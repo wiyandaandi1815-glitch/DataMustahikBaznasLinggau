@@ -1,26 +1,3026 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Form Data Mustahik - BAZNAS Kota Lubuklinggau</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
-    .header { background: #1a5276; color: white; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 20px; }
-    .info { background: #fff3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-    h1 { margin: 0; font-size: 22px; }
-    h2 { margin: 5px 0 0; font-size: 16px; font-weight: normal; }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Data Mustahik — BAZNAS Kota Lubuklinggau</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --teal:#0d7c66;--teal-dark:#0a6654;--teal-light:#e6f4f1;
+  --gold:#c8a84b;--gold-dark:#b5963e;--gold-light:#fdf7e7;
+  --red:#d4342a;--red-light:#fdecea;
+  --blue:#2563eb;--blue-light:#eff6ff;
+  --orange:#ea580c;
+  --g50:#f9fafb;--g100:#f3f4f6;--g200:#e5e7eb;--g300:#d1d5db;
+  --g400:#9ca3af;--g500:#6b7280;--g700:#374151;--g900:#111827;
+  --white:#ffffff;--radius:8px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--g50);color:var(--g900);min-height:100vh;padding-bottom:80px;}
+
+/* HEADER */
+.app-header{background:var(--teal);color:#fff;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:62px;position:sticky;top:0;z-index:300;box-shadow:0 2px 12px rgba(0,0,0,.22);}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px;}
+.logo-sub{font-size:11px;font-weight:400;opacity:.75;}
+
+/* TAB BAR */
+.tab-bar{background:#fff;border-bottom:2px solid var(--g200);display:flex;padding:0 24px;position:sticky;top:62px;z-index:200;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+.tab-btn{padding:13px 18px;font-size:13px;font-weight:600;color:var(--g500);cursor:pointer;border:none;background:none;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.tab-btn.active{color:var(--teal);border-bottom-color:var(--teal);}
+.tab-btn:hover:not(.active){color:var(--g700);}
+.tab-pane{display:none;}.tab-pane.active{display:block;}
+
+/* MAIN */
+.main{max-width:1200px;margin:22px auto;padding:0 16px;}
+.pg-title{font-size:21px;font-weight:800;margin-bottom:3px;}
+.pg-sub{font-size:13px;color:var(--g500);margin-bottom:18px;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:var(--radius);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;white-space:nowrap;}
+.btn-primary{background:var(--teal);color:#fff;}.btn-primary:hover{background:var(--teal-dark);}
+.btn-gold{background:var(--gold);color:#fff;}.btn-gold:hover{background:var(--gold-dark);}
+.btn-blue{background:var(--blue);color:#fff;}.btn-blue:hover{background:#1d4ed8;}
+.btn-outline{background:#fff;color:var(--g700);border:1.5px solid var(--g300);}.btn-outline:hover{border-color:var(--teal);color:var(--teal);}
+.btn-danger{background:var(--red);color:#fff;}.btn-danger:hover{background:#b52d23;}
+.btn-ghost{background:transparent;color:var(--g500);border:1.5px solid transparent;padding:6px 10px;}.btn-ghost:hover{background:var(--g100);color:var(--g900);}
+.btn-sm{padding:5px 9px;font-size:11.5px;}
+.btn-icon{padding:5px 7px;border-radius:6px;}
+.action-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+
+/* CARD */
+.card{background:#fff;border-radius:12px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden;}
+.card-header{display:flex;align-items:center;gap:10px;padding:12px 20px 10px;background:var(--teal);color:#fff;}
+.sec-num{width:25px;height:25px;background:rgba(255,255,255,.22);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.card-header h2{font-size:13.5px;font-weight:700;letter-spacing:.3px;}
+.izn-badge{margin-left:auto;font-size:10px;background:var(--gold);padding:2px 8px;border-radius:20px;font-weight:700;}
+.card-body{padding:18px 20px;}
+.izn-hdr{background:linear-gradient(135deg,#7c3f00,#c8a84b);}
+
+/* GRID FORM */
+.grid{display:grid;gap:13px;}
+.g2{grid-template-columns:1fr 1fr;}.g3{grid-template-columns:1fr 1fr 1fr;}
+.c2{grid-column:span 2;}.c3{grid-column:span 3;}
+@media(max-width:620px){.g2,.g3{grid-template-columns:1fr;}.c2,.c3{grid-column:span 1;}}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:12px;font-weight:600;color:var(--g700);}
+.req{color:var(--red);margin-left:2px;}
+.hint{font-weight:400;color:var(--g400);font-size:11px;margin-left:3px;}
+input,select,textarea{font-family:inherit;font-size:13px;padding:8px 11px;border:1.5px solid var(--g200);border-radius:var(--radius);background:#fff;color:var(--g900);transition:border-color .15s,box-shadow .15s;width:100%;outline:none;}
+input:focus,select:focus,textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,124,102,.11);}
+input[readonly]{background:var(--g100);color:var(--g500);cursor:not-allowed;}
+textarea{resize:vertical;min-height:66px;}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' viewBox='0 0 24 24'%3E%3Cpath stroke='%236b7280' stroke-width='2' d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;padding-right:26px;}
+
+/* DESIL BOX */
+.desil-box{background:var(--teal-light);border:1.5px solid #b2ddd6;border-radius:var(--radius);padding:12px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:6px;}
+@media(max-width:620px){.desil-box{grid-template-columns:1fr 1fr;}}
+.di-label{font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px;}
+.di-value{font-size:14px;font-weight:700;color:var(--g900);}
+
+/* IZN */
+.izn-info{background:var(--gold-light);border:1.5px solid #e8d7a3;border-radius:var(--radius);padding:11px 14px;margin-bottom:13px;font-size:12px;color:#7c5c00;}
+.penyakit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:7px;margin-top:4px;}
+.penyakit-item{display:flex;align-items:center;gap:7px;padding:7px 9px;border:1.5px solid var(--g200);border-radius:var(--radius);cursor:pointer;transition:all .15s;background:#fff;user-select:none;}
+.penyakit-item:hover{border-color:var(--gold);background:var(--gold-light);}
+.penyakit-item input[type=checkbox]{width:14px;height:14px;accent-color:var(--gold);flex-shrink:0;cursor:pointer;border:none;box-shadow:none;padding:0;}
+.penyakit-item input[type=checkbox]:focus{box-shadow:none;}
+.penyakit-item.checked{border-color:var(--gold);background:var(--gold-light);}
+.penyakit-item span{font-size:12px;font-weight:500;color:var(--g700);}
+.izn-score-box{background:linear-gradient(135deg,#fdf7e7,#fff9f0);border:1.5px solid #e8d7a3;border-radius:var(--radius);padding:13px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:6px;}
+@media(max-width:620px){.izn-score-box{grid-template-columns:1fr;}}
+.si-label{font-size:10px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.5px;}
+.si-value{font-size:20px;font-weight:800;color:var(--g900);}
+.si-sub{font-size:11px;color:var(--g500);}
+
+/* ═══ TABLE — STICKY COLUMNS + HORIZONTAL SCROLL ═══ */
+.tbl-outer{position:relative;border-radius:10px;overflow:hidden;box-shadow:var(--shadow);}
+.tbl-scroll{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;}
+.tbl-scroll::-webkit-scrollbar{height:7px;}
+.tbl-scroll::-webkit-scrollbar-track{background:var(--g100);}
+.tbl-scroll::-webkit-scrollbar-thumb{background:var(--g300);border-radius:4px;}
+.tbl-scroll::-webkit-scrollbar-thumb:hover{background:var(--teal);}
+
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:1480px;}
+thead th{background:var(--teal);color:#fff;padding:10px 12px;text-align:left;font-weight:700;font-size:11px;letter-spacing:.3px;white-space:nowrap;position:sticky;top:0;z-index:10;}
+tbody td{padding:8px 12px;border-bottom:1px solid var(--g100);color:var(--g700);white-space:nowrap;vertical-align:middle;background:#fff;}
+tbody tr:hover td{background:var(--teal-light);}
+
+/* Sticky: Checkbox */
+thead th:nth-child(1),tbody td:nth-child(1){position:sticky;left:0;z-index:15;min-width:36px;width:36px;text-align:center;}
+thead th:nth-child(1){z-index:20;background:var(--teal);}
+tbody td:nth-child(1){background:#fff;}
+tbody tr:hover td:nth-child(1),tbody tr.row-selected td:nth-child(1){background:var(--teal-light);}
+
+/* Sticky: No */
+thead th:nth-child(2),tbody td:nth-child(2){position:sticky;left:36px;z-index:15;min-width:46px;text-align:center;}
+thead th:nth-child(2){z-index:20;background:var(--teal);}
+tbody td:nth-child(2){background:#fff;font-weight:700;color:var(--g500);font-size:11px;}
+tbody tr:hover td:nth-child(2),tbody tr.row-selected td:nth-child(2){background:var(--teal-light);}
+
+/* Sticky: ID Mustahik */
+thead th:nth-child(3),tbody td:nth-child(3){position:sticky;left:82px;z-index:15;min-width:165px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;}
+thead th:nth-child(3){z-index:20;background:var(--teal);}
+tbody td:nth-child(3){background:#fff;color:var(--teal-dark);font-weight:700;letter-spacing:.5px;}
+tbody tr:hover td:nth-child(3),tbody tr.row-selected td:nth-child(3){background:var(--teal-light);}
+
+/* Sticky: Nama */
+thead th:nth-child(4),tbody td:nth-child(4){position:sticky;left:247px;z-index:15;min-width:180px;max-width:180px;}
+thead th:nth-child(4){z-index:20;background:var(--teal);}
+tbody td:nth-child(4){font-weight:700;background:#fff;border-right:2px solid var(--g200);}
+tbody tr:hover td:nth-child(4),tbody tr.row-selected td:nth-child(4){background:var(--teal-light);}
+thead th:nth-child(4){border-right:2px solid rgba(255,255,255,.2);}
+
+/* Sticky: Aksi (last column) */
+thead th:last-child,tbody td:last-child{position:sticky;right:0;z-index:15;min-width:120px;text-align:center;background:#fff;}
+thead th:last-child{z-index:20;background:var(--teal);border-left:2px solid rgba(255,255,255,.2);}
+tbody td:last-child{border-left:2px solid var(--g200);}
+tbody tr:hover td:last-child,tbody tr.row-selected td:last-child{background:var(--teal-light);}
+
+/* Shadow hints */
+thead th:nth-child(4)::after,tbody td:nth-child(4)::after{content:'';position:absolute;right:-8px;top:0;bottom:0;width:8px;background:linear-gradient(to right,rgba(0,0,0,.06),transparent);pointer-events:none;}
+thead th:last-child::before,tbody td:last-child::before{content:'';position:absolute;left:-8px;top:0;bottom:0;width:8px;background:linear-gradient(to left,rgba(0,0,0,.06),transparent);pointer-events:none;}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+.b-green{background:#d1fae5;color:#065f46;}
+.b-yellow{background:#fef3c7;color:#92400e;}
+.b-red{background:#fee2e2;color:#991b1b;}
+.b-gray{background:var(--g100);color:var(--g500);}
+.b-blue{background:#dbeafe;color:#1e40af;}
+.b-teal{background:var(--teal-light);color:var(--teal-dark);}
+
+/* FILTER BAR */
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;background:#fff;padding:12px 14px;border-radius:10px;box-shadow:var(--shadow);}
+.filter-bar input,.filter-bar select{width:auto;font-size:12.5px;padding:7px 10px;}
+.filter-bar .search-wrap{position:relative;flex:1;min-width:220px;}
+.filter-bar .search-wrap input{padding-left:32px;}
+.filter-bar .search-wrap .s-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--g400);pointer-events:none;}
+.filter-bar select{min-width:130px;}
+
+/* PAGINATION */
+.pag-wrap{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:12px;}
+.pagination{display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.pg-btn{min-width:30px;height:30px;border-radius:6px;border:1.5px solid var(--g200);background:#fff;color:var(--g700);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;}
+.pg-btn:hover:not(:disabled){border-color:var(--teal);color:var(--teal);}
+.pg-btn.active{background:var(--teal);color:#fff;border-color:var(--teal);}
+.pg-btn:disabled{opacity:.38;cursor:not-allowed;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.46);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-overlay.open{opacity:1;pointer-events:auto;}
+.modal{background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.28);width:100%;max-width:680px;max-height:90vh;display:flex;flex-direction:column;transform:scale(.95);transition:transform .2s;}
+.modal-overlay.open .modal{transform:scale(1);}
+.modal-hdr{padding:15px 22px 13px;border-bottom:1px solid var(--g200);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.modal-hdr h3{font-size:15px;font-weight:800;}
+.modal-body{flex:1;overflow-y:auto;padding:18px 22px;}
+.modal-ftr{padding:13px 22px;border-top:1px solid var(--g200);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;}
+.x-btn{background:none;border:none;cursor:pointer;color:var(--g400);font-size:22px;line-height:1;padding:2px;transition:color .12s;}.x-btn:hover{color:var(--g900);}
+
+/* DETAIL */
+.det-sec{margin-bottom:14px;}
+.det-sec h4{font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px;padding-bottom:4px;border-bottom:2px solid var(--teal-light);}
+.det-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px 18px;}
+.det-row{display:flex;flex-direction:column;gap:1px;padding:4px 0;}
+.dr-lbl{font-size:11px;color:var(--g400);font-weight:500;}
+.dr-val{font-size:13px;font-weight:600;color:var(--g900);}
+.det-row.full{grid-column:span 2;}
+.izn-big{background:var(--gold-light);border:1.5px solid #e8d7a3;border-radius:var(--radius);padding:11px 16px;display:flex;align-items:center;gap:14px;margin-bottom:8px;}
+.izn-num{font-size:38px;font-weight:800;color:var(--gold);line-height:1;}
+
+/* CONFIRM */
+.conf-modal{max-width:400px;}
+.conf-body{padding:28px 22px;text-align:center;}
+.conf-body .c-icon{font-size:48px;margin-bottom:12px;}
+.conf-body h4{font-size:16px;font-weight:800;margin-bottom:8px;}
+.conf-body p{font-size:13px;color:var(--g500);line-height:1.65;}
+
+/* IMPORT */
+.drop-zone{border:3px dashed var(--g300);border-radius:12px;padding:44px 24px;text-align:center;cursor:pointer;transition:all .2s;background:#fff;position:relative;}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--blue);background:var(--blue-light);}
+.drop-zone h3{font-size:16px;font-weight:700;color:var(--g700);margin:10px 0 6px;}
+.drop-zone p{font-size:13px;color:var(--g400);}
+#file-import{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.import-prev{background:var(--blue-light);border:1.5px solid #bfdbfe;border-radius:var(--radius);padding:14px 18px;margin-top:14px;display:none;}
+.import-prev h4{font-size:13px;font-weight:700;color:var(--blue);margin-bottom:8px;}
+.imp-stats{display:flex;gap:22px;flex-wrap:wrap;}
+.imp-stat .isn{font-size:24px;font-weight:800;color:var(--g900);}
+.imp-stat .isl{font-size:11px;color:var(--g500);}
+.imp-log{margin-top:10px;max-height:110px;overflow-y:auto;background:#fff;border-radius:6px;padding:8px 10px;font-size:11.5px;color:var(--g600);line-height:1.8;}
+
+/* EMPTY */
+.empty-st{text-align:center;padding:60px 20px;color:var(--g400);}
+.empty-st .e-icon{font-size:52px;margin-bottom:12px;}
+.empty-st h4{font-size:15px;font-weight:700;color:var(--g500);margin-bottom:6px;}
+.empty-st p{font-size:13px;}
+
+/* FOOTER */
+.tbl-footer{text-align:center;padding:14px;font-size:12px;color:var(--g400);border-top:1px solid var(--g100);letter-spacing:.3px;}
+.tbl-footer strong{color:var(--teal);font-weight:700;}
+
+
+/* ── ANGGOTA KELUARGA ── */
+.ak-table-wrap{overflow-x:auto;border-radius:8px;border:1.5px solid var(--g200);}
+.ak-table{width:100%;border-collapse:collapse;min-width:900px;font-size:12.5px;}
+.ak-table thead th{background:var(--teal);color:#fff;padding:8px 10px;font-size:11px;font-weight:700;text-align:left;white-space:nowrap;}
+.ak-table thead th:first-child{text-align:center;width:36px;}
+.ak-table tbody td{padding:5px 6px;border-bottom:1px solid var(--g100);vertical-align:middle;}
+.ak-table tbody tr:hover td{background:var(--teal-light);}
+.ak-table input,.ak-table select{font-size:12.5px;padding:5px 7px;border:1.5px solid var(--g200);border-radius:6px;width:100%;background:#fff;outline:none;font-family:inherit;}
+.ak-table input:focus,.ak-table select:focus{border-color:var(--teal);box-shadow:0 0 0 2px rgba(13,124,102,.1);}
+.ak-table .row-num{width:28px;height:28px;background:var(--teal-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--teal);margin:0 auto;}
+.ak-table .btn-del-row{background:none;border:none;cursor:pointer;color:var(--g300);padding:3px;border-radius:4px;transition:color .12s;}
+.ak-table .btn-del-row:hover{color:var(--red);}
+.ak-add-row{display:flex;align-items:center;gap:8px;margin-top:10px;}
+.ak-note{font-size:11.5px;color:var(--g400);background:var(--teal-light);border-left:3px solid var(--teal);padding:8px 12px;border-radius:0 6px 6px 0;margin-bottom:12px;line-height:1.6;}
+.ak-note strong{color:var(--teal);}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--teal);color:#fff;padding:11px 20px;border-radius:var(--radius);font-size:13.5px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);z-index:9999;max-width:320px;}
+#toast.show{transform:translateY(0);opacity:1;}
+#toast.err{background:var(--red);}
+#toast.info{background:var(--blue);}
+
+.mono{font-family:'IBM Plex Mono',monospace;}
+.data-count{font-size:12px;color:var(--g500);margin-bottom:8px;}
+.data-count strong{color:var(--teal);}
+
+/* ══ ID MUSTAHIK ══ */
+.mustahik-id-display{
+  font-family:'IBM Plex Mono',monospace;
+  background:var(--g100);
+  border:1.5px solid var(--g200);
+  border-radius:var(--radius);
+  padding:8px 12px;
+  text-align:center;
+  font-size:14px;
+  font-weight:600;
+  color:var(--teal-dark);
+  letter-spacing:1px;
+  user-select:none;
+  cursor:not-allowed;
+}
+.id-preview-wrap{margin-bottom:10px;background:var(--teal-light);border:1.5px solid #b2ddd6;border-radius:var(--radius);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.id-preview-wrap .id-label{font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+.id-preview-wrap .id-val{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:var(--teal-dark);letter-spacing:1.5px;}
+
+/* ══ REKOMENDASI BADGE ══ */
+.rek-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;cursor:pointer;border:none;max-width:170px;overflow:hidden;text-overflow:ellipsis;}
+.rek-merah{background:#fee2e2;color:#991b1b;}
+.rek-oranye{background:#ffedd5;color:#9a3412;}
+.rek-kuning{background:#fef3c7;color:#92400e;}
+.rek-hijau{background:#d1fae5;color:#065f46;}
+.rek-abu{background:var(--g100);color:var(--g500);}
+.rek-hitam{background:#1f2937;color:#f9fafb;}
+
+/* ══ TOOLTIP REKOMENDASI ══ */
+.rek-tooltip-wrap{position:relative;display:inline-block;}
+.rek-tooltip{
+  display:none;position:fixed;z-index:9000;
+  background:#1f2937;color:#f9fafb;
+  border-radius:10px;padding:12px 16px;
+  font-size:12px;line-height:1.7;
+  box-shadow:0 8px 32px rgba(0,0,0,.28);
+  max-width:300px;min-width:220px;
+  pointer-events:none;
+  white-space:normal;
+}
+.rek-tooltip.visible{display:block;}
+.rek-tooltip .rt-head{font-weight:800;font-size:13px;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,.2);padding-bottom:5px;}
+.rek-tooltip .rt-row{display:flex;gap:7px;align-items:flex-start;margin-bottom:3px;}
+.rek-tooltip .rt-lbl{opacity:.65;min-width:70px;flex-shrink:0;}
+.rek-tooltip .rt-val{font-weight:600;}
+
+/* ══ REKOMENDASI PREVIEW BOX DI FORM ══ */
+.rek-preview-card{
+  background:linear-gradient(135deg,#f0f9ff 0%,#e6f4f1 100%);
+  border-left:6px solid var(--gold);
+  border-radius:12px;
+  padding:16px 20px;
+  margin-top:16px;
+  box-shadow:0 1px 4px rgba(0,0,0,.07);
+}
+.rek-preview-label{
+  font-size:10px;font-weight:800;color:var(--gold);
+  text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;
+  display:flex;align-items:center;gap:6px;
+}
+.rek-preview-badge{font-size:18px;font-weight:800;margin-bottom:8px;display:block;}
+.rek-preview-kuadran{
+  font-size:11px;font-weight:700;color:var(--teal);
+  text-transform:uppercase;letter-spacing:.5px;
+  margin-bottom:5px;
+}
+.rek-preview-detail{
+  font-size:13px;color:var(--g700);line-height:1.65;
+  font-style:italic;margin-top:4px;
+  border-top:1px dashed var(--g200);padding-top:8px;
+}
+.rek-preview-empty{
+  font-size:12.5px;color:var(--g400);font-style:italic;text-align:center;padding:8px 0;
+}
+
+/* ══ SROI PREVIEW (form) ══ */
+.sroi-preview-card{
+  background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);
+  border-left:6px solid #16a34a;border-radius:12px;
+  padding:14px 18px;margin-top:14px;
+  box-shadow:0 1px 4px rgba(0,0,0,.07);
+}
+.sroi-preview-label{font-size:10px;font-weight:800;color:#16a34a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;}
+.sroi-rasio-big{font-size:28px;font-weight:900;color:#15803d;line-height:1;margin-bottom:4px;}
+.sroi-rasio-sub{font-size:11px;color:#166534;margin-bottom:8px;}
+.sroi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed #86efac;}
+@media(max-width:620px){.sroi-grid{grid-template-columns:1fr 1fr;}}
+.sroi-item .si-lbl{font-size:9.5px;color:#166534;font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+.sroi-item .si-val{font-size:13px;font-weight:700;color:#14532d;margin-top:2px;}
+.sroi-disclaimer{font-size:10.5px;color:#166534;font-style:italic;margin-top:8px;padding-top:8px;border-top:1px dashed #86efac;line-height:1.6;}
+
+/* ══ SROI badge di tabel ══ */
+.sroi-badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+.sroi-tinggi{background:#dcfce7;color:#15803d;}
+.sroi-sedang{background:#fef3c7;color:#92400e;}
+.sroi-rendah{background:#fee2e2;color:#991b1b;}
+.sroi-na{background:var(--g100);color:var(--g400);}
+
+/* ══ PRINT STYLES ══ */
+@media print{
+  .app-header,.tab-bar,.action-bar,.filter-bar,.pag-wrap,
+  .modal-overlay,#toast,#rek-tooltip,
+  .tab-pane:not(.active){display:none!important;}
+  body{background:#fff!important;padding:0!important;}
+  .card{box-shadow:none!important;border:1px solid #ddd!important;}
+  .print-area{display:block!important;}
+  .no-print{display:none!important;}
+}
+.print-area{display:none;}
+
+/* ══ CHECKBOX PILIH BARIS ══ */
+.chk-col{width:36px;text-align:center;}
+.chk-col input[type=checkbox]{width:15px;height:15px;accent-color:var(--teal);cursor:pointer;}
+.row-selected td{background:#e6f4f1!important;}
+
+/* ══ BADGE CETAK INFO ══ */
+#cetak-info{font-size:12px;color:var(--teal);font-weight:600;display:none;padding:4px 10px;background:var(--teal-light);border-radius:6px;}
+
+/* ════════════════════════════════════════
+   PRINT — KARTU MUSTAHIK A4
+   ════════════════════════════════════════ */
+@media print{
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  body,html{margin:0;padding:0;background:#fff!important;}
+  .app-header,.tab-bar,.action-bar,.filter-bar,.pag-wrap,
+  .modal-overlay,#toast,#rek-tooltip,.tab-pane:not(#t-print),
+  .tbl-outer,.card,.btn,nav,button,select,input:not([type=checkbox]),
+  textarea,.empty-st{display:none!important;}
+  #t-print{display:block!important;}
+  @page{size:A4 portrait;margin:8mm 10mm;}
+}
+
+/* ══ PRINT PREVIEW PANE ══ */
+#t-print{display:none;}
+
+/* ══ KARTU CETAK STYLES (screen preview + print) ══ */
+.kop-surat{text-align:center;padding-bottom:8px;margin-bottom:8px;}
+.kop-surat img.kop-logo{width:70px;height:auto;display:block;margin:0 auto 6px;}
+.kop-surat .kop-nama1{font-family:'Times New Roman',serif;font-size:16px;font-weight:bold;color:#000;letter-spacing:.5px;}
+.kop-surat .kop-nama2{font-family:'Times New Roman',serif;font-size:11px;color:#222;margin-bottom:4px;}
+.kop-surat .kop-alamat{font-family:'Times New Roman',serif;font-size:9px;color:#333;line-height:1.55;}
+.kop-garis{border:none;border-top:2px solid #000;margin:6px 0 2px;}
+.kop-garis2{border:none;border-top:1px solid #000;margin:0 0 8px;}
+
+.kartu-wrap{font-family:'Times New Roman',Georgia,serif;font-size:11px;color:#000;background:#fff;page-break-after:always;}
+.kartu-wrap:last-child{page-break-after:auto!important;}
+
+.kartu-judul{text-align:center;margin:8px 0 6px;}
+.kartu-judul h2{font-size:14px;font-weight:bold;letter-spacing:1px;margin:0;text-transform:uppercase;}
+.kartu-judul .kjsub{font-size:10px;color:#333;margin-top:3px;}
+
+.kc-sec{margin:8px 0 4px;}
+.kc-sec-title{font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;
+  background:#1a5276;color:#fff;padding:3px 8px;border-radius:3px;display:block;margin-bottom:5px;}
+.kc-grid2{display:grid;grid-template-columns:1fr 1fr;gap:2px 14px;}
+.kc-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px 10px;}
+.kc-row{padding:2px 0;border-bottom:1px dotted #ccc;}
+.kc-lbl{font-size:9px;color:#555;font-weight:normal;}
+.kc-val{font-size:10.5px;font-weight:bold;color:#000;word-break:break-word;}
+.kc-full{grid-column:1/-1;}
+
+/* Tabel anggota keluarga */
+.ak-print-table{width:100%;border-collapse:collapse;font-size:9px;margin-top:4px;}
+.ak-print-table th{background:#1a5276;color:#fff;padding:4px 6px;text-align:left;font-weight:bold;}
+.ak-print-table td{padding:4px 6px;border:1px solid #bbb;}
+.ak-print-table tr:nth-child(even) td{background:#f5f5f5;}
+
+/* Box IZN skor di cetak */
+.kc-izn-box{display:inline-flex;align-items:center;gap:10px;background:#fdf7e7;border:1.5px solid #c8a84b;border-radius:6px;padding:6px 12px;margin-bottom:6px;}
+.kc-izn-num{font-size:28px;font-weight:900;color:#c8a84b;line-height:1;}
+.kc-izn-kat{font-size:11px;font-weight:bold;color:#7c5c00;}
+
+/* Box rekomendasi di cetak */
+.kc-rek-box{border-left:5px solid #c8a84b;background:#fef9e6;padding:10px 14px;border-radius:0 8px 8px 0;margin:6px 0;}
+.kc-rek-title{font-size:9px;font-weight:bold;color:#c8a84b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+.kc-rek-badge{font-size:15px;font-weight:900;display:block;margin-bottom:6px;}
+.kc-rek-detail{font-size:10px;color:#374151;line-height:1.65;border-top:1px dashed #e8d7a3;padding-top:6px;margin-top:4px;}
+
+/* Tanda tangan */
+.kc-ttd{display:flex;justify-content:space-between;align-items:flex-end;margin-top:20px;padding-top:10px;border-top:1px solid #ccc;}
+.kc-ttd-blok{text-align:center;min-width:180px;}
+.kc-ttd-blok .ttd-title{font-size:10px;font-weight:bold;margin-bottom:55px;}
+.kc-ttd-blok .ttd-garis{border-top:1px solid #000;padding-top:4px;font-size:9.5px;}
+.kc-ttd-tengah{text-align:center;font-size:10px;color:#333;}
+
+/* Footer kartu */
+.kc-footer{margin-top:8px;padding-top:5px;border-top:2px solid #000;font-size:8px;color:#555;text-align:center;line-height:1.6;}
+.kc-halaman{font-size:9px;color:#666;text-align:right;margin-top:4px;}
+</style>
 </head>
 <body>
-  <div class="header">
-    <h1>BADAN AMIL ZAKAT NASIONAL (BAZNAS)</h1>
-    <h2>KOTA LUBUKLINGGAU</h2>
-    <h2>Form Data Mustahik</h2>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="logo">
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+      <circle cx="14" cy="14" r="14" fill="rgba(255,255,255,.15)"/>
+      <path d="M14 5c-5 0-9 4-9 9s4 9 9 9 9-4 9-9-4-9-9-9zm0 4l1.5 4.5H20l-3.75 2.7 1.5 4.5L14 18l-3.75 2.7 1.5-4.5L8 13.5h4.5L14 9z" fill="white"/>
+    </svg>
+    <div>
+      <div>BAZNAS Kota Lubuklinggau</div>
+      <div class="logo-sub">Manajemen Data Mustahik · IZN 2024</div>
+    </div>
   </div>
-  <div class="info">
-    <strong>Perhatian:</strong> File HTML asli sedang dalam proses upload. Halaman ini akan segera diperbarui dengan form lengkap Data Mustahik BAZNAS Lubuklinggau.
+  <span id="hdr-count" style="font-size:12px;opacity:.8;"></span>
+</header>
+
+<!-- TAB BAR -->
+<nav class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('t-daftar',this)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    Daftar Mustahik
+  </button>
+  <button class="tab-btn" onclick="switchTab('t-form',this)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    Input / Edit
+  </button>
+  <button class="tab-btn" id="tab-import-btn" onclick="switchTab('t-import',this)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    Import / Rollback
+  </button>
+</nav>
+
+<!-- ════ TAB 1: DAFTAR ════ -->
+<div id="t-daftar" class="tab-pane active">
+<div class="main">
+  <div class="pg-title">Daftar Mustahik</div>
+  <div class="pg-sub">Scroll horizontal untuk melihat semua kolom. Kolom <strong>No</strong>, <strong>Nama</strong>, dan <strong>Aksi</strong> terpaku (sticky).</div>
+
+  <!-- Action Bar -->
+  <div class="action-bar">
+    <button class="btn btn-primary" onclick="bukaFormBaru()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Tambah Mustahik
+    </button>
+    <button class="btn btn-gold" onclick="exportExcel()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export Excel
+    </button>
+    <button class="btn" style="background:#dc2626;color:#fff;" onclick="exportPdfSelectedData()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Export PDF Terpilih
+    </button>
+    <button class="btn" style="background:#6b21a8;color:#fff;" onclick="printSelectedData()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Cetak Data Terpilih (A4)
+    </button>
+    <span id="cetak-info">0 dipilih</span>
+    <button class="btn btn-outline" onclick="switchTab('t-import',document.getElementById('tab-import-btn'))">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Import / Rollback
+    </button>
+    <button class="btn btn-danger" onclick="konfHapusSemua()" style="margin-left:auto">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+      Hapus Semua
+    </button>
   </div>
-  <p>Silakan hubungi administrator untuk informasi lebih lanjut.</p>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="search-wrap">
+      <svg class="s-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="q-search" placeholder="Cari nama, NIK, kecamatan, asnaf..." oninput="applyFilter()"/>
+    </div>
+    <select id="q-asnaf" onchange="applyFilter()">
+      <option value="">Semua Asnaf</option>
+      <option>Fakir</option><option>Miskin</option><option>Amil</option>
+      <option>Muallaf</option><option>Riqab</option><option>Gharim</option>
+      <option>Fisabilillah</option><option>Ibnu Sabil</option>
+    </select>
+    <select id="q-verif" onchange="applyFilter()">
+      <option value="">Semua Verif.</option>
+      <option value="belum_verifikasi">Belum Verif.</option>
+      <option value="terverifikasi">Terverifikasi</option>
+      <option value="ditolak">Ditolak</option>
+      <option value="nonaktif">Nonaktif</option>
+    </select>
+    <select id="q-desil" onchange="applyFilter()">
+      <option value="">Semua Desil</option>
+      <option value="1">Desil 1</option><option value="2">Desil 2</option>
+      <option value="3">Desil 3</option><option value="4">Desil 4</option>
+      <option value="5">Desil 5</option><option value="6">Desil 6</option>
+    </select>
+    <select id="q-aktif" onchange="applyFilter()">
+      <option value="">Semua Status</option>
+      <option value="true">Aktif</option>
+      <option value="false">Nonaktif</option>
+    </select>
+    <button class="btn btn-ghost btn-sm" onclick="resetFilter()">↺ Reset</button>
+  </div>
+
+  <!-- Table -->
+  <div class="tbl-outer">
+    <div class="tbl-scroll" id="tbl-scroll-wrap">
+      <table id="main-table">
+        <thead>
+          <tr>
+            <th class="chk-col"><input type="checkbox" id="chk-all" title="Pilih Semua" onchange="toggleAllCheckbox(this)"/></th>
+            <th>No</th>
+            <th>ID Mustahik</th>
+            <th>Nama Mustahik</th>
+            <th>NIK</th>
+            <th>Asnaf</th>
+            <th>Kel. Bantuan</th>
+            <th>Kecamatan</th>
+            <th>Kelurahan</th>
+            <th>Telepon</th>
+            <th>Desil</th>
+            <th>Status Ekonomi</th>
+            <th>Prioritas</th>
+            <th>Kondisi Kesehatan</th>
+            <th>Penyakit Diderita</th>
+            <th>JKN/BPJS</th>
+            <th>Skor IZN Kes.</th>
+            <th>Kategori IZN</th>
+            <th>Rekomendasi Bantuan</th>
+            <th>Detail Rekomendasi</th>
+            <th>Nilai Bantuan</th>
+            <th>Rasio SROI</th>
+            <th>Status Verif.</th>
+            <th>Aktif</th>
+            <th>Tgl. Input</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+    </div>
+    <!-- Footer watermark -->
+    <div class="tbl-footer">
+      © <strong>2026 — BAZNAS Kota Lubuk Linggau — Data Mustahik — By Andi Wiyanda</strong>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pag-wrap" style="margin-top:12px;">
+    <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--g500);">
+      <span>Tampil:</span>
+      <select id="page-size" onchange="applyFilter()" style="width:76px;padding:5px 8px;font-size:12px;">
+        <option value="10">10</option><option value="25" selected>25</option>
+        <option value="50">50</option><option value="100">100</option>
+        <option value="9999">Semua</option>
+      </select>
+      <span id="pag-info" style="color:var(--g500);"></span>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+</div>
+
+<!-- ════ TAB 2: FORM ════ -->
+<div id="t-form" class="tab-pane">
+<div class="main">
+  <div id="form-title" class="pg-title">Tambah Mustahik Baru</div>
+  <div class="pg-sub">Lengkapi data di bawah ini. Field <span style="color:var(--red)">*</span> wajib diisi.</div>
+
+  <div class="action-bar">
+    <button class="btn btn-primary" onclick="simpanData()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      <span id="btn-save-lbl">Simpan Data</span>
+    </button>
+    <button class="btn btn-outline" onclick="resetForm()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      Bersihkan
+    </button>
+    <button class="btn btn-ghost" onclick="switchTab('t-daftar',document.querySelector('.tab-btn'))">← Kembali ke Daftar</button>
+    <input type="hidden" id="edit-id" value=""/>
+  </div>
+
+  <!-- Sec 1: Identitas -->
+  <div class="card">
+    <div class="card-header"><div class="sec-num">1</div><h2>IDENTITAS MUSTAHIK</h2></div>
+    <div class="card-body">
+      <div class="grid g2">
+        <div class="field c2"><label>Nama Lengkap <span class="req">*</span></label><input id="f-nama" type="text" placeholder="Nama lengkap sesuai KTP"/></div>
+        <div class="field"><label>NIK <span class="hint">16 digit</span></label><input id="f-nik" type="text" maxlength="20" placeholder="Nomor Induk Kependudukan" class="mono"/></div>
+        <div class="field"><label>No. KK</label><input id="f-noKK" type="text" maxlength="20" placeholder="Nomor Kartu Keluarga" class="mono"/></div>
+        <div class="field"><label>No. KTP <span class="hint">jika berbeda NIK</span></label><input id="f-noKTP" type="text" maxlength="20" placeholder="Nomor KTP" class="mono"/></div>
+        <div class="field"><label>Jenis Kelamin</label><select id="f-jk"><option value="">— Pilih —</option><option>Laki-laki</option><option>Perempuan</option></select></div>
+        <div class="field"><label>Tempat Lahir</label><input id="f-tempatLahir" type="text" placeholder="Kota tempat lahir"/></div>
+        <div class="field"><label>Tanggal Lahir</label><input id="f-tglLahir" type="date"/></div>
+        <div class="field"><label>Status Keluarga</label><select id="f-statusKel"><option value="">— Pilih —</option><option>Kepala Keluarga</option><option>Istri</option><option>Anak</option><option>Orang Tua</option><option>Lainnya</option></select></div>
+        <div class="field"><label>Jumlah Tanggungan</label><input id="f-tanggungan" type="number" min="0" placeholder="0"/></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Sec 2: Anggota Keluarga -->
+  <div class="card">
+    <div class="card-header"><div class="sec-num">2</div><h2>DAFTAR ANGGOTA KELUARGA</h2></div>
+    <div class="card-body">
+      <div class="ak-note">
+        <strong>Petunjuk:</strong> Isi seluruh anggota keluarga yang tinggal serumah dan menjadi tanggungan, termasuk <strong>Kepala Keluarga</strong> sebagai baris pertama.
+        Klik <strong>+ Tambah Baris</strong> untuk menambah anggota. Maksimal <strong>20 anggota</strong>.
+      </div>
+      <div class="ak-table-wrap">
+        <table class="ak-table">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th style="min-width:170px">Nama Lengkap</th>
+              <th style="min-width:110px">Hub. Keluarga</th>
+              <th style="min-width:60px">L / P</th>
+              <th style="min-width:130px">Tanggal Lahir</th>
+              <th style="min-width:140px">NIK</th>
+              <th style="min-width:100px">Pend. Terakhir</th>
+              <th style="min-width:120px">Pekerjaan</th>
+              <th style="min-width:120px">Kondisi Kesehatan</th>
+              <th style="min-width:130px">Keterangan / Penyakit</th>
+              <th style="width:32px"></th>
+            </tr>
+          </thead>
+          <tbody id="ak-tbody"></tbody>
+        </table>
+      </div>
+      <div class="ak-add-row">
+        <button class="btn btn-outline btn-sm" onclick="akTambahBaris()" type="button">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Tambah Baris Anggota
+        </button>
+        <span id="ak-count" style="font-size:12px;color:var(--g400)">0 anggota</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sec 3: Alamat (was Sec 2) -->
+  <div class="card">
+    <div class="card-header"><div class="sec-num">3</div><h2>ALAMAT DOMISILI</h2></div>
+    <div class="card-body">
+      <div class="grid g2">
+        <div class="field c2"><label>Alamat Lengkap</label><textarea id="f-alamat" rows="2" placeholder="Jalan, RT/RW, Dusun..."></textarea></div>
+        <div class="field"><label>Kelurahan</label><input id="f-kelurahan" type="text" placeholder="Kelurahan"/></div>
+        <div class="field"><label>Kecamatan</label><input id="f-kecamatan" type="text" placeholder="Kecamatan"/></div>
+        <div class="field"><label>Kota</label><input id="f-kota" type="text" value="Lubuklinggau"/></div>
+        <div class="field"><label>Provinsi</label><input id="f-provinsi" type="text" value="Sumatera Selatan"/></div>
+        <div class="field"><label>Kode Pos</label><input id="f-kodePos" type="text" maxlength="10" placeholder="31xxx" class="mono"/></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sec 3: Kontak -->
+  <div class="card">
+    <div class="card-header"><div class="sec-num">4</div><h2>KONTAK</h2></div>
+    <div class="card-body">
+      <div class="grid g2">
+        <div class="field"><label>Telepon / HP</label><input id="f-telepon" type="tel" placeholder="08xxxxxxxxxx" class="mono"/></div>
+        <div class="field"><label>Email</label><input id="f-email" type="email" placeholder="email@contoh.com"/></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sec 5: Klasifikasi -->
+  <div class="card">
+    <div class="card-header"><div class="sec-num">5</div><h2>KLASIFIKASI BAZNAS</h2></div>
+    <div class="card-body">
+      <div class="grid g2">
+        <div class="field"><label>Kategori Asnaf <span class="req">*</span></label>
+          <select id="f-asnaf"><option value="">— Pilih Asnaf —</option><option>Fakir</option><option>Miskin</option><option>Amil</option><option>Muallaf</option><option>Riqab</option><option>Gharim</option><option>Fisabilillah</option><option>Ibnu Sabil</option></select>
+        </div>
+        <div class="field"><label>Kategori Bantuan</label>
+          <select id="f-katBantuan" onchange="updateSROIPreview()"><option value="">— Pilih —</option><option>Zakat Konsumtif</option><option>Zakat Produktif</option><option>Infak/Sedekah</option><option>Bantuan Pendidikan</option><option>Bantuan Kesehatan</option><option>Bantuan Rumah Layak Huni</option><option>Bantuan Modal Usaha</option><option>Bantuan Dakwah</option></select>
+        </div>
+        <div class="field"><label>Program BAZNAS</label><input id="f-program" type="text" placeholder="Nama program (jika ada)"/></div>
+        <div class="field">
+          <label>Nilai Bantuan / Modal (Rp)
+            <span class="hint">— untuk kalkulasi SROI</span>
+          </label>
+          <input id="f-nilaiModal" type="number" min="0" step="50000" placeholder="0"
+            oninput="updateSROIPreview()"/>
+        </div>
+        <div class="field">
+          <label>Durasi Program (Bulan)
+            <span class="hint">— untuk proyeksi SROI</span>
+          </label>
+          <select id="f-durasiProgram" onchange="updateSROIPreview()">
+            <option value="">— Pilih —</option>
+            <option value="1">1 Bulan</option>
+            <option value="3">3 Bulan</option>
+            <option value="6">6 Bulan</option>
+            <option value="12">12 Bulan</option>
+            <option value="24">24 Bulan</option>
+          </select>
+        </div>
+        <div class="field"><label>Status Verifikasi <span class="req">*</span></label>
+          <select id="f-statusVerif"><option value="belum_verifikasi">Belum Verifikasi</option><option value="terverifikasi">Terverifikasi</option><option value="ditolak">Ditolak</option><option value="nonaktif">Nonaktif</option></select>
+        </div>
+        <div class="field"><label>Status Aktif</label>
+          <select id="f-aktif"><option value="true">Aktif</option><option value="false">Nonaktif</option></select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sec 6: Ekonomi -->
+  <div class="card">
+    <div class="card-header"><div class="sec-num">6</div><h2>KONDISI EKONOMI & DESIL</h2></div>
+    <div class="card-body">
+      <div class="grid g2">
+        <div class="field"><label>Pekerjaan</label><input id="f-pekerjaan" type="text" placeholder="Buruh, pedagang, tidak bekerja..."/></div>
+        <div class="field"><label>Penghasilan Bulanan (Rp)</label><input id="f-penghasilan" type="number" min="0" step="1000" placeholder="0" oninput="hitungDesil()"/></div>
+        <div class="field"><label>Jumlah Anggota Keluarga</label><input id="f-jmlAnggota" type="number" min="1" placeholder="1" oninput="hitungDesil()"/></div>
+        <div class="field"><label>Total Pengeluaran Bulanan (Rp)</label><input id="f-pengeluaran" type="number" min="0" step="1000" placeholder="0" oninput="hitungDesil()"/></div>
+        <div class="field"><label>Kondisi Rumah</label>
+          <select id="f-kondisiRumah"><option value="">— Pilih —</option><option>Permanen / Layak Huni</option><option>Semi Permanen</option><option>Tidak Layak Huni</option><option>Rumah Dinas/Kontrak</option><option>Menumpang</option></select>
+        </div>
+        <div class="field"><label>Kebutuhan Utama</label>
+          <select id="f-kebutuhan"><option value="">— Pilih —</option><option>Pangan</option><option>Sandang</option><option>Papan</option><option>Kesehatan</option><option>Pendidikan</option><option>Modal Usaha</option><option>Lainnya</option></select>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Preview Desil (otomatis)</div>
+        <div class="desil-box">
+          <div><div class="di-label">Pengeluaran/Kapita</div><div class="di-value" id="p-perkapita">—</div></div>
+          <div><div class="di-label">Desil</div><div class="di-value" id="p-desil">—</div></div>
+          <div><div class="di-label">Status Ekonomi</div><div class="di-value" id="p-status" style="font-size:12px">—</div></div>
+          <div><div class="di-label">Prioritas</div><div class="di-value" id="p-prioritas">—</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sec 7: Kesehatan IZN -->
+  <div class="card">
+    <div class="card-header izn-hdr"><div class="sec-num" style="background:rgba(255,255,255,.2)">7</div><h2>KESEHATAN & PENYAKIT</h2><span class="izn-badge">IZN</span></div>
+    <div class="card-body">
+      <div class="izn-info"><strong>Indeks Zakat Nasional (IZN)</strong> — Dimensi Kesehatan. Data ini mengukur kemiskinan multidimensi dan menentukan prioritas bantuan kesehatan mustahik.</div>
+      <div class="grid g2" style="margin-bottom:14px">
+        <div class="field"><label>Status JKN/BPJS Kesehatan</label>
+          <select id="f-jkn"><option value="">— Pilih —</option><option value="Memiliki BPJS PBI">BPJS PBI (dibayar pemerintah)</option><option value="Memiliki BPJS Mandiri">BPJS Mandiri</option><option value="Memiliki Asuransi Swasta">Asuransi Swasta</option><option value="Tidak Memiliki">Tidak Memiliki Jaminan</option></select>
+        </div>
+        <div class="field"><label>Akses Fasilitas Kesehatan</label>
+          <select id="f-faskes"><option value="">— Pilih —</option><option value="Mudah (&lt;1 km)">Mudah (≤1 km)</option><option value="Sedang (1-5 km)">Sedang (1–5 km)</option><option value="Sulit (&gt;5 km)">Sulit (&gt;5 km)</option></select>
+        </div>
+        <div class="field"><label>Kondisi Kesehatan Umum</label>
+          <select id="f-kondisiKes" onchange="updateIZN()"><option value="">— Pilih —</option><option value="Sehat">Sehat (tidak ada keluhan)</option><option value="Sakit Ringan">Sakit Ringan (bisa beraktivitas)</option><option value="Sakit Sedang">Sakit Sedang (terbatas)</option><option value="Sakit Berat / Kronis">Sakit Berat / Kronis</option><option value="Difabel">Penyandang Disabilitas</option></select>
+        </div>
+        <div class="field"><label>Anggota Keluarga Sakit Kronis</label>
+          <select id="f-anggotaSakit" onchange="updateIZN()"><option value="">— Pilih —</option><option value="Tidak">Tidak ada</option><option value="Ya, 1 orang">Ya, 1 orang</option><option value="Ya, 2+ orang">Ya, 2 orang atau lebih</option></select>
+        </div>
+        <div class="field"><label>Frekuensi Sakit (3 bln terakhir)</label>
+          <select id="f-frekSakit" onchange="updateIZN()"><option value="">— Pilih —</option><option value="Tidak pernah">Tidak pernah</option><option value="1-2 kali">1–2 kali</option><option value="3-5 kali">3–5 kali</option><option value=">5 kali">Lebih dari 5 kali</option></select>
+        </div>
+        <div class="field"><label>Pengeluaran Kesehatan Bulanan (Rp)</label>
+          <input id="f-pengeluaranKes" type="number" min="0" step="10000" placeholder="0" oninput="updateIZN()"/>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:14px">
+        <label>Jenis Penyakit / Kondisi Medis <span class="hint">bisa pilih lebih dari satu</span></label>
+        <div class="penyakit-grid" id="penyakit-grid"></div>
+        <div class="field" style="margin-top:10px">
+          <label>Penyakit / Kondisi Lain <span class="hint">jika tidak ada dalam daftar</span></label>
+          <input id="f-penyakitLain" type="text" placeholder="Tulis penyakit lain jika ada..."/>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:14px">
+        <label>Riwayat Medis / Catatan Kesehatan</label>
+        <textarea id="f-riwayatMedis" rows="2" placeholder="Riwayat operasi, rawat inap, alergi obat, dll."></textarea>
+      </div>
+
+      <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Skor IZN Dimensi Kesehatan (estimasi otomatis)</div>
+      <div class="izn-score-box">
+        <div><div class="si-label">Skor Dimensi</div><div class="si-value" id="izn-skor">—</div><div class="si-sub">dari 100</div></div>
+        <div><div class="si-label">Kategori</div><div class="si-value" id="izn-kat" style="font-size:15px">—</div><div class="si-sub">tingkat keparahan</div></div>
+        <div><div class="si-label">Rekomendasi</div><div class="si-value" id="izn-rek" style="font-size:11px;font-weight:600;line-height:1.4">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ REKOMENDASI BANTUAN PREVIEW (Otomatis Realtime) ══ -->
+  <div class="card" id="card-rek-preview">
+    <div class="card-header" style="background:linear-gradient(135deg,#7c5c00,var(--gold))">
+      <div class="sec-num" style="background:rgba(255,255,255,.2)">📋</div>
+      <h2>REKOMENDASI BANTUAN (OTOMATIS)</h2>
+      <span class="izn-badge" style="background:rgba(255,255,255,.25)">Realtime</span>
+    </div>
+    <div class="card-body">
+      <div id="rek-preview-wrap">
+        <div class="rek-preview-empty" id="rek-preview-empty">
+          ⬆ Isi data Ekonomi (pengeluaran + jumlah anggota) dan data Kesehatan (kondisi, penyakit) untuk melihat rekomendasi bantuan secara otomatis.
+        </div>
+        <div id="rek-preview-content" style="display:none">
+          <div class="rek-preview-card">
+            <div class="rek-preview-label">📋 Rekomendasi Bantuan Otomatis</div>
+            <span class="rek-preview-badge" id="rpv-badge">—</span>
+            <div class="rek-preview-kuadran" id="rpv-kuadran">—</div>
+            <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--g500);margin-bottom:8px;">
+              <span>Desil Ekonomi: <strong id="rpv-desil" style="color:var(--teal)">—</strong></span>
+              <span>Skor IZN Kes.: <strong id="rpv-izn" style="color:var(--gold)">—</strong></span>
+              <span>Level Prioritas: <strong id="rpv-level" style="color:var(--red)">—</strong>/5</span>
+            </div>
+            <div class="rek-preview-detail" id="rpv-detail">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SROI PROYEKSI PREVIEW (Otomatis Realtime) ══ -->
+  <div class="card" id="card-sroi-preview">
+    <div class="card-header" style="background:linear-gradient(135deg,#14532d,#16a34a)">
+      <div class="sec-num" style="background:rgba(255,255,255,.2)">📊</div>
+      <h2>PROYEKSI SROI — SOCIAL RETURN ON INVESTMENT</h2>
+      <span class="izn-badge" style="background:rgba(255,255,255,.25)">Estimasi</span>
+    </div>
+    <div class="card-body">
+      <div id="sroi-preview-empty" class="rek-preview-empty">
+        ⬆ Isi Kategori Bantuan + Nilai Bantuan + Durasi Program untuk melihat proyeksi SROI secara otomatis.
+      </div>
+      <div id="sroi-preview-content" style="display:none">
+        <div class="sroi-preview-card">
+          <div class="sroi-preview-label">📊 Proyeksi SROI — Social Return on Investment</div>
+          <div class="sroi-rasio-big">1 : <span id="sp-rasio">0.00</span></div>
+          <div class="sroi-rasio-sub">Setiap Rp 1 yang diinvestasikan menciptakan nilai manfaat sosial sebesar Rp <span id="sp-rasio2">0.00</span></div>
+          <div class="sroi-grid">
+            <div class="sroi-item"><div class="si-lbl">Input (Investasi)</div><div class="si-val" id="sp-input">—</div></div>
+            <div class="sroi-item"><div class="si-lbl">Proxy Outcome</div><div class="si-val" id="sp-outcome">—</div></div>
+            <div class="sroi-item"><div class="si-lbl">Outcome Bersih</div><div class="si-val" id="sp-outcomeBersih">—</div></div>
+            <div class="sroi-item"><div class="si-lbl">Deadweight (15%)</div><div class="si-val" id="sp-deadweight">—</div></div>
+            <div class="sroi-item"><div class="si-lbl">Attribution (70%)</div><div class="si-val" id="sp-attribution">—</div></div>
+            <div class="sroi-item"><div class="si-lbl">Kategori Bantuan</div><div class="si-val" id="sp-kategori">—</div></div>
+          </div>
+          <div class="sroi-disclaimer">
+            ⚠️ <strong>Catatan Metodologi:</strong> Proyeksi ini menggunakan proxy outcome standar BAZNAS RI berdasarkan kategori bantuan dan desil ekonomi. Rasio SROI aktual akan dihitung setelah evaluasi program selesai (6–12 bulan). Deadweight 15% dan Attribution 70% mengacu pada standar perhitungan SROI sektor zakat Indonesia.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sec 8: Survey -->
+  <div class="card">
+    <div class="card-header"><div class="sec-num">8</div><h2>DATA SURVEY LAPANGAN</h2></div>
+    <div class="card-body">
+      <div class="grid g2">
+        <div class="field"><label>Tanggal Survey</label><input id="f-tglSurvey" type="date"/></div>
+        <div class="field"><label>Nama Surveyor</label><input id="f-surveyor" type="text" placeholder="Petugas surveyor"/></div>
+        <div class="field c2"><label>Catatan Survey / Observasi Lapangan</label><textarea id="f-catatanSurvey" rows="2" placeholder="Kondisi tempat tinggal, temuan lapangan, dll."></textarea></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ════ TAB 3: IMPORT ════ -->
+<div id="t-import" class="tab-pane">
+<div class="main">
+  <div class="pg-title">Import / Rollback Data</div>
+  <div class="pg-sub">Pulihkan data dari file Excel yang sebelumnya sudah di-export. Kolom akan dicocokkan otomatis. Data yang sudah ada <strong>tidak</strong> akan terhapus — import bersifat <em>append</em> (tambah). Gunakan tombol "Hapus Semua lalu Import" untuk rollback penuh.</div>
+
+  <div class="card">
+    <div class="card-header" style="background:var(--blue)"><div class="sec-num" style="background:rgba(255,255,255,.2)">📥</div><h2>UPLOAD FILE EXCEL</h2></div>
+    <div class="card-body">
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-import" accept=".xlsx,.xls" onchange="handleFileImport(this.files[0])"/>
+        <div style="font-size:52px">📂</div>
+        <h3>Klik atau Seret File Excel ke Sini</h3>
+        <p>Format yang didukung: <strong>.xlsx</strong> atau <strong>.xls</strong></p>
+        <p style="margin-top:6px;font-size:12px;color:var(--g300);">File export BAZNAS Mustahik — sheet "Data Mustahik"</p>
+      </div>
+
+      <div class="import-prev" id="import-prev">
+        <h4>📊 Pratinjau Data yang Akan Diimport</h4>
+        <div class="imp-stats">
+          <div class="imp-stat"><div class="isn" id="imp-total">0</div><div class="isl">Total Baris</div></div>
+          <div class="imp-stat"><div class="isn" id="imp-valid">0</div><div class="isl">Data Valid</div></div>
+          <div class="imp-stat"><div class="isn" id="imp-skip">0</div><div class="isl">Dilewati (duplikat)</div></div>
+        </div>
+        <div class="imp-log" id="imp-log"></div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+        <button class="btn btn-blue" id="btn-do-import" onclick="doImport(false)" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import (Tambahkan ke Data Existing)
+        </button>
+        <button class="btn btn-danger" id="btn-rollback" onclick="konfRollback()" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Hapus Semua lalu Import (Rollback Penuh)
+        </button>
+        <button class="btn btn-ghost" onclick="resetImport()">
+          ↺ Reset Upload
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panduan -->
+  <div class="card">
+    <div class="card-header"><div class="sec-num">?</div><h2>PANDUAN ROLLBACK</h2></div>
+    <div class="card-body" style="font-size:13px;color:var(--g700);line-height:1.9">
+      <p style="margin-bottom:10px">Skenario rollback terjadi ketika Anda membuka aplikasi kembali dan tabel kosong, karena data di <em>localStorage</em> browser hilang (misalnya setelah berpindah perangkat, membersihkan cache, atau menggunakan mode Incognito).</p>
+      <p><strong>Langkah Rollback:</strong></p>
+      <ol style="margin-left:20px;margin-top:6px;line-height:2.2">
+        <li>Cari file Excel hasil export sebelumnya (format: <code style="background:var(--g100);padding:1px 6px;border-radius:4px;font-family:monospace">DataMustahik_BAZNAS_LLG_YYYY-MM-DD.xlsx</code>)</li>
+        <li>Klik tab <strong>Import / Rollback</strong> di atas</li>
+        <li>Upload file Excel tersebut ke area di atas</li>
+        <li>Periksa pratinjau data (total baris, valid, duplikat)</li>
+        <li>Klik <strong>"Hapus Semua lalu Import"</strong> untuk rollback penuh, atau <strong>"Import Tambahkan"</strong> jika sudah ada data yang ingin dipertahankan</li>
+        <li>Data akan langsung muncul di tabel Daftar Mustahik ✅</li>
+      </ol>
+      <div style="background:var(--gold-light);border:1.5px solid #e8d7a3;border-radius:var(--radius);padding:10px 14px;margin-top:14px;font-size:12px;color:#7c5c00;">
+        <strong>💡 Tips:</strong> Biasakan export Excel setiap selesai sesi input data. Simpan file di Google Drive atau folder khusus agar mudah ditemukan saat dibutuhkan.
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════ MODAL DETAIL ════ -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h3>Detail Mustahik</h3>
+      <button class="x-btn" onclick="closeModal('modal-detail')">×</button>
+    </div>
+    <div class="modal-body" id="modal-detail-body"></div>
+    <div class="modal-ftr">
+      <button class="btn btn-outline" onclick="closeModal('modal-detail')">Tutup</button>
+      <button class="btn btn-primary" id="btn-modal-edit">Edit Data</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL KONFIRMASI ════ -->
+<div class="modal-overlay" id="modal-konfirm">
+  <div class="modal conf-modal">
+    <div class="modal-hdr">
+      <h3 id="konfirm-title">Konfirmasi</h3>
+      <button class="x-btn" onclick="closeModal('modal-konfirm')">×</button>
+    </div>
+    <div class="conf-body">
+      <div class="c-icon" id="konfirm-icon">⚠️</div>
+      <h4 id="konfirm-head">Apakah Anda yakin?</h4>
+      <p id="konfirm-msg">Tindakan ini tidak dapat dibatalkan.</p>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-outline" onclick="closeModal('modal-konfirm')">Batal</button>
+      <button class="btn btn-danger" id="konfirm-ok-btn">Ya, Lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<div id="rek-tooltip" class="rek-tooltip"></div>
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════
+// STORE — localStorage with in-memory fallback
+// ════════════════════════════════════════════
+const STORE_KEY='baznas_mustahik_v2';
+const ID_COUNTER_KEY='baznas_id_counters';
+let dataList=[];
+let importBuffer=[];
+let currentPage=1;
+let filteredData=[];
+let _memStore={};
+
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch{_memStore[k]=v;}}
+function lsGet(k){try{return localStorage.getItem(k);}catch{return _memStore[k]||null;}}
+
+function loadStore(){
+  try{const r=lsGet(STORE_KEY);dataList=r?JSON.parse(r):[];}
+  catch{dataList=[];}
+  // reset flag pilih — tidak disimpan ke localStorage
+  dataList.forEach(d=>{d._selected=false;});
+}
+function saveStore(){
+  // jangan simpan flag _selected ke localStorage
+  const clean=dataList.map(d=>{const c={...d};delete c._selected;return c;});
+  lsSet(STORE_KEY,JSON.stringify(clean));
+}
+
+// ════════════════════════════════════════════
+// TABS
+// ════════════════════════════════════════════
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+
+// ════════════════════════════════════════════
+// ID MUSTAHIK OTOMATIS — FORMAT: 1674-YYMM-XXXXX
+// ════════════════════════════════════════════
+function getCurrentPeriod(){
+  const now=new Date();
+  const yy=String(now.getFullYear()).slice(-2);
+  const mm=String(now.getMonth()+1).padStart(2,'0');
+  return yy+mm;
+}
+
+function getCounters(){
+  try{const r=lsGet(ID_COUNTER_KEY);return r?JSON.parse(r):{};}
+  catch{return{};}
+}
+
+function saveCounters(obj){
+  lsSet(ID_COUNTER_KEY,JSON.stringify(obj));
+}
+
+function getCounterForPeriod(period){
+  const c=getCounters();
+  return c[period]||0;
+}
+
+function saveCounterForPeriod(period,counter){
+  const c=getCounters();
+  c[period]=counter;
+  saveCounters(c);
+}
+
+function formatCounter(n){
+  return String(n).padStart(5,'0');
+}
+
+function generateMustahikId(){
+  const period=getCurrentPeriod();
+  let counter=getCounterForPeriod(period)+1;
+  const id='1674-'+period+'-'+formatCounter(counter);
+  saveCounterForPeriod(period,counter);
+  return id;
+}
+
+function getPeriodFromDate(dateStr){
+  // dateStr bisa format: "DD/MM/YYYY" (id-ID) atau "YYYY-MM-DD" atau Date object
+  let d;
+  if(!dateStr){d=new Date();}
+  else if(typeof dateStr==='string'){
+    // Format id-ID: "27/4/2026" atau "1/1/2025"
+    if(dateStr.includes('/')){
+      const parts=dateStr.split('/');
+      if(parts.length===3){d=new Date(parseInt(parts[2]),parseInt(parts[1])-1,parseInt(parts[0]));}
+      else{d=new Date();}
+    } else {
+      d=new Date(dateStr);
+    }
+  } else {d=new Date();}
+  if(isNaN(d.getTime()))d=new Date();
+  const yy=String(d.getFullYear()).slice(-2);
+  const mm=String(d.getMonth()+1).padStart(2,'0');
+  return yy+mm;
+}
+
+function migrateExistingData(){
+  // Beri ID untuk data lama yang belum punya mustahikId
+  const counters=getCounters();
+  let migrated=0;
+  dataList.forEach(function(d){
+    if(!d.mustahikId){
+      const period=getPeriodFromDate(d.createdAt);
+      counters[period]=(counters[period]||0)+1;
+      d.mustahikId='1674-'+period+'-'+formatCounter(counters[period]);
+      migrated++;
+    }
+  });
+  if(migrated>0){
+    saveCounters(counters);
+    saveStore();
+    console.log('[BAZNAS] Migrasi ID selesai: '+migrated+' data diperbarui.');
+  }
+}
+
+// ════════════════════════════════════════════
+// REKOMENDASI BANTUAN OTOMATIS
+// ════════════════════════════════════════════
+function getRekomendasiBantuan(desil,iznSkor){
+  // Desil: number 1-10 atau null/''
+  // iznSkor: number 0-100 atau null/''
+  const d=(desil===''||desil===null||desil===undefined)?null:parseInt(desil);
+  const s=(iznSkor===''||iznSkor===null||iznSkor===undefined)?null:parseInt(iznSkor);
+
+  // Data belum lengkap
+  if(d===null&&s===null){
+    return{teks:'⚠️ Data belum lengkap',warna:'rek-hitam',levelPrioritas:0,
+      detail:'Lengkapi data ekonomi & kesehatan untuk mendapatkan rekomendasi bantuan.'};
+  }
+  if(d===null){
+    return{teks:'⚠️ Data ekonomi kosong',warna:'rek-hitam',levelPrioritas:0,
+      detail:'Data desil ekonomi belum diisi. Lengkapi pengeluaran & jumlah anggota keluarga.'};
+  }
+  if(s===null){
+    return{teks:'⚠️ Data IZN kosong',warna:'rek-hitam',levelPrioritas:0,
+      detail:'Data IZN Kesehatan belum diisi. Lengkapi seksi Kesehatan & Penyakit.'};
+  }
+
+  // Aturan eskalasi: jika skor IZN < 25, naikkan 1 tingkat prioritas
+  const escalate=s<25;
+
+  // Kuadran I: Miskin + Sakit Parah → PRIORITAS UTAMA
+  if(d<=4&&s<=49){
+    return{teks:'🔴 PRIORITAS UTAMA',warna:'rek-merah',levelPrioritas:5,
+      detail:'Kuadran I — Kronis Prioritas. Desil '+d+' + IZN '+s+'. Rekomendasi: Bantuan darurat kesehatan + pangan + modal usaha adaptif.'};
+  }
+  // Kuadran II: Miskin tapi Sehat — naik ke I jika IZN sangat rendah (eskalasi sudah tercover di atas)
+  if(d<=4&&s>=50){
+    // Eskalasi: jika IZN 50-74 dan desil 1-2, naikkan ke prioritas utama
+    if(escalate||( d<=2&&s<75)){
+      return{teks:'🔴 PRIORITAS UTAMA',warna:'rek-merah',levelPrioritas:5,
+        detail:'Eskalasi: Desil '+d+' + IZN '+s+' (< 25). Ditingkatkan ke Prioritas Utama.'};
+    }
+    return{teks:'🟠 Bantuan Pangan & Ekonomi',warna:'rek-oranye',levelPrioritas:4,
+      detail:'Kuadran II — Miskin Sehat. Desil '+d+' + IZN '+s+'. Rekomendasi: Sembako reguler + bantuan tunai bersyarat + pelatihan UMKM.'};
+  }
+  // Kuadran III: Ekonomi menengah tapi Sakit
+  if(d>=5&&d<=7&&s<=49){
+    if(escalate){
+      // Eskalasi ke Kuadran II level
+      return{teks:'🟠 Bantuan Pangan & Ekonomi',warna:'rek-oranye',levelPrioritas:4,
+        detail:'Eskalasi: Kuadran III + IZN '+s+' (< 25). Ditingkatkan satu level. Rekomendasi: Tambahkan bantuan pangan & ekonomi.'};
+    }
+    return{teks:'🟡 Bantuan Kesehatan',warna:'rek-kuning',levelPrioritas:3,
+      detail:'Kuadran III — Rentan Sakit. Desil '+d+' + IZN '+s+'. Rekomendasi: BPJS PBI + obat kronis + alat bantu kesehatan.'};
+  }
+  // Desil 5-7 tapi sehat
+  if(d>=5&&d<=7&&s>=50){
+    if(escalate){
+      return{teks:'🟡 Bantuan Kesehatan',warna:'rek-kuning',levelPrioritas:3,
+        detail:'Eskalasi: Desil menengah + IZN '+s+' (< 25). Perlu pantauan kesehatan lebih ketat.'};
+    }
+    return{teks:'⚪ Non-Prioritas',warna:'rek-abu',levelPrioritas:1,
+      detail:'Desil '+d+' + IZN '+s+'. Kondisi menengah dan sehat. Cukup pemantauan berkala.'};
+  }
+  // Kuadran IV: Tidak miskin + Sehat
+  if(d>=8&&s>=75){
+    return{teks:'⚪ Non-Prioritas',warna:'rek-abu',levelPrioritas:1,
+      detail:'Kuadran IV — Stabil. Desil '+d+' + IZN '+s+'. Tidak perlu bantuan reguler, cukup pemantauan.'};
+  }
+  // Kuadran V: Tidak miskin tapi Sakit (Kasus Khusus)
+  if(d>=8&&s<=74){
+    if(escalate){
+      return{teks:'🟡 Bantuan Kesehatan',warna:'rek-kuning',levelPrioritas:3,
+        detail:'Eskalasi: Desil '+d+' (tidak miskin) + IZN '+s+' (< 25). Kondisi kritis, perlu intervensi kesehatan segera.'};
+    }
+    return{teks:'🟢 Bantuan Terbatas',warna:'rek-hijau',levelPrioritas:2,
+      detail:'Kuadran V — Kasus Khusus. Desil '+d+' + IZN '+s+'. Rekomendasi: Pendampingan ringan / bantuan sekali waktu (misal musibah).'};
+  }
+  // Fallback
+  return{teks:'⚪ Perlu Evaluasi',warna:'rek-abu',levelPrioritas:1,
+    detail:'Desil '+d+' + IZN '+s+'. Silakan evaluasi kembali data ekonomi dan kesehatan.'};
+}
+
+// Tooltip rekomendasi
+var _tooltipTimer=null;
+function showRekTooltip(el,detail){
+  var tip=document.getElementById('rek-tooltip');
+  if(!tip)return;
+  tip.innerHTML=detail;
+  tip.classList.add('visible');
+  _positionTooltip(el,tip);
+}
+function hideRekTooltip(){
+  var tip=document.getElementById('rek-tooltip');
+  if(tip)tip.classList.remove('visible');
+}
+function _positionTooltip(el,tip){
+  var r=el.getBoundingClientRect();
+  var top=r.bottom+8;
+  var left=r.left;
+  if(top+180>window.innerHeight)top=r.top-188;
+  if(left+300>window.innerWidth)left=window.innerWidth-310;
+  if(left<8)left=8;
+  tip.style.top=top+'px';
+  tip.style.left=left+'px';
+}
+function rekBadgeHtml(d){
+  const r=getRekomendasiBantuan(d.desil,d.iznSkor);
+  const safeDetail=r.detail.replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+  return '<span class="rek-badge '+r.warna+'" '
+    +'onmouseenter="showRekTooltip(this,\''+safeDetail+'\')" '
+    +'onmouseleave="hideRekTooltip()" '
+    +'onclick="showRekTooltip(this,\''+safeDetail+'\')">'+r.teks+'</span>';
+}
+
+// ════════════════════════════════════════════
+// DETAIL REKOMENDASI BANTUAN (VERBOSE)
+// ════════════════════════════════════════════
+function getDetailRekomendasi(desil,iznSkor){
+  const d=(desil===''||desil===null||desil===undefined)?null:parseInt(desil);
+  const s=(iznSkor===''||iznSkor===null||iznSkor===undefined)?null:parseInt(iznSkor);
+  const escalate=(s!==null&&s<25);
+
+  // Kuadran VI — Data Tidak Lengkap
+  if(d===null||s===null){
+    return{
+      kuadran:'VI',namaKuadran:'Data Tidak Lengkap',
+      detail:'Lengkapi data ekonomi (penghasilan, pengeluaran, jumlah anggota keluarga) dan data kesehatan (kondisi kesehatan, penyakit, frekuensi sakit) untuk mendapatkan rekomendasi yang akurat.',
+      teks:'Kuadran VI — Data Tidak Lengkap. Rekomendasi: Lengkapi data ekonomi & kesehatan terlebih dahulu.'
+    };
+  }
+
+  // Kuadran I — Kronis Prioritas Utama: Desil 1-4 + IZN 0-49
+  if(d<=4&&s<=49){
+    return{
+      kuadran:'I',namaKuadran:'Kronis Prioritas Utama',
+      detail:'Bantuan darurat kesehatan + rujukan faskes gratis + paket gizi khusus + bantuan modal usaha adaptif + pendampingan intensif 6 bulan.',
+      teks:'Kuadran I — Kronis Prioritas Utama. Desil '+d+' + IZN '+s+'. Rekomendasi: Bantuan darurat kesehatan + rujukan faskes gratis + paket gizi khusus + bantuan modal usaha adaptif + pendampingan intensif 6 bulan.'
+    };
+  }
+
+  // Kuadran II — Miskin Sehat: Desil 1-4 + IZN 50-100 (dengan eskalasi)
+  if(d<=4&&s>=50){
+    if(escalate||d<=2){
+      return{
+        kuadran:'I',namaKuadran:'Kronis Prioritas Utama (Eskalasi)',
+        detail:'Data ini dieskalasi ke Kuadran I karena Desil '+d+' (sangat miskin). Bantuan darurat kesehatan + rujukan faskes gratis + paket gizi khusus + pendampingan intensif.',
+        teks:'Kuadran I — Eskalasi dari Kuadran II. Desil '+d+' + IZN '+s+'. Rekomendasi: Bantuan darurat kesehatan + rujukan faskes gratis + paket gizi khusus.'
+      };
+    }
+    return{
+      kuadran:'II',namaKuadran:'Miskin Sehat',
+      detail:'Sembako reguler 3 bulan + bantuan tunai bersyarat (BLT) + pelatihan UMKM + bantuan peralatan usaha ringan.',
+      teks:'Kuadran II — Miskin Sehat. Desil '+d+' + IZN '+s+'. Rekomendasi: Sembako reguler 3 bulan + bantuan tunai bersyarat (BLT) + pelatihan UMKM + bantuan peralatan usaha ringan.'
+    };
+  }
+
+  // Kuadran III — Rentan Sakit: Desil 5-7 + IZN 0-49
+  if(d>=5&&d<=7&&s<=49){
+    if(escalate){
+      return{
+        kuadran:'III',namaKuadran:'Rentan Sakit (Eskalasi Kritis)',
+        detail:'IZN sangat rendah (< 25). Eskalasi: BPJS PBI segera + obat kronis prioritas + kunjungan rumah petugas kesehatan + tambahan bantuan pangan darurat.',
+        teks:'Kuadran III (Eskalasi) — Rentan Sakit Kritis. Desil '+d+' + IZN '+s+'. Rekomendasi: BPJS PBI segera + obat kronis + kunjungan rumah + bantuan pangan darurat.'
+      };
+    }
+    return{
+      kuadran:'III',namaKuadran:'Rentan Sakit',
+      detail:'BPJS PBI (iuran ditanggung negara) + obat kronis rutin + alat bantu kesehatan (jika perlu) + pendampingan pengobatan.',
+      teks:'Kuadran III — Rentan Sakit. Desil '+d+' + IZN '+s+'. Rekomendasi: BPJS PBI + obat kronis rutin + alat bantu kesehatan + pendampingan pengobatan.'
+    };
+  }
+
+  // Desil 5-7 tapi sehat (IZN ≥ 50)
+  if(d>=5&&d<=7&&s>=50){
+    if(escalate){
+      return{
+        kuadran:'III',namaKuadran:'Rentan Sakit (Pantau Ketat)',
+        detail:'Kondisi ekonomi menengah namun IZN rendah. Pantau kondisi kesehatan secara berkala. BPJS PBI preventif + edukasi gaya hidup sehat.',
+        teks:'Kuadran III — Pantau Ketat. Desil '+d+' + IZN '+s+'. Rekomendasi: Pantau berkala + BPJS PBI preventif + edukasi kesehatan.'
+      };
+    }
+    return{
+      kuadran:'IV',namaKuadran:'Stabil Non-Prioritas',
+      detail:'Tidak perlu bantuan reguler. Cukup pemantauan berkala setiap 6 bulan. Potensi sebagai muzaki.',
+      teks:'Kuadran IV — Stabil Non-Prioritas. Desil '+d+' + IZN '+s+'. Rekomendasi: Pemantauan berkala setiap 6 bulan. Potensi dikembangkan sebagai muzaki.'
+    };
+  }
+
+  // Kuadran IV — Stabil Non-Prioritas: Desil 8-10 + IZN 75-100
+  if(d>=8&&s>=75){
+    return{
+      kuadran:'IV',namaKuadran:'Stabil Non-Prioritas',
+      detail:'Tidak perlu bantuan reguler. Cukup pemantauan berkala setiap 6 bulan. Potensi sebagai muzaki.',
+      teks:'Kuadran IV — Stabil Non-Prioritas. Desil '+d+' + IZN '+s+'. Rekomendasi: Tidak perlu bantuan reguler. Pemantauan berkala. Potensi muzaki.'
+    };
+  }
+
+  // Kuadran V — Bantuan Terbatas: Desil 8-10 + IZN 0-74
+  if(d>=8&&s<=74){
+    if(escalate){
+      return{
+        kuadran:'V',namaKuadran:'Bantuan Terbatas (Perlu Perhatian Kesehatan)',
+        detail:'Kondisi ekonomi baik namun kesehatan sangat rendah. Intervensi kesehatan segera: BPJS Mandiri dibantu + konsultasi spesialis + pemantauan rutin bulanan.',
+        teks:'Kuadran V (Eskalasi) — Ekonomi Baik, Sakit Berat. Desil '+d+' + IZN '+s+'. Rekomendasi: Bantuan BPJS Mandiri + konsultasi spesialis + pemantauan rutin.'
+      };
+    }
+    return{
+      kuadran:'V',namaKuadran:'Bantuan Terbatas',
+      detail:'Bantuan insidental (musibah/kebakaran/bencana) + pendampingan ringan. Tidak masuk program bantuan reguler.',
+      teks:'Kuadran V — Bantuan Terbatas. Desil '+d+' + IZN '+s+'. Rekomendasi: Bantuan insidental (musibah) + pendampingan ringan. Tidak masuk program reguler.'
+    };
+  }
+
+  // Fallback
+  return{
+    kuadran:'—',namaKuadran:'Perlu Evaluasi',
+    detail:'Data desil dan IZN sudah tersedia namun tidak cocok dengan kuadran manapun. Silakan periksa kembali data ekonomi dan kesehatan.',
+    teks:'Perlu Evaluasi. Desil '+d+' + IZN '+s+'. Silakan periksa kembali data ekonomi dan kesehatan.'
+  };
+}
+
+// ════════════════════════════════════════════
+// UPDATE REKOMENDASI PREVIEW DI FORM (REALTIME)
+// ════════════════════════════════════════════
+function updateRekomendasiPreview(){
+  // Ambil desil dari hasil hitungDesil terkini
+  const desilEl=document.getElementById('p-desil');
+  const iznEl=document.getElementById('izn-skor');
+  if(!desilEl||!iznEl)return;
+
+  const desilTxt=desilEl.textContent; // "Desil 3" atau "—"
+  const iznTxt=iznEl.textContent;     // "72" atau "—"
+
+  const desil=(desilTxt&&desilTxt!=='—')?parseInt(desilTxt.replace('Desil','').trim()):null;
+  const izn=(iznTxt&&iznTxt!=='—')?parseInt(iznTxt):null;
+
+  const empty=document.getElementById('rek-preview-empty');
+  const content=document.getElementById('rek-preview-content');
+  if(!empty||!content)return;
+
+  if(desil===null&&izn===null){
+    empty.style.display='block';content.style.display='none';
+    return;
+  }
+  empty.style.display='none';content.style.display='block';
+
+  const rek=getRekomendasiBantuan(desil,izn);
+  const detail=getDetailRekomendasi(desil,izn);
+
+  const badgeEl=document.getElementById('rpv-badge');
+  const kuadranEl=document.getElementById('rpv-kuadran');
+  const desilValEl=document.getElementById('rpv-desil');
+  const iznValEl=document.getElementById('rpv-izn');
+  const levelEl=document.getElementById('rpv-level');
+  const detailEl=document.getElementById('rpv-detail');
+
+  if(badgeEl){
+    badgeEl.textContent=rek.teks;
+    // Hapus semua class warna lama
+    badgeEl.className='rek-preview-badge';
+    const colorMap={'rek-merah':'#991b1b','rek-oranye':'#9a3412','rek-kuning':'#92400e','rek-hijau':'#065f46','rek-abu':'#6b7280','rek-hitam':'#f9fafb'};
+    badgeEl.style.color=colorMap[rek.warna]||'var(--g700)';
+  }
+  if(kuadranEl) kuadranEl.textContent='Kuadran '+detail.kuadran+' — '+detail.namaKuadran;
+  if(desilValEl) desilValEl.textContent=desil?'Desil '+desil:'—';
+  if(iznValEl) iznValEl.textContent=izn!==null?izn:'—';
+  if(levelEl) levelEl.textContent=rek.levelPrioritas;
+  if(detailEl) detailEl.textContent=detail.detail;
+}
+
+// ════════════════════════════════════════════
+// MIGRASI FIELD REKOMENDASI DATA LAMA
+// ════════════════════════════════════════════
+function migrasiRekomendasi(){
+  let changed=0;
+  dataList.forEach(function(d){
+    if(!d.rekomendasiSingkat||!d.detailRekomendasi){
+      const rek=getRekomendasiBantuan(d.desil,d.iznSkor);
+      const det=getDetailRekomendasi(d.desil,d.iznSkor);
+      d.rekomendasiSingkat=rek.teks.replace(/[🔴🟠🟡🟢⚪⚠️]/g,'').trim();
+      d.detailRekomendasi=det.teks;
+      changed++;
+    }
+  });
+  if(changed>0){saveStore();console.log('[BAZNAS] Migrasi rekomendasi: '+changed+' data diperbarui.');}
+}
+
+// ════════════════════════════════════════════
+// SROI — SOCIAL RETURN ON INVESTMENT (PROYEKSI)
+// Metodologi: SROI Network International + adaptasi BAZNAS RI
+// Rasio = (Outcome × Attribution × (1-Deadweight)) / Input
+// Deadweight: 15% | Attribution: 70%
+// Proxy multiplier per kategori bantuan (riset BAZNAS RI 2022)
+// ════════════════════════════════════════════
+const SROI_MULTIPLIER={
+  'Zakat Produktif':      3.2,
+  'Bantuan Modal Usaha':  3.2,
+  'Bantuan Pendidikan':   4.1,
+  'Bantuan Kesehatan':    2.8,
+  'Bantuan Rumah Layak Huni': 2.2,
+  'Zakat Konsumtif':      1.5,
+  'Infak/Sedekah':        1.8,
+  'Bantuan Dakwah':       1.6,
+  'default':              2.0
+};
+
+const SROI_DEADWEIGHT  = 0.15; // 15% — manfaat yang terjadi tanpa intervensi
+const SROI_ATTRIBUTION = 0.70; // 70% — porsi manfaat karena program ini
+const SROI_DURASI_DEFAULT = 12; // bulan jika tidak diisi
+
+/**
+ * Hitung proyeksi SROI untuk satu data mustahik
+ * @param {object} d - data mustahik
+ * @returns {object} {rasio, input, outcome, outcomeBersih, deadweightAmt, attributionAmt, multiplier, durasi, kategori}
+ */
+function hitungSROI(d){
+  const input   = parseFloat(d.nilaiModal)||0;
+  const durasi  = parseInt(d.durasiProgram)||SROI_DURASI_DEFAULT;
+  const kat     = d.kategoriBantuan||'';
+  const mult    = SROI_MULTIPLIER[kat]||SROI_MULTIPLIER['default'];
+
+  // Penyesuaian multiplier berdasarkan desil (lebih miskin → dampak lebih besar)
+  const desil   = parseInt(d.desil)||5;
+  const desilBonus = desil<=2?0.3:desil<=4?0.15:desil<=6?0.0:-0.1;
+  const multFinal  = Math.max(1.0, mult + desilBonus);
+
+  // Proxy outcome: input × multiplier × (durasi/12) — dinormalisasi ke 1 tahun
+  const outcome       = input * multFinal * (durasi / 12);
+  const deadweightAmt = outcome * SROI_DEADWEIGHT;
+  const attributionAmt= (outcome - deadweightAmt) * (1 - SROI_ATTRIBUTION);
+  const outcomeBersih = outcome - deadweightAmt - attributionAmt;
+  const rasio         = input > 0 ? outcomeBersih / input : 0;
+
+  return{
+    rasio, input, outcome, outcomeBersih,
+    deadweightAmt, attributionAmt,
+    multiplier:multFinal, durasi, kategori:kat||'—',
+    desilBonus
+  };
+}
+
+/** Update preview SROI di form secara realtime */
+function updateSROIPreview(){
+  const nilaiEl   = document.getElementById('f-nilaiModal');
+  const durasiEl  = document.getElementById('f-durasiProgram');
+  const katEl     = document.getElementById('f-katBantuan');
+  const emptyEl   = document.getElementById('sroi-preview-empty');
+  const contentEl = document.getElementById('sroi-preview-content');
+  if(!nilaiEl||!emptyEl||!contentEl) return;
+
+  const nilai    = parseFloat(nilaiEl.value)||0;
+  const durasi   = durasiEl?durasiEl.value:'';
+  const kategori = katEl?katEl.value:'';
+
+  if(!nilai||!kategori){
+    emptyEl.style.display='block';
+    contentEl.style.display='none';
+    return;
+  }
+  emptyEl.style.display='none';
+  contentEl.style.display='block';
+
+  // Ambil desil dari preview
+  const desilTxt = (document.getElementById('p-desil')||{}).textContent||'';
+  const desil    = desilTxt&&desilTxt!=='—'?parseInt(desilTxt.replace('Desil','').trim()):5;
+
+  const sr = hitungSROI({
+    nilaiModal:nilai, durasiProgram:durasi||'12',
+    kategoriBantuan:kategori, desil
+  });
+
+  const fRp = v=>'Rp '+Math.round(v).toLocaleString('id-ID');
+
+  const setTxt=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  setTxt('sp-rasio',       sr.rasio.toFixed(2));
+  setTxt('sp-rasio2',      sr.rasio.toFixed(2));
+  setTxt('sp-input',       fRp(sr.input));
+  setTxt('sp-outcome',     fRp(sr.outcome));
+  setTxt('sp-outcomeBersih',fRp(sr.outcomeBersih));
+  setTxt('sp-deadweight',  fRp(sr.deadweightAmt)+' (15%)');
+  setTxt('sp-attribution', fRp(sr.attributionAmt)+' (30%)');
+  setTxt('sp-kategori',    sr.kategori+' × '+sr.multiplier.toFixed(1));
+}
+
+// ════════════════════════════════════════════
+// PENYAKIT LIST
+// ════════════════════════════════════════════
+const PENYAKIT=[
+  'Hipertensi','Diabetes Melitus','Penyakit Jantung / Koroner','Stroke',
+  'Gagal Ginjal Kronis','Tuberkulosis (TBC)','Kanker / Tumor Ganas',
+  'Penyakit Paru Kronis (PPOK/Asma)','Hepatitis B/C','HIV/AIDS',
+  'Gangguan Jiwa / Psikiatri','Epilepsi','Katarak / Ggn. Penglihatan',
+  'Tuli / Ggn. Pendengaran','Disabilitas Fisik','Disabilitas Intelektual',
+  'Malnutrisi / Gizi Buruk','Stunting (anak)','Anemia Kronis','Penyakit Kulit Kronis'
+];
+
+function renderPenyakitGrid(){
+  document.getElementById('penyakit-grid').innerHTML=PENYAKIT.map(function(p,i){
+    return '<label class="penyakit-item" id="pi-'+i+'">'
+         + '<input type="checkbox" id="pc-'+i+'"/>'
+         + '<span>'+p+'</span>'
+         + '</label>';
+  }).join('');
+  // Event listener dipasang setelah DOM siap — TIDAK ada onclick di label
+  PENYAKIT.forEach(function(_,i){
+    var cb=document.getElementById('pc-'+i);
+    var lbl=document.getElementById('pi-'+i);
+    if(!cb||!lbl)return;
+    cb.addEventListener('change',function(){
+      lbl.classList.toggle('checked',cb.checked);
+      updateIZN();
+    });
+  });
+}
+
+function getCheckedPenyakit(){
+  return PENYAKIT.filter(function(_,i){
+    var cb=document.getElementById('pc-'+i);
+    return cb&&cb.checked;
+  });
+}
+
+function setCheckedPenyakit(arr){
+  PENYAKIT.forEach(function(p,i){
+    var cb=document.getElementById('pc-'+i);
+    var lbl=document.getElementById('pi-'+i);
+    if(!cb)return;
+    var v=Array.isArray(arr)&&arr.includes(p);
+    cb.checked=v;
+    if(lbl)lbl.classList.toggle('checked',v);
+  });
+  updateIZN();
+}
+
+// ════════════════════════════════════════════
+// DESIL
+// ════════════════════════════════════════════
+const THRESH=[300000,450000,600000,750000,900000,1100000,1350000,1650000,2000000];
+function computeDesil(total,anggota){
+  if(!total||!anggota||anggota<=0)return{perkapita:null,desil:null,status:null,prioritas:false};
+  const pk=total/anggota;
+  let d=10;
+  for(let i=0;i<THRESH.length;i++){if(pk<=THRESH[i]){d=i+1;break;}}
+  const st=d<=2?'Sangat Miskin':d<=4?'Miskin':d<=6?'Rentan Miskin':d<=8?'Hampir Tidak Miskin':'Tidak Miskin';
+  return{perkapita:pk,desil:d,status:st,prioritas:d<=3};
+}
+function fRp(v){return'Rp '+Math.round(v).toLocaleString('id-ID');}
+function hitungDesil(){
+  const t=parseFloat(document.getElementById('f-pengeluaran').value)||0;
+  const a=parseFloat(document.getElementById('f-jmlAnggota').value)||0;
+  const r=computeDesil(t,a);
+  document.getElementById('p-perkapita').textContent=r.perkapita?fRp(r.perkapita):'—';
+  document.getElementById('p-desil').textContent=r.desil?'Desil '+r.desil:'—';
+  document.getElementById('p-status').textContent=r.status||'—';
+  document.getElementById('p-prioritas').textContent=r.perkapita?(r.prioritas?'⭐ Prioritas':'Non-prioritas'):'—';
+  updateRekomendasiPreview();
+  updateSROIPreview();
+}
+
+// ════════════════════════════════════════════
+// IZN SCORE
+// ════════════════════════════════════════════
+function updateIZN(){
+  let s=100;
+  const k=document.getElementById('f-kondisiKes').value;
+  if(k==='Sakit Ringan')s-=10;
+  else if(k==='Sakit Sedang')s-=25;
+  else if(k==='Sakit Berat / Kronis')s-=40;
+  else if(k==='Difabel')s-=35;
+  const as=document.getElementById('f-anggotaSakit').value;
+  if(as==='Ya, 1 orang')s-=10;else if(as==='Ya, 2+ orang')s-=20;
+  const fr=document.getElementById('f-frekSakit').value;
+  if(fr==='1-2 kali')s-=5;else if(fr==='3-5 kali')s-=12;else if(fr==='>5 kali')s-=20;
+  s-=Math.min(getCheckedPenyakit().length*5,30);
+  const pk=parseFloat(document.getElementById('f-pengeluaranKes').value)||0;
+  const ph=parseFloat(document.getElementById('f-penghasilan').value)||0;
+  if(ph>0){const r=pk/ph;if(r>0.3)s-=15;else if(r>0.1)s-=5;}
+  s=Math.max(0,Math.min(100,Math.round(s)));
+  let kat,rek;
+  if(s>=75){kat='Baik';rek='Pantau berkala';}
+  else if(s>=50){kat='Sedang';rek='Bantu biaya kesehatan rutin';}
+  else if(s>=25){kat='Buruk';rek='Prioritas bantuan kesehatan';}
+  else{kat='Kritis';rek='🚨 Segera tangani, rujuk faskes';}
+  const noData=!k&&!as&&!fr&&getCheckedPenyakit().length===0;
+  document.getElementById('izn-skor').textContent=noData?'—':s;
+  document.getElementById('izn-kat').textContent=noData?'—':kat;
+  document.getElementById('izn-rek').textContent=noData?'—':rek;
+  updateRekomendasiPreview();
+  return noData?null:s;
+}
+function getIZNSkor(){const v=document.getElementById('izn-skor').textContent;return v==='—'?null:parseInt(v);}
+
+// ════════════════════════════════════════════
+// READ FORM
+// ════════════════════════════════════════════
+function gv(id){return document.getElementById(id)?.value||'';}
+
+// ════════════════════════════════════════════
+// ANGGOTA KELUARGA
+// ════════════════════════════════════════════
+const AK_MAX = 20;
+const HUB_OPTIONS = ['Kepala Keluarga','Istri','Suami','Anak','Orang Tua','Mertua','Saudara Kandung','Cucu','Keponakan','Lainnya'];
+const PEND_OPTIONS = ['Tidak Sekolah','Belum Sekolah','SD','SMP','SMA/SMK','D3','S1','S2/S3'];
+const KES_OPTIONS  = ['Sehat','Sakit Ringan','Sakit Sedang','Sakit Berat/Kronis','Disabilitas'];
+
+function akMakeSelect(name, options, val) {
+  return `<select name="${name}" onchange="akUpdateCount()"><option value="">—</option>${options.map(o=>'<option'+(val===o?' selected':'')+'>'+o+'</option>').join('')}</select>`;
+}
+
+function akRenderRow(idx, data) {
+  const d = data || {};
+  return `<tr id="ak-row-${idx}">
+    <td><div class="row-num">${idx+1}</div></td>
+    <td><input type="text" name="ak-nama" placeholder="Nama lengkap" value="${d.nama||''}" oninput="akUpdateCount()"/></td>
+    <td>${akMakeSelect('ak-hub', HUB_OPTIONS, d.hub||'')}</td>
+    <td>${akMakeSelect('ak-lp', ['L','P'], d.lp||'')}</td>
+    <td><input type="date" name="ak-tgl" value="${d.tgl||''}"/></td>
+    <td><input type="text" name="ak-nik" placeholder="NIK (16 digit)" class="mono" maxlength="20" value="${d.nik||''}"/></td>
+    <td>${akMakeSelect('ak-pend', PEND_OPTIONS, d.pend||'')}</td>
+    <td><input type="text" name="ak-pekerjaan" placeholder="Pekerjaan" value="${d.pekerjaan||''}"/></td>
+    <td>${akMakeSelect('ak-kes', KES_OPTIONS, d.kes||'')}</td>
+    <td><input type="text" name="ak-ket" placeholder="Penyakit / catatan" value="${d.ket||''}"/></td>
+    <td><button class="btn-del-row" onclick="akHapusBaris(${idx})" title="Hapus baris" type="button">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+    </button></td>
+  </tr>`;
+}
+
+function akTambahBaris(data) {
+  const tbody = document.getElementById('ak-tbody');
+  if (!tbody) return;
+  const rowCount = tbody.querySelectorAll('tr').length;
+  if (rowCount >= AK_MAX) { toast('Maksimal ' + AK_MAX + ' anggota keluarga.', true); return; }
+  const idx = rowCount;
+  tbody.insertAdjacentHTML('beforeend', akRenderRow(idx, data));
+  akUpdateCount();
+}
+
+function akHapusBaris(idx) {
+  const row = document.getElementById('ak-row-' + idx);
+  if (row) row.remove();
+  akRenumber();
+}
+
+function akRenumber() {
+  const tbody = document.getElementById('ak-tbody');
+  if (!tbody) return;
+  tbody.querySelectorAll('tr').forEach((tr, i) => {
+    tr.id = 'ak-row-' + i;
+    const num = tr.querySelector('.row-num');
+    if (num) num.textContent = i + 1;
+    tr.querySelectorAll('[onclick]').forEach(el => {
+      el.setAttribute('onclick', el.getAttribute('onclick').replace(/akHapusBaris\(\d+\)/, `akHapusBaris(${i})`));
+    });
+  });
+  akUpdateCount();
+}
+
+function akUpdateCount() {
+  const tbody = document.getElementById('ak-tbody');
+  const el = document.getElementById('ak-count');
+  if (!tbody || !el) return;
+  const n = tbody.querySelectorAll('tr').length;
+  el.textContent = n + ' anggota';
+}
+
+function akReadAll() {
+  const tbody = document.getElementById('ak-tbody');
+  if (!tbody) return [];
+  return Array.from(tbody.querySelectorAll('tr')).map(tr => ({
+    nama:      tr.querySelector('[name=ak-nama]')?.value?.trim() || '',
+    hub:       tr.querySelector('[name=ak-hub]')?.value || '',
+    lp:        tr.querySelector('[name=ak-lp]')?.value || '',
+    tgl:       tr.querySelector('[name=ak-tgl]')?.value || '',
+    nik:       tr.querySelector('[name=ak-nik]')?.value?.trim() || '',
+    pend:      tr.querySelector('[name=ak-pend]')?.value || '',
+    pekerjaan: tr.querySelector('[name=ak-pekerjaan]')?.value?.trim() || '',
+    kes:       tr.querySelector('[name=ak-kes]')?.value || '',
+    ket:       tr.querySelector('[name=ak-ket]')?.value?.trim() || '',
+  }));
+}
+
+function akFillAll(list) {
+  const tbody = document.getElementById('ak-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  (list || []).forEach((row, i) => akTambahBaris(row));
+}
+
+function akReset() {
+  const tbody = document.getElementById('ak-tbody');
+  if (tbody) tbody.innerHTML = '';
+  akUpdateCount();
+}
+
+function readForm(){
+  const t=parseFloat(gv('f-pengeluaran'))||0,a=parseFloat(gv('f-jmlAnggota'))||0;
+  const d=computeDesil(t,a);
+  const s=getIZNSkor();
+  let kat='';
+  if(s!==null){if(s>=75)kat='Baik';else if(s>=50)kat='Sedang';else if(s>=25)kat='Buruk';else kat='Kritis';}
+  return{
+    id:Date.now(),
+    nama:gv('f-nama').trim(),nik:gv('f-nik').trim(),noKK:gv('f-noKK').trim(),noKTP:gv('f-noKTP').trim(),
+    jenisKelamin:gv('f-jk'),tempatLahir:gv('f-tempatLahir').trim(),tanggalLahir:gv('f-tglLahir'),
+    statusKeluarga:gv('f-statusKel'),jumlahTanggungan:gv('f-tanggungan'),
+    alamat:gv('f-alamat').trim(),kelurahan:gv('f-kelurahan').trim(),kecamatan:gv('f-kecamatan').trim(),
+    kota:gv('f-kota').trim(),provinsi:gv('f-provinsi').trim(),kodePos:gv('f-kodePos').trim(),
+    telepon:gv('f-telepon').trim(),email:gv('f-email').trim(),
+    asnaf:gv('f-asnaf'),kategoriBantuan:gv('f-katBantuan'),program:gv('f-program').trim(),
+    nilaiModal:gv('f-nilaiModal'),durasiProgram:gv('f-durasiProgram'),
+    statusVerifikasi:gv('f-statusVerif'),isActive:gv('f-aktif'),
+    pekerjaan:gv('f-pekerjaan').trim(),penghasilan:gv('f-penghasilan'),
+    jumlahAnggota:a||'',totalPengeluaran:t||'',
+    pengeluaranPerKapita:d.perkapita?Math.round(d.perkapita):'',
+    desil:d.desil||'',statusEkonomi:d.status||'',prioritasBantuan:d.perkapita?(d.prioritas?'Ya':'Tidak'):'',
+    kondisiRumah:gv('f-kondisiRumah'),kebutuhanUtama:gv('f-kebutuhan'),
+    statusJkn:gv('f-jkn'),aksesFaskes:gv('f-faskes'),kondisiKesehatan:gv('f-kondisiKes'),
+    anggotaSakit:gv('f-anggotaSakit'),frekuensiSakit:gv('f-frekSakit'),
+    pengeluaranKesehatan:gv('f-pengeluaranKes'),
+    penyakitDiderita:getCheckedPenyakit().join('; '),
+    penyakitLainnya:gv('f-penyakitLain').trim(),
+    riwayatMedis:gv('f-riwayatMedis').trim(),
+    iznSkor:s??'',iznKategori:kat,
+    rekomendasiSingkat:(()=>{const r=getRekomendasiBantuan(d.desil||'',s??'');return r.teks.replace(/[🔴🟠🟡🟢⚪⚠️]/g,'').trim();})(),
+    detailRekomendasi:(()=>{const det=getDetailRekomendasi(d.desil||'',s??'');return det.teks;})(),
+    // SROI dihitung saat simpan menggunakan nilai form terkini
+    sroiRasio:'', sroiData:'',  // akan diisi di simpanData()
+    tanggalSurvey:gv('f-tglSurvey'),surveyor:gv('f-surveyor').trim(),
+    catatanSurvey:gv('f-catatanSurvey').trim(),
+    anggotaKeluarga:akReadAll(),
+    createdAt:new Date().toLocaleDateString('id-ID'),
+  };
+}
+
+function fillForm(d){
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';};
+  sv('f-nama',d.nama);sv('f-nik',d.nik);sv('f-noKK',d.noKK);sv('f-noKTP',d.noKTP);
+  sv('f-jk',d.jenisKelamin);sv('f-tempatLahir',d.tempatLahir);sv('f-tglLahir',d.tanggalLahir);
+  sv('f-statusKel',d.statusKeluarga);sv('f-tanggungan',d.jumlahTanggungan);
+  sv('f-alamat',d.alamat);sv('f-kelurahan',d.kelurahan);sv('f-kecamatan',d.kecamatan);
+  sv('f-kota',d.kota||'Lubuklinggau');sv('f-provinsi',d.provinsi||'Sumatera Selatan');sv('f-kodePos',d.kodePos);
+  sv('f-telepon',d.telepon);sv('f-email',d.email);
+  sv('f-asnaf',d.asnaf);sv('f-katBantuan',d.kategoriBantuan);sv('f-program',d.program);
+  sv('f-nilaiModal',d.nilaiModal);sv('f-durasiProgram',d.durasiProgram);
+  sv('f-statusVerif',d.statusVerifikasi);sv('f-aktif',d.isActive);
+  sv('f-pekerjaan',d.pekerjaan);sv('f-penghasilan',d.penghasilan);
+  sv('f-jmlAnggota',d.jumlahAnggota);sv('f-pengeluaran',d.totalPengeluaran);
+  sv('f-kondisiRumah',d.kondisiRumah);sv('f-kebutuhan',d.kebutuhanUtama);
+  sv('f-jkn',d.statusJkn);sv('f-faskes',d.aksesFaskes);sv('f-kondisiKes',d.kondisiKesehatan);
+  sv('f-anggotaSakit',d.anggotaSakit);sv('f-frekSakit',d.frekuensiSakit);
+  sv('f-pengeluaranKes',d.pengeluaranKesehatan);
+  sv('f-penyakitLain',d.penyakitLainnya);sv('f-riwayatMedis',d.riwayatMedis);
+  sv('f-tglSurvey',d.tanggalSurvey);sv('f-surveyor',d.surveyor);sv('f-catatanSurvey',d.catatanSurvey);
+  const arr=(d.penyakitDiderita||'').split(';').map(x=>x.trim()).filter(Boolean);
+  setCheckedPenyakit(arr);
+  hitungDesil();updateIZN();updateSROIPreview();
+  akFillAll(d.anggotaKeluarga||[]);
+}
+
+function resetForm(){
+  document.querySelectorAll('#t-form input:not([type=hidden]),#t-form select,#t-form textarea').forEach(el=>{
+    if(el.id==='f-kota')el.value='Lubuklinggau';
+    else if(el.id==='f-provinsi')el.value='Sumatera Selatan';
+    else if(el.id==='f-statusVerif')el.value='belum_verifikasi';
+    else if(el.id==='f-aktif')el.value='true';
+    else el.value='';
+  });
+  PENYAKIT.forEach((_,i)=>{
+    const c=document.getElementById('pc-'+i);
+    if(c){c.checked=false;document.getElementById('pi-'+i).classList.remove('checked');}
+  });
+  document.getElementById('edit-id').value='';
+  document.getElementById('form-title').textContent='Tambah Mustahik Baru';
+  document.getElementById('btn-save-lbl').textContent='Simpan Data';
+  document.getElementById('p-perkapita').textContent='—';
+  document.getElementById('p-desil').textContent='—';
+  document.getElementById('p-status').textContent='—';
+  document.getElementById('p-prioritas').textContent='—';
+  document.getElementById('izn-skor').textContent='—';
+  document.getElementById('izn-kat').textContent='—';
+  document.getElementById('izn-rek').textContent='—';
+  // reset preview rekomendasi
+  const rpvEmpty=document.getElementById('rek-preview-empty');
+  const rpvContent=document.getElementById('rek-preview-content');
+  if(rpvEmpty)rpvEmpty.style.display='block';
+  if(rpvContent)rpvContent.style.display='none';
+  // reset preview SROI
+  const sroiEmpty=document.getElementById('sroi-preview-empty');
+  const sroiContent=document.getElementById('sroi-preview-content');
+  if(sroiEmpty)sroiEmpty.style.display='block';
+  if(sroiContent)sroiContent.style.display='none';
+  akReset();
+}
+
+// ════════════════════════════════════════════
+// CRUD
+// ════════════════════════════════════════════
+function bukaFormBaru(){
+  resetForm();
+  switchTab('t-form',document.querySelectorAll('.tab-btn')[1]);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function simpanData(){
+  const d=readForm();
+  if(!d.nama){toast('Nama mustahik wajib diisi!',true);return;}
+  if(!d.asnaf){toast('Kategori Asnaf wajib dipilih!',true);return;}
+  const eid=document.getElementById('edit-id').value;
+  // Hitung SROI dan simpan bersama data
+  if(d.nilaiModal&&d.kategoriBantuan){
+    const sr=hitungSROI(d);
+    d.sroiRasio=sr.rasio.toFixed(2);
+    d.sroiData=JSON.stringify({
+      rasio:sr.rasio.toFixed(2),input:sr.input,outcome:Math.round(sr.outcome),
+      outcomeBersih:Math.round(sr.outcomeBersih),multiplier:sr.multiplier.toFixed(1),
+      durasi:sr.durasi,kategori:sr.kategori,
+      deadweight:Math.round(sr.deadweightAmt),attribution:Math.round(sr.attributionAmt)
+    });
+  }
+
+  if(eid){
+    const idx=dataList.findIndex(x=>x.id==eid);
+    if(idx>=0){
+      d.id=dataList[idx].id;
+      d.createdAt=dataList[idx].createdAt;
+      d.mustahikId=dataList[idx].mustahikId||generateMustahikId();
+      // Hitung ulang rekomendasi saat edit (data ekonomi/kesehatan mungkin berubah)
+      const rekBaru=getRekomendasiBantuan(d.desil,d.iznSkor);
+      const detBaru=getDetailRekomendasi(d.desil,d.iznSkor);
+      d.rekomendasiSingkat=rekBaru.teks.replace(/[🔴🟠🟡🟢⚪⚠️]/g,'').trim();
+      d.detailRekomendasi=detBaru.teks;
+      dataList[idx]=d;
+    }
+    toast('✓ Data mustahik berhasil diperbarui!');
+  }else{
+    d.mustahikId=generateMustahikId();
+    dataList.push(d);
+    toast('✓ Data mustahik berhasil disimpan! ID: '+d.mustahikId);
+  }
+  saveStore();applyFilter();updateHeader();
+  resetForm();
+  switchTab('t-daftar',document.querySelectorAll('.tab-btn')[0]);
+  setTimeout(()=>window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}),200);
+}
+
+function editData(id){
+  const d=dataList.find(x=>x.id==id);if(!d)return;
+  closeModal('modal-detail');
+  resetForm();
+  fillForm(d);
+  document.getElementById('edit-id').value=d.id;
+  document.getElementById('form-title').textContent='Edit Data Mustahik';
+  document.getElementById('btn-save-lbl').textContent='Simpan Perubahan';
+  switchTab('t-form',document.querySelectorAll('.tab-btn')[1]);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function hapusBaris(id){
+  showKonfirm('⚠️','Hapus Data Ini?','Data mustahik ini akan dihapus permanen dan tidak bisa dikembalikan.',()=>{
+    dataList=dataList.filter(x=>x.id!=id);
+    saveStore();applyFilter();updateHeader();updateCetakInfo();
+    toast('Data berhasil dihapus.');
+  },'Hapus','btn-danger');
+}
+
+function konfHapusSemua(){
+  if(!dataList.length){toast('Tidak ada data.',true);return;}
+  showKonfirm('🗑️','Hapus SEMUA Data?',`Seluruh ${dataList.length} data mustahik akan dihapus. Pastikan sudah export Excel terlebih dahulu!`,()=>{
+    dataList=[];saveStore();applyFilter();updateHeader();
+    toast('Semua data berhasil dihapus.');
+  },'Hapus Semua','btn-danger');
+}
+
+function toggleAktif(id){
+  const d=dataList.find(x=>x.id==id);if(!d)return;
+  d.isActive=d.isActive==='true'?'false':'true';
+  saveStore();applyFilter();
+  toast(d.isActive==='true'?'Mustahik diaktifkan kembali.':'Mustahik dinonaktifkan.');
+}
+
+
+// Render tabel anggota keluarga untuk modal detail (tanpa nested backtick)
+function renderAKDetail(d){
+  if(!d.anggotaKeluarga||!d.anggotaKeluarga.length) return '';
+  var th='<thead><tr style="background:var(--teal);color:#fff">'
+    +'<th style="padding:6px 9px;font-size:11px;text-align:center">No</th>'
+    +'<th style="padding:6px 9px;font-size:11px;text-align:left;min-width:120px">Nama</th>'
+    +'<th style="padding:6px 9px;font-size:11px">Hub.</th>'
+    +'<th style="padding:6px 9px;font-size:11px">L/P</th>'
+    +'<th style="padding:6px 9px;font-size:11px">Tgl Lahir</th>'
+    +'<th style="padding:6px 9px;font-size:11px">NIK</th>'
+    +'<th style="padding:6px 9px;font-size:11px">Pend.</th>'
+    +'<th style="padding:6px 9px;font-size:11px">Pekerjaan</th>'
+    +'<th style="padding:6px 9px;font-size:11px">Kondisi Kes.</th>'
+    +'<th style="padding:6px 9px;font-size:11px">Keterangan</th>'
+    +'</tr></thead>';
+  var tb='<tbody>';
+  d.anggotaKeluarga.forEach(function(a,i){
+    var bg=i%2===0?'#fff':'#f9fafb';
+    tb+='<tr style="border-bottom:1px solid #e5e7eb;background:'+bg+'">'
+      +'<td style="padding:5px 8px;text-align:center;font-weight:700;color:var(--teal)">'+(i+1)+'</td>'
+      +'<td style="padding:5px 8px;font-weight:600">'+(a.nama||'—')+'</td>'
+      +'<td style="padding:5px 8px;text-align:center">'+(a.hub||'—')+'</td>'
+      +'<td style="padding:5px 8px;text-align:center">'+(a.lp||'—')+'</td>'
+      +'<td style="padding:5px 8px;white-space:nowrap">'+(a.tgl||'—')+'</td>'
+      +'<td style="padding:5px 8px;font-family:monospace;font-size:11px">'+(a.nik||'—')+'</td>'
+      +'<td style="padding:5px 8px;text-align:center">'+(a.pend||'—')+'</td>'
+      +'<td style="padding:5px 8px">'+(a.pekerjaan||'—')+'</td>'
+      +'<td style="padding:5px 8px">'+(a.kes||'—')+'</td>'
+      +'<td style="padding:5px 8px;font-size:11px;color:var(--g500)">'+(a.ket||'—')+'</td>'
+      +'</tr>';
+  });
+  tb+='</tbody>';
+  return '<div class="det-sec">'
+    +'<h4>Anggota Keluarga ('+d.anggotaKeluarga.length+' orang)</h4>'
+    +'<div style="overflow-x:auto;border-radius:6px;border:1px solid var(--g200)">'
+    +'<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:700px">'
+    +th+tb+'</table></div></div>';
+}
+
+// ════════════════════════════════════════════
+// DETAIL MODAL
+// ════════════════════════════════════════════
+function lihatDetail(id){
+  const d=dataList.find(x=>x.id==id);if(!d)return;
+  const s=d.iznSkor;
+  let sc='',bk='';
+  if(s!==''){
+    sc=s;bk=s>=75?'Baik':s>=50?'Sedang':s>=25?'Buruk':'Kritis';
+  }
+  const row=(lbl,val,full)=>`<div class="det-row${full?' full':''}"><div class="dr-lbl">${lbl}</div><div class="dr-val">${val||'—'}</div></div>`;
+  const rek=getRekomendasiBantuan(d.desil,d.iznSkor);
+  const detRek=getDetailRekomendasi(d.desil,d.iznSkor);
+  document.getElementById('modal-detail-body').innerHTML=`
+    <div style="background:var(--teal-light);border:1.5px solid #b2ddd6;border-radius:var(--radius);padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">ID Mustahik</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:800;color:var(--teal-dark);letter-spacing:1.5px">${d.mustahikId||'—'}</div>
+      </div>
+      <div style="margin-left:auto">
+        <div style="font-size:10px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Rekomendasi Bantuan</div>
+        <span class="rek-badge ${rek.warna}" style="font-size:12px;padding:4px 12px">${rek.teks}</span>
+      </div>
+    </div>
+    <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:2px solid #16a34a;border-radius:10px;padding:14px 18px;margin-bottom:14px;">
+      <div style="font-size:9px;font-weight:800;color:#16a34a;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;">📊 Proyeksi SROI</div>
+      ${(()=>{
+        if(!d.nilaiModal||!d.kategoriBantuan) return '<div style="font-size:12px;color:#6b7280;font-style:italic;">Nilai bantuan / kategori belum diisi. Edit data untuk menambahkan.</div>';
+        const sr=d.sroiData?JSON.parse(d.sroiData):hitungSROI(d);
+        const rasio=parseFloat(sr.rasio||sr.rasio)||0;
+        const fRp=v=>'Rp '+Math.round(v).toLocaleString('id-ID');
+        const cls=rasio>=3?'#15803d':rasio>=1.5?'#92400e':'#991b1b';
+        return `<div style="font-size:26px;font-weight:900;color:${cls};margin-bottom:4px;">1 : ${parseFloat(sr.rasio).toFixed(2)}</div>
+        <div style="font-size:11px;color:#166534;margin-bottom:10px;">Setiap Rp 1 investasi menciptakan nilai manfaat Rp ${parseFloat(sr.rasio).toFixed(2)}</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px 12px;font-size:11px;">
+          <div><div style="color:#6b7280">Input</div><div style="font-weight:700">${fRp(sr.input)}</div></div>
+          <div><div style="color:#6b7280">Proxy Outcome</div><div style="font-weight:700">${fRp(sr.outcome)}</div></div>
+          <div><div style="color:#6b7280">Outcome Bersih</div><div style="font-weight:700">${fRp(sr.outcomeBersih)}</div></div>
+          <div><div style="color:#6b7280">Multiplier</div><div style="font-weight:700">${sr.multiplier}× (${sr.kategori})</div></div>
+          <div><div style="color:#6b7280">Durasi</div><div style="font-weight:700">${sr.durasi} bulan</div></div>
+          <div><div style="color:#6b7280">Deadweight</div><div style="font-weight:700">${fRp(sr.deadweight)} (15%)</div></div>
+        </div>`;
+      })()}
+    </div>
+      <div style="font-size:9px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">📋 Detail Rekomendasi Bantuan — Kuadran ${detRek.kuadran}</div>
+      <div style="font-size:14px;font-weight:800;color:var(--g900);margin-bottom:6px">Kuadran ${detRek.kuadran} — ${detRek.namaKuadran}</div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--g500);margin-bottom:10px;">
+        <span>Desil Ekonomi: <strong style="color:var(--teal)">${d.desil?'Desil '+d.desil:'—'}</strong></span>
+        <span>Skor IZN Kes.: <strong style="color:var(--gold)">${d.iznSkor!==''&&d.iznSkor!==undefined?d.iznSkor:'—'}</strong></span>
+        <span>Level Prioritas: <strong style="color:var(--red)">${rek.levelPrioritas}/5</strong></span>
+      </div>
+      <div style="font-size:13px;color:#374151;line-height:1.7;border-top:1px dashed #e8d7a3;padding-top:10px;">
+        <strong>Intervensi yang Direkomendasikan:</strong><br/>${detRek.detail}
+      </div>
+    </div>
+    <div class="det-sec"><h4>Identitas</h4><div class="det-grid">
+      ${row('Nama Lengkap',d.nama,true)}
+      ${row('NIK',d.nik)}${row('No. KK',d.noKK)}
+      ${row('Jenis Kelamin',d.jenisKelamin)}${row('TTL',d.tempatLahir+(d.tanggalLahir?', '+d.tanggalLahir:''))}
+      ${row('Status Keluarga',d.statusKeluarga)}${row('Jml Tanggungan',d.jumlahTanggungan)}
+    </div></div>
+    <div class="det-sec"><h4>Alamat & Kontak</h4><div class="det-grid">
+      ${row('Alamat',d.alamat,true)}
+      ${row('Kelurahan',d.kelurahan)}${row('Kecamatan',d.kecamatan)}
+      ${row('Kota',d.kota)}${row('Telepon',d.telepon)}
+    </div></div>
+    <div class="det-sec"><h4>Klasifikasi BAZNAS</h4><div class="det-grid">
+      ${row('Asnaf',d.asnaf)}${row('Kat. Bantuan',d.kategoriBantuan)}
+      ${row('Program',d.program)}${row('Status Verif.',d.statusVerifikasi)}
+      ${row('Status',d.isActive==='true'?'Aktif':'Nonaktif')}
+    </div></div>
+    <div class="det-sec"><h4>Ekonomi & Desil</h4><div class="det-grid">
+      ${row('Pekerjaan',d.pekerjaan)}${row('Penghasilan',d.penghasilan?fRp(d.penghasilan):'')}
+      ${row('Jml Anggota',d.jumlahAnggota)}${row('Total Pengeluaran',d.totalPengeluaran?fRp(d.totalPengeluaran):'')}
+      ${row('Per Kapita',d.pengeluaranPerKapita?fRp(d.pengeluaranPerKapita):'')}${row('Desil',d.desil?'Desil '+d.desil:'')}
+      ${row('Status Ekonomi',d.statusEkonomi)}${row('Prioritas',d.prioritasBantuan)}
+    </div></div>
+    <div class="det-sec"><h4>Kesehatan (IZN)</h4>
+      ${sc!==''?`<div class="izn-big"><div class="izn-num">${sc}</div><div><div style="font-size:13px;font-weight:700;color:var(--gold)">${bk}</div><div style="font-size:11px;color:var(--g500)">Skor IZN Kesehatan / 100</div></div></div>`:''}
+      <div class="det-grid">
+        ${row('Status JKN/BPJS',d.statusJkn)}${row('Akses Faskes',d.aksesFaskes)}
+        ${row('Kondisi Kesehatan',d.kondisiKesehatan)}${row('Anggota Sakit',d.anggotaSakit)}
+        ${row('Frek. Sakit',d.frekuensiSakit)}${row('Peng. Kesehatan',d.pengeluaranKesehatan?fRp(d.pengeluaranKesehatan):'')}
+        ${row('Penyakit Diderita',d.penyakitDiderita,true)}
+        ${row('Penyakit Lain',d.penyakitLainnya,true)}
+        ${row('Riwayat Medis',d.riwayatMedis,true)}
+      </div>
+    </div>
+    <div class="det-sec"><h4>Survey</h4><div class="det-grid">
+      ${row('Tgl. Survey',d.tanggalSurvey)}${row('Surveyor',d.surveyor)}
+      ${row('Catatan',d.catatanSurvey,true)}
+    </div></div>
+    ${renderAKDetail(d)}
+    <div style="font-size:11px;color:var(--g400);text-align:right">ID Sistem: ${d.id} · ID Mustahik: ${d.mustahikId||'—'} · Input: ${d.createdAt}</div>`;
+  document.getElementById('btn-modal-edit').onclick=()=>editData(id);
+  openModal('modal-detail');
+}
+
+// ════════════════════════════════════════════
+// FILTER + PAGINATION + RENDER TABLE
+// ════════════════════════════════════════════
+function getVal(id){const el=document.getElementById(id);return el?el.value:'';}
+
+function applyFilter(){
+  const q=getVal('q-search').toLowerCase();
+  const asnaf=getVal('q-asnaf');
+  const verif=getVal('q-verif');
+  const desil=getVal('q-desil');
+  const aktif=getVal('q-aktif');
+  filteredData=dataList.filter(d=>{
+    if(q&&!(
+      (d.nama||'').toLowerCase().includes(q)||
+      (d.nik||'').toLowerCase().includes(q)||
+      (d.kecamatan||'').toLowerCase().includes(q)||
+      (d.asnaf||'').toLowerCase().includes(q)||
+      (d.kelurahan||'').toLowerCase().includes(q)
+    ))return false;
+    if(asnaf&&d.asnaf!==asnaf)return false;
+    if(verif&&d.statusVerifikasi!==verif)return false;
+    if(desil&&String(d.desil)!==desil)return false;
+    if(aktif&&d.isActive!==aktif)return false;
+    return true;
+  });
+  currentPage=1;
+  renderTable();
+}
+
+function resetFilter(){
+  ['q-search','q-asnaf','q-verif','q-desil','q-aktif'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  applyFilter();
+}
+
+function verifBadge(s){
+  if(s==='terverifikasi')return'<span class="badge b-green">Terverifikasi</span>';
+  if(s==='ditolak')return'<span class="badge b-red">Ditolak</span>';
+  if(s==='nonaktif')return'<span class="badge b-gray">Nonaktif</span>';
+  return'<span class="badge b-yellow">Belum Verif.</span>';
+}
+
+function iznColor(s){
+  if(s==='')return'var(--g400)';
+  const n=parseInt(s);
+  if(n>=75)return'#065f46';if(n>=50)return'#92400e';if(n>=25)return'var(--orange)';return'var(--red)';
+}
+
+function setText(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
+
+function renderTable(){
+  const psEl=document.getElementById('page-size');
+  const ps=psEl?parseInt(psEl.value)||25:25;
+  const total=filteredData.length;
+  const pages=ps>=9999?1:Math.ceil(total/ps)||1;
+  if(currentPage>pages)currentPage=pages;
+  const start=(currentPage-1)*ps,end=Math.min(start+ps,total);
+  const slice=ps>=9999?filteredData:filteredData.slice(start,end);
+
+  setText('showing-count',total>0?`${start+1}–${end}`:'0');
+  setText('total-count',total);
+  setText('pag-info',`Halaman ${currentPage} / ${pages}`);
+  updateHeader();
+
+  const tbody=document.getElementById('tbl-body');
+  if(!tbody)return;
+  if(!slice.length){
+    tbody.innerHTML=`<tr><td colspan="27"><div class="empty-st">
+      <div class="e-icon">📋</div>
+      <h4>Tidak Ada Data</h4>
+      <p>${dataList.length?'Coba ubah filter pencarian.':'Belum ada mustahik terdaftar. Klik "Tambah Mustahik" untuk mulai.'}</p>
+    </div></td></tr>`;
+    renderPagination(0,1);
+    return;
+  }
+
+  tbody.innerHTML=slice.map((d,i)=>`
+    <tr id="tr-${d.id}" class="${d._selected?'row-selected':''}">
+      <td class="chk-col"><input type="checkbox" class="row-chk" data-id="${d.id}" ${d._selected?'checked':''} onchange="onRowCheck(this,${d.id})"/></td>
+      <td>${start+i+1}</td>
+      <td class="mono" style="font-size:11.5px;color:var(--teal-dark);font-weight:700;letter-spacing:.5px">${d.mustahikId||'—'}</td>
+      <td style="font-weight:700;max-width:180px;overflow:hidden;text-overflow:ellipsis">${d.nama}</td>
+      <td style="text-align:center">${d.anggotaKeluarga&&d.anggotaKeluarga.length?`<span class="badge b-teal">${d.anggotaKeluarga.length} org</span>`:'—'}</td>
+      <td class="mono" style="font-size:11.5px">${d.nik||'—'}</td>
+      <td>${d.asnaf?`<span class="badge b-teal">${d.asnaf}</span>`:'—'}</td>
+      <td style="font-size:11.5px;max-width:130px;overflow:hidden;text-overflow:ellipsis">${d.kategoriBantuan||'—'}</td>
+      <td>${d.kecamatan||'—'}</td>
+      <td>${d.kelurahan||'—'}</td>
+      <td class="mono" style="font-size:11.5px">${d.telepon||'—'}</td>
+      <td style="text-align:center">${d.desil?`<span class="badge b-blue">Desil ${d.desil}</span>`:'—'}</td>
+      <td style="font-size:11.5px">${d.statusEkonomi||'—'}</td>
+      <td style="text-align:center">${d.prioritasBantuan==='Ya'?'<span class="badge b-red">⭐ Prioritas</span>':d.prioritasBantuan==='Tidak'?'<span class="badge b-gray">Non</span>':'—'}</td>
+      <td style="font-size:11.5px">${d.kondisiKesehatan||'—'}</td>
+      <td style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${d.penyakitDiderita||''}">${d.penyakitDiderita||'—'}</td>
+      <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis">${d.statusJkn||'—'}</td>
+      <td style="text-align:center;font-weight:800;color:${iznColor(String(d.iznSkor))}">${d.iznSkor!==''&&d.iznSkor!==undefined?d.iznSkor:'—'}</td>
+      <td style="font-size:11.5px">${d.iznKategori||'—'}</td>
+      <td style="padding:6px 10px">${rekBadgeHtml(d)}</td>
+      <td style="max-width:180px;padding:6px 10px;">
+        ${(()=>{
+          const det=d.detailRekomendasi||(getDetailRekomendasi(d.desil,d.iznSkor).teks);
+          const short=det.length>55?det.slice(0,55)+'…':det;
+          const safe=det.replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+          return '<span style="font-size:11px;color:var(--g500);cursor:default;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;" title="'+safe+'">'+short+'</span>';
+        })()}
+      </td>
+      <td style="text-align:right;font-family:monospace;font-size:11.5px;color:var(--teal-dark)">${d.nilaiModal?'Rp '+parseInt(d.nilaiModal).toLocaleString('id-ID'):'—'}</td>
+      <td style="padding:5px 8px;">${(()=>{
+        if(!d.nilaiModal||!d.kategoriBantuan)return '<span style="font-size:11px;color:var(--g400)">—</span>';
+        const sr=hitungSROI(d);
+        const cls=sr.rasio>=3?'sroi-tinggi':sr.rasio>=1.5?'sroi-sedang':'sroi-rendah';
+        return '<span class="sroi-badge '+cls+'">1 : '+sr.rasio.toFixed(2)+'</span>';
+      })()}</td>
+      <td>${verifBadge(d.statusVerifikasi)}</td>
+      <td style="text-align:center">${d.isActive==='true'?'<span class="badge b-green">Aktif</span>':'<span class="badge b-gray">Nonaktif</span>'}</td>
+      <td style="font-size:11px;color:var(--g400)">${d.createdAt||'—'}</td>
+      <td>
+        <div style="display:flex;gap:4px;align-items:center;justify-content:center">
+          <button class="btn btn-outline btn-sm btn-icon" title="Lihat Detail" onclick="lihatDetail(${d.id})">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+          <button class="btn btn-primary btn-sm btn-icon" title="Edit" onclick="editData(${d.id})">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="btn btn-sm btn-icon ${d.isActive==='true'?'btn-outline':'btn-gold'}" title="${d.isActive==='true'?'Nonaktifkan':'Aktifkan'}" onclick="toggleAktif(${d.id})">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+          </button>
+          <button class="btn btn-danger btn-sm btn-icon" title="Hapus" onclick="hapusBaris(${d.id})">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+          </button>
+        </div>
+      </td>
+    </tr>`).join('');
+
+  renderPagination(pages,currentPage);
+  updateCetakInfo();
+}
+
+function renderPagination(pages,cur){
+  const el=document.getElementById('pagination');
+  if(!el)return;
+  if(pages<=1){el.innerHTML='';return;}
+  let h='';
+  h+=`<button class="pg-btn" onclick="goPage(${cur-1})" ${cur<=1?'disabled':''}>‹</button>`;
+  let s=Math.max(1,cur-2),e=Math.min(pages,cur+2);
+  if(s>1){h+=`<button class="pg-btn" onclick="goPage(1)">1</button>`;if(s>2)h+=`<span style="padding:0 4px;color:var(--g400)">…</span>`;}
+  for(let p=s;p<=e;p++)h+=`<button class="pg-btn${p===cur?' active':''}" onclick="goPage(${p})">${p}</button>`;
+  if(e<pages){if(e<pages-1)h+=`<span style="padding:0 4px;color:var(--g400)">…</span>`;h+=`<button class="pg-btn" onclick="goPage(${pages})">${pages}</button>`;}
+  h+=`<button class="pg-btn" onclick="goPage(${cur+1})" ${cur>=pages?'disabled':''}>›</button>`;
+  el.innerHTML=h;
+}
+
+function goPage(p){currentPage=p;renderTable();}
+function updateHeader(){const el=document.getElementById('hdr-count');if(el)el.textContent=dataList.length?`${dataList.length} mustahik terdaftar`:''}
+
+// ════════════════════════════════════════════
+// EXPORT EXCEL
+// ════════════════════════════════════════════
+function exportExcel(){
+  if(!dataList.length){toast('Tidak ada data untuk diekspor!',true);return;}
+  try{
+    // ── Sheet 1: Data Mustahik
+    const H=[
+      'No','ID Mustahik','Nama','NIK','No KK','No KTP','Jenis Kelamin','Tempat Lahir','Tanggal Lahir',
+      'Status Keluarga','Jml Tanggungan','Alamat','Kelurahan','Kecamatan','Kota','Provinsi',
+      'Kode Pos','Telepon','Email','Asnaf','Kategori Bantuan','Program','Status Verifikasi',
+      'Aktif','Pekerjaan','Penghasilan (Rp)','Jml Anggota Keluarga','Total Pengeluaran (Rp)',
+      'Pengeluaran Per Kapita (Rp)','Desil','Status Ekonomi','Prioritas Bantuan',
+      'Kondisi Rumah','Kebutuhan Utama','Status JKN/BPJS','Akses Faskes',
+      'Kondisi Kesehatan','Anggota Sakit Kronis','Frekuensi Sakit',
+      'Pengeluaran Kesehatan (Rp)','Penyakit Diderita','Penyakit Lainnya',
+      'Riwayat Medis','Skor IZN Kesehatan','Kategori IZN','Rekomendasi Bantuan',
+      'Detail Rekomendasi','Level Prioritas Bantuan',
+      'Nilai Bantuan (Rp)','Durasi Program (Bln)','Rasio SROI','Proxy Outcome (Rp)',
+      'Outcome Bersih (Rp)','Multiplier SROI','Kategori SROI',
+      'Tanggal Survey','Surveyor','Catatan Survey','Tanggal Input',
+      'Jml Anggota Keluarga Terdaftar','Anggota Keluarga JSON'
+    ];
+    var rows=dataList.map(function(d,i){
+      const rek=getRekomendasiBantuan(d.desil,d.iznSkor);
+      const detRek=getDetailRekomendasi(d.desil,d.iznSkor);
+      const sr=(d.nilaiModal&&d.kategoriBantuan)?hitungSROI(d):null;
+      return [
+        i+1,
+        {v:d.mustahikId||'',t:'s'},
+        d.nama||'', d.nik||'', d.noKK||'', d.noKTP||'',
+        d.jenisKelamin||'', d.tempatLahir||'', d.tanggalLahir||'',
+        d.statusKeluarga||'', d.jumlahTanggungan||'',
+        d.alamat||'', d.kelurahan||'', d.kecamatan||'', d.kota||'', d.provinsi||'', d.kodePos||'',
+        d.telepon||'', d.email||'',
+        d.asnaf||'', d.kategoriBantuan||'', d.program||'',
+        d.statusVerifikasi||'', d.isActive==='true'?'Aktif':'Nonaktif',
+        d.pekerjaan||'', d.penghasilan||'',
+        d.jumlahAnggota||'', d.totalPengeluaran||'',
+        d.pengeluaranPerKapita||'', d.desil||'', d.statusEkonomi||'', d.prioritasBantuan||'',
+        d.kondisiRumah||'', d.kebutuhanUtama||'',
+        d.statusJkn||'', d.aksesFaskes||'', d.kondisiKesehatan||'',
+        d.anggotaSakit||'', d.frekuensiSakit||'', d.pengeluaranKesehatan||'',
+        d.penyakitDiderita||'', d.penyakitLainnya||'', d.riwayatMedis||'',
+        d.iznSkor!==undefined&&d.iznSkor!==''?d.iznSkor:'', d.iznKategori||'',
+        d.rekomendasiSingkat||rek.teks.replace(/[🔴🟠🟡🟢⚪⚠️]/g,'').trim(),
+        d.detailRekomendasi||detRek.teks,
+        rek.levelPrioritas,
+        // ── Kolom SROI ──
+        d.nilaiModal||'',
+        d.durasiProgram||'',
+        sr?parseFloat(sr.rasio.toFixed(2)):'',
+        sr?Math.round(sr.outcome):'',
+        sr?Math.round(sr.outcomeBersih):'',
+        sr?sr.multiplier.toFixed(1)+'×':'',
+        sr?(sr.rasio>=3?'Tinggi':sr.rasio>=1.5?'Sedang':'Rendah'):'',
+        d.tanggalSurvey||'', d.surveyor||'', d.catatanSurvey||'', d.createdAt||'',
+        (d.anggotaKeluarga&&d.anggotaKeluarga.length)||0,
+        JSON.stringify(d.anggotaKeluarga||[])
+      ];
+    });
+    var ws1=XLSX.utils.aoa_to_sheet([H].concat(rows));
+    // Paksa kolom ID Mustahik sebagai teks agar tidak berubah jadi angka
+    var range=XLSX.utils.decode_range(ws1['!ref']);
+    for(var r=1;r<=range.e.r;r++){
+      var cellAddr=XLSX.utils.encode_cell({r:r,c:1});
+      if(ws1[cellAddr])ws1[cellAddr].t='s';
+    }
+    ws1['!cols']=[
+      {wch:4},{wch:20},{wch:30},{wch:18},{wch:18},{wch:18},{wch:12},{wch:14},{wch:12},
+      {wch:14},{wch:8},{wch:35},{wch:16},{wch:16},{wch:14},{wch:14},{wch:8},
+      {wch:14},{wch:22},{wch:14},{wch:18},{wch:18},{wch:16},{wch:8},
+      {wch:18},{wch:18},{wch:12},{wch:22},{wch:20},{wch:8},{wch:20},{wch:10},
+      {wch:20},{wch:16},{wch:28},{wch:22},{wch:24},{wch:20},{wch:18},{wch:18},
+      {wch:55},{wch:30},{wch:40},{wch:14},{wch:12},{wch:36},{wch:80},{wch:12},
+      // SROI columns
+      {wch:18},{wch:12},{wch:12},{wch:18},{wch:18},{wch:12},{wch:10},
+      {wch:14},{wch:20},{wch:40},{wch:14},{wch:8},{wch:60}
+    ];
+
+    // ── Sheet 2: Anggota Keluarga
+    var akH=[
+      'No Mustahik','Nama Mustahik','NIK Mustahik','No Urut Anggota',
+      'Nama Anggota','Hub. Keluarga','L/P','Tanggal Lahir','NIK Anggota',
+      'Pend. Terakhir','Pekerjaan','Kondisi Kesehatan','Keterangan'
+    ];
+    var akRows=[];
+    dataList.forEach(function(d,mi){
+      if(d.anggotaKeluarga&&d.anggotaKeluarga.length){
+        d.anggotaKeluarga.forEach(function(a,ai){
+          akRows.push([
+            mi+1, d.nama||'', d.nik||'', ai+1,
+            a.nama||'', a.hub||'', a.lp||'', a.tgl||'', a.nik||'',
+            a.pend||'', a.pekerjaan||'', a.kes||'', a.ket||''
+          ]);
+        });
+      }
+    });
+    var ws2=XLSX.utils.aoa_to_sheet([akH].concat(akRows));
+    ws2['!cols']=[
+      {wch:8},{wch:28},{wch:18},{wch:10},{wch:28},{wch:16},
+      {wch:5},{wch:13},{wch:18},{wch:12},{wch:18},{wch:20},{wch:30}
+    ];
+
+    // ── Sheet 3: Panduan IZN & Rekomendasi
+    var ws3rows=[
+      ['PANDUAN SKOR IZN DIMENSI KESEHATAN — BAZNAS Kota Lubuklinggau'],[''],
+      ['TABEL SKOR IZN'],
+      ['Skor','Kategori','Rekomendasi'],
+      ['75-100','Baik','Pantau berkala'],
+      ['50-74','Sedang','Bantu biaya kesehatan rutin'],
+      ['25-49','Buruk','Prioritas bantuan kesehatan'],
+      ['0-24','Kritis','Segera tangani dan rujuk faskes'],
+      [''],
+      ['MATRIKS REKOMENDASI BANTUAN (2 DIMENSI) — DETAIL'],
+      ['Kuadran','Nama Kuadran','Desil Ekonomi','Skor IZN','Level Prioritas','Detail Intervensi'],
+      ['I','Kronis Prioritas Utama','1–4','0–49','5 (Tertinggi)','Bantuan darurat kesehatan + rujukan faskes gratis + paket gizi khusus + bantuan modal usaha adaptif + pendampingan intensif 6 bulan'],
+      ['II','Miskin Sehat','1–4','50–100','4','Sembako reguler 3 bulan + bantuan tunai bersyarat (BLT) + pelatihan UMKM + bantuan peralatan usaha ringan'],
+      ['III','Rentan Sakit','5–7','0–49','3','BPJS PBI (iuran ditanggung negara) + obat kronis rutin + alat bantu kesehatan (jika perlu) + pendampingan pengobatan'],
+      ['IV','Stabil Non-Prioritas','8–10','75–100','1','Tidak perlu bantuan reguler. Cukup pemantauan berkala setiap 6 bulan. Potensi sebagai muzaki.'],
+      ['V','Bantuan Terbatas','8–10','0–74','2','Bantuan insidental (musibah/kebakaran/bencana) + pendampingan ringan. Tidak masuk program reguler.'],
+      ['VI','Data Tidak Lengkap','—','—','0','Lengkapi data ekonomi & kesehatan terlebih dahulu.'],
+      [''],
+      ['ATURAN ESKALASI'],
+      ['- Jika Desil ≤ 3: otomatis Kuadran I atau II (prioritas tinggi)'],
+      ['- Jika Skor IZN < 25: naikkan 1 tingkat prioritas dari kuadran semula'],
+      [''],
+      ['FORMAT ID MUSTAHIK: 1674-YYMM-XXXXX'],
+      ['1674 = Kode BAZNAS Kota Lubuklinggau'],
+      ['YYMM = Tahun 2 digit + Bulan 2 digit saat data disimpan'],
+      ['XXXXX = Nomor urut 5 digit per periode (reset setiap bulan baru)'],
+      [''],
+      ['Daftar Penyakit IZN:']
+    ];
+    PENYAKIT.forEach(function(p,i){ ws3rows.push([i+1,p]); });
+    ws3rows.push(['']);
+    ws3rows.push(['Sumber: Indeks Zakat Nasional (IZN) — BAZNAS RI']);
+    ws3rows.push(['© 2026 — BAZNAS Kota Lubuk Linggau — Data Mustahik — By Andi Wiyanda']);
+    var ws3=XLSX.utils.aoa_to_sheet(ws3rows);
+
+    // ── Sheet 4: Ringkasan SROI
+    var sroiList=dataList.filter(function(d){return d.nilaiModal&&d.kategoriBantuan;});
+    var totalInput=0,totalOutcome=0,totalBersih=0;
+    var ws4H=['No','ID Mustahik','Nama Mustahik','Kategori Bantuan','Durasi (Bln)',
+      'Nilai Modal (Rp)','Proxy Outcome (Rp)','Deadweight (Rp)','Attribution (Rp)',
+      'Outcome Bersih (Rp)','Rasio SROI','Multiplier','Kategori Rasio'];
+    var ws4rows=sroiList.map(function(d,i){
+      const sr=hitungSROI(d);
+      totalInput+=sr.input;totalOutcome+=sr.outcome;totalBersih+=sr.outcomeBersih;
+      return[i+1,d.mustahikId||'',d.nama||'',d.kategoriBantuan||'',sr.durasi,
+        Math.round(sr.input),Math.round(sr.outcome),Math.round(sr.deadweightAmt),
+        Math.round(sr.attributionAmt),Math.round(sr.outcomeBersih),
+        parseFloat(sr.rasio.toFixed(2)),parseFloat(sr.multiplier.toFixed(1)),
+        sr.rasio>=3?'Tinggi (≥3)':sr.rasio>=1.5?'Sedang (1.5–3)':'Rendah (<1.5)'];
+    });
+    var agr=totalInput>0?(totalBersih/totalInput):0;
+    ws4rows.push(['']);
+    ws4rows.push(['TOTAL AGREGAT','','','','',Math.round(totalInput),Math.round(totalOutcome),
+      '','',Math.round(totalBersih),parseFloat(agr.toFixed(2)),'',
+      agr>=3?'Tinggi':agr>=1.5?'Sedang':'Rendah']);
+    ws4rows.push(['']);
+    ws4rows.push(['METODOLOGI SROI']);
+    ws4rows.push(['Deadweight','15% — Manfaat yang terjadi tanpa intervensi program']);
+    ws4rows.push(['Attribution','70% — Proporsi manfaat yang benar-benar karena program ini']);
+    ws4rows.push(['Zakat Produktif/Modal Usaha','3.2×']);
+    ws4rows.push(['Bantuan Pendidikan','4.1×']);
+    ws4rows.push(['Bantuan Kesehatan','2.8×']);
+    ws4rows.push(['Bantuan Rumah Layak Huni','2.2×']);
+    ws4rows.push(['Infak/Sedekah','1.8×']);
+    ws4rows.push(['Zakat Konsumtif','1.5×']);
+    ws4rows.push(['Penyesuaian Desil','Desil 1–2: +0.3 | Desil 3–4: +0.15 | Desil 7+: -0.1']);
+    ws4rows.push(['CATATAN','Proyeksi berbasis proxy. Rasio aktual dihitung setelah evaluasi 6–12 bulan.']);
+    var ws4=XLSX.utils.aoa_to_sheet([ws4H].concat(ws4rows));
+    ws4['!cols']=[{wch:4},{wch:20},{wch:28},{wch:20},{wch:8},{wch:16},{wch:18},
+      {wch:16},{wch:16},{wch:18},{wch:10},{wch:10},{wch:18}];
+
+    // ── Build workbook
+    var wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws1,'Data Mustahik');
+    XLSX.utils.book_append_sheet(wb,ws2,'Anggota Keluarga');
+    XLSX.utils.book_append_sheet(wb,ws3,'Panduan IZN');
+    XLSX.utils.book_append_sheet(wb,ws4,'Ringkasan SROI');
+
+    // ── Download via Blob (bekerja di file:// dan server)
+    var tgl=new Date().toISOString().slice(0,10);
+    var fname='DataMustahik_BAZNAS_LLG_'+tgl+'.xlsx';
+    var buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+    var blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var url=URL.createObjectURL(blob);
+    var link=document.createElement('a');
+    link.href=url;
+    link.download=fname;
+    link.style.display='none';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(function(){URL.revokeObjectURL(url);link.remove();},2000);
+    toast('\u2713 Excel berhasil diunduh! ('+dataList.length+' mustahik)');
+  }catch(err){
+    console.error('exportExcel error:',err);
+    toast('Gagal export: '+err.message,true);
+  }
+}
+
+// ════════════════════════════════════════════
+// KOLOM MAPPING UNTUK IMPORT EXCEL
+// ════════════════════════════════════════════
+const COL_MAP={
+  'ID Mustahik':'mustahikId',
+  'Nama':'nama','NIK':'nik','No KK':'noKK','No KTP':'noKTP',
+  'Jenis Kelamin':'jenisKelamin','Tempat Lahir':'tempatLahir','Tanggal Lahir':'tanggalLahir',
+  'Status Keluarga':'statusKeluarga','Jml Tanggungan':'jumlahTanggungan',
+  'Alamat':'alamat','Kelurahan':'kelurahan','Kecamatan':'kecamatan',
+  'Kota':'kota','Provinsi':'provinsi','Kode Pos':'kodePos',
+  'Telepon':'telepon','Email':'email',
+  'Asnaf':'asnaf','Kategori Bantuan':'kategoriBantuan','Program':'program',
+  'Nilai Bantuan (Rp)':'nilaiModal','Durasi Program (Bln)':'durasiProgram',
+  'Status Verifikasi':'statusVerifikasi','Aktif':'isActive',
+  'Pekerjaan':'pekerjaan','Penghasilan (Rp)':'penghasilan',
+  'Jml Anggota Keluarga':'jumlahAnggota','Total Pengeluaran (Rp)':'totalPengeluaran',
+  'Pengeluaran Per Kapita (Rp)':'pengeluaranPerKapita','Desil':'desil',
+  'Status Ekonomi':'statusEkonomi','Prioritas Bantuan':'prioritasBantuan',
+  'Kondisi Rumah':'kondisiRumah','Kebutuhan Utama':'kebutuhanUtama',
+  'Status JKN/BPJS':'statusJkn','Akses Faskes':'aksesFaskes',
+  'Kondisi Kesehatan':'kondisiKesehatan','Anggota Sakit Kronis':'anggotaSakit',
+  'Frekuensi Sakit':'frekuensiSakit','Pengeluaran Kesehatan (Rp)':'pengeluaranKesehatan',
+  'Penyakit Diderita':'penyakitDiderita','Penyakit Lainnya':'penyakitLainnya',
+  'Riwayat Medis':'riwayatMedis','Skor IZN Kesehatan':'iznSkor','Kategori IZN':'iznKategori',
+  'Rekomendasi Bantuan':'rekomendasiSingkat','Detail Rekomendasi':'detailRekomendasi',
+  'Tanggal Survey':'tanggalSurvey','Surveyor':'surveyor','Catatan Survey':'catatanSurvey',
+  'Anggota Keluarga JSON':'anggotaKeluarga'
+};
+
+function handleFileImport(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const wb=XLSX.read(e.target.result,{type:'array'});
+    const wsName=wb.SheetNames.find(n=>n==='Data Mustahik')||wb.SheetNames[0];
+    const ws=wb.Sheets[wsName];
+    const raw=XLSX.utils.sheet_to_json(ws,{defval:''});
+    importBuffer=[];
+    let valid=0,skip=0;
+    const logs=[];
+    raw.forEach((row,i)=>{
+      if(!row['Nama']){logs.push(`Baris ${i+2}: Nama kosong — dilewati`);skip++;return;}
+      const obj={id:Date.now()+Math.random(),createdAt:new Date().toLocaleDateString('id-ID')};
+      Object.keys(COL_MAP).forEach(col=>{
+        const fld=COL_MAP[col];
+        let v=row[col]!==undefined?String(row[col]).trim():'';
+        if(fld==='isActive'&&(v==='Aktif'||v==='true'))v='true';
+        else if(fld==='isActive')v=v==='false'||v==='Nonaktif'?'false':'true';
+        if(fld==='anggotaKeluarga'){try{obj[fld]=JSON.parse(v);}catch{obj[fld]=[];}}
+        else obj[fld]=v;
+      });
+      importBuffer.push(obj);valid++;
+    });
+    const dupNik=importBuffer.filter(d=>d.nik&&dataList.some(x=>x.nik===d.nik));
+    skip+=dupNik.length;
+    dupNik.forEach(d=>logs.push(`NIK ${d.nik} (${d.nama}) sudah ada — akan dilewati saat import tambah`));
+    document.getElementById('imp-total').textContent=raw.length;
+    document.getElementById('imp-valid').textContent=valid;
+    document.getElementById('imp-skip').textContent=skip;
+    document.getElementById('imp-log').innerHTML=logs.length?logs.map(l=>`<div>⚠ ${l}</div>`).join(''):'<div style="color:var(--teal)">✓ Semua baris valid, tidak ada peringatan.</div>';
+    document.getElementById('import-prev').style.display='block';
+    document.getElementById('btn-do-import').style.display='inline-flex';
+    document.getElementById('btn-rollback').style.display='inline-flex';
+    toast(`File dibaca: ${raw.length} baris ditemukan.`,'info');
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function doImport(replace){
+  if(!importBuffer.length){toast('Tidak ada data untuk diimport.',true);return;}
+  if(replace){dataList=[];}
+  const existing_niks=new Set(dataList.map(d=>d.nik).filter(Boolean));
+  let added=0;
+  importBuffer.forEach(d=>{
+    if(!replace&&d.nik&&existing_niks.has(d.nik))return;
+    d.id=Date.now()+Math.random();
+    dataList.push(d);added++;
+  });
+  saveStore();
+  migrateExistingData();  // pastikan data import juga punya mustahikId
+  applyFilter();updateHeader();
+  toast(`✓ ${added} data berhasil diimport!`);
+  resetImport();
+  switchTab('t-daftar',document.querySelectorAll('.tab-btn')[0]);
+}
+
+function konfRollback(){
+  showKonfirm('🔄','Rollback Penuh?',`Seluruh data yang ada (${dataList.length} mustahik) akan dihapus dan digantikan dengan ${importBuffer.length} data dari file Excel. Lanjutkan?`,()=>{
+    closeModal('modal-konfirm');doImport(true);
+  },'Rollback Sekarang','btn-danger');
+}
+
+function resetImport(){
+  importBuffer=[];
+  document.getElementById('file-import').value='';
+  document.getElementById('import-prev').style.display='none';
+  document.getElementById('btn-do-import').style.display='none';
+  document.getElementById('btn-rollback').style.display='none';
+}
+
+// Drag & drop
+const dz=document.getElementById('drop-zone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');const f=e.dataTransfer.files[0];if(f)handleFileImport(f);});
+
+// ════════════════════════════════════════════
+// MODAL HELPERS
+// ════════════════════════════════════════════
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');});
+});
+
+let konfirmCb=null;
+function showKonfirm(icon,head,msg,cb,btnTxt='Lanjutkan',btnCls='btn-danger'){
+  document.getElementById('konfirm-icon').textContent=icon;
+  document.getElementById('konfirm-head').textContent=head;
+  document.getElementById('konfirm-msg').textContent=msg;
+  const btn=document.getElementById('konfirm-ok-btn');
+  btn.textContent=btnTxt;btn.className='btn '+btnCls;
+  konfirmCb=cb;
+  btn.onclick=()=>{closeModal('modal-konfirm');if(konfirmCb)konfirmCb();};
+  openModal('modal-konfirm');
+}
+
+// ════════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════════
+function toast(msg,err){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='show'+(err?' err':'');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3200);
+}
+
+// ════════════════════════════════════════════
+// CHECKBOX PILIH BARIS
+// ════════════════════════════════════════════
+function onRowCheck(cb,id){
+  const d=dataList.find(x=>x.id==id);
+  if(d)d._selected=cb.checked;
+  const tr=document.getElementById('tr-'+id);
+  if(tr)tr.classList.toggle('row-selected',cb.checked);
+  updateCetakInfo();
+}
+
+function toggleAllCheckbox(masterCb){
+  const checked=masterCb.checked;
+  // hanya toggle yang sedang tampil di halaman
+  document.querySelectorAll('.row-chk').forEach(cb=>{
+    const id=parseInt(cb.dataset.id);
+    cb.checked=checked;
+    const d=dataList.find(x=>x.id==id);
+    if(d)d._selected=checked;
+    const tr=document.getElementById('tr-'+id);
+    if(tr)tr.classList.toggle('row-selected',checked);
+  });
+  updateCetakInfo();
+}
+
+function updateCetakInfo(){
+  const n=dataList.filter(d=>d._selected).length;
+  const el=document.getElementById('cetak-info');
+  if(!el)return;
+  if(n>0){el.style.display='inline-block';el.textContent=n+' dipilih';}
+  else{el.style.display='none';}
+  // sinkron master checkbox
+  const allChk=document.querySelectorAll('.row-chk');
+  const masterCb=document.getElementById('chk-all');
+  if(masterCb&&allChk.length>0){
+    const allChecked=[...allChk].every(c=>c.checked);
+    const anyChecked=[...allChk].some(c=>c.checked);
+    masterCb.checked=allChecked;
+    masterCb.indeterminate=anyChecked&&!allChecked;
+  }
+}
+
+// ════════════════════════════════════════════
+// PRINT HELPERS
+// ════════════════════════════════════════════
+function formatTglIndonesia(s){
+  if(!s)return'—';
+  // Handles "DD/MM/YYYY" (id-ID) or "YYYY-MM-DD" (ISO date input)
+  const bulan=['','Januari','Februari','Maret','April','Mei','Juni',
+    'Juli','Agustus','September','Oktober','November','Desember'];
+  let d,m,y;
+  if(s.includes('/')){[d,m,y]=s.split('/').map(Number);}
+  else if(s.includes('-')){[y,m,d]=s.split('-').map(Number);}
+  else return s;
+  return(d||'')+(m?' '+bulan[m]:'')+(y?' '+y:'');
+}
+
+function formatRupiah(n){
+  const v=parseFloat(n);
+  if(!v&&v!==0)return'—';
+  return'Rp '+Math.round(v).toLocaleString('id-ID');
+}
+
+function getBadgePrintColor(teks){
+  if(!teks)return{bg:'#e5e7eb',color:'#374151'};
+  if(teks.includes('PRIORITAS'))return{bg:'#fee2e2',color:'#991b1b'};
+  if(teks.includes('Pangan'))return{bg:'#ffedd5',color:'#9a3412'};
+  if(teks.includes('Kesehatan')||teks.includes('Sakit'))return{bg:'#fef3c7',color:'#92400e'};
+  if(teks.includes('Terbatas')||teks.includes('Terbatas'))return{bg:'#d1fae5',color:'#065f46'};
+  if(teks.includes('Non-Prioritas')||teks.includes('Stabil'))return{bg:'#f3f4f6',color:'#374151'};
+  return{bg:'#e5e7eb',color:'#374151'};
+}
+
+// ════════════════════════════════════════════
+// KOP SURAT HTML (shared)
+// ════════════════════════════════════════════
+function getKopHtml(){
+  return `<div class="kop-surat">
+    <img class="kop-logo"
+      src="https://i.ibb.co.com/VYBc9j4V/LOGO-BAZNAS-GARUDA-EMAS.png"
+      alt="Logo BAZNAS"
+      onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+    <div style="display:none;font-size:32px;margin-bottom:4px">🦅</div>
+    <div class="kop-nama1">BAZNAS KOTA LUBUKLINGGAU</div>
+    <div class="kop-nama2">Badan Amil Zakat Nasional Kota Lubuk Linggau</div>
+    <div class="kop-alamat">
+      Jl. Letkol Sukirno Kompleks Ex. Pemda, Kel. Air Kuti, Kec. Lubuk Linggau Timur I<br/>
+      Kota Lubuk Linggau, Sumatera Selatan 31625<br/>
+      Telp. +62812-7144-8282 &nbsp;|&nbsp; E-Mail: baznas@lubuklinggau.go.id<br/>
+      Website: www.kotalubuklingga.baznas.go.id
+    </div>
+  </div>
+  <hr class="kop-garis"/>
+  <hr class="kop-garis2"/>`;
+}
+
+// ════════════════════════════════════════════
+// GENERATE SATU KARTU MUSTAHIK HTML
+// ════════════════════════════════════════════
+function generateKartuMustahikHTML(d, nomor, total){
+  const rek=getRekomendasiBantuan(d.desil,d.iznSkor);
+  const detRek=getDetailRekomendasi(d.desil,d.iznSkor);
+  const tglCetak=formatTglIndonesia(new Date().toLocaleDateString('id-ID'));
+  const bc=getBadgePrintColor(d.rekomendasiSingkat||'');
+  const iznSkorVal=(d.iznSkor!==''&&d.iznSkor!==undefined)?d.iznSkor:'—';
+  const iznKatVal=d.iznKategori||'—';
+
+  // --- Tabel anggota keluarga ---
+  let akHtml='<p style="font-size:9px;color:#555;font-style:italic;">Tidak ada data anggota keluarga yang tercatat.</p>';
+  if(d.anggotaKeluarga&&d.anggotaKeluarga.length){
+    const rows=d.anggotaKeluarga.map((a,i)=>`
+      <tr>
+        <td style="text-align:center">${i+1}</td>
+        <td>${a.nama||'—'}</td>
+        <td>${a.hub||a.status||'—'}</td>
+        <td>${a.lp||a.usia||'—'}</td>
+        <td>${a.pend||a.pendidikan||'—'}</td>
+        <td>${a.kes||a.kondisiKesehatan||'—'}</td>
+        <td style="font-size:8.5px">${a.pekerjaan||a.ket||'—'}</td>
+      </tr>`).join('');
+    akHtml=`<table class="ak-print-table">
+      <thead><tr>
+        <th style="width:24px">No</th>
+        <th>Nama Lengkap</th>
+        <th>Hub./Status</th>
+        <th>L/P·Usia</th>
+        <th>Pendidikan</th>
+        <th>Kond. Kesehatan</th>
+        <th>Pekerjaan/Ket.</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  }
+
+  // --- Penyakit diderita ---
+  const penyakitStr=d.penyakitDiderita||(d.penyakitLainnya?'(lihat penyakit lain)':'—');
+
+  return `<div class="kartu-wrap">
+    ${getKopHtml()}
+
+    <div class="kartu-judul">
+      <h2>KARTU DATA MUSTAHIK</h2>
+      <div class="kjsub">
+        Nomor ID: <strong>${d.mustahikId||'—'}</strong>
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+        Tanggal Cetak: <strong>${tglCetak}</strong>
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+        Halaman <strong>${nomor}</strong> dari <strong>${total}</strong>
+      </div>
+    </div>
+
+    <!-- A. IDENTITAS -->
+    <div class="kc-sec">
+      <span class="kc-sec-title">A. Identitas Mustahik</span>
+      <div class="kc-grid2">
+        <div class="kc-row kc-full"><div class="kc-lbl">Nama Lengkap</div><div class="kc-val">${d.nama||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">NIK</div><div class="kc-val" style="font-family:monospace">${d.nik||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">No. KK</div><div class="kc-val" style="font-family:monospace">${d.noKK||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Tempat & Tanggal Lahir</div><div class="kc-val">${d.tempatLahir||'—'}${d.tanggalLahir?', '+formatTglIndonesia(d.tanggalLahir):''}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Jenis Kelamin</div><div class="kc-val">${d.jenisKelamin||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Status Keluarga</div><div class="kc-val">${d.statusKeluarga||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Jumlah Tanggungan</div><div class="kc-val">${d.jumlahTanggungan||'0'} orang</div></div>
+        <div class="kc-row"><div class="kc-lbl">Asnaf</div><div class="kc-val">${d.asnaf||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Status Verifikasi</div><div class="kc-val">${d.statusVerifikasi||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Status Aktif</div><div class="kc-val">${d.isActive==='true'?'Aktif':'Nonaktif'}</div></div>
+      </div>
+    </div>
+
+    <!-- B. ALAMAT -->
+    <div class="kc-sec">
+      <span class="kc-sec-title">B. Alamat &amp; Kontak</span>
+      <div class="kc-grid2">
+        <div class="kc-row kc-full"><div class="kc-lbl">Alamat Lengkap</div><div class="kc-val">${d.alamat||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Kelurahan</div><div class="kc-val">${d.kelurahan||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Kecamatan</div><div class="kc-val">${d.kecamatan||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Kota / Kabupaten</div><div class="kc-val">${d.kota||'Lubuklinggau'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Provinsi</div><div class="kc-val">${d.provinsi||'Sumatera Selatan'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Kode Pos</div><div class="kc-val">${d.kodePos||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Telepon / HP</div><div class="kc-val">${d.telepon||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Email</div><div class="kc-val">${d.email||'—'}</div></div>
+      </div>
+    </div>
+
+    <!-- C. EKONOMI -->
+    <div class="kc-sec">
+      <span class="kc-sec-title">C. Data Ekonomi &amp; Desil</span>
+      <div class="kc-grid3">
+        <div class="kc-row"><div class="kc-lbl">Pekerjaan</div><div class="kc-val">${d.pekerjaan||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Penghasilan Bulanan</div><div class="kc-val">${formatRupiah(d.penghasilan)}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Jml. Anggota Kel.</div><div class="kc-val">${d.jumlahAnggota||'—'} orang</div></div>
+        <div class="kc-row"><div class="kc-lbl">Total Pengeluaran/Bln</div><div class="kc-val">${formatRupiah(d.totalPengeluaran)}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Pengeluaran/Kapita</div><div class="kc-val">${formatRupiah(d.pengeluaranPerKapita)}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Desil Ekonomi</div><div class="kc-val">${d.desil?'Desil '+d.desil:'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Status Ekonomi</div><div class="kc-val">${d.statusEkonomi||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Prioritas Bantuan</div><div class="kc-val">${d.prioritasBantuan||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Kondisi Rumah</div><div class="kc-val">${d.kondisiRumah||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Kebutuhan Utama</div><div class="kc-val">${d.kebutuhanUtama||'—'}</div></div>
+      </div>
+    </div>
+
+    <!-- D. KESEHATAN -->
+    <div class="kc-sec">
+      <span class="kc-sec-title">D. Data Kesehatan (IZN)</span>
+      <div style="margin-bottom:6px">
+        <div class="kc-izn-box">
+          <div class="kc-izn-num">${iznSkorVal}</div>
+          <div>
+            <div class="kc-izn-kat">${iznKatVal}</div>
+            <div style="font-size:9px;color:#999">Skor IZN Kesehatan / 100</div>
+          </div>
+        </div>
+      </div>
+      <div class="kc-grid3">
+        <div class="kc-row"><div class="kc-lbl">Status JKN/BPJS</div><div class="kc-val">${d.statusJkn||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Akses Faskes</div><div class="kc-val">${d.aksesFaskes||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Kondisi Kesehatan</div><div class="kc-val">${d.kondisiKesehatan||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Anggota Sakit Kronis</div><div class="kc-val">${d.anggotaSakit||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Frekuensi Sakit 3 bln</div><div class="kc-val">${d.frekuensiSakit||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Peng. Kesehatan/Bln</div><div class="kc-val">${formatRupiah(d.pengeluaranKesehatan)}</div></div>
+        <div class="kc-row kc-full"><div class="kc-lbl">Penyakit Diderita</div><div class="kc-val">${penyakitStr}</div></div>
+        ${d.penyakitLainnya?`<div class="kc-row kc-full"><div class="kc-lbl">Penyakit Lainnya</div><div class="kc-val">${d.penyakitLainnya}</div></div>`:''}
+        ${d.riwayatMedis?`<div class="kc-row kc-full"><div class="kc-lbl">Riwayat Medis</div><div class="kc-val">${d.riwayatMedis}</div></div>`:''}
+      </div>
+    </div>
+
+    <!-- E. ANGGOTA KELUARGA -->
+    <div class="kc-sec">
+      <span class="kc-sec-title">E. Susunan Anggota Keluarga</span>
+      ${akHtml}
+    </div>
+
+    <!-- F. REKOMENDASI -->
+    <div class="kc-sec">
+      <span class="kc-sec-title">F. Rekomendasi Bantuan</span>
+      <div class="kc-rek-box">
+        <div class="kc-rek-title">📋 Rekomendasi Bantuan — Kuadran ${detRek.kuadran}</div>
+        <span class="kc-rek-badge" style="background:${bc.bg};color:${bc.color};padding:4px 12px;border-radius:20px;display:inline-block;">
+          ${rek.teks}
+        </span>
+        <div style="font-size:10px;color:#555;margin:5px 0;"><strong>Kuadran ${detRek.kuadran} — ${detRek.namaKuadran}</strong>
+          &nbsp;|&nbsp; Desil: ${d.desil||'—'} &nbsp;|&nbsp; IZN: ${iznSkorVal} &nbsp;|&nbsp; Level Prioritas: ${rek.levelPrioritas}/5
+        </div>
+        <div class="kc-rek-detail"><strong>Intervensi yang Direkomendasikan:</strong><br/>${detRek.detail}</div>
+      </div>
+    </div>
+
+    <!-- G. SURVEY -->
+    <div class="kc-sec">
+      <span class="kc-sec-title">G. Data Survey Lapangan</span>
+      <div class="kc-grid3">
+        <div class="kc-row"><div class="kc-lbl">Tanggal Survey</div><div class="kc-val">${formatTglIndonesia(d.tanggalSurvey)}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Nama Surveyor</div><div class="kc-val">${d.surveyor||'—'}</div></div>
+        <div class="kc-row"><div class="kc-lbl">Tanggal Input</div><div class="kc-val">${d.createdAt||'—'}</div></div>
+        ${d.catatanSurvey?`<div class="kc-row kc-full"><div class="kc-lbl">Catatan Survey</div><div class="kc-val">${d.catatanSurvey}</div></div>`:''}
+      </div>
+    </div>
+
+    <!-- H. SROI -->
+    ${(()=>{
+      if(!d.nilaiModal||!d.kategoriBantuan) return '';
+      const sr=d.sroiData?JSON.parse(d.sroiData):hitungSROI(d);
+      const rasio=parseFloat(sr.rasio)||0;
+      const fRp=v=>'Rp '+Math.round(v).toLocaleString('id-ID');
+      const rasioColor=rasio>=3?'#15803d':rasio>=1.5?'#92400e':'#991b1b';
+      const rasioLabel=rasio>=3?'Tinggi':rasio>=1.5?'Sedang':'Rendah';
+      return `<div class="kc-sec">
+        <span class="kc-sec-title" style="background:#15803d">H. Proyeksi SROI — Social Return on Investment</span>
+        <div style="border:1.5px solid #16a34a;border-radius:6px;background:#f0fdf4;padding:7px 10px;margin-bottom:4px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:5px;">
+            <div>
+              <div style="font-size:8px;color:#166534;font-weight:bold;text-transform:uppercase;letter-spacing:.4px">Rasio SROI Proyeksi</div>
+              <div style="font-size:22px;font-weight:900;color:${rasioColor};line-height:1">1 : ${rasio.toFixed(2)}</div>
+              <div style="font-size:8px;color:#166534;">Kategori: <strong>${rasioLabel}</strong> &nbsp;|&nbsp; ${d.kategoriBantuan}</div>
+            </div>
+            <div style="margin-left:auto;text-align:right">
+              <div style="font-size:8px;color:#166534;font-weight:bold">Nilai Bantuan</div>
+              <div style="font-size:11px;font-weight:800;color:#14532d">${fRp(sr.input)}</div>
+              <div style="font-size:8px;color:#166534;margin-top:3px;font-weight:bold">Durasi Program</div>
+              <div style="font-size:11px;font-weight:800;color:#14532d">${sr.durasi} Bulan</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px 8px;border-top:1px dashed #86efac;padding-top:5px;">
+            <div class="kc-row"><div class="kc-lbl" style="color:#166534">Proxy Outcome</div><div class="kc-val" style="color:#15803d">${fRp(sr.outcome)}</div></div>
+            <div class="kc-row"><div class="kc-lbl" style="color:#166534">Deadweight (15%)</div><div class="kc-val">${fRp(sr.deadweight||sr.deadweightAmt)}</div></div>
+            <div class="kc-row"><div class="kc-lbl" style="color:#166534">Outcome Bersih</div><div class="kc-val" style="color:#15803d;font-size:10px">${fRp(sr.outcomeBersih)}</div></div>
+            <div class="kc-row"><div class="kc-lbl" style="color:#166534">Multiplier</div><div class="kc-val">${sr.multiplier}× (${sr.kategori||d.kategoriBantuan})</div></div>
+            <div class="kc-row"><div class="kc-lbl" style="color:#166534">Attribution (70%)</div><div class="kc-val">${fRp(sr.attribution||sr.attributionAmt)}</div></div>
+            <div class="kc-row"><div class="kc-lbl" style="color:#166534">Interpretasi</div><div class="kc-val" style="color:${rasioColor}">Setiap Rp 1 → Rp ${rasio.toFixed(2)}</div></div>
+          </div>
+          <div style="font-size:7.5px;color:#166534;font-style:italic;margin-top:5px;border-top:1px dashed #86efac;padding-top:4px;">⚠ Proyeksi berbasis proxy standar BAZNAS RI. Rasio aktual dihitung setelah evaluasi program selesai (6–12 bulan). Deadweight 15%, Attribution 70%.</div>
+        </div>
+      </div>`;
+    })()}
+
+    <!-- H. TANDA TANGAN -->
+    <div class="kc-ttd">
+      <div class="kc-ttd-blok">
+        <div class="ttd-title">Mengetahui,<br/>Ketua BAZNAS Kota Lubuklinggau</div>
+        <div class="ttd-garis">( _________________________________ )</div>
+      </div>
+      <div class="kc-ttd-tengah">
+        Lubuklinggau, ${tglCetak}
+      </div>
+      <div class="kc-ttd-blok">
+        <div class="ttd-title">Petugas Surveyor${d.surveyor?'<br/>'+d.surveyor:''}</div>
+        <div class="ttd-garis">( _________________________________ )</div>
+      </div>
+    </div>
+
+    <!-- FOOTER KARTU -->
+    <div class="kc-footer">
+      Dokumen Resmi BAZNAS Kota Lubuklinggau — Sistem Informasi Mustahik Terpadu IZN<br/>
+      Dicetak pada: ${tglCetak}${d.surveyor?' oleh: '+d.surveyor:''} &nbsp;|&nbsp; ID: ${d.mustahikId||'—'} &nbsp;|&nbsp; Total data dicetak: ${total}
+    </div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════
+// GENERATE DOKUMEN CETAK LENGKAP
+// ════════════════════════════════════════════
+function generatePrintDocument(selected){
+  const total=selected.length;
+  const kartuArr=selected.map((d,i)=>generateKartuMustahikHTML(d,i+1,total));
+  return `<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<title>Kartu Data Mustahik — BAZNAS Kota Lubuklinggau</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+/* ══ KUNCI UTAMA: hapus header/footer browser, margin ketat ══ */
+@page{
+  size:A4 portrait;
+  margin:8mm 10mm 8mm 10mm;  /* atas kanan bawah kiri — cukup rapat agar muat 1 hal */
+  /* Sembunyikan header & footer bawaan Chrome/Edge/Firefox */
+  @top-left   { content: none; }
+  @top-center { content: none; }
+  @top-right  { content: none; }
+  @bottom-left   { content: none; }
+  @bottom-center { content: none; }
+  @bottom-right  { content: none; }
+}
+
+/* Perkuat suppression header/footer via -webkit */
+html{
+  -webkit-print-color-adjust:exact;
+  print-color-adjust:exact;
+}
+
+body{
+  font-family:'Times New Roman',Georgia,serif;
+  font-size:10px;          /* turun dari 11px → lebih kompak */
+  color:#000;
+  background:#fff;
+  /* margin 0 di body agar @page margin yang berlaku */
+  margin:0;padding:0;
+}
+
+.kartu-wrap{page-break-after:always;background:#fff;}
+.kartu-wrap:last-child{page-break-after:auto!important;}
+
+/* KOP */
+.kop-surat{text-align:center;padding-bottom:5px;margin-bottom:5px;}
+.kop-logo{width:62px;height:auto;display:block;margin:0 auto 4px;}
+.kop-nama1{font-size:14px;font-weight:bold;letter-spacing:.5px;}
+.kop-nama2{font-size:10px;margin-bottom:3px;}
+.kop-alamat{font-size:8.5px;color:#333;line-height:1.5;}
+.kop-garis{border:none;border-top:2px solid #000;margin:4px 0 2px;}
+.kop-garis2{border:none;border-top:1px solid #000;margin:0 0 5px;}
+
+/* JUDUL */
+.kartu-judul{text-align:center;margin:5px 0 4px;}
+.kartu-judul h2{font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;margin:0;}
+.kjsub{font-size:9px;color:#333;margin-top:2px;}
+
+/* SEKSI */
+.kc-sec{margin:4px 0 2px;}
+.kc-sec-title{
+  font-size:9px;font-weight:bold;text-transform:uppercase;letter-spacing:.5px;
+  background:#1a5276;color:#fff;padding:2px 7px;border-radius:3px;
+  display:block;margin-bottom:3px;
+}
+.kc-grid2{display:grid;grid-template-columns:1fr 1fr;gap:0px 10px;}
+.kc-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0px 7px;}
+.kc-row{padding:1px 0;border-bottom:1px dotted #ddd;}
+.kc-lbl{font-size:8px;color:#555;}
+.kc-val{font-size:9.5px;font-weight:bold;color:#000;word-break:break-word;line-height:1.3;}
+.kc-full{grid-column:1/-1;}
+
+/* TABEL ANGGOTA */
+.ak-print-table{width:100%;border-collapse:collapse;font-size:8px;margin-top:2px;}
+.ak-print-table th{background:#1a5276;color:#fff;padding:2px 4px;text-align:left;}
+.ak-print-table td{padding:2px 4px;border:1px solid #bbb;}
+.ak-print-table tr:nth-child(even) td{background:#f5f5f5;}
+
+/* IZN */
+.kc-izn-box{display:inline-flex;align-items:center;gap:6px;background:#fdf7e7;border:1px solid #c8a84b;border-radius:5px;padding:3px 8px;margin-bottom:3px;}
+.kc-izn-num{font-size:22px;font-weight:900;color:#c8a84b;line-height:1;}
+.kc-izn-kat{font-size:10px;font-weight:bold;color:#7c5c00;}
+
+/* REKOMENDASI */
+.kc-rek-box{border-left:4px solid #c8a84b;background:#fef9e6;padding:5px 10px;border-radius:0 5px 5px 0;margin:3px 0;}
+.kc-rek-title{font-size:8px;font-weight:bold;color:#c8a84b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;}
+.kc-rek-badge{font-size:12px;font-weight:900;display:inline-block;padding:2px 8px;border-radius:20px;margin-bottom:3px;}
+.kc-rek-detail{font-size:9px;color:#374151;line-height:1.5;border-top:1px dashed #e8d7a3;padding-top:4px;margin-top:2px;}
+
+/* TANDA TANGAN */
+.kc-ttd{display:flex;justify-content:space-between;align-items:flex-end;margin-top:10px;padding-top:6px;border-top:1px solid #ccc;}
+.kc-ttd-blok{text-align:center;min-width:150px;}
+.ttd-title{font-size:9px;font-weight:bold;margin-bottom:38px;}
+.ttd-garis{border-top:1px solid #000;padding-top:3px;font-size:8.5px;}
+.kc-ttd-tengah{text-align:center;font-size:9px;color:#444;}
+
+/* FOOTER */
+.kc-footer{margin-top:5px;padding-top:4px;border-top:2px solid #000;font-size:7.5px;color:#555;text-align:center;line-height:1.5;}
+</style>
+</head>
+<body>
+${kartuArr.join('\n')}
+</body>
+</html>`;
+}
+
+// ════════════════════════════════════════════
+// CETAK DATA TERPILIH
+// ════════════════════════════════════════════
+function printSelectedData(){
+  const selected=dataList.filter(d=>d._selected);
+  if(!selected.length){
+    toast('Pilih minimal 1 mustahik terlebih dahulu menggunakan checkbox di kolom pertama tabel!',true);
+    return;
+  }
+  const html=generatePrintDocument(selected);
+  const win=window.open('','_blank','width=900,height=700,scrollbars=yes');
+  if(!win){toast('Popup diblokir browser. Aktifkan popup untuk halaman ini.',true);return;}
+  win.document.write(html);
+  win.document.close();
+  win.onload=function(){
+    setTimeout(()=>{win.focus();win.print();},400);
+  };
+  toast('✓ Membuka jendela cetak untuk '+selected.length+' mustahik...');
+}
+
+// ════════════════════════════════════════════
+// EXPORT PDF — Via Dialog Print Browser
+// (Works on file://, http://, https:// — no CORS issue)
+// User pilih "Save as PDF" / "Microsoft Print to PDF"
+// ════════════════════════════════════════════
+function exportPdfSelectedData(){
+  const selected = dataList.filter(d=>d._selected);
+  if(!selected.length){
+    toast('Pilih minimal 1 mustahik dengan checkbox sebelum export PDF!', true);
+    return;
+  }
+
+  // Generate dokumen HTML lengkap (sama dengan printSelectedData)
+  const html = generatePrintDocument(selected);
+
+  // Buka window baru, tulis konten, lalu panggil print()
+  const win = window.open('', '_blank', 'width=900,height=700,scrollbars=yes');
+  if(!win){
+    toast('Popup diblokir browser. Izinkan popup untuk halaman ini.', true);
+    return;
+  }
+
+  win.document.write(html);
+  win.document.close();
+
+  // Tunggu load selesai lalu buka dialog print
+  // (user pilih "Save as PDF" di dialog printer)
+  win.onload = function(){
+    // Tambahkan instruksi singkat di title bar browser
+    win.document.title = 'PDF — ' + selected.length + ' Mustahik — BAZNAS Lubuklinggau';
+    setTimeout(function(){
+      win.focus();
+      win.print();
+      // Tutup window setelah dialog print ditutup (opsional)
+      win.onafterprint = function(){ win.close(); };
+    }, 400);
+  };
+
+  toast('✓ Dialog cetak terbuka — pilih "Save as PDF", lalu di "More settings" pastikan "Headers and footers" tidak dicentang (' + selected.length + ' mustahik)');
+}
+
+// ════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════
+loadStore();
+migrateExistingData();   // beri ID retroaktif untuk data lama
+migrasiRekomendasi();    // beri field rekomendasi untuk data lama
+renderPenyakitGrid();
+applyFilter();
+document.getElementById('f-kota').value='Lubuklinggau';
+document.getElementById('f-provinsi').value='Sumatera Selatan';
+</script>
 </body>
 </html>
