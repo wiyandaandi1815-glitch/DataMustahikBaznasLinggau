@@ -1985,9 +1985,9 @@ function hapusBaris(id){
 
 function konfHapusSemua(){
   if(!dataList.length){toast('Tidak ada data.',true);return;}
-  const nq=qGet().length;
-  showKonfirm('🗑️','Kosongkan Cache Lokal?',`Seluruh ${dataList.length} data di PERANGKAT INI saja yang dihapus — data di database terpusat TIDAK tersentuh dan akan dimuat ulang saat online.`+(nq?` Perhatian: ${nq} data yang belum terkirim tetap disimpan di antrian.`:''),()=>{
-    dataList=[];saveStore();applyFilter();updateHeader();
+  const nLokal=dataList.filter(d=>!d._sinkron).length;
+  showKonfirm('🗑️','Kosongkan Cache Lokal?',`Data di PERANGKAT INI saja yang dihapus — data di database terpusat TIDAK tersentuh dan akan dimuat ulang saat online.`+(nLokal?` ${nLokal} data yang belum pernah tersimpan di database TETAP dipertahankan agar tidak hilang.`:''),()=>{
+    dataList=dataList.filter(d=>!d._sinkron);saveStore();applyFilter();updateHeader();
     toast('Cache lokal dikosongkan.');
     dbMuatDaftar(true);
   },'Kosongkan Cache','btn-danger');
@@ -2577,7 +2577,7 @@ function handleFileImport(file){
 
 function doImport(replace){
   if(!importBuffer.length){toast('Tidak ada data untuk diimport.',true);return;}
-  if(replace){dataList=dataList.filter(x=>qGet().some(q=>q.nik===x.nik));}  // hanya cache lokal; data menunggu dipertahankan
+  if(replace){dataList=dataList.filter(x=>!x._sinkron);}  // hanya cache lokal; data yang belum pernah masuk database dipertahankan
   let added=0,updated=0;const kirim=[];
   importBuffer.forEach(d=>{
     if(!/^\d{16}$/.test(d.nik||''))return;
