@@ -699,9 +699,39 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
     </div>
   </div>
 
-  <!-- Sec 5: Klasifikasi -->
+  <!-- Sec 5: Data Perbankan -->
   <div class="card">
-    <div class="card-header"><div class="sec-num">5</div><h2>KLASIFIKASI BAZNAS</h2></div>
+    <div class="card-header"><div class="sec-num">5</div><h2>DATA PERBANKAN</h2></div>
+    <div class="card-body">
+      <div class="grid g2">
+        <div class="field"><label>Metode Penyaluran Bantuan</label>
+          <select id="f-metodeSalur" onchange="toggleRek()"><option value="">— Pilih —</option><option>Transfer Bank</option><option>Tunai</option></select>
+        </div>
+        <div class="field"><label>Status Verifikasi Rekening</label>
+          <select id="f-verifRek"><option value="">— Pilih —</option><option>Belum Diverifikasi</option><option>Terverifikasi (sesuai buku tabungan)</option><option>Tidak Sesuai / Ditolak</option></select>
+        </div>
+      </div>
+      <div id="rek-wrap" style="display:none;margin-top:12px">
+        <div class="grid g2">
+          <div class="field"><label>Nama Bank <span class="req">*</span></label>
+            <select id="f-bank" onchange="toggleRek()"><option value="">— Pilih Bank —</option><option>Bank Syariah Indonesia (BSI)</option><option>Bank Sumsel Babel Syariah</option><option>Bank Sumsel Babel</option><option>BRI</option><option>BNI</option><option>Bank Mandiri</option><option>BCA</option><option>BTN</option><option>Bank Muamalat</option><option>BTPN Syariah</option><option>Bank Mega Syariah</option><option>Lainnya</option></select>
+          </div>
+          <div class="field" id="bankLain-wrap" style="display:none"><label>Nama Bank Lainnya <span class="req">*</span></label><input id="f-bankLain" type="text" placeholder="Tulis nama bank"/></div>
+          <div class="field"><label>No. Rekening <span class="req">*</span></label><input id="f-noRek" type="text" inputmode="numeric" maxlength="20" placeholder="Hanya angka" class="mono" oninput="this.value=this.value.replace(/\D/g,'')"/></div>
+          <div class="field"><label>Nama Pemilik Rekening <span class="req">*</span></label><input id="f-namaRek" type="text" placeholder="Sesuai buku tabungan" oninput="cekNamaRek()"/></div>
+          <div class="field"><label>Cabang / KCP</label><input id="f-cabangBank" type="text" placeholder="mis. KCP Lubuklinggau"/></div>
+          <div class="field"><label>Hubungan Pemilik Rekening dgn Mustahik</label>
+            <select id="f-hubRek" onchange="cekNamaRek()"><option value="">— Pilih —</option><option>Diri Sendiri</option><option>Suami/Istri</option><option>Anak</option><option>Orang Tua</option><option>Wali</option><option>Lembaga/Sekolah</option><option>Lainnya</option></select>
+          </div>
+        </div>
+        <div id="rek-warn" style="display:none;margin-top:10px;padding:8px 12px;border-radius:8px;background:#fff7e0;border:1px solid #f0d58a;color:#7a5a00;font-size:12.5px">⚠️ Nama pemilik rekening berbeda dengan nama mustahik. Pastikan kolom <b>Hubungan Pemilik Rekening</b> diisi dan dilampiri surat kuasa/keterangan.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sec 6: Klasifikasi -->
+  <div class="card">
+    <div class="card-header"><div class="sec-num">6</div><h2>KLASIFIKASI BAZNAS</h2></div>
     <div class="card-body">
       <div class="grid g2">
         <div class="field"><label>Kategori Asnaf <span class="req">*</span></label>
@@ -743,7 +773,7 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
 
   <!-- Sec 6: Ekonomi -->
   <div class="card">
-    <div class="card-header"><div class="sec-num">6</div><h2>KONDISI EKONOMI & DESIL</h2></div>
+    <div class="card-header"><div class="sec-num">7</div><h2>KONDISI EKONOMI & DESIL</h2></div>
     <div class="card-body">
       <div class="grid g2">
         <div class="field"><label>Pekerjaan</label><input id="f-pekerjaan" type="text" placeholder="Buruh, pedagang, tidak bekerja..."/></div>
@@ -771,7 +801,7 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
 
   <!-- Sec 7: Kesehatan IZN -->
   <div class="card">
-    <div class="card-header izn-hdr"><div class="sec-num" style="background:rgba(255,255,255,.2)">7</div><h2>KESEHATAN & PENYAKIT</h2><span class="izn-badge">IZN</span></div>
+    <div class="card-header izn-hdr"><div class="sec-num" style="background:rgba(255,255,255,.2)">8</div><h2>KESEHATAN & PENYAKIT</h2><span class="izn-badge">IZN</span></div>
     <div class="card-body">
       <div class="izn-info"><strong>Indeks Zakat Nasional (IZN)</strong> — Dimensi Kesehatan. Data ini mengukur kemiskinan multidimensi dan menentukan prioritas bantuan kesehatan mustahik.</div>
       <div class="grid g2" style="margin-bottom:14px">
@@ -881,7 +911,7 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
 
   <!-- Sec 8: Survey -->
   <div class="card">
-    <div class="card-header"><div class="sec-num">8</div><h2>DATA SURVEY LAPANGAN</h2></div>
+    <div class="card-header"><div class="sec-num">9</div><h2>DATA SURVEY LAPANGAN</h2></div>
     <div class="card-body">
       <div class="grid g2">
         <div class="field"><label>Tanggal Survey</label><input id="f-tglSurvey" type="date"/></div>
@@ -1720,6 +1750,9 @@ function readForm(){
     alamat:gv('f-alamat').trim(),kelurahan:gv('f-kelurahan').trim(),kecamatan:gv('f-kecamatan').trim(),
     kota:gv('f-kota').trim(),provinsi:gv('f-provinsi').trim(),kodePos:gv('f-kodePos').trim(),
     telepon:gv('f-telepon').trim(),email:gv('f-email').trim(),
+    metodeSalur:gv('f-metodeSalur'),namaBank:(gv('f-bank')==='Lainnya'?gv('f-bankLain').trim():gv('f-bank')),
+    noRekening:gv('f-noRek').trim(),namaPemilikRek:gv('f-namaRek').trim(),cabangBank:gv('f-cabangBank').trim(),
+    hubunganRek:gv('f-hubRek'),statusVerifRek:gv('f-verifRek'),
     asnaf:gv('f-asnaf'),kategoriBantuan:gv('f-katBantuan'),program:gv('f-program').trim(),
     nilaiModal:gv('f-nilaiModal'),durasiProgram:gv('f-durasiProgram'),
     statusVerifikasi:gv('f-statusVerif'),isActive:gv('f-aktif'),
@@ -1754,6 +1787,12 @@ function fillForm(d){
   sv('f-alamat',d.alamat);sv('f-kelurahan',d.kelurahan);sv('f-kecamatan',d.kecamatan);
   sv('f-kota',d.kota||'Lubuklinggau');sv('f-provinsi',d.provinsi||'Sumatera Selatan');sv('f-kodePos',d.kodePos);
   sv('f-telepon',d.telepon);sv('f-email',d.email);
+  sv('f-metodeSalur',d.metodeSalur);
+  {const bs=document.getElementById('f-bank');const known=[...bs.options].some(o=>o.value&&o.value===d.namaBank&&o.value!=='Lainnya');
+   if(d.namaBank&&!known){sv('f-bank','Lainnya');sv('f-bankLain',d.namaBank);}else{sv('f-bank',d.namaBank);sv('f-bankLain','');}}
+  sv('f-noRek',d.noRekening);sv('f-namaRek',d.namaPemilikRek);sv('f-cabangBank',d.cabangBank);
+  sv('f-hubRek',d.hubunganRek);sv('f-verifRek',d.statusVerifRek);
+  toggleRek();
   sv('f-asnaf',d.asnaf);sv('f-katBantuan',d.kategoriBantuan);sv('f-program',d.program);
   sv('f-nilaiModal',d.nilaiModal);sv('f-durasiProgram',d.durasiProgram);
   sv('f-statusVerif',d.statusVerifikasi);sv('f-aktif',d.isActive);
@@ -1804,7 +1843,25 @@ function resetForm(){
   if(sroiEmpty)sroiEmpty.style.display='block';
   if(sroiContent)sroiContent.style.display='none';
   akReset();
+  toggleRek();
 }
+
+// ── Data Perbankan helpers ──
+function toggleRek(){
+  const m=document.getElementById('f-metodeSalur');if(!m)return;
+  const isTf=m.value==='Transfer Bank';
+  document.getElementById('rek-wrap').style.display=isTf?'block':'none';
+  document.getElementById('bankLain-wrap').style.display=(document.getElementById('f-bank').value==='Lainnya')?'block':'none';
+  cekNamaRek();
+}
+function normNama(x){return (x||'').toUpperCase().replace(/[^A-Z]/g,'');}
+function cekNamaRek(){
+  const w=document.getElementById('rek-warn');if(!w)return;
+  const nr=gv('f-namaRek').trim(),nm=gv('f-nama').trim(),isTf=gv('f-metodeSalur')==='Transfer Bank';
+  const beda=isTf&&nr&&nm&&normNama(nr)!==normNama(nm);
+  w.style.display=(beda&&gv('f-hubRek')!=='Lembaga/Sekolah')?'block':'none';
+}
+function maskRek(n){n=String(n||'');return n.length>4?'•••• '+n.slice(-4):n;}
 
 // ════════════════════════════════════════════
 // CRUD
@@ -1819,6 +1876,12 @@ function simpanData(){
   const d=readForm();
   if(!d.nama){toast('Nama mustahik wajib diisi!',true);return;}
   if(!d.asnaf){toast('Kategori Asnaf wajib dipilih!',true);return;}
+  if(d.metodeSalur==='Transfer Bank'){
+    if(!d.namaBank){toast('Nama Bank wajib diisi untuk penyaluran via transfer!',true);return;}
+    if(!/^\d{6,20}$/.test(d.noRekening)){toast('No. Rekening wajib diisi (6–20 digit angka)!',true);return;}
+    if(!d.namaPemilikRek){toast('Nama Pemilik Rekening wajib diisi!',true);return;}
+    if(normNama(d.namaPemilikRek)!==normNama(d.nama)&&!d.hubunganRek){toast('Nama pemilik rekening berbeda — isi Hubungan Pemilik Rekening!',true);return;}
+  }
   const eid=document.getElementById('edit-id').value;
   // Hitung SROI dan simpan bersama data
   if(d.nilaiModal&&d.kategoriBantuan){
@@ -1998,6 +2061,10 @@ function lihatDetail(id){
       ${row('Kelurahan',d.kelurahan)}${row('Kecamatan',d.kecamatan)}
       ${row('Kota',d.kota)}${row('Telepon',d.telepon)}
     </div></div>
+    ${d.metodeSalur?`<div class="det-sec"><h4>Data Perbankan</h4><div class="det-grid">
+      ${row('Metode Penyaluran',d.metodeSalur)}${row('Status Verif. Rek.',d.statusVerifRek)}
+      ${d.metodeSalur==='Transfer Bank'?row('Nama Bank',d.namaBank)+row('No. Rekening',d.noRekening)+row('Pemilik Rekening',d.namaPemilikRek)+row('Hubungan',d.hubunganRek)+row('Cabang / KCP',d.cabangBank):''}
+    </div></div>`:''}
     <div class="det-sec"><h4>Klasifikasi BAZNAS</h4><div class="det-grid">
       ${row('Asnaf',d.asnaf)}${row('Kat. Bantuan',d.kategoriBantuan)}
       ${row('Program',d.program)}${row('Status Verif.',d.statusVerifikasi)}
@@ -2119,7 +2186,7 @@ function renderTable(){
       <td style="font-size:11.5px;max-width:130px;overflow:hidden;text-overflow:ellipsis">${d.kategoriBantuan||'—'}</td>
       <td>${d.kecamatan||'—'}</td>
       <td>${d.kelurahan||'—'}</td>
-      <td class="mono" style="font-size:11.5px">${d.telepon||'—'}</td>
+      <td class="mono" style="font-size:11.5px">${d.telepon||'—'}${d.noRekening?`<div style="font-size:10.5px;color:#777;margin-top:2px" title="${d.namaBank||''}">🏦 ${maskRek(d.noRekening)}</div>`:''}</td>
       <td style="text-align:center">${d.desil?`<span class="badge b-blue">Desil ${d.desil}</span>`:'—'}</td>
       <td style="font-size:11.5px">${d.statusEkonomi||'—'}</td>
       <td style="text-align:center">${d.prioritasBantuan==='Ya'?'<span class="badge b-red">⭐ Prioritas</span>':d.prioritasBantuan==='Tidak'?'<span class="badge b-gray">Non</span>':'—'}</td>
@@ -2196,7 +2263,7 @@ function exportExcel(){
     const H=[
       'No','ID Mustahik','Nama','NIK','No KK','No KTP','Jenis Kelamin','Tempat Lahir','Tanggal Lahir',
       'Status Keluarga','Jml Tanggungan','Alamat','Kelurahan','Kecamatan','Kota','Provinsi',
-      'Kode Pos','Telepon','Email','Asnaf','Kategori Bantuan','Program','Status Verifikasi',
+      'Kode Pos','Telepon','Email','Metode Penyaluran','Nama Bank','No Rekening','Nama Pemilik Rekening','Cabang Bank','Hubungan Pemilik Rekening','Status Verifikasi Rekening','Asnaf','Kategori Bantuan','Program','Status Verifikasi',
       'Aktif','Pekerjaan','Penghasilan (Rp)','Jml Anggota Keluarga','Total Pengeluaran (Rp)',
       'Pengeluaran Per Kapita (Rp)','Desil','Status Ekonomi','Prioritas Bantuan',
       'Kondisi Rumah','Kebutuhan Utama','Status JKN/BPJS','Akses Faskes',
@@ -2221,6 +2288,7 @@ function exportExcel(){
         d.statusKeluarga||'', d.jumlahTanggungan||'',
         d.alamat||'', d.kelurahan||'', d.kecamatan||'', d.kota||'', d.provinsi||'', d.kodePos||'',
         d.telepon||'', d.email||'',
+        d.metodeSalur||'', d.namaBank||'', {v:d.noRekening||'',t:'s'}, d.namaPemilikRek||'', d.cabangBank||'', d.hubunganRek||'', d.statusVerifRek||'',
         d.asnaf||'', d.kategoriBantuan||'', d.program||'',
         d.statusVerifikasi||'', d.isActive==='true'?'Aktif':'Nonaktif',
         d.pekerjaan||'', d.penghasilan||'',
@@ -2257,7 +2325,7 @@ function exportExcel(){
     ws1['!cols']=[
       {wch:4},{wch:20},{wch:30},{wch:18},{wch:18},{wch:18},{wch:12},{wch:14},{wch:12},
       {wch:14},{wch:8},{wch:35},{wch:16},{wch:16},{wch:14},{wch:14},{wch:8},
-      {wch:14},{wch:22},{wch:14},{wch:18},{wch:18},{wch:16},{wch:8},
+      {wch:14},{wch:22},{wch:16},{wch:28},{wch:22},{wch:28},{wch:20},{wch:22},{wch:26},{wch:14},{wch:18},{wch:18},{wch:16},{wch:8},
       {wch:18},{wch:18},{wch:12},{wch:22},{wch:20},{wch:8},{wch:20},{wch:10},
       {wch:20},{wch:16},{wch:28},{wch:22},{wch:24},{wch:20},{wch:18},{wch:18},
       {wch:55},{wch:30},{wch:40},{wch:14},{wch:12},{wch:36},{wch:80},{wch:12},
@@ -2400,6 +2468,8 @@ const COL_MAP={
   'Alamat':'alamat','Kelurahan':'kelurahan','Kecamatan':'kecamatan',
   'Kota':'kota','Provinsi':'provinsi','Kode Pos':'kodePos',
   'Telepon':'telepon','Email':'email',
+  'Metode Penyaluran':'metodeSalur','Nama Bank':'namaBank','No Rekening':'noRekening','Nama Pemilik Rekening':'namaPemilikRek',
+  'Cabang Bank':'cabangBank','Hubungan Pemilik Rekening':'hubunganRek','Status Verifikasi Rekening':'statusVerifRek',
   'Asnaf':'asnaf','Kategori Bantuan':'kategoriBantuan','Program':'program',
   'Nilai Bantuan (Rp)':'nilaiModal','Durasi Program (Bln)':'durasiProgram',
   'Status Verifikasi':'statusVerifikasi','Aktif':'isActive',
