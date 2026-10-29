@@ -46,6 +46,14 @@ textarea{min-height:80px;resize:vertical}
 .hasil .no{font-family:ui-monospace,Consolas,monospace;font-size:26px;font-weight:800;color:var(--teal-dark);letter-spacing:1px;background:var(--teal-light);border-radius:8px;padding:12px;margin:12px 0}
 .st{display:inline-block;padding:6px 14px;border-radius:20px;font-weight:800;font-size:14px;margin:8px 0}
 .st.Menunggu{background:#fff4d6;color:#7c5c00}.st.Dijadwalkan{background:#e3efff;color:#1d4e9e}.st.Diterima{background:var(--teal-light);color:var(--teal-dark)}.st.Tidak{background:#fdecea;color:var(--red)}
+.riw{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:10px;text-align:left}
+.riw th,.riw td{padding:7px 6px;border-bottom:1px solid var(--g100)}
+.riw th{font-size:12px;color:var(--g500);font-weight:700}
+.riw td.n,.riw th.n{text-align:right;white-space:nowrap}
+.riw tfoot td{font-weight:800;border-top:2px solid var(--teal);border-bottom:0}
+.info{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;text-align:left;font-size:14px;margin-top:10px}
+.info div:nth-child(odd){color:var(--g500)}
+.info div:nth-child(even){font-weight:700}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px}
 .hidden{display:none}
@@ -58,7 +66,7 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
 </header>
 <nav class="tabs">
   <button id="tab-f" class="on" onclick="tab('f')">📝 Ajukan Bantuan</button>
-  <button id="tab-s" onclick="tab('s')">🔎 Cek Status</button>
+  <button id="tab-s" onclick="tab('s')">🔎 Cek Status / Bantuan</button>
 </nav>
 <main>
 
@@ -153,7 +161,7 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
   <div class="no" id="no-pj"></div>
   <p style="font-size:13.5px">Gunakan nomor ini dan tanggal lahir untuk <strong>cek status</strong>. Petugas BAZNAS akan menghubungi nomor HP yang Anda isi untuk jadwal verifikasi.</p>
   <div style="display:grid;gap:10px;margin-top:16px">
-    <button class="btn" onclick="tab('s');document.getElementById('s-no').value=document.getElementById('no-pj').textContent">Cek Status</button>
+    <button class="btn" onclick="tab('s');document.querySelector('input[name=jenis-cek][value=pj]').click();document.getElementById('s-no').value=document.getElementById('no-pj').textContent">Cek Status</button>
     <button class="btn ghost" onclick="location.reload()">Isi Pengajuan Lain</button>
   </div>
 </div></div>
@@ -161,9 +169,14 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
 
 <!-- ═════════ CEK STATUS ═════════ -->
 <section id="sec-s" class="hidden">
-  <div class="card"><h2>CEK STATUS PENGAJUAN</h2><div class="body grid">
-    <div><label>Nomor pengajuan</label><input id="s-no" placeholder="PJ-2611-0001" style="text-transform:uppercase" maxlength="14"></div>
-    <div><label>Tanggal lahir calon penerima</label><input id="s-tgl" type="date"></div>
+  <div class="card"><h2>CEK STATUS</h2><div class="body grid">
+    <div class="full radio" style="flex-direction:column;gap:8px">
+      <label style="align-items:flex-start"><input type="radio" name="jenis-cek" value="pj" checked style="margin-top:4px"><span>Saya mengajukan secara online (punya <strong>Nomor Pengajuan</strong> PJ-…)</span></label>
+      <label style="align-items:flex-start"><input type="radio" name="jenis-cek" value="mh" style="margin-top:4px"><span>Saya sudah terdaftar sebagai mustahik (punya <strong>ID Mustahik</strong> 1674-…)</span></label>
+    </div>
+    <div id="cek-pj"><label>Nomor pengajuan</label><input id="s-no" placeholder="PJ-2611-0001" style="text-transform:uppercase" maxlength="14"></div>
+    <div id="cek-mh" class="hidden"><label>ID Mustahik <span class="hint">tertera di formulir/kartu mustahik</span></label><input id="s-mid" placeholder="1674-2610-00007" inputmode="numeric" maxlength="15"></div>
+    <div><label>Tanggal lahir</label><input id="s-tgl" type="date"></div>
     <div class="full"><button class="btn" id="btn-cek" onclick="cekStatus()">Cek Status</button></div>
   </div></div>
   <div id="s-hasil" class="card hidden"><div class="hasil" id="s-isi"></div></div>
@@ -258,7 +271,43 @@ document.getElementById('fpj').addEventListener('submit',async ev=>{
   }finally{btn.disabled=false;btn.textContent='Kirim Pengajuan';}
 });
 
+document.querySelectorAll('input[name=jenis-cek]').forEach(r=>r.addEventListener('change',()=>{
+  const mh=document.querySelector('input[name=jenis-cek]:checked').value==='mh';
+  document.getElementById('cek-pj').classList.toggle('hidden',mh);
+  document.getElementById('cek-mh').classList.toggle('hidden',!mh);
+  document.getElementById('s-hasil').classList.add('hidden');
+}));
+document.getElementById('s-mid').addEventListener('input',e=>{
+  const d=e.target.value.replace(/\D/g,'').slice(0,13);
+  e.target.value=d.length>8?d.slice(0,4)+'-'+d.slice(4,8)+'-'+d.slice(8):d.length>4?d.slice(0,4)+'-'+d.slice(4):d;
+});
+function rp(n){return 'Rp '+Math.round(+n||0).toLocaleString('id-ID');}
+function tglId(s){const d=new Date(s+'T00:00:00');return isNaN(d)?esc(s):d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});}
+async function cekMustahik(){
+  const id=v('s-mid'),tgl=v('s-tgl');
+  const box=document.getElementById('s-hasil'),isi=document.getElementById('s-isi');
+  if(!/^\d{4}-\d{4}-\d{5}$/.test(id)||!tgl){box.classList.remove('hidden');isi.innerHTML='<p style="color:var(--red)">Isi ID Mustahik (contoh 1674-2610-00007) dan tanggal lahir.</p>';return;}
+  const b=document.getElementById('btn-cek');b.disabled=true;b.textContent='Memeriksa…';
+  try{
+    const r=await api('cek_mustahik',{mustahikId:id,tanggalLahir:tgl});
+    box.classList.remove('hidden');
+    if(!r.ok){isi.innerHTML='<p style="color:var(--red)">'+esc(r.pesan)+'</p>';return;}
+    const aktif=r.status_aktif==='Aktif';
+    const rows=r.riwayat.map(x=>'<tr><td>'+tglId(x.tanggal)+'</td><td>'+esc(x.program||'-')+'</td><td>'+esc(x.bentuk||'-')+'</td><td class="n">'+rp(x.nilai)+'</td></tr>').join('');
+    isi.innerHTML='<div style="font-family:monospace;font-weight:800;font-size:16px">'+esc(r.mustahikId)+'</div>'+
+      '<div style="font-size:18px;font-weight:800;margin-top:2px">'+esc(r.nama)+'</div>'+
+      '<div class="st '+(aktif?'Diterima':'Tidak')+'">'+(aktif?'✅ Terdaftar sebagai mustahik (Aktif)':'Terdaftar — status Nonaktif')+'</div>'+
+      '<div class="info"><div>Asnaf</div><div>'+esc(r.asnaf||'-')+'</div><div>Jenis bantuan</div><div>'+esc(r.jenis_bantuan||'-')+'</div><div>Status verifikasi</div><div>'+esc(r.status_verifikasi||'-')+'</div></div>'+
+      '<h4 style="text-align:left;margin-top:16px;color:var(--teal-dark)">Riwayat bantuan diterima</h4>'+
+      (r.riwayat.length?'<div style="overflow-x:auto"><table class="riw"><thead><tr><th>Tanggal</th><th>Program</th><th>Bentuk</th><th class="n">Nominal</th></tr></thead><tbody>'+rows+
+        '</tbody><tfoot><tr><td colspan="3">Total ('+r.jumlah_penyaluran+' kali)</td><td class="n">'+rp(r.total)+'</td></tr></tfoot></table></div>'
+        :'<p style="text-align:left;color:var(--g500);margin-top:6px">Belum ada catatan penyaluran bantuan.</p>')+
+      '<p style="font-size:12px;color:var(--g500);margin-top:12px;text-align:left">Data penyaluran diperbarui berkala oleh BAZNAS Kota Lubuklinggau. Pertanyaan: hubungi kantor BAZNAS (0812-7144-8282).</p>';
+  }catch(err){box.classList.remove('hidden');isi.innerHTML='<p style="color:var(--red)">Gagal terhubung ke server. Coba lagi.</p>';}
+  finally{b.disabled=false;b.textContent='Cek Status';}
+}
 async function cekStatus(){
+  if(document.querySelector('input[name=jenis-cek]:checked').value==='mh')return cekMustahik();
   const no=v('s-no').toUpperCase(),tgl=v('s-tgl');
   const box=document.getElementById('s-hasil'),isi=document.getElementById('s-isi');
   if(!/^PJ-\d{4}-\d{4}$/.test(no)||!tgl){box.classList.remove('hidden');isi.innerHTML='<p style="color:var(--red)">Isi nomor pengajuan (contoh PJ-2611-0001) dan tanggal lahir.</p>';return;}
