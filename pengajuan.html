@@ -122,6 +122,15 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
         <option value="Bantuan Modal Usaha">Modal usaha</option>
         <option value="Zakat Produktif">Usaha produktif / pemberdayaan</option>
         <option value="Bantuan Dakwah">Kegiatan dakwah / keagamaan</option></select></div>
+      <div id="pend-wrap" class="full hidden" style="background:#eef6ff;border:1px solid #bcd6f5;border-radius:8px;padding:12px">
+        <div style="font-weight:800;font-size:13px;color:#1e40af;margin-bottom:8px">🎓 Data Pendidikan</div>
+        <div class="grid">
+          <div class="full"><label>Nama sekolah / kampus</label><input id="lembagaPendidikan" maxlength="120" placeholder="mis. SMAN 1 Lubuklinggau"></div>
+          <div><label>Jenjang</label><select id="jenjangPendidikan"><option value="">— Pilih —</option><option>SD/MI</option><option>SMP/MTs</option><option>SMA/MA/SMK</option><option>D3</option><option>S1</option><option>S2</option><option>Pesantren</option><option>Lainnya</option></select></div>
+          <div><label>Program studi / kelas</label><input id="prodiKelas" maxlength="80" placeholder="mis. Kelas XI IPA"></div>
+          <div><label>Semester <span class="hint">(bila kuliah)</span></label><input id="semester" maxlength="10" inputmode="numeric"></div>
+        </div>
+      </div>
       <div><label>Kebutuhan paling mendesak</label><select id="kebutuhanUtama"><option value="">— Pilih —</option><option>Pangan</option><option>Sandang</option><option>Papan</option><option>Kesehatan</option><option>Pendidikan</option><option>Modal Usaha</option><option>Lainnya</option></select></div>
       <div class="full"><label>Ceritakan singkat kondisi dan alasan mengajukan <span class="req">*</span></label><textarea id="alasan" maxlength="600" placeholder="Contoh: Suami sakit sejak 2025, saya bekerja sebagai buruh cuci dengan 3 anak sekolah…"></textarea></div>
     </div></div>
@@ -203,6 +212,9 @@ async function api(aksi,data){
 function v(id){return (document.getElementById(id).value||'').trim();}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
+document.getElementById('kategoriBantuan').addEventListener('change',()=>{
+  document.getElementById('pend-wrap').classList.toggle('hidden',!/pendidikan|beasiswa/i.test(v('kategoriBantuan')));
+});
 document.querySelectorAll('input[name=diisi]').forEach(r=>r.addEventListener('change',()=>{
   document.getElementById('wakil').classList.toggle('hidden',document.querySelector('input[name=diisi]:checked').value!=='Diwakilkan');
 }));
@@ -240,7 +252,8 @@ document.getElementById('fpj').addEventListener('submit',async ev=>{
   const d={website:v('website'),diisi_oleh:diisi,persetujuan:document.getElementById('persetujuan').checked};
   ['nama','nik','noKK','jenisKelamin','statusKeluarga','tempatLahir','tanggalLahir','alamat','kecamatan','kelurahan','telepon',
    'pekerjaan','penghasilan','totalPengeluaran','jumlahAnggota','jumlahTanggungan','kondisiRumah','kategoriBantuan','kebutuhanUtama','alasan',
-   'nama_pengisi','hubungan_pengisi','hp_pengisi'].forEach(k=>d[k]=v(k));
+   'nama_pengisi','hubungan_pengisi','hp_pengisi','lembagaPendidikan','jenjangPendidikan','prodiKelas','semester'].forEach(k=>d[k]=v(k));
+  if(!/pendidikan|beasiswa/i.test(d.kategoriBantuan)){d.lembagaPendidikan='';d.jenjangPendidikan='';d.prodiKelas='';d.semester='';}
   const s=[];
   if(d.nama.length<3)s.push('Nama lengkap');
   if(!/^\d{16}$/.test(d.nik))s.push('NIK 16 digit');
@@ -302,6 +315,10 @@ async function cekMustahik(){
       (r.riwayat.length?'<div style="overflow-x:auto"><table class="riw"><thead><tr><th>Tanggal</th><th>Program</th><th>Bentuk</th><th class="n">Nominal</th></tr></thead><tbody>'+rows+
         '</tbody><tfoot><tr><td colspan="3">Total ('+r.jumlah_penyaluran+' kali)</td><td class="n">'+rp(r.total)+'</td></tr></tfoot></table></div>'
         :'<p style="text-align:left;color:var(--g500);margin-top:6px">Belum ada catatan penyaluran bantuan.</p>')+
+      (r.barang&&r.barang.length?'<h4 style="text-align:left;margin-top:18px;color:var(--teal-dark)">Barang yang dipinjamkan</h4>'+
+        '<div style="overflow-x:auto"><table class="riw"><thead><tr><th>Barang</th><th>Sejak</th><th>Status</th></tr></thead><tbody>'+
+        r.barang.map(x=>'<tr><td>'+esc(x.jenis)+'</td><td>'+tglId(x.sejak)+'</td><td>'+esc(x.status)+'</td></tr>').join('')+'</tbody></table></div>'+
+        '<p style="text-align:left;font-size:12.5px;background:#fff8e1;border:1px solid #f0d78c;border-radius:8px;padding:8px 10px;margin-top:8px">ℹ️ '+esc(r.catatan_barang)+'</p>':'')+
       '<p style="font-size:12px;color:var(--g500);margin-top:12px;text-align:left">Data penyaluran diperbarui berkala oleh BAZNAS Kota Lubuklinggau. Pertanyaan: hubungi kantor BAZNAS (0812-7144-8282).</p>';
   }catch(err){box.classList.remove('hidden');isi.innerHTML='<p style="color:var(--red)">Gagal terhubung ke server. Coba lagi.</p>';}
   finally{b.disabled=false;b.textContent='Cek Status';}

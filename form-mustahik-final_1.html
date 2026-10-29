@@ -790,9 +790,18 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
           <select id="f-asnaf"><option value="">— Pilih Asnaf —</option><option>Fakir</option><option>Miskin</option><option>Amil</option><option>Muallaf</option><option>Riqab</option><option>Gharim</option><option>Fisabilillah</option><option>Ibnu Sabil</option></select>
         </div>
         <div class="field"><label>Kategori Bantuan</label>
-          <select id="f-katBantuan" onchange="updateSROIPreview()"><option value="">— Pilih —</option><option>Zakat Konsumtif</option><option>Zakat Produktif</option><option>Infak/Sedekah</option><option>Bantuan Pendidikan</option><option>Bantuan Kesehatan</option><option>Bantuan Rumah Layak Huni</option><option>Bantuan Modal Usaha</option><option>Bantuan Dakwah</option></select>
+          <select id="f-katBantuan" onchange="updateSROIPreview();togglePend()"><option value="">— Pilih —</option><option>Zakat Konsumtif</option><option>Zakat Produktif</option><option>Infak/Sedekah</option><option>Bantuan Pendidikan</option><option>Bantuan Kesehatan</option><option>Bantuan Rumah Layak Huni</option><option>Bantuan Modal Usaha</option><option>Bantuan Dakwah</option></select>
         </div>
-        <div class="field"><label>Program BAZNAS</label><input id="f-program" type="text" placeholder="Nama program (jika ada)"/></div>
+        <div class="field"><label>Program BAZNAS</label><input id="f-program" type="text" placeholder="Nama program (jika ada)" oninput="togglePend()"/></div>
+        <div id="pend-wrap" style="display:none;grid-column:1/-1;background:#eef6ff;border:1.5px solid #bcd6f5;border-radius:10px;padding:10px 12px">
+          <div style="font-weight:800;font-size:12px;color:#1e40af;margin-bottom:6px">🎓 DATA PENDIDIKAN (BEASISWA)</div>
+          <div class="grid g2">
+            <div class="field"><label>Nama Sekolah / Kampus</label><input id="f-lembagaPend" type="text" maxlength="120" placeholder="mis. SMAN 1 Lubuklinggau / Universitas …"/></div>
+            <div class="field"><label>Jenjang</label><select id="f-jenjangPend"><option value="">— Pilih —</option><option>SD/MI</option><option>SMP/MTs</option><option>SMA/MA/SMK</option><option>D3</option><option>S1</option><option>S2</option><option>Pesantren</option><option>Lainnya</option></select></div>
+            <div class="field"><label>Program Studi / Kelas</label><input id="f-prodiKelas" type="text" maxlength="80" placeholder="mis. Ekonomi Syariah / Kelas XI IPA"/></div>
+            <div class="field"><label>Semester</label><input id="f-semester" type="text" maxlength="10" placeholder="mis. 3"/></div>
+          </div>
+        </div>
         <div class="field">
           <label>Nilai Bantuan / Modal (Rp)
             <span class="hint">— untuk kalkulasi SROI</span>
@@ -1891,6 +1900,7 @@ function readForm(){
     detailRekomendasi:(()=>{const det=getDetailRekomendasi(d.desil||'',s??'');return det.teks;})(),
     // SROI dihitung saat simpan menggunakan nilai form terkini
     sroiRasio:'', sroiData:'',  // akan diisi di simpanData()
+    ...(()=>{const p=isPendidikan(gv('f-katBantuan'),gv('f-program'));return{lembagaPendidikan:p?gv('f-lembagaPend').trim():'',jenjangPendidikan:p?gv('f-jenjangPend'):'',prodiKelas:p?gv('f-prodiKelas').trim():'',semester:p?gv('f-semester').trim():''};})(),
     tanggalSurvey:gv('f-tglSurvey'),surveyor:gv('f-surveyor').trim(),
     catatanSurvey:gv('f-catatanSurvey').trim(),
     anggotaKeluarga:akReadAll(),
@@ -1914,6 +1924,7 @@ function fillForm(d){
   toggleRek();
   sv('f-asnaf',d.asnaf);sv('f-katBantuan',d.kategoriBantuan);sv('f-program',d.program);
   sv('f-nilaiModal',d.nilaiModal);sv('f-durasiProgram',d.durasiProgram);
+  sv('f-lembagaPend',d.lembagaPendidikan);sv('f-jenjangPend',d.jenjangPendidikan);sv('f-prodiKelas',d.prodiKelas);sv('f-semester',d.semester);togglePend();
   sv('f-statusVerif',d.statusVerifikasi);sv('f-aktif',d.isActive);
   sv('f-pekerjaan',d.pekerjaan);sv('f-penghasilan',d.penghasilan);
   sv('f-jmlAnggota',d.jumlahAnggota);sv('f-pengeluaran',d.totalPengeluaran);
@@ -1965,6 +1976,7 @@ function resetForm(){
   toggleRek();
   if(typeof tampilUser==='function')tampilUser();
   pjAktif='';const pjb=document.getElementById('pj-banner');if(pjb)pjb.style.display='none';
+  if(typeof togglePend==='function')togglePend();
 }
 
 // ── Data Perbankan helpers ──
@@ -2620,6 +2632,7 @@ const COL_MAP={
   'Riwayat Medis':'riwayatMedis','Skor IZN Kesehatan':'iznSkor','Kategori IZN':'iznKategori',
   'Rekomendasi Bantuan':'rekomendasiSingkat','Detail Rekomendasi':'detailRekomendasi',
   'Tanggal Survey':'tanggalSurvey','Surveyor':'surveyor','Catatan Survey':'catatanSurvey',
+  'Lembaga Pendidikan':'lembagaPendidikan','Jenjang Pendidikan':'jenjangPendidikan','Prodi/Kelas':'prodiKelas','Semester':'semester',
   'Anggota Keluarga JSON':'anggotaKeluarga'
 };
 
@@ -3455,7 +3468,7 @@ function pjDetail(no){
       ${baris('Alamat',pjEsc(p.alamat)+'<br>'+pjEsc(p.kelurahan)+', '+pjEsc(p.kecamatan))}${baris('HP/WA',`<a href="https://wa.me/${pjEsc(p.telepon.replace(/^0/,'62').replace(/\D/g,''))}" target="_blank" rel="noopener">${pjEsc(p.telepon)}</a>`)}
       ${baris('Pekerjaan',pjEsc(p.pekerjaan))}${baris('Penghasilan / bulan',fRpPj(p.penghasilan))}${baris('Pengeluaran / bulan',fRpPj(p.totalPengeluaran))}
       ${baris('Anggota serumah / tanggungan',pjEsc(p.jumlahAnggota||'—')+' / '+pjEsc(p.jumlahTanggungan||'—'))}${baris('Kondisi rumah',pjEsc(p.kondisiRumah))}
-      ${baris('Bantuan diajukan',pjEsc(p.kategoriBantuan))}${baris('Kebutuhan mendesak',pjEsc(p.kebutuhanUtama))}${baris('Alasan',pjEsc(p.alasan))}
+      ${baris('Bantuan diajukan',pjEsc(p.kategoriBantuan))}${p.lembagaPendidikan||p.jenjangPendidikan?baris('Pendidikan',[p.lembagaPendidikan,p.jenjangPendidikan,p.prodiKelas,p.semester?'Semester '+p.semester:''].filter(Boolean).map(pjEsc).join(' · ')):''}${baris('Kebutuhan mendesak',pjEsc(p.kebutuhanUtama))}${baris('Alasan',pjEsc(p.alasan))}
       ${baris('Diisi oleh',p.diisi_oleh==='Diwakilkan'?pjEsc(p.nama_pengisi)+' ('+pjEsc(p.hubungan_pengisi)+') · '+pjEsc(p.hp_pengisi):'Yang bersangkutan')}
       ${baris('Persetujuan data',pjEsc(p.persetujuan))}
     </div>
@@ -3519,6 +3532,7 @@ function pjLengkapi(no){
     statusKeluarga:p.statusKeluarga,alamat:p.alamat,kelurahan:p.kelurahan,kecamatan:p.kecamatan,kota:p.kota||'Lubuklinggau',provinsi:'Sumatera Selatan',
     telepon:p.telepon,pekerjaan:p.pekerjaan,penghasilan:p.penghasilan,jumlahAnggota:p.jumlahAnggota,totalPengeluaran:p.totalPengeluaran,
     jumlahTanggungan:p.jumlahTanggungan,kondisiRumah:p.kondisiRumah,kebutuhanUtama:p.kebutuhanUtama,kategoriBantuan:p.kategoriBantuan,
+    lembagaPendidikan:p.lembagaPendidikan,jenjangPendidikan:p.jenjangPendidikan,prodiKelas:p.prodiKelas,semester:p.semester,
     statusVerifikasi:'belum_verifikasi',isActive:'true',
     catatanSurvey:'Dari pengajuan mandiri '+p.no_pengajuan+(p.diisi_oleh==='Diwakilkan'?' (diisikan '+p.nama_pengisi+', '+p.hubungan_pengisi+')':'')+'. Alasan: '+p.alasan});
   tampilUser();
@@ -3603,6 +3617,7 @@ function dokFormulir(d){
       <tr><td class="lbl">Asnaf</td><td class="sep">:</td><td>${b?dCek(DOK_ASNAF,'',4):dV(d.asnaf)}</td></tr>
       <tr><td class="lbl">Jenis Bantuan</td><td class="sep">:</td><td>${b?dCek(DOK_BANTUAN,'',3):dV(d.kategoriBantuan)}</td></tr>
       ${b?'':r('Program / Nilai Bantuan',[d.program,dRp(d.nilaiModal)].filter(Boolean).join(' — '))}
+      ${!b&&(d.lembagaPendidikan||d.jenjangPendidikan)?r('Pendidikan',[d.lembagaPendidikan,d.jenjangPendidikan,d.prodiKelas,d.semester?'Semester '+d.semester:''].filter(Boolean).join(' · ')):''}
       <tr><td class="lbl">Metode Penyaluran</td><td class="sep">:</td><td>${b?dCek(['Tunai','Transfer Bank','Barang/Natura'],'',3):dV(d.metodeSalur)}</td></tr></table>
     ${dDua(r('Bank / No. Rekening',b?'':[d.namaBank,d.noRekening].filter(Boolean).join(' / ')),r('Atas Nama / Hubungan',b?'':[d.namaPemilikRek,d.hubunganRek].filter(Boolean).join(' / ')))}
     <div class="pernyataan">Dengan ini saya menyatakan bahwa data yang saya berikan di atas adalah <b>benar</b> dan dapat dipertanggungjawabkan. Saya bersedia data ini diverifikasi oleh petugas BAZNAS Kota Lubuklinggau dan apabila di kemudian hari terbukti tidak benar, saya bersedia menerima konsekuensi sesuai ketentuan yang berlaku.</div>
@@ -3962,6 +3977,13 @@ function ndOpsiBaca(){
 }
 
 document.querySelectorAll('input[name=dok-jenis]').forEach(r=>r.addEventListener('change',ndOpsiToggle));
+
+// ── Data pendidikan (beasiswa) ──
+function isPendidikan(kat,prog){return /pendidikan|beasiswa/i.test((kat||'')+' '+(prog||''));}
+function togglePend(){
+  const w=document.getElementById('pend-wrap');if(!w)return;
+  w.style.display=isPendidikan(gv('f-katBantuan'),gv('f-program'))?'block':'none';
+}
 
 // ════════════════════════════════════════════
 // INIT
