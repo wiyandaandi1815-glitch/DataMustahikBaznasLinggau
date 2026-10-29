@@ -435,6 +435,21 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
 /* Footer kartu */
 .kc-footer{margin-top:8px;padding-top:5px;border-top:2px solid #000;font-size:8px;color:#555;text-align:center;line-height:1.6;}
 .kc-halaman{font-size:9px;color:#666;text-align:right;margin-top:4px;}
+/* ── Sinkron database & login ── */
+.hdr-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.sync-badge{font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.18);white-space:nowrap}
+.sync-badge.wait{background:#f5b041;color:#4a3000}
+.sync-badge.off{background:#e74c3c;color:#fff}
+.btn-logout{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;display:none;align-items:center;gap:4px}
+.btn-logout:hover{background:rgba(255,255,255,.28)}
+#login-overlay{position:fixed;inset:0;z-index:2000;background:linear-gradient(135deg,#0a6654,#0d7c66);display:none;align-items:center;justify-content:center;padding:16px}
+.login-card{background:#fff;border-radius:14px;max-width:380px;width:100%;padding:28px 24px;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.login-card h2{font-size:18px;color:#0a6654;margin-bottom:4px}
+.login-card p{font-size:12.5px;color:#666;margin-bottom:16px;line-height:1.5}
+.login-card input{width:100%;font-size:16px;letter-spacing:2px;text-align:center;padding:10px;margin-bottom:10px}
+.login-card button{width:100%;justify-content:center}
+#login-msg{font-size:12.5px;min-height:18px;margin-top:10px;text-align:center}
+@media(max-width:640px){.app-header{height:auto;min-height:62px;padding:8px 16px;flex-wrap:wrap;gap:6px}}
 </style>
 </head>
 <body>
@@ -451,8 +466,24 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
       <div class="logo-sub">Manajemen Data Mustahik · IZN 2024</div>
     </div>
   </div>
-  <span id="hdr-count" style="font-size:12px;opacity:.8;"></span>
+  <div class="hdr-right">
+    <span id="sync-badge" class="sync-badge">☁</span>
+    <span id="hdr-count" style="font-size:12px;opacity:.8;"></span>
+    <span id="hdr-user" style="font-size:12px;font-weight:700"></span>
+    <button id="btn-logout" class="btn-logout" onclick="dbLogout()" type="button">Keluar</button>
+  </div>
 </header>
+
+<!-- LOGIN -->
+<div id="login-overlay">
+  <form class="login-card" onsubmit="return dbLogin(event)" autocomplete="off">
+    <h2>Data Mustahik BAZNAS</h2>
+    <p>Kota Lubuklinggau — masukkan <strong>kode akses surveyor</strong> yang diberikan Bidang Perencanaan, Keuangan &amp; Pelaporan.</p>
+    <input id="login-kode" type="password" placeholder="Kode akses" autocomplete="off"/>
+    <button id="login-btn" class="btn btn-primary" type="submit">Masuk</button>
+    <div id="login-msg"></div>
+  </form>
+</div>
 
 <!-- TAB BAR -->
 <nav class="tab-bar">
@@ -548,6 +579,7 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
             <th>No</th>
             <th>ID Mustahik</th>
             <th>Nama Mustahik</th>
+            <th>Anggota</th>
             <th>NIK</th>
             <th>Asnaf</th>
             <th>Kel. Bantuan</th>
@@ -622,7 +654,7 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
     <div class="card-body">
       <div class="grid g2">
         <div class="field c2"><label>Nama Lengkap <span class="req">*</span></label><input id="f-nama" type="text" placeholder="Nama lengkap sesuai KTP"/></div>
-        <div class="field"><label>NIK <span class="hint">16 digit</span></label><input id="f-nik" type="text" maxlength="20" placeholder="Nomor Induk Kependudukan" class="mono"/></div>
+        <div class="field"><label>NIK <span style="color:#c0392b">*</span> <span class="hint">16 digit, wajib (kunci database)</span></label><input id="f-nik" type="text" inputmode="numeric" maxlength="16" placeholder="Nomor Induk Kependudukan" class="mono"/></div>
         <div class="field"><label>No. KK</label><input id="f-noKK" type="text" maxlength="20" placeholder="Nomor Kartu Keluarga" class="mono"/></div>
         <div class="field"><label>No. KTP <span class="hint">jika berbeda NIK</span></label><input id="f-noKTP" type="text" maxlength="20" placeholder="Nomor KTP" class="mono"/></div>
         <div class="field"><label>Jenis Kelamin</label><select id="f-jk"><option value="">— Pilih —</option><option>Laki-laki</option><option>Perempuan</option></select></div>
@@ -928,7 +960,7 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
 <div id="t-import" class="tab-pane">
 <div class="main">
   <div class="pg-title">Import / Rollback Data</div>
-  <div class="pg-sub">Pulihkan data dari file Excel yang sebelumnya sudah di-export. Kolom akan dicocokkan otomatis. Data yang sudah ada <strong>tidak</strong> akan terhapus — import bersifat <em>append</em> (tambah). Gunakan tombol "Hapus Semua lalu Import" untuk rollback penuh.</div>
+  <div class="pg-sub">Pulihkan data dari file Excel yang sebelumnya sudah di-export. Kolom akan dicocokkan otomatis. Setiap baris dikirim ke <strong>database terpusat</strong> dengan kunci <strong>NIK</strong>: NIK yang sudah ada akan <em>diperbarui</em>, NIK baru akan <em>ditambahkan</em>. Baris tanpa NIK 16 digit dilewati. Tidak ada data di database yang dihapus oleh proses impor.</div>
 
   <div class="card">
     <div class="card-header" style="background:var(--blue)"><div class="sec-num" style="background:rgba(255,255,255,.2)">📥</div><h2>UPLOAD FILE EXCEL</h2></div>
@@ -954,11 +986,11 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
       <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
         <button class="btn btn-blue" id="btn-do-import" onclick="doImport(false)" style="display:none">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Import (Tambahkan ke Data Existing)
+          Import → Kirim ke Database (upsert NIK)
         </button>
         <button class="btn btn-danger" id="btn-rollback" onclick="konfRollback()" style="display:none">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-          Hapus Semua lalu Import (Rollback Penuh)
+          Kosongkan Cache Lokal lalu Import
         </button>
         <button class="btn btn-ghost" onclick="resetImport()">
           ↺ Reset Upload
@@ -971,14 +1003,14 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
   <div class="card">
     <div class="card-header"><div class="sec-num">?</div><h2>PANDUAN ROLLBACK</h2></div>
     <div class="card-body" style="font-size:13px;color:var(--g700);line-height:1.9">
-      <p style="margin-bottom:10px">Skenario rollback terjadi ketika Anda membuka aplikasi kembali dan tabel kosong, karena data di <em>localStorage</em> browser hilang (misalnya setelah berpindah perangkat, membersihkan cache, atau menggunakan mode Incognito).</p>
+      <p style="margin-bottom:10px">Sejak tersambung database terpusat, data tidak lagi hilang saat berganti perangkat atau membersihkan cache — cukup masuk dengan kode akses dan data dimuat dari database. Impor Excel kini dipakai untuk <strong>kirim massal</strong> (misalnya data lama hasil export) ke database.</p>
       <p><strong>Langkah Rollback:</strong></p>
       <ol style="margin-left:20px;margin-top:6px;line-height:2.2">
         <li>Cari file Excel hasil export sebelumnya (format: <code style="background:var(--g100);padding:1px 6px;border-radius:4px;font-family:monospace">DataMustahik_BAZNAS_LLG_YYYY-MM-DD.xlsx</code>)</li>
         <li>Klik tab <strong>Import / Rollback</strong> di atas</li>
         <li>Upload file Excel tersebut ke area di atas</li>
         <li>Periksa pratinjau data (total baris, valid, duplikat)</li>
-        <li>Klik <strong>"Hapus Semua lalu Import"</strong> untuk rollback penuh, atau <strong>"Import Tambahkan"</strong> jika sudah ada data yang ingin dipertahankan</li>
+        <li>Klik <strong>"Import → Kirim ke Database"</strong>; data ber-NIK sama akan diperbarui (upsert), bukan diduplikasi</li>
         <li>Data akan langsung muncul di tabel Daftar Mustahik ✅</li>
       </ol>
       <div style="background:var(--gold-light);border:1.5px solid #e8d7a3;border-radius:var(--radius);padding:10px 14px;margin-top:14px;font-size:12px;color:#7c5c00;">
@@ -1130,7 +1162,7 @@ function migrateExistingData(){
   const counters=getCounters();
   let migrated=0;
   dataList.forEach(function(d){
-    if(!d.mustahikId){
+    if(!d.mustahikId&&!d._pending){
       const period=getPeriodFromDate(d.createdAt);
       counters[period]=(counters[period]||0)+1;
       d.mustahikId='1674-'+period+'-'+formatCounter(counters[period]);
@@ -1844,6 +1876,7 @@ function resetForm(){
   if(sroiContent)sroiContent.style.display='none';
   akReset();
   toggleRek();
+  if(typeof tampilUser==='function')tampilUser();
 }
 
 // ── Data Perbankan helpers ──
@@ -1875,6 +1908,7 @@ function bukaFormBaru(){
 function simpanData(){
   const d=readForm();
   if(!d.nama){toast('Nama mustahik wajib diisi!',true);return;}
+  if(!/^\d{16}$/.test(d.nik)){toast('NIK wajib diisi 16 digit angka!',true);document.getElementById('f-nik').focus();return;}
   if(!d.asnaf){toast('Kategori Asnaf wajib dipilih!',true);return;}
   if(d.metodeSalur==='Transfer Bank'){
     if(!d.namaBank){toast('Nama Bank wajib diisi untuk penyaluran via transfer!',true);return;}
@@ -1883,6 +1917,9 @@ function simpanData(){
     if(normNama(d.namaPemilikRek)!==normNama(d.nama)&&!d.hubunganRek){toast('Nama pemilik rekening berbeda — isi Hubungan Pemilik Rekening!',true);return;}
   }
   const eid=document.getElementById('edit-id').value;
+  {const dup=dataList.find(x=>x.nik===d.nik&&x.id!=eid);
+   if(dup){toast('NIK '+d.nik+' sudah terdaftar atas nama '+dup.nama+' — gunakan tombol Edit pada data tersebut.',true);return;}}
+  let nikLama='';
   // Hitung SROI dan simpan bersama data
   if(d.nilaiModal&&d.kategoriBantuan){
     const sr=hitungSROI(d);
@@ -1900,7 +1937,9 @@ function simpanData(){
     if(idx>=0){
       d.id=dataList[idx].id;
       d.createdAt=dataList[idx].createdAt;
-      d.mustahikId=dataList[idx].mustahikId||generateMustahikId();
+      d.mustahikId=dataList[idx].mustahikId||'';
+      nikLama=dataList[idx].nik||'';
+      d._sinkron=dataList[idx]._sinkron;
       // Hitung ulang rekomendasi saat edit (data ekonomi/kesehatan mungkin berubah)
       const rekBaru=getRekomendasiBantuan(d.desil,d.iznSkor);
       const detBaru=getDetailRekomendasi(d.desil,d.iznSkor);
@@ -1910,11 +1949,13 @@ function simpanData(){
     }
     toast('✓ Data mustahik berhasil diperbarui!');
   }else{
-    d.mustahikId=generateMustahikId();
+    d.mustahikId='';  // ID dibuat terpusat oleh server
     dataList.push(d);
-    toast('✓ Data mustahik berhasil disimpan! ID: '+d.mustahikId);
+    toast(navigator.onLine?'✓ Data disimpan — mengirim ke database…':'✓ Data disimpan di perangkat — akan dikirim otomatis saat online.');
   }
+  d._pending=true;
   saveStore();applyFilter();updateHeader();
+  dbEnqueueSimpan([{rec:d,nikLama}]);
   resetForm();
   switchTab('t-daftar',document.querySelectorAll('.tab-btn')[0]);
   setTimeout(()=>window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}),200);
@@ -1933,8 +1974,10 @@ function editData(id){
 }
 
 function hapusBaris(id){
-  showKonfirm('⚠️','Hapus Data Ini?','Data mustahik ini akan dihapus permanen dan tidak bisa dikembalikan.',()=>{
+  const target=dataList.find(x=>x.id==id);
+  showKonfirm('⚠️','Hapus Data Ini?','Data mustahik ini akan ditandai DIHAPUS di database (riwayat tetap tersimpan di Google Sheet) dan hilang dari daftar semua surveyor.',()=>{
     dataList=dataList.filter(x=>x.id!=id);
+    if(target)dbEnqueueHapus(target.nik);
     saveStore();applyFilter();updateHeader();updateCetakInfo();
     toast('Data berhasil dihapus.');
   },'Hapus','btn-danger');
@@ -1942,15 +1985,18 @@ function hapusBaris(id){
 
 function konfHapusSemua(){
   if(!dataList.length){toast('Tidak ada data.',true);return;}
-  showKonfirm('🗑️','Hapus SEMUA Data?',`Seluruh ${dataList.length} data mustahik akan dihapus. Pastikan sudah export Excel terlebih dahulu!`,()=>{
+  const nq=qGet().length;
+  showKonfirm('🗑️','Kosongkan Cache Lokal?',`Seluruh ${dataList.length} data di PERANGKAT INI saja yang dihapus — data di database terpusat TIDAK tersentuh dan akan dimuat ulang saat online.`+(nq?` Perhatian: ${nq} data yang belum terkirim tetap disimpan di antrian.`:''),()=>{
     dataList=[];saveStore();applyFilter();updateHeader();
-    toast('Semua data berhasil dihapus.');
-  },'Hapus Semua','btn-danger');
+    toast('Cache lokal dikosongkan.');
+    dbMuatDaftar(true);
+  },'Kosongkan Cache','btn-danger');
 }
 
 function toggleAktif(id){
   const d=dataList.find(x=>x.id==id);if(!d)return;
   d.isActive=d.isActive==='true'?'false':'true';
+  if(/^\d{16}$/.test(d.nik||'')){d._pending=!d.mustahikId;dbEnqueueSimpan([{rec:d}]);}
   saveStore();applyFilter();
   toast(d.isActive==='true'?'Mustahik diaktifkan kembali.':'Mustahik dinonaktifkan.');
 }
@@ -2178,7 +2224,7 @@ function renderTable(){
     <tr id="tr-${d.id}" class="${d._selected?'row-selected':''}">
       <td class="chk-col"><input type="checkbox" class="row-chk" data-id="${d.id}" ${d._selected?'checked':''} onchange="onRowCheck(this,${d.id})"/></td>
       <td>${start+i+1}</td>
-      <td class="mono" style="font-size:11.5px;color:var(--teal-dark);font-weight:700;letter-spacing:.5px">${d.mustahikId||'—'}</td>
+      <td class="mono" style="font-size:11.5px;color:var(--teal-dark);font-weight:700;letter-spacing:.5px">${d.mustahikId||(d._pending?'⏳ menunggu':'—')}</td>
       <td style="font-weight:700;max-width:180px;overflow:hidden;text-overflow:ellipsis">${d.nama}</td>
       <td style="text-align:center">${d.anggotaKeluarga&&d.anggotaKeluarga.length?`<span class="badge b-teal">${d.anggotaKeluarga.length} org</span>`:'—'}</td>
       <td class="mono" style="font-size:11.5px">${d.nik||'—'}</td>
@@ -2512,9 +2558,11 @@ function handleFileImport(file){
       });
       importBuffer.push(obj);valid++;
     });
+    const nikSalah=importBuffer.filter(d=>!/^\d{16}$/.test(d.nik||''));
+    skip+=nikSalah.length;valid-=nikSalah.length;
+    nikSalah.forEach(d=>logs.push(`${d.nama}: NIK "${d.nik||'-'}" bukan 16 digit — dilewati`));
     const dupNik=importBuffer.filter(d=>d.nik&&dataList.some(x=>x.nik===d.nik));
-    skip+=dupNik.length;
-    dupNik.forEach(d=>logs.push(`NIK ${d.nik} (${d.nama}) sudah ada — akan dilewati saat import tambah`));
+    dupNik.forEach(d=>logs.push(`NIK ${d.nik} (${d.nama}) sudah ada — akan DIPERBARUI (upsert)`));
     document.getElementById('imp-total').textContent=raw.length;
     document.getElementById('imp-valid').textContent=valid;
     document.getElementById('imp-skip').textContent=skip;
@@ -2529,24 +2577,25 @@ function handleFileImport(file){
 
 function doImport(replace){
   if(!importBuffer.length){toast('Tidak ada data untuk diimport.',true);return;}
-  if(replace){dataList=[];}
-  const existing_niks=new Set(dataList.map(d=>d.nik).filter(Boolean));
-  let added=0;
+  if(replace){dataList=dataList.filter(x=>qGet().some(q=>q.nik===x.nik));}  // hanya cache lokal; data menunggu dipertahankan
+  let added=0,updated=0;const kirim=[];
   importBuffer.forEach(d=>{
-    if(!replace&&d.nik&&existing_niks.has(d.nik))return;
-    d.id=Date.now()+Math.random();
-    dataList.push(d);added++;
+    if(!/^\d{16}$/.test(d.nik||''))return;
+    const idx=dataList.findIndex(x=>x.nik===d.nik);
+    if(idx>=0){d.id=dataList[idx].id;d.mustahikId=dataList[idx].mustahikId||d.mustahikId||'';d._sinkron=dataList[idx]._sinkron;dataList[idx]=d;updated++;}
+    else{d.id=Date.now()+Math.random();dataList.push(d);added++;}
+    d._pending=true;kirim.push({rec:d});
   });
   saveStore();
-  migrateExistingData();  // pastikan data import juga punya mustahikId
   applyFilter();updateHeader();
-  toast(`✓ ${added} data berhasil diimport!`);
+  if(kirim.length)dbEnqueueSimpan(kirim);
+  toast(`✓ ${added} data baru + ${updated} diperbarui — dikirim ke database (upsert NIK).`);
   resetImport();
   switchTab('t-daftar',document.querySelectorAll('.tab-btn')[0]);
 }
 
 function konfRollback(){
-  showKonfirm('🔄','Rollback Penuh?',`Seluruh data yang ada (${dataList.length} mustahik) akan dihapus dan digantikan dengan ${importBuffer.length} data dari file Excel. Lanjutkan?`,()=>{
+  showKonfirm('🔄','Kosongkan Cache lalu Import?',`Cache lokal perangkat ini (${dataList.length} mustahik) dikosongkan, lalu ${importBuffer.length} baris dari file Excel dikirim ke database (upsert NIK). Data di database TIDAK dihapus. Lanjutkan?`,()=>{
     closeModal('modal-konfirm');doImport(true);
   },'Rollback Sekarang','btn-danger');
 }
@@ -3082,6 +3131,184 @@ function exportPdfSelectedData(){
 }
 
 // ════════════════════════════════════════════
+// SINKRON DATABASE TERPUSAT (Google Sheet + Apps Script)
+// localStorage = cache & antrian offline; sumber kebenaran = database
+// ════════════════════════════════════════════
+const DB_URL='https://script.google.com/macros/s/AKfycbwcFWag2lgTgaaV5lKBWU_YDrhSHEAgPgXyrfFR9tq6uRyzrg5t_158fHzSBX6183me/exec';
+const QUEUE_KEY='baznas_antrian_v1';
+const SS_TOKEN='baznas_token', SS_NAMA='baznas_surveyor';
+const NIK_RE=/^\d{16}$/;
+let _flushing=false, _dbLoaded=false;
+
+function ssGet(k){try{return sessionStorage.getItem(k);}catch{return null;}}
+function ssSet(k,v){try{sessionStorage.setItem(k,v);}catch{}}
+function ssDel(k){try{sessionStorage.removeItem(k);}catch{}}
+function getToken(){return ssGet(SS_TOKEN)||'';}
+
+async function dbApi(aksi,data,tokenOverride){
+  const res=await fetch(DB_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify({aksi,token:tokenOverride||getToken(),data:data===undefined?null:data}),redirect:'follow'});
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  return res.json();
+}
+
+// ── Antrian offline ──
+function qGet(){try{return JSON.parse(lsGet(QUEUE_KEY)||'[]');}catch{return[];}}
+function qSave(q){lsSet(QUEUE_KEY,JSON.stringify(q));updateSyncBadge();}
+function bersihRec(d){const c={};Object.keys(d).forEach(k=>{if(k[0]!=='_')c[k]=d[k];});return c;}
+function dbEnqueueSimpan(list){
+  const q=qGet();
+  list.forEach(({rec,nikLama})=>{
+    const r=bersihRec(rec);
+    let nl=(nikLama&&nikLama!==r.nik)?nikLama:'';
+    // gabungkan dengan item tertunda untuk NIK yang sama (atau NIK lama)
+    for(let i=q.length-1;i>=0;i--){
+      const it=q[i];
+      if(it.aksi==='simpan'&&(it.nik===r.nik||(nl&&it.nik===nl))){
+        if(it.nik===nl)nl=it.data.nik_lama||'';  // data lama belum pernah sampai server
+        q.splice(i,1);
+      }else if(it.aksi==='hapus'&&it.nik===r.nik){q.splice(i,1);}
+    }
+    if(nl)r.nik_lama=nl;
+    q.push({aksi:'simpan',nik:r.nik,data:r,t:Date.now()});
+  });
+  qSave(q);dbFlush();
+}
+function dbEnqueueHapus(nik){
+  if(!NIK_RE.test(nik||''))return;
+  const q=qGet().filter(it=>it.nik!==nik);
+  q.push({aksi:'hapus',nik,data:{nik},t:Date.now()});
+  qSave(q);dbFlush();
+}
+
+async function dbFlush(){
+  if(_flushing||!getToken())return;
+  _flushing=true;updateSyncBadge();
+  try{
+    while(true){
+      const q=qGet();if(!q.length)break;
+      const head=q[0];
+      // kirim simpan secara berkelompok (maks 50) untuk impor massal
+      let batch=[head];
+      if(head.aksi==='simpan'){batch=[];for(const it of q){if(it.aksi!=='simpan'||batch.length>=50)break;batch.push(it);}}
+      let r;
+      try{
+        r=head.aksi==='simpan'?await dbApi('simpan',batch.map(b=>b.data)):await dbApi('hapus',head.data);
+      }catch(err){setSyncState('offline');break;}   // jaringan gagal → coba lagi nanti
+      if(!r.ok&&r.kode==='AUTH'){toast('Kode akses ditolak server — silakan masuk ulang.',true);dbLogout(true);break;}
+      if(!r.ok&&r.kode==='SIBUK'){break;}
+      if(!r.ok&&!r.hasil){toast('Server: '+(r.pesan||'gagal')+' — data tetap di antrian.',true);break;}
+      // hasil per NIK
+      const sent=new Set(batch.map(b=>b.t));
+      const ditolak=[];
+      (r.hasil||[]).forEach(h=>{
+        const d=dataList.find(x=>x.nik===h.nik);
+        if(h.ok&&d&&head.aksi==='simpan'){
+          if(h.mustahikId)d.mustahikId=h.mustahikId;
+          d._pending=false;d._sinkron=true;d._diubahPada=h.diubah_pada||d._diubahPada;
+        }else if(!h.ok){ditolak.push(h.nik+': '+h.pesan);if(d)d._pending=false;}
+      });
+      qSave(qGet().filter(it=>!sent.has(it.t)));
+      if(ditolak.length){toast('Ditolak server: '+ditolak.slice(0,2).join(' | '),true);console.warn('[DB] ditolak',ditolak);}
+      saveStore();
+      setSyncState('online');
+    }
+  }finally{
+    _flushing=false;updateSyncBadge();
+    if(typeof applyFilter==='function')applyFilter();
+  }
+}
+
+// ── Muat daftar dari database ──
+async function dbMuatDaftar(silent){
+  if(!getToken())return;
+  let r;
+  try{r=await dbApi('daftar');}catch(err){setSyncState('offline');if(!silent)toast('Offline — menampilkan data cache lokal.',true);return;}
+  if(!r.ok){if(r.kode==='AUTH'){dbLogout(true);}else toast(r.pesan,true);return;}
+  setSyncState('online');
+  const q=qGet();
+  const tertunda=new Map(q.filter(x=>x.aksi==='simpan').map(x=>[x.nik,x]));
+  const hapusTertunda=new Set(q.filter(x=>x.aksi==='hapus').map(x=>x.nik));
+  const dihapusServer=new Set(r.dihapus_nik||[]);
+  const lama=dataList;
+  const baru=r.data.filter(d=>!hapusTertunda.has(d.nik)&&!tertunda.has(d.nik)).map(d=>({...d,_sinkron:true,_pending:false}));
+  // data yang masih di antrian: pakai versi lokal
+  lama.filter(d=>tertunda.has(d.nik)).forEach(d=>baru.push(d));
+  // data lokal lama yang belum pernah terkirim (mis. input sebelum aplikasi tersambung database)
+  const nikServer=new Set(r.data.map(d=>d.nik));
+  const lokalSaja=lama.filter(d=>!d._sinkron&&!tertunda.has(d.nik)&&!hapusTertunda.has(d.nik)&&!nikServer.has(d.nik)&&!dihapusServer.has(d.nik));
+  lokalSaja.forEach(d=>baru.push(d));
+  dataList=baru;dataList.forEach(d=>{d._selected=false;});
+  saveStore();applyFilter();updateHeader();
+  _dbLoaded=true;
+  if(lokalSaja.length){
+    const valid=lokalSaja.filter(d=>NIK_RE.test(d.nik||''));
+    const msg=`Ada ${lokalSaja.length} data di perangkat ini yang belum ada di database`+
+      (valid.length<lokalSaja.length?` (${lokalSaja.length-valid.length} di antaranya NIK belum 16 digit — perbaiki lewat Edit)`:'')+
+      `. Kirim ${valid.length} data ber-NIK valid ke database sekarang?`;
+    if(valid.length)showKonfirm('☁️','Kirim Data Lokal?',msg,()=>{valid.forEach(d=>d._pending=true);dbEnqueueSimpan(valid.map(d=>({rec:d})));},'Kirim Sekarang','btn-primary');
+    else toast(msg,true);
+  }
+  if(!silent)toast(`✓ ${r.data.length} data dimuat dari database.`);
+}
+
+// ── Indikator ──
+let _syncState='';
+function setSyncState(s){_syncState=s;updateSyncBadge();}
+function updateSyncBadge(){
+  const el=document.getElementById('sync-badge');if(!el)return;
+  const n=qGet().length, off=!navigator.onLine||_syncState==='offline';
+  el.className='sync-badge '+(n?'wait':off?'off':'ok');
+  el.textContent=n?`⏳ ${n} data menunggu terkirim${_flushing?'…':''}`:off?'⚠ Offline — memakai cache':'☁ Tersinkron';
+}
+
+// ── Login / keluar ──
+function tampilLogin(show){
+  document.getElementById('login-overlay').style.display=show?'flex':'none';
+  if(show)setTimeout(()=>document.getElementById('login-kode').focus(),50);
+}
+async function dbLogin(ev){
+  if(ev)ev.preventDefault();
+  const inp=document.getElementById('login-kode'),msg=document.getElementById('login-msg'),btn=document.getElementById('login-btn');
+  const kode=inp.value.trim();
+  if(!kode){msg.textContent='Masukkan kode akses.';return false;}
+  btn.disabled=true;msg.style.color='';msg.textContent='Memeriksa kode akses…';
+  try{
+    const r=await dbApi('cek',null,kode);
+    if(!r.ok||r.peran!=='surveyor'){msg.style.color='var(--red,#c0392b)';msg.textContent=r.peran==='excel'?'Token EXCEL tidak bisa dipakai untuk masuk aplikasi.':(r.pesan||'Kode akses ditolak.');return false;}
+    ssSet(SS_TOKEN,kode);ssSet(SS_NAMA,r.nama);
+    inp.value='';msg.textContent='';
+    tampilLogin(false);tampilUser();
+    toast('Selamat datang, '+r.nama+'.');
+    await dbFlush();await dbMuatDaftar(true);
+  }catch(err){
+    msg.style.color='var(--red,#c0392b)';msg.textContent='Tidak dapat terhubung ke server. Periksa koneksi internet lalu coba lagi.';
+  }finally{btn.disabled=false;}
+  return false;
+}
+function dbLogout(paksa){
+  const go=()=>{ssDel(SS_TOKEN);ssDel(SS_NAMA);tampilUser();tampilLogin(true);};
+  if(paksa===true){go();return;}
+  const n=qGet().length;
+  showKonfirm('🚪','Keluar?',n?`Masih ada ${n} data menunggu terkirim. Data tetap aman di antrian perangkat ini dan akan dikirim saat Anda masuk lagi.`:'Anda akan keluar dari aplikasi.',go,'Keluar','btn-danger');
+}
+function tampilUser(){
+  const nm=ssGet(SS_NAMA)||'';
+  const el=document.getElementById('hdr-user');if(el)el.textContent=nm?('👤 '+nm):'';
+  const b=document.getElementById('btn-logout');if(b)b.style.display=nm?'inline-flex':'none';
+  const sv=document.getElementById('f-surveyor');if(sv&&!sv.value&&nm)sv.value=nm;
+}
+
+function dbInit(){
+  window.addEventListener('online',()=>{setSyncState('online');dbFlush();});
+  window.addEventListener('offline',()=>setSyncState('offline'));
+  setInterval(()=>{if(navigator.onLine&&qGet().length)dbFlush();},30000);
+  updateSyncBadge();tampilUser();
+  if(!getToken()){tampilLogin(true);return;}
+  dbFlush().then(()=>dbMuatDaftar(true));
+}
+
+// ════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════
 loadStore();
@@ -3091,6 +3318,7 @@ renderPenyakitGrid();
 applyFilter();
 document.getElementById('f-kota').value='Lubuklinggau';
 document.getElementById('f-provinsi').value='Sumatera Selatan';
+dbInit();
 </script>
 </body>
 </html>
