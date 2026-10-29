@@ -146,6 +146,17 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
 /* BADGES */
 .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
 .b-green{background:#d1fae5;color:#065f46;}
+.b-gold{background:#fff4d6;color:#7c5c00;}
+/* Pengajuan Masuk: tabel sendiri, tidak memakai kolom sticky tabel utama */
+table.pj-tbl{min-width:900px;}
+table.pj-tbl th,table.pj-tbl td{position:static!important;left:auto!important;min-width:0!important;max-width:none!important;width:auto!important;text-align:left!important;border-right:0!important;font-family:inherit!important;letter-spacing:normal!important;font-size:12.5px;}
+table.pj-tbl td{background:#fff!important;color:var(--g700)!important;font-weight:400;}
+table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
+.pj-dl{display:grid;grid-template-columns:40% 1fr;gap:8px;padding:5px 0;border-bottom:1px solid var(--g100);}
+.pj-dl>div:first-child{color:var(--g500);}
+.pj-dl>div:last-child{font-weight:600;word-break:break-word;}
+.pj-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:560px){.pj-dl{grid-template-columns:1fr;gap:0}.pj-2col{grid-template-columns:1fr}}
 .b-yellow{background:#fef3c7;color:#92400e;}
 .b-red{background:#fee2e2;color:#991b1b;}
 .b-gray{background:var(--g100);color:var(--g500);}
@@ -495,6 +506,10 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
     Input / Edit
   </button>
+  <button class="tab-btn" id="tab-pj-btn" onclick="switchTab('t-pengajuan',this);pjMuat(true)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
+    Pengajuan Masuk <span id="pj-count" class="badge b-red" style="display:none;margin-left:4px">0</span>
+  </button>
   <button class="tab-btn" id="tab-import-btn" onclick="switchTab('t-import',this)">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
     Import / Rollback
@@ -633,6 +648,7 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
 <div id="t-form" class="tab-pane">
 <div class="main">
   <div id="form-title" class="pg-title">Tambah Mustahik Baru</div>
+  <div id="pj-banner" style="display:none;background:#fff8e1;border:1.5px solid #f0d78c;border-radius:10px;padding:10px 14px;font-size:13px;margin:6px 0 10px"></div>
   <div class="pg-sub">Lengkapi data di bawah ini. Field <span style="color:var(--red)">*</span> wajib diisi.</div>
 
   <div class="action-bar">
@@ -957,6 +973,26 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
 </div>
 
 <!-- ════ TAB 3: IMPORT ════ -->
+<div id="t-pengajuan" class="tab-pane">
+<div class="main">
+  <div class="pg-title">Pengajuan Masuk</div>
+  <div class="pg-sub">Pengajuan mandiri dari calon mustahik melalui formulir publik <a href="pengajuan.html" target="_blank" rel="noopener"><strong>pengajuan.html</strong></a>. Verifikasi, jadwalkan kunjungan, lalu <strong>Lengkapi &amp; Terima</strong> untuk memindahkannya ke Daftar Mustahik.</div>
+  <div class="card"><div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <select id="pj-filter" onchange="pjRender()" style="max-width:220px">
+      <option value="aktif">Perlu tindak lanjut</option><option value="Menunggu verifikasi">Menunggu verifikasi</option>
+      <option value="Dijadwalkan kunjungan">Dijadwalkan kunjungan</option><option value="Diterima">Diterima</option>
+      <option value="Tidak memenuhi syarat">Tidak memenuhi syarat</option><option value="">Semua</option></select>
+    <input id="pj-cari" type="text" placeholder="Cari no/nama/NIK/kelurahan" oninput="pjRender()" style="max-width:260px"/>
+    <button class="btn btn-outline" type="button" onclick="pjMuat()">↻ Muat ulang</button>
+    <span id="pj-status" style="font-size:12px;color:var(--g500);margin-left:auto"></span>
+  </div></div>
+  <div class="card"><div class="tbl-scroll"><table class="pj-tbl">
+    <thead><tr><th>No Pengajuan</th><th>Tanggal</th><th>Nama</th><th>Kelurahan / Kecamatan</th><th>Bantuan</th><th>HP/WA</th><th>Status</th><th>Aksi</th></tr></thead>
+    <tbody id="pj-tbody"><tr><td colspan="8" style="text-align:center;padding:24px;color:var(--g500)">Memuat…</td></tr></tbody>
+  </table></div></div>
+</div>
+</div>
+
 <div id="t-import" class="tab-pane">
 <div class="main">
   <div class="pg-title">Import / Rollback Data</div>
@@ -1022,6 +1058,14 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
 </div>
 
 <!-- ════ MODAL DETAIL ════ -->
+<div class="modal-overlay" id="modal-pj">
+  <div class="modal">
+    <div class="modal-hdr"><h3 id="pj-modal-title">Pengajuan</h3><button class="x-btn" onclick="closeModal('modal-pj')">×</button></div>
+    <div class="modal-body" id="pj-modal-body"></div>
+    <div class="modal-ftr" id="pj-modal-ftr" style="flex-wrap:wrap"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-detail">
   <div class="modal">
     <div class="modal-hdr">
@@ -1877,6 +1921,7 @@ function resetForm(){
   akReset();
   toggleRek();
   if(typeof tampilUser==='function')tampilUser();
+  pjAktif='';const pjb=document.getElementById('pj-banner');if(pjb)pjb.style.display='none';
 }
 
 // ── Data Perbankan helpers ──
@@ -1955,7 +2000,7 @@ function simpanData(){
   }
   d._pending=true;
   saveStore();applyFilter();updateHeader();
-  dbEnqueueSimpan([{rec:d,nikLama}]);
+  dbEnqueueSimpan([{rec:d,nikLama,noPengajuan:eid?'':pjAktif}]);
   resetForm();
   switchTab('t-daftar',document.querySelectorAll('.tab-btn')[0]);
   setTimeout(()=>window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}),200);
@@ -3158,18 +3203,21 @@ function qSave(q){lsSet(QUEUE_KEY,JSON.stringify(q));updateSyncBadge();}
 function bersihRec(d){const c={};Object.keys(d).forEach(k=>{if(k[0]!=='_')c[k]=d[k];});return c;}
 function dbEnqueueSimpan(list){
   const q=qGet();
-  list.forEach(({rec,nikLama})=>{
+  list.forEach(({rec,nikLama,noPengajuan})=>{
     const r=bersihRec(rec);
     let nl=(nikLama&&nikLama!==r.nik)?nikLama:'';
+    let np=noPengajuan||'';
     // gabungkan dengan item tertunda untuk NIK yang sama (atau NIK lama)
     for(let i=q.length-1;i>=0;i--){
       const it=q[i];
       if(it.aksi==='simpan'&&(it.nik===r.nik||(nl&&it.nik===nl))){
         if(it.nik===nl)nl=it.data.nik_lama||'';  // data lama belum pernah sampai server
+        if(!np&&it.data.no_pengajuan)np=it.data.no_pengajuan;
         q.splice(i,1);
       }else if(it.aksi==='hapus'&&it.nik===r.nik){q.splice(i,1);}
     }
     if(nl)r.nik_lama=nl;
+    if(np)r.no_pengajuan=np;
     q.push({aksi:'simpan',nik:r.nik,data:r,t:Date.now()});
   });
   qSave(q);dbFlush();
@@ -3209,6 +3257,7 @@ async function dbFlush(){
         }else if(!h.ok){ditolak.push(h.nik+': '+h.pesan);if(d)d._pending=false;}
       });
       qSave(qGet().filter(it=>!sent.has(it.t)));
+      if(batch.some(b=>b.data&&b.data.no_pengajuan)&&typeof pjMuat==='function')pjMuat(true);
       if(ditolak.length){toast('Ditolak server: '+ditolak.slice(0,2).join(' | '),true);console.warn('[DB] ditolak',ditolak);}
       saveStore();
       setSyncState('online');
@@ -3280,7 +3329,7 @@ async function dbLogin(ev){
     inp.value='';msg.textContent='';
     tampilLogin(false);tampilUser();
     toast('Selamat datang, '+r.nama+'.');
-    await dbFlush();await dbMuatDaftar(true);
+    await dbFlush();await dbMuatDaftar(true);pjMuat(true);
   }catch(err){
     msg.style.color='var(--red,#c0392b)';msg.textContent='Tidak dapat terhubung ke server. Periksa koneksi internet lalu coba lagi.';
   }finally{btn.disabled=false;}
@@ -3305,7 +3354,133 @@ function dbInit(){
   setInterval(()=>{if(navigator.onLine&&qGet().length)dbFlush();},30000);
   updateSyncBadge();tampilUser();
   if(!getToken()){tampilLogin(true);return;}
-  dbFlush().then(()=>dbMuatDaftar(true));
+  dbFlush().then(()=>dbMuatDaftar(true)).then(()=>pjMuat(true));
+}
+
+// ════════════════════════════════════════════
+// PENGAJUAN MANDIRI — antrean dari formulir publik (pengajuan.html)
+// ════════════════════════════════════════════
+let pjList=[], pjAktif='';
+const PJ_ST={menunggu:'Menunggu verifikasi',jadwal:'Dijadwalkan kunjungan',terima:'Diterima',tolak:'Tidak memenuhi syarat'};
+function pjEsc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function pjBadge(st){const c={[PJ_ST.menunggu]:'b-gold',[PJ_ST.jadwal]:'b-blue',[PJ_ST.terima]:'b-teal',[PJ_ST.tolak]:'b-red'}[st]||'b-gray';return `<span class="badge ${c}">${pjEsc(st)}</span>`;}
+function pjTgl(iso){const d=new Date(iso);return isNaN(d)?pjEsc(iso):d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});}
+function fRpPj(v){return v?('Rp '+Number(v).toLocaleString('id-ID')):'—';}
+
+async function pjMuat(silent){
+  if(!getToken())return;
+  const st=document.getElementById('pj-status');
+  if(st)st.textContent='Memuat…';
+  try{
+    const r=await dbApi('pengajuan_daftar');
+    if(!r.ok){if(r.kode==='AUTH')dbLogout(true);else if(!silent)toast(r.pesan,true);return;}
+    pjList=r.data||[];
+    pjRender();
+  }catch(err){if(st)st.textContent='Offline — daftar pengajuan tidak dapat dimuat.';}
+}
+function pjRender(){
+  const aktif=pjList.filter(p=>p.status===PJ_ST.menunggu||p.status===PJ_ST.jadwal).length;
+  const b=document.getElementById('pj-count');if(b){b.textContent=aktif;b.style.display=aktif?'inline-block':'none';}
+  const tb=document.getElementById('pj-tbody');if(!tb)return;
+  const f=document.getElementById('pj-filter').value,q=(document.getElementById('pj-cari').value||'').toLowerCase();
+  const rows=pjList.filter(p=>(!f||(f==='aktif'?(p.status===PJ_ST.menunggu||p.status===PJ_ST.jadwal):p.status===f))&&
+    (!q||[p.no_pengajuan,p.nama,p.nik,p.kelurahan,p.kecamatan].join(' ').toLowerCase().includes(q)));
+  document.getElementById('pj-status').textContent=`${rows.length} pengajuan ditampilkan · ${aktif} perlu ditindaklanjuti`;
+  tb.innerHTML=rows.length?rows.map(p=>`<tr>
+    <td class="mono" style="font-weight:700;color:var(--teal-dark)">${pjEsc(p.no_pengajuan)}</td>
+    <td>${pjTgl(p.waktu)}</td>
+    <td style="font-weight:700">${pjEsc(p.nama)}</td>
+    <td>${pjEsc(p.kelurahan)}, ${pjEsc(p.kecamatan)}</td>
+    <td>${pjEsc(p.kategoriBantuan)}</td>
+    <td class="mono">${pjEsc(p.telepon)}</td>
+    <td>${pjBadge(p.status)}${p.jadwal_kunjungan&&p.status===PJ_ST.jadwal?`<div style="font-size:11px;color:var(--g500)">📅 ${pjEsc(p.jadwal_kunjungan)}</div>`:''}</td>
+    <td><button class="btn btn-primary btn-sm" onclick="pjDetail('${pjEsc(p.no_pengajuan)}')">Buka</button></td></tr>`).join('')
+    :'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--g500)">Belum ada pengajuan.</td></tr>';
+}
+
+function pjDetail(no){
+  const p=pjList.find(x=>x.no_pengajuan===no);if(!p)return;
+  const baris=(l,v)=>`<div class="pj-dl"><div>${l}</div><div>${v||'—'}</div></div>`;
+  const final=p.status===PJ_ST.terima||p.status===PJ_ST.tolak;
+  document.getElementById('pj-modal-title').textContent='Pengajuan '+p.no_pengajuan;
+  document.getElementById('pj-modal-body').innerHTML=`
+    <div style="margin-bottom:10px">${pjBadge(p.status)} <span style="font-size:12px;color:var(--g500)">Diajukan ${pjTgl(p.waktu)}${p.ditangani_oleh?' · ditangani '+pjEsc(p.ditangani_oleh):''}${p.mustahikId?' · ID Mustahik <strong>'+pjEsc(p.mustahikId)+'</strong>':''}</span></div>
+    <div style="font-size:13px">
+      ${baris('Nama',pjEsc(p.nama))}${baris('NIK',`<span class="mono">${pjEsc(p.nik)}</span>`)}${baris('No KK',`<span class="mono">${pjEsc(p.noKK)}</span>`)}
+      ${baris('Jenis kelamin',pjEsc(p.jenisKelamin))}${baris('Tempat, tgl lahir',pjEsc(p.tempatLahir)+', '+pjEsc(p.tanggalLahir))}${baris('Status keluarga',pjEsc(p.statusKeluarga))}
+      ${baris('Alamat',pjEsc(p.alamat)+'<br>'+pjEsc(p.kelurahan)+', '+pjEsc(p.kecamatan))}${baris('HP/WA',`<a href="https://wa.me/${pjEsc(p.telepon.replace(/^0/,'62').replace(/\D/g,''))}" target="_blank" rel="noopener">${pjEsc(p.telepon)}</a>`)}
+      ${baris('Pekerjaan',pjEsc(p.pekerjaan))}${baris('Penghasilan / bulan',fRpPj(p.penghasilan))}${baris('Pengeluaran / bulan',fRpPj(p.totalPengeluaran))}
+      ${baris('Anggota serumah / tanggungan',pjEsc(p.jumlahAnggota||'—')+' / '+pjEsc(p.jumlahTanggungan||'—'))}${baris('Kondisi rumah',pjEsc(p.kondisiRumah))}
+      ${baris('Bantuan diajukan',pjEsc(p.kategoriBantuan))}${baris('Kebutuhan mendesak',pjEsc(p.kebutuhanUtama))}${baris('Alasan',pjEsc(p.alasan))}
+      ${baris('Diisi oleh',p.diisi_oleh==='Diwakilkan'?pjEsc(p.nama_pengisi)+' ('+pjEsc(p.hubungan_pengisi)+') · '+pjEsc(p.hp_pengisi):'Yang bersangkutan')}
+      ${baris('Persetujuan data',pjEsc(p.persetujuan))}
+    </div>
+    <div class="pj-2col" style="margin-top:12px">
+      <div style="border:1px solid var(--g200);border-radius:8px;padding:8px;text-align:center"><div style="font-weight:700;font-size:12px;margin-bottom:6px">KTP</div><div id="pj-dok-ktp"><button class="btn btn-outline btn-sm" onclick="pjLihatDok('${pjEsc(no)}','ktp')">Tampilkan</button></div></div>
+      <div style="border:1px solid var(--g200);border-radius:8px;padding:8px;text-align:center"><div style="font-weight:700;font-size:12px;margin-bottom:6px">Kartu Keluarga</div><div id="pj-dok-kk"><button class="btn btn-outline btn-sm" onclick="pjLihatDok('${pjEsc(no)}','kk')">Tampilkan</button></div></div>
+    </div>
+    ${final?'':`<div style="background:var(--g50,#f8fafb);border:1px solid var(--g200);border-radius:8px;padding:10px;margin-top:12px">
+      <div style="font-weight:700;font-size:12.5px;margin-bottom:6px">Tindak lanjut</div>
+      <div class="pj-2col">
+        <div><label style="font-size:11.5px">Jadwal kunjungan</label><input id="pj-jadwal" type="date" value="${pjEsc(p.jadwal_kunjungan)}"/></div>
+        <div><label style="font-size:11.5px">Catatan petugas (internal)</label><input id="pj-catatan" type="text" maxlength="300" value="${pjEsc(p.catatan_petugas)}"/></div>
+      </div></div>`}
+    ${final&&p.catatan_petugas?`<div style="margin-top:10px;font-size:12.5px"><strong>Catatan petugas:</strong> ${pjEsc(p.catatan_petugas)}</div>`:''}`;
+  document.getElementById('pj-modal-ftr').innerHTML=final
+    ?`<button class="btn btn-outline" onclick="closeModal('modal-pj')">Tutup</button>`
+    :`<button class="btn btn-outline" onclick="closeModal('modal-pj')">Tutup</button>
+      <button class="btn btn-danger" onclick="pjTolak('${pjEsc(no)}')">Tidak Memenuhi Syarat</button>
+      <button class="btn btn-blue" onclick="pjJadwal('${pjEsc(no)}')">Simpan Jadwal Kunjungan</button>
+      <button class="btn btn-primary" onclick="pjLengkapi('${pjEsc(no)}')">Lengkapi &amp; Terima →</button>`;
+  openModal('modal-pj');
+}
+
+async function pjLihatDok(no,jenis){
+  const box=document.getElementById('pj-dok-'+jenis);box.textContent='Memuat…';
+  try{
+    const r=await dbApi('pengajuan_file',{no,jenis});
+    if(!r.ok){box.textContent=r.pesan||'Gagal memuat.';return;}
+    const bin=atob(r.base64),u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+    const url=URL.createObjectURL(new Blob([u8],{type:r.mime}));
+    box.innerHTML=r.mime==='application/pdf'
+      ?`<a class="btn btn-outline btn-sm" href="${url}" target="_blank" rel="noopener">Buka PDF</a>`
+      :`<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="${jenis}" style="max-width:100%;max-height:220px;border-radius:6px"/></a>`;
+  }catch(err){box.textContent='Offline — tidak dapat memuat dokumen.';}
+}
+
+async function pjUbahStatus(no,status,extra){
+  try{
+    const r=await dbApi('pengajuan_update',{no,status,...extra});
+    if(!r.ok){toast(r.pesan||'Gagal memperbarui.',true);return false;}
+    toast('✓ '+r.pesan);closeModal('modal-pj');await pjMuat(true);return true;
+  }catch(err){toast('Gagal terhubung ke server — perubahan status pengajuan perlu koneksi internet.',true);return false;}
+}
+function pjJadwal(no){
+  const j=document.getElementById('pj-jadwal').value;
+  if(!j){toast('Isi tanggal jadwal kunjungan.',true);return;}
+  pjUbahStatus(no,PJ_ST.jadwal,{jadwal:j,catatan:document.getElementById('pj-catatan').value});
+}
+function pjTolak(no){
+  const c=document.getElementById('pj-catatan').value.trim();
+  if(!c){toast('Isi catatan petugas (alasan tidak memenuhi syarat).',true);document.getElementById('pj-catatan').focus();return;}
+  showKonfirm('⚠️','Tidak Memenuhi Syarat?','Pengajuan '+no+' akan ditandai TIDAK MEMENUHI SYARAT. Pemohon akan melihat status ini saat cek status.',()=>pjUbahStatus(no,PJ_ST.tolak,{catatan:c}),'Ya, Tandai','btn-danger');
+}
+function pjLengkapi(no){
+  const p=pjList.find(x=>x.no_pengajuan===no);if(!p)return;
+  const dup=dataList.find(x=>x.nik===p.nik);
+  if(dup){toast('NIK ini sudah ada di Daftar Mustahik ('+dup.nama+').',true);return;}
+  closeModal('modal-pj');
+  bukaFormBaru();
+  fillForm({nama:p.nama,nik:p.nik,noKK:p.noKK,noKTP:p.nik,jenisKelamin:p.jenisKelamin,tempatLahir:p.tempatLahir,tanggalLahir:p.tanggalLahir,
+    statusKeluarga:p.statusKeluarga,alamat:p.alamat,kelurahan:p.kelurahan,kecamatan:p.kecamatan,kota:p.kota||'Lubuklinggau',provinsi:'Sumatera Selatan',
+    telepon:p.telepon,pekerjaan:p.pekerjaan,penghasilan:p.penghasilan,jumlahAnggota:p.jumlahAnggota,totalPengeluaran:p.totalPengeluaran,
+    jumlahTanggungan:p.jumlahTanggungan,kondisiRumah:p.kondisiRumah,kebutuhanUtama:p.kebutuhanUtama,kategoriBantuan:p.kategoriBantuan,
+    statusVerifikasi:'belum_verifikasi',isActive:'true',
+    catatanSurvey:'Dari pengajuan mandiri '+p.no_pengajuan+(p.diisi_oleh==='Diwakilkan'?' (diisikan '+p.nama_pengisi+', '+p.hubungan_pengisi+')':'')+'. Alasan: '+p.alasan});
+  tampilUser();
+  pjAktif=no;
+  const bn=document.getElementById('pj-banner');
+  if(bn){bn.style.display='block';bn.innerHTML='📥 Melengkapi pengajuan mandiri <strong>'+pjEsc(no)+'</strong> — lengkapi Asnaf, kesehatan/IZN, rekening, dan hasil verifikasi lapangan, lalu <strong>Simpan Data</strong>. Pengajuan otomatis berstatus <em>Diterima</em>.';}
 }
 
 // ════════════════════════════════════════════

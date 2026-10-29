@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pengajuan Bantuan — BAZNAS Kota Lubuklinggau</title>
+<meta name="description" content="Formulir pengajuan bantuan mandiri calon mustahik BAZNAS Kota Lubuklinggau">
+<style>
+:root{--teal:#0d7c66;--teal-dark:#0a6654;--teal-light:#e6f4f1;--gold:#c9a227;--red:#c0392b;--g50:#f8fafb;--g100:#f1f4f6;--g300:#d3dae0;--g500:#6b7780;--g700:#36424a;--radius:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--g50);color:var(--g700);font-size:15px;line-height:1.5}
+header{background:var(--teal);color:#fff;padding:18px 16px;text-align:center}
+header h1{font-size:19px;font-weight:800}
+header p{font-size:13px;opacity:.9;margin-top:2px}
+.tabs{display:flex;max-width:760px;margin:0 auto;background:#fff;border-bottom:1px solid var(--g300);position:sticky;top:0;z-index:5}
+.tabs button{flex:1;padding:13px 8px;border:0;background:none;font-size:14px;font-weight:700;color:var(--g500);border-bottom:3px solid transparent;cursor:pointer}
+.tabs button.on{color:var(--teal);border-bottom-color:var(--teal)}
+main{max-width:760px;margin:0 auto;padding:16px}
+.card{background:#fff;border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:16px;overflow:hidden}
+.card h2{font-size:14px;background:var(--teal);color:#fff;padding:10px 16px;letter-spacing:.3px}
+.card .body{padding:16px}
+.intro{background:var(--teal-light);border:1px solid #b2ddd6;border-radius:var(--radius);padding:14px 16px;font-size:13.5px;margin-bottom:16px}
+.intro ul{margin:6px 0 0 18px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.full{grid-column:1/-1}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
+label{display:block;font-size:13px;font-weight:700;margin-bottom:4px}
+label .req{color:var(--red)}
+label .hint{font-weight:400;color:var(--g500);font-size:12px}
+input,select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--g300);border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:inherit}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,124,102,.12)}
+textarea{min-height:80px;resize:vertical}
+.radio{display:flex;gap:16px;flex-wrap:wrap}
+.radio label{font-weight:400;display:flex;align-items:center;gap:6px;cursor:pointer}
+.radio input{width:auto}
+.upl{border:2px dashed var(--g300);border-radius:8px;padding:12px;text-align:center;font-size:13px;color:var(--g500)}
+.upl img{max-width:100%;max-height:160px;margin-top:8px;border-radius:6px}
+.upl .ok{color:var(--teal);font-weight:700}
+.consent{display:flex;gap:10px;align-items:flex-start;font-size:13.5px}
+.consent input{width:20px;height:20px;margin-top:2px;flex:none}
+.btn{display:inline-flex;justify-content:center;align-items:center;gap:6px;width:100%;padding:14px;border:0;border-radius:8px;background:var(--teal);color:#fff;font-size:16px;font-weight:800;cursor:pointer}
+.btn:disabled{opacity:.6;cursor:wait}
+.btn.ghost{background:#fff;color:var(--teal);border:1.5px solid var(--teal)}
+.err{background:#fdecea;border:1px solid #f5c6c0;color:var(--red);border-radius:8px;padding:10px 14px;font-size:13.5px;margin-bottom:12px;display:none}
+.hasil{text-align:center;padding:24px 16px}
+.hasil .no{font-family:ui-monospace,Consolas,monospace;font-size:26px;font-weight:800;color:var(--teal-dark);letter-spacing:1px;background:var(--teal-light);border-radius:8px;padding:12px;margin:12px 0}
+.st{display:inline-block;padding:6px 14px;border-radius:20px;font-weight:800;font-size:14px;margin:8px 0}
+.st.Menunggu{background:#fff4d6;color:#7c5c00}.st.Dijadwalkan{background:#e3efff;color:#1d4e9e}.st.Diterima{background:var(--teal-light);color:var(--teal-dark)}.st.Tidak{background:#fdecea;color:var(--red)}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>Pengajuan Bantuan BAZNAS</h1>
+  <p>Badan Amil Zakat Nasional Kota Lubuklinggau</p>
+</header>
+<nav class="tabs">
+  <button id="tab-f" class="on" onclick="tab('f')">📝 Ajukan Bantuan</button>
+  <button id="tab-s" onclick="tab('s')">🔎 Cek Status</button>
+</nav>
+<main>
+
+<!-- ═════════ FORMULIR ═════════ -->
+<section id="sec-f">
+<div id="form-wrap">
+  <div class="intro">
+    <strong>Sebelum mengisi, siapkan:</strong>
+    <ul>
+      <li>KTP dan Kartu Keluarga (KK) — difoto dengan jelas</li>
+      <li>Nomor HP/WhatsApp yang aktif</li>
+    </ul>
+    <div style="margin-top:6px">Pengajuan akan <strong>diverifikasi oleh petugas BAZNAS</strong> (termasuk kunjungan ke rumah). Mengisi formulir <strong>tidak dipungut biaya</strong> dan belum berarti pasti menerima bantuan.</div>
+  </div>
+
+  <form id="fpj" autocomplete="off" novalidate>
+    <div class="hp" aria-hidden="true"><label>Website<input id="website" tabindex="-1" autocomplete="off"></label></div>
+
+    <div class="card"><h2>A. IDENTITAS CALON PENERIMA</h2><div class="body grid">
+      <div class="full"><label>Nama lengkap (sesuai KTP) <span class="req">*</span></label><input id="nama" maxlength="100"></div>
+      <div><label>NIK <span class="req">*</span> <span class="hint">16 digit</span></label><input id="nik" inputmode="numeric" maxlength="16"></div>
+      <div><label>Nomor KK <span class="req">*</span> <span class="hint">16 digit</span></label><input id="noKK" inputmode="numeric" maxlength="16"></div>
+      <div><label>Jenis kelamin <span class="req">*</span></label><select id="jenisKelamin"><option value="">— Pilih —</option><option>Laki-laki</option><option>Perempuan</option></select></div>
+      <div><label>Status dalam keluarga</label><select id="statusKeluarga"><option value="">— Pilih —</option><option>Kepala Keluarga</option><option>Istri</option><option>Anak</option><option>Orang Tua</option><option>Lainnya</option></select></div>
+      <div><label>Tempat lahir</label><input id="tempatLahir" maxlength="60"></div>
+      <div><label>Tanggal lahir <span class="req">*</span></label><input id="tanggalLahir" type="date"></div>
+    </div></div>
+
+    <div class="card"><h2>B. ALAMAT &amp; KONTAK</h2><div class="body grid">
+      <div class="full"><label>Alamat (jalan, RT/RW, nomor rumah) <span class="req">*</span></label><textarea id="alamat" maxlength="300" style="min-height:60px"></textarea></div>
+      <div><label>Kecamatan <span class="req">*</span></label><select id="kecamatan"><option value="">— Pilih —</option>
+        <option>Lubuklinggau Barat I</option><option>Lubuklinggau Barat II</option><option>Lubuklinggau Selatan I</option><option>Lubuklinggau Selatan II</option>
+        <option>Lubuklinggau Timur I</option><option>Lubuklinggau Timur II</option><option>Lubuklinggau Utara I</option><option>Lubuklinggau Utara II</option></select></div>
+      <div><label>Kelurahan <span class="req">*</span></label><input id="kelurahan" maxlength="60"></div>
+      <div class="full"><label>Nomor HP / WhatsApp <span class="req">*</span></label><input id="telepon" type="tel" inputmode="tel" placeholder="08xxxxxxxxxx" maxlength="16"></div>
+    </div></div>
+
+    <div class="card"><h2>C. KONDISI EKONOMI KELUARGA</h2><div class="body grid">
+      <div class="full"><label>Pekerjaan</label><input id="pekerjaan" maxlength="60" placeholder="Buruh, pedagang kecil, tidak bekerja…"></div>
+      <div><label>Penghasilan keluarga per bulan (Rp)</label><input id="penghasilan" type="number" min="0" step="1000" inputmode="numeric" placeholder="0"></div>
+      <div><label>Pengeluaran keluarga per bulan (Rp)</label><input id="totalPengeluaran" type="number" min="0" step="1000" inputmode="numeric" placeholder="0"></div>
+      <div><label>Jumlah anggota keluarga serumah</label><input id="jumlahAnggota" type="number" min="1" max="30" inputmode="numeric"></div>
+      <div><label>Jumlah tanggungan</label><input id="jumlahTanggungan" type="number" min="0" max="30" inputmode="numeric"></div>
+      <div class="full"><label>Kondisi rumah</label><select id="kondisiRumah"><option value="">— Pilih —</option><option>Permanen / Layak Huni</option><option>Semi Permanen</option><option>Tidak Layak Huni</option><option>Rumah Dinas/Kontrak</option><option>Menumpang</option></select></div>
+    </div></div>
+
+    <div class="card"><h2>D. BANTUAN YANG DIAJUKAN</h2><div class="body grid">
+      <div><label>Jenis bantuan <span class="req">*</span></label><select id="kategoriBantuan"><option value="">— Pilih —</option>
+        <option value="Zakat Konsumtif">Kebutuhan hidup sehari-hari</option>
+        <option value="Bantuan Pendidikan">Pendidikan / biaya sekolah</option>
+        <option value="Bantuan Kesehatan">Kesehatan / berobat</option>
+        <option value="Bantuan Rumah Layak Huni">Perbaikan rumah</option>
+        <option value="Bantuan Modal Usaha">Modal usaha</option>
+        <option value="Zakat Produktif">Usaha produktif / pemberdayaan</option>
+        <option value="Bantuan Dakwah">Kegiatan dakwah / keagamaan</option></select></div>
+      <div><label>Kebutuhan paling mendesak</label><select id="kebutuhanUtama"><option value="">— Pilih —</option><option>Pangan</option><option>Sandang</option><option>Papan</option><option>Kesehatan</option><option>Pendidikan</option><option>Modal Usaha</option><option>Lainnya</option></select></div>
+      <div class="full"><label>Ceritakan singkat kondisi dan alasan mengajukan <span class="req">*</span></label><textarea id="alasan" maxlength="600" placeholder="Contoh: Suami sakit sejak 2025, saya bekerja sebagai buruh cuci dengan 3 anak sekolah…"></textarea></div>
+    </div></div>
+
+    <div class="card"><h2>E. FOTO DOKUMEN</h2><div class="body grid">
+      <div><label>Foto KTP <span class="req">*</span></label><div class="upl"><input type="file" id="f-ktp" accept="image/*,application/pdf"><div id="pv-ktp"></div></div></div>
+      <div><label>Foto Kartu Keluarga <span class="req">*</span></label><div class="upl"><input type="file" id="f-kk" accept="image/*,application/pdf"><div id="pv-kk"></div></div></div>
+      <div class="full" style="font-size:12.5px;color:var(--g500)">Foto disimpan secara rahasia dan hanya dapat dibuka oleh petugas BAZNAS. Format JPG/PNG/PDF.</div>
+    </div></div>
+
+    <div class="card"><h2>F. YANG MENGISI FORMULIR</h2><div class="body grid">
+      <div class="full radio">
+        <label><input type="radio" name="diisi" value="Sendiri" checked> Saya sendiri (calon penerima)</label>
+        <label><input type="radio" name="diisi" value="Diwakilkan"> Diisikan oleh orang lain</label>
+      </div>
+      <div id="wakil" class="full grid hidden" style="gap:12px">
+        <div><label>Nama pengisi <span class="req">*</span></label><input id="nama_pengisi" maxlength="80"></div>
+        <div><label>Hubungan <span class="req">*</span></label><select id="hubungan_pengisi"><option value="">— Pilih —</option><option>Keluarga</option><option>Tetangga</option><option>Ketua RT/RW</option><option>Lurah/Perangkat Kelurahan</option><option>Tokoh Masyarakat/Agama</option><option>Lainnya</option></select></div>
+        <div class="full"><label>No HP pengisi <span class="req">*</span></label><input id="hp_pengisi" type="tel" inputmode="tel" maxlength="16"></div>
+      </div>
+    </div></div>
+
+    <div class="card"><div class="body">
+      <label class="consent"><input type="checkbox" id="persetujuan">
+        <span>Saya menyatakan data yang diisi <strong>benar</strong>, dan <strong>menyetujui</strong> BAZNAS Kota Lubuklinggau mengumpulkan, menyimpan, dan memverifikasi data pribadi ini (termasuk kunjungan petugas) semata-mata untuk keperluan penyaluran zakat, infak, dan sedekah, sesuai UU No. 27 Tahun 2022 tentang Pelindungan Data Pribadi.</span></label>
+    </div></div>
+
+    <div id="err" class="err"></div>
+    <button type="submit" id="btn-kirim" class="btn">Kirim Pengajuan</button>
+  </form>
+</div>
+
+<div id="hasil" class="card hidden"><div class="hasil">
+  <div style="font-size:44px">✅</div>
+  <h3 style="font-size:19px;color:var(--teal-dark)">Pengajuan berhasil dikirim</h3>
+  <p style="margin-top:6px">Simpan / foto layar <strong>Nomor Pengajuan</strong> berikut:</p>
+  <div class="no" id="no-pj"></div>
+  <p style="font-size:13.5px">Gunakan nomor ini dan tanggal lahir untuk <strong>cek status</strong>. Petugas BAZNAS akan menghubungi nomor HP yang Anda isi untuk jadwal verifikasi.</p>
+  <div style="display:grid;gap:10px;margin-top:16px">
+    <button class="btn" onclick="tab('s');document.getElementById('s-no').value=document.getElementById('no-pj').textContent">Cek Status</button>
+    <button class="btn ghost" onclick="location.reload()">Isi Pengajuan Lain</button>
+  </div>
+</div></div>
+</section>
+
+<!-- ═════════ CEK STATUS ═════════ -->
+<section id="sec-s" class="hidden">
+  <div class="card"><h2>CEK STATUS PENGAJUAN</h2><div class="body grid">
+    <div><label>Nomor pengajuan</label><input id="s-no" placeholder="PJ-2611-0001" style="text-transform:uppercase" maxlength="14"></div>
+    <div><label>Tanggal lahir calon penerima</label><input id="s-tgl" type="date"></div>
+    <div class="full"><button class="btn" id="btn-cek" onclick="cekStatus()">Cek Status</button></div>
+  </div></div>
+  <div id="s-hasil" class="card hidden"><div class="hasil" id="s-isi"></div></div>
+</section>
+</main>
+<footer>BAZNAS Kota Lubuklinggau · Data Anda dilindungi dan hanya digunakan untuk penyaluran ZIS.</footer>
+
+<script>
+const DB_URL='https://script.google.com/macros/s/AKfycbwcFWag2lgTgaaV5lKBWU_YDrhSHEAgPgXyrfFR9tq6uRyzrg5t_158fHzSBX6183me/exec';
+const dok={ktp:null,kk:null};
+
+function tab(t){
+  document.getElementById('sec-f').classList.toggle('hidden',t!=='f');
+  document.getElementById('sec-s').classList.toggle('hidden',t!=='s');
+  document.getElementById('tab-f').classList.toggle('on',t==='f');
+  document.getElementById('tab-s').classList.toggle('on',t==='s');
+  window.scrollTo({top:0});
+}
+async function api(aksi,data){
+  const r=await fetch(DB_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({aksi,data})});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
+function v(id){return (document.getElementById(id).value||'').trim();}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+document.querySelectorAll('input[name=diisi]').forEach(r=>r.addEventListener('change',()=>{
+  document.getElementById('wakil').classList.toggle('hidden',document.querySelector('input[name=diisi]:checked').value!=='Diwakilkan');
+}));
+['nik','noKK'].forEach(id=>document.getElementById(id).addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,16);}));
+
+// ── Foto dokumen: kompres gambar agar ringan dikirim lewat HP ──
+function bacaFile(file){return new Promise((ok,no)=>{const fr=new FileReader();fr.onload=()=>ok(fr.result);fr.onerror=no;fr.readAsDataURL(file);});}
+async function kompres(file){
+  if(file.type==='application/pdf'){
+    if(file.size>3*1024*1024)throw new Error('File PDF maksimal 3 MB.');
+    const u=await bacaFile(file);return{mime:'application/pdf',base64:u.split(',')[1],preview:null,nama:file.name};
+  }
+  if(!/^image\//.test(file.type))throw new Error('Hanya foto (JPG/PNG) atau PDF.');
+  const url=await bacaFile(file);
+  const img=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>no(new Error('Foto tidak bisa dibaca. Coba foto ulang.'));i.src=url;});
+  const maks=1600,sk=Math.min(1,maks/Math.max(img.width,img.height));
+  const c=document.createElement('canvas');c.width=Math.round(img.width*sk);c.height=Math.round(img.height*sk);
+  c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+  const out=c.toDataURL('image/jpeg',0.8);
+  return{mime:'image/jpeg',base64:out.split(',')[1],preview:out,nama:file.name};
+}
+['ktp','kk'].forEach(j=>document.getElementById('f-'+j).addEventListener('change',async e=>{
+  const pv=document.getElementById('pv-'+j);dok[j]=null;pv.innerHTML='';
+  const f=e.target.files[0];if(!f)return;
+  pv.textContent='Memproses…';
+  try{dok[j]=await kompres(f);pv.innerHTML='<div class="ok">✓ '+esc(f.name)+'</div>'+(dok[j].preview?'<img src="'+dok[j].preview+'" alt="pratinjau">':'');}
+  catch(err){pv.innerHTML='<span style="color:var(--red)">'+esc(err.message)+'</span>';e.target.value='';}
+}));
+
+function tampilErr(m){const e=document.getElementById('err');e.innerHTML=m;e.style.display=m?'block':'none';if(m)e.scrollIntoView({behavior:'smooth',block:'center'});}
+
+document.getElementById('fpj').addEventListener('submit',async ev=>{
+  ev.preventDefault();tampilErr('');
+  const diisi=document.querySelector('input[name=diisi]:checked').value;
+  const d={website:v('website'),diisi_oleh:diisi,persetujuan:document.getElementById('persetujuan').checked};
+  ['nama','nik','noKK','jenisKelamin','statusKeluarga','tempatLahir','tanggalLahir','alamat','kecamatan','kelurahan','telepon',
+   'pekerjaan','penghasilan','totalPengeluaran','jumlahAnggota','jumlahTanggungan','kondisiRumah','kategoriBantuan','kebutuhanUtama','alasan',
+   'nama_pengisi','hubungan_pengisi','hp_pengisi'].forEach(k=>d[k]=v(k));
+  const s=[];
+  if(d.nama.length<3)s.push('Nama lengkap');
+  if(!/^\d{16}$/.test(d.nik))s.push('NIK 16 digit');
+  if(!/^\d{16}$/.test(d.noKK))s.push('Nomor KK 16 digit');
+  if(!d.jenisKelamin)s.push('Jenis kelamin');
+  if(!d.tanggalLahir)s.push('Tanggal lahir');
+  if(!d.alamat||!d.kecamatan||!d.kelurahan)s.push('Alamat, kecamatan, kelurahan');
+  if(!/^(\+?62|0)8\d{7,12}$/.test(d.telepon.replace(/[\s-]/g,'')))s.push('Nomor HP/WA yang benar (08…)');
+  if(!d.kategoriBantuan)s.push('Jenis bantuan');
+  if(d.alasan.length<10)s.push('Alasan pengajuan (min. 10 huruf)');
+  if(!dok.ktp)s.push('Foto KTP');
+  if(!dok.kk)s.push('Foto KK');
+  if(diisi==='Diwakilkan'&&(!d.nama_pengisi||!d.hubungan_pengisi||!d.hp_pengisi))s.push('Data pengisi (nama, hubungan, No HP)');
+  if(!d.persetujuan)s.push('Centang persetujuan');
+  if(s.length){tampilErr('<strong>Mohon lengkapi:</strong> '+s.map(esc).join(', ')+'.');return;}
+  if(diisi==='Sendiri'){d.nama_pengisi='';d.hubungan_pengisi='';d.hp_pengisi='';}
+  d.ktp={mime:dok.ktp.mime,base64:dok.ktp.base64};d.kk={mime:dok.kk.mime,base64:dok.kk.base64};
+  const btn=document.getElementById('btn-kirim');btn.disabled=true;btn.textContent='Mengirim… mohon tunggu';
+  try{
+    const r=await api('ajukan',d);
+    if(!r.ok){tampilErr(esc(r.pesan||'Pengajuan gagal dikirim.'));return;}
+    document.getElementById('no-pj').textContent=r.no_pengajuan;
+    document.getElementById('form-wrap').classList.add('hidden');
+    document.getElementById('hasil').classList.remove('hidden');
+    window.scrollTo({top:0});
+  }catch(err){
+    tampilErr('Gagal terhubung ke server. Periksa koneksi internet Anda, lalu tekan <strong>Kirim Pengajuan</strong> lagi.');
+  }finally{btn.disabled=false;btn.textContent='Kirim Pengajuan';}
+});
+
+async function cekStatus(){
+  const no=v('s-no').toUpperCase(),tgl=v('s-tgl');
+  const box=document.getElementById('s-hasil'),isi=document.getElementById('s-isi');
+  if(!/^PJ-\d{4}-\d{4}$/.test(no)||!tgl){box.classList.remove('hidden');isi.innerHTML='<p style="color:var(--red)">Isi nomor pengajuan (contoh PJ-2611-0001) dan tanggal lahir.</p>';return;}
+  const b=document.getElementById('btn-cek');b.disabled=true;b.textContent='Memeriksa…';
+  try{
+    const r=await api('status',{no,tanggalLahir:tgl});
+    box.classList.remove('hidden');
+    if(!r.ok){isi.innerHTML='<p style="color:var(--red)">'+esc(r.pesan)+'</p>';return;}
+    isi.innerHTML='<div style="font-family:monospace;font-weight:800;font-size:18px">'+esc(r.no_pengajuan)+'</div>'+
+      '<div style="font-size:12.5px;color:var(--g500)">Diajukan '+esc(r.tanggal_pengajuan)+'</div>'+
+      '<div class="st '+esc(r.status.split(' ')[0])+'">'+esc(r.status)+'</div>'+
+      (r.jadwal_kunjungan?'<p><strong>Jadwal kunjungan:</strong> '+esc(r.jadwal_kunjungan)+'</p>':'')+
+      '<p style="margin-top:8px">'+esc(r.keterangan)+'</p>';
+  }catch(err){box.classList.remove('hidden');isi.innerHTML='<p style="color:var(--red)">Gagal terhubung ke server. Coba lagi.</p>';}
+  finally{b.disabled=false;b.textContent='Cek Status';}
+}
+</script>
+</body>
+</html>
