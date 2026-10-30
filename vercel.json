@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/k/:id", "destination": "/api/k?id=:id" },
+    { "source": "/logo-baznas.jpg", "destination": "/api/logo" }
+  ]
+}
