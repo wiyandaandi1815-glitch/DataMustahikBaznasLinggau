@@ -147,6 +147,22 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
 .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
 .b-green{background:#d1fae5;color:#065f46;}
 .b-gold{background:#fff4d6;color:#7c5c00;}
+/* v8 muzaki & publikasi */
+.bag-mz{font-weight:700;font-size:12.5px;color:var(--teal-dark);background:var(--teal-light);border-left:4px solid var(--teal);padding:4px 10px;border-radius:4px;margin:12px 0 8px}
+.bag-mz:first-of-type{margin-top:0}
+.kt-kartu{margin-bottom:10px}
+.kt-prog{height:10px;background:var(--g100);border-radius:6px;overflow:hidden;margin:8px 0 4px}.kt-prog>div{height:100%;background:#1D9E75;border-radius:6px}
+.kt-catatan{background:#fff8e1;border:1px solid #f0d78c;border-radius:8px;padding:6px 10px;font-size:12.5px;margin-top:6px}
+.kt-foto{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}.kt-th{position:relative;width:96px;height:72px;border-radius:6px;overflow:hidden;background:var(--g100)}
+.kt-th img{width:100%;height:100%;object-fit:cover}.kt-th button{position:absolute;top:2px;right:2px;border:0;background:rgba(0,0,0,.6);color:#fff;border-radius:50%;width:20px;height:20px;cursor:pointer;line-height:18px}
+.kt-prog-opsi{display:flex;gap:6px;align-items:center;font-weight:400!important;padding:6px 8px;border:1px solid var(--g100);border-radius:6px;margin-bottom:4px;font-size:12.5px}
+.kal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.kal-h{font-size:11px;font-weight:700;text-align:center;color:var(--g500)}
+.kal-sel{min-height:74px;border:1px solid var(--g100);border-radius:6px;padding:2px;font-size:10.5px;overflow:hidden}.kal-sel.kosong{border:0}.kal-sel.hari-ini{border-color:var(--teal);background:var(--teal-light)}
+.kal-tgl{font-weight:700;color:var(--g500)}.kal-ev{border-radius:3px;padding:0 3px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px}
+.kal-ev.kmp{background:#FAEEDA;color:#633806}.kal-ev.kmp.on{background:#1D9E75;color:#fff}.kal-ev.lap{background:#e0e7ff;color:#3730a3}
+@media(max-width:620px){.kal-sel{min-height:54px}.kal-ev{font-size:9px}}
+.tab-bar{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}.tab-bar::-webkit-scrollbar{display:none}
+@media(max-width:620px){.tab-bar{padding:0 6px}.tab-btn{padding:12px 10px}}
 /* Pengajuan Masuk: tabel sendiri, tidak memakai kolom sticky tabel utama */
 table.pj-tbl{min-width:900px;}
 table.pj-tbl th,table.pj-tbl td{position:static!important;left:auto!important;min-width:0!important;max-width:none!important;width:auto!important;text-align:left!important;border-right:0!important;font-family:inherit!important;letter-spacing:normal!important;font-size:12.5px;}
@@ -509,6 +525,14 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
   <button class="tab-btn" id="tab-pj-btn" onclick="switchTab('t-pengajuan',this);pjMuat(true)">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
     Pengajuan Masuk <span id="pj-count" class="badge b-red" style="display:none;margin-left:4px">0</span>
+  </button>
+  <button class="tab-btn" id="tab-mz-btn" onclick="switchTab('t-muzaki',this);if(!mzMuatSekali)mzMuat(true)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Muzaki/Donatur
+  </button>
+  <button class="tab-btn" id="tab-kt-btn" onclick="switchTab('t-konten',this);ktMuat(true)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg>
+    Publikasi &amp; Kampanye <span id="kt-count" class="badge b-red" style="display:none;margin-left:4px">0</span>
   </button>
   <button class="tab-btn" id="tab-import-btn" onclick="switchTab('t-import',this)">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -1022,6 +1046,45 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
 </div>
 </div>
 
+<div id="t-muzaki" class="tab-pane">
+<div class="main">
+  <div class="pg-title">Data Muzaki/Donatur</div>
+  <div class="pg-sub">Muzaki, Munfiq, Donatur, CSR, UPZ. Riwayat setoran berasal dari Excel Buku Bukti Kas (baca saja). Kartu NPWZ &amp; Bukti Setor Zakat dicetak dari menu Detail.</div>
+  <div class="card"><div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <button class="btn btn-primary" type="button" onclick="mzForm()">+ Tambah Muzaki</button>
+    <input id="mz-cari" type="text" placeholder="Cari nama, NIK, NPWP, NPWZ, ID" oninput="mzRender()" style="max-width:260px"/>
+    <select id="mz-filter" onchange="mzRender()" style="max-width:190px"><option value="">Semua jenis</option><option>Muzaki</option><option>Munfiq</option><option>Donatur</option><option>CSR</option><option>UPZ</option><option>Anonim</option><option>Lainnya</option></select>
+    <button class="btn btn-outline" type="button" onclick="mzUpzBuka()">🏢 Master UPZ</button>
+    <button class="btn btn-outline" type="button" onclick="mzMuat()">↻ Muat ulang</button>
+    <span id="mz-status" style="font-size:12px;color:var(--g500);margin-left:auto"></span>
+  </div></div>
+  <div class="card"><div class="tbl-scroll"><table class="pj-tbl">
+    <thead><tr><th>ID</th><th>Nama</th><th>Jenis</th><th>NPWZ</th><th>HP</th><th>Setoran</th><th>Status</th><th>Aksi</th></tr></thead>
+    <tbody id="mz-tbody"><tr><td colspan="8" style="text-align:center;padding:24px;color:var(--g500)">Memuat…</td></tr></tbody>
+  </table></div></div>
+</div>
+</div>
+
+<div id="t-konten" class="tab-pane">
+<div class="main">
+  <div class="pg-title">Publikasi &amp; Kampanye</div>
+  <div class="pg-sub">Laporan "Hari Ini Kami Menyalurkan" dan kampanye terjadwal. Alur: Draf → Wakil Ketua → Ketua → terjadwal → tayang di <a href="kabar.html" target="_blank" rel="noopener"><strong>kabar.html</strong></a>. Angka selalu dari database, tidak diketik manual.</div>
+  <div class="card"><div class="card-body" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <button class="btn btn-primary kt-mode" type="button" onclick="ktPilihMode('kampanye',this)">Kampanye</button>
+    <button class="btn btn-outline kt-mode" type="button" onclick="ktPilihMode('laporan',this)">Laporan Penyaluran</button>
+    <button class="btn btn-outline kt-mode" type="button" onclick="ktPilihMode('saya',this)">Menunggu Saya</button>
+    <button class="btn btn-outline kt-mode" type="button" onclick="ktPilihMode('kalender',this)">📅 Kalender</button>
+    <select id="kt-filter" onchange="ktRender()" style="max-width:190px"><option value="">Semua status</option><option>Draf</option><option>Menunggu Wakil Ketua</option><option>Menunggu Ketua</option><option>Disetujui</option><option>Tayang</option><option>Berakhir</option><option>Arsip</option></select>
+    <span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn btn-outline" type="button" onclick="ktForm('laporan')">+ Laporan Penyaluran</button>
+      <button class="btn btn-primary" type="button" onclick="ktForm('kampanye')">+ Kampanye</button>
+      <button class="btn btn-ghost" type="button" onclick="ktMuat()">↻</button></span>
+    <div id="kt-status" style="font-size:12px;color:var(--g500);width:100%"></div>
+  </div></div>
+  <div id="kt-isi"></div>
+</div>
+</div>
+
 <div id="t-import" class="tab-pane">
 <div class="main">
   <div class="pg-title">Import / Rollback Data</div>
@@ -1152,6 +1215,41 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
     <div class="modal-hdr"><h3 id="pj-modal-title">Pengajuan</h3><button class="x-btn" onclick="closeModal('modal-pj')">×</button></div>
     <div class="modal-body" id="pj-modal-body"></div>
     <div class="modal-ftr" id="pj-modal-ftr" style="flex-wrap:wrap"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-mz">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-hdr"><h3 id="mz-form-title">Muzaki</h3><button class="x-btn" onclick="closeModal('modal-mz')">×</button></div>
+    <div class="modal-body" id="mz-form-body"></div>
+    <div class="modal-ftr"><button class="btn btn-outline" type="button" onclick="closeModal('modal-mz')">Batal</button><button class="btn btn-primary" id="mz-btn-simpan" type="button" onclick="mzSimpan()">Simpan Muzaki</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-mz-detail">
+  <div class="modal" style="max-width:820px">
+    <div class="modal-hdr"><h3 id="mz-detail-title">Detail</h3><button class="x-btn" onclick="closeModal('modal-mz-detail')">×</button></div>
+    <div class="modal-body" id="mz-detail-body"></div>
+    <div class="modal-ftr" id="mz-detail-ftr" style="flex-wrap:wrap"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-upz">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-hdr"><h3>🏢 Master UPZ</h3><button class="x-btn" onclick="closeModal('modal-upz')">×</button></div>
+    <div class="modal-body" id="upz-body"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-kt">
+  <div class="modal" style="max-width:780px">
+    <div class="modal-hdr"><h3 id="kt-form-title">Konten</h3><button class="x-btn" onclick="closeModal('modal-kt')">×</button></div>
+    <div class="modal-body" id="kt-form-body"></div>
+    <div class="modal-ftr"><button class="btn btn-outline" type="button" onclick="closeModal('modal-kt')">Batal</button><button class="btn btn-primary" id="kt-btn-simpan" type="button" onclick="ktSimpan()">Simpan Draf</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-kt-setuju">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-hdr"><h3 id="kt-setuju-title">Persetujuan</h3><button class="x-btn" onclick="closeModal('modal-kt-setuju')">×</button></div>
+    <div class="modal-body" id="kt-setuju-body"></div>
+    <div class="modal-ftr" id="kt-setuju-ftr"></div>
   </div>
 </div>
 
@@ -3440,7 +3538,7 @@ async function dbLogin(ev){
   try{
     const r=await dbApi('cek',null,kode);
     if(!r.ok||r.peran!=='surveyor'){msg.style.color='var(--red,#c0392b)';msg.textContent=r.peran==='excel'?'Token EXCEL tidak bisa dipakai untuk masuk aplikasi.':(r.pesan||'Kode akses ditolak.');return false;}
-    ssSet(SS_TOKEN,kode);ssSet(SS_NAMA,r.nama);
+    ssSet(SS_TOKEN,kode);ssSet(SS_NAMA,r.nama);ssSet('baznas_jabatan',r.jabatan||'PETUGAS');
     inp.value='';msg.textContent='';
     tampilLogin(false);tampilUser();
     toast('Selamat datang, '+r.nama+'.');
@@ -3451,7 +3549,7 @@ async function dbLogin(ev){
   return false;
 }
 function dbLogout(paksa){
-  const go=()=>{ssDel(SS_TOKEN);ssDel(SS_NAMA);if(typeof simpanAcuanLokal==='function')simpanAcuanLokal(null,false);tampilUser();tampilLogin(true);};
+  const go=()=>{ssDel(SS_TOKEN);ssDel(SS_NAMA);ssDel('baznas_jabatan');if(typeof simpanAcuanLokal==='function')simpanAcuanLokal(null,false);tampilUser();tampilLogin(true);};
   if(paksa===true){go();return;}
   const n=qGet().length;
   showKonfirm('🚪','Keluar?',n?`Masih ada ${n} data menunggu terkirim. Data tetap aman di antrian perangkat ini dan akan dikirim saat Anda masuk lagi.`:'Anda akan keluar dari aplikasi.',go,'Keluar','btn-danger');
@@ -4113,6 +4211,570 @@ async function simpanAcuan(){
 }
 
 // ════════════════════════════════════════════
+// v8 — DATA MUZAKI/DONATUR · MASTER UPZ · RIWAYAT SETORAN · KARTU NPWZ · BSZ
+// ════════════════════════════════════════════
+const MZ_OPT={
+  jenisDonatur:['Muzaki','Munfiq','Donatur','CSR','UPZ','Anonim','Lainnya'],
+  bentukEntitas:['Perorangan','Badan/Perusahaan','Instansi Pemerintah','UPZ','Komunitas','Lainnya'],
+  status:['Aktif','Nonaktif'],
+  jenisIdentitas:['NIK','NPWP','Passport','Lainnya'],
+  jenisKelamin:['Laki-laki','Perempuan'],
+  metodePembayaranDefault:['Tunai','Transfer Bank','QRIS','Payroll','Lainnya'],
+  jenisDanaDefault:['Zakat','Infak/Sedekah','DSKL','Lainnya'],
+  pekerjaan:['Belum/Tidak Bekerja','Mengurus Rumah Tangga','Pelajar/Mahasiswa','Pensiunan','Wiraswasta','Swasta','PNS (Pegawai Negeri Sipil)','TNI (Tentara Nasional Indonesia)','POLRI','Karyawan Swasta','Karyawan BUMN','Karyawan BUMD','Karyawan Honorer','Buruh Harian Lepas','Buruh Tani/Perkebunan','Buruh Nelayan/Perikanan','Buruh Peternakan','Pembantu Rumah Tangga','Tukang Cukur','Tukang Listrik','Tukang Batu','Tukang Kayu','Tukang Sol Sepatu','Tukang Las/Pandai Besi','Tukang Jahit','Tukang Gigi','Penata Rambut','Penata Rias','Mekanik','Sopir','Montir','Pedagang','Petani','Peternak','Nelayan','Industri Rumah Tangga','Pengrajin','Seniman','Wartawan','Ustadz/Mubaligh','Juru Masak','Penjaga Toko','Penjaga Warung','Pendeta','Pastur','Perawat','Bidan','Dokter','Apoteker','Psikiater','Psikolog','Guru','Dosen','Tenaga Pengajar','Konsultan','Notaris','Pengacara','Hakim','Jaksa','Arsitek','Akuntan','Desainer','Manajer','Direktur','Programmer','Analis Sistem','Teknisi','Wakil Gubernur','Gubernur','Wakil Bupati','Bupati','Anggota DPRD Provinsi','Anggota DPRD Kabupaten','Tenaga Tata Usaha','Editor','Penulis','Penyiar','Presenter','Peneliti','Fotografer','Videografer','Duta Besar','Waiter/Waitress','Biarawati','Satpam','Petugas Kebersihan','Pramugari/Pramugara','Masinis','Pilot','Nahkoda','ABK (Anak Buah Kapal)','Penerjemah','Pemandu Wisata','Travel Agent','Pegawai Bank','Pegawai Asuransi','Pegawai Pajak','Pegawai Bea Cukai','Pegawai Imigrasi','Pegawai Perusahaan Startup','Asisten Ahli','Promotor Acara','Anggota Lembaga Tinggi','Investor','Lainnya']
+};
+const MZ_PEMERINTAH=['PNS (Pegawai Negeri Sipil)','TNI (Tentara Nasional Indonesia)','POLRI','Wakil Gubernur','Gubernur','Wakil Bupati','Bupati','Anggota DPRD Provinsi','Anggota DPRD Kabupaten','Duta Besar','Anggota Lembaga Tinggi','Hakim','Jaksa','Pegawai Pajak','Pegawai Bea Cukai','Pegawai Imigrasi'];
+const MZ_ISIAN=['nama','jenisDonatur','bentukEntitas','status','npwz','npwzSamaDenganNik','jenisIdentitas','nomorIdentitas','npwp','jenisKelamin','tempatLahir','tanggalLahir','pekerjaan','nip','namaInstansi','upzTerkait','alamat','kelurahan','kecamatan','kota','provinsi','kodePos','hp','whatsapp','email','metodePembayaranDefault','jenisDanaDefault','catatan'];
+const MZ_CACHE='baznas_muzaki_v1', MZ_Q='baznas_antrian_mz_v1', SS_JABATAN='baznas_jabatan';
+const JAB_NAMA={PETUGAS:'Petugas',WK1:'Wakil Ketua I',WK2:'Wakil Ketua II',WK3:'Wakil Ketua III',WK4:'Wakil Ketua IV',KETUA:'Ketua'};
+let mzList=[],mzUpz=[],mzRingkas={},mzBolehNpwz=false,mzBolehBatal=false,mzEdit=null,mzMuatSekali=false,_mzFlush=false;
+
+function xE(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function xRp(v){return 'Rp '+Math.round(+v||0).toLocaleString('id-ID');}
+function xTgl(s){if(!s)return '—';const d=new Date(String(s).length===10?s+'T00:00:00':s);return isNaN(d)?xE(s):d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});}
+function jabatanSaya(){return ssGet(SS_JABATAN)||'PETUGAS';}
+function mzOpsi(list,val,kosong){return (kosong!==false?'<option value="">— Pilih —</option>':'')+list.map(o=>`<option${o===val?' selected':''}>${xE(o)}</option>`).join('');}
+
+// ── cache & antrian offline ──
+function mzSimpanCache(){lsSet(MZ_CACHE,JSON.stringify({muzaki:mzList,upz:mzUpz,ringkas:mzRingkas}));}
+function mzBacaCache(){try{const c=JSON.parse(lsGet(MZ_CACHE)||'{}');mzList=c.muzaki||[];mzUpz=c.upz||[];mzRingkas=c.ringkas||{};}catch{}}
+function mzQ(){try{return JSON.parse(lsGet(MZ_Q)||'[]');}catch{return[];}}
+function mzQSave(q){lsSet(MZ_Q,JSON.stringify(q));}
+
+async function mzMuat(silent){
+  if(!getToken())return;
+  const st=document.getElementById('mz-status');
+  if(st)st.textContent='Memuat…';
+  let r;
+  try{r=await dbApi('daftar_muzaki');}catch(e){mzBacaCache();mzRender();if(st)st.textContent='Offline — menampilkan cache perangkat.';return;}
+  if(!r.ok){if(r.kode==='AUTH')dbLogout(true);else toast(r.pesan,true);return;}
+  if(r.jabatan)ssSet(SS_JABATAN,r.jabatan);
+  mzBolehNpwz=!!r.boleh_ubah_npwz;mzBolehBatal=!!r.boleh_batal_bsz;
+  const tunda=mzQ();
+  mzList=r.muzaki.concat(tunda.filter(t=>!t.data.muzakiId).map(t=>({...t.data,_pending:true})));
+  tunda.filter(t=>t.data.muzakiId).forEach(t=>{const i=mzList.findIndex(x=>x.muzakiId===t.data.muzakiId);if(i>=0)mzList[i]={...mzList[i],...t.data,_pending:true};});
+  mzUpz=r.upz;mzRingkas=r.ringkas||{};mzMuatSekali=true;
+  mzSimpanCache();mzRender();
+  if(st)st.textContent=`${r.muzaki.length} muzaki · ${r.upz.length} UPZ`+(tunda.length?` · ${tunda.length} menunggu terkirim`:'');
+  if(!silent)toast('✓ Data muzaki dimuat.');
+}
+
+function mzRender(){
+  const tb=document.getElementById('mz-tbody');if(!tb)return;
+  const q=(document.getElementById('mz-cari').value||'').toLowerCase().trim();
+  const fj=document.getElementById('mz-filter').value;
+  const rows=mzList.filter(m=>(!fj||m.jenisDonatur===fj)&&(!q||[m.nama,m.nomorIdentitas,m.npwp,m.npwz,m.muzakiId].some(v=>String(v||'').toLowerCase().includes(q))))
+    .sort((a,b)=>String(a.nama).localeCompare(String(b.nama),'id'));
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--g500)">${mzList.length?'Tidak ada yang cocok dengan pencarian/filter.':'Belum ada data muzaki. Klik "+ Tambah Muzaki".'}</td></tr>`;return;}
+  tb.innerHTML=rows.slice(0,500).map(m=>{
+    const s=mzRingkas[m.muzakiId];
+    return `<tr>
+      <td class="mono">${m.muzakiId?xE(m.muzakiId):'<span class="badge b-gold">menunggu</span>'}</td>
+      <td><strong>${xE(m.nama)}</strong>${m.namaInstansi?'<br><span style="font-size:11px;color:var(--g500)">'+xE(m.namaInstansi)+'</span>':''}</td>
+      <td>${xE(m.jenisDonatur)}<br><span style="font-size:11px;color:var(--g500)">${xE(m.bentukEntitas||'')}</span></td>
+      <td class="mono">${xE(m.npwz||'—')}</td><td>${xE(m.hp||m.whatsapp||'—')}</td>
+      <td>${s?`${s.jumlah}× · ${xRp(s.total)}`:'—'}</td>
+      <td><span class="badge ${m.status==='Nonaktif'?'b-gray':'b-teal'}">${xE(m.status||'Aktif')}</span>${m._pending?' <span class="badge b-gold">⏳</span>':''}</td>
+      <td style="white-space:nowrap">${m.muzakiId?`<button class="btn btn-outline" type="button" onclick="mzDetail('${xE(m.muzakiId)}')">Detail</button> `:''}
+        ${m.muzakiId?`<button class="btn btn-ghost" type="button" onclick="mzForm('${xE(m.muzakiId)}')">Ubah</button>`:''}</td></tr>`;
+  }).join('');
+}
+
+// ── form ──
+function mzForm(id){
+  const m=id?mzList.find(x=>x.muzakiId===id):null;
+  mzEdit=m?{...m}:{status:'Aktif',kota:'Lubuklinggau',provinsi:'Sumatera Selatan'};
+  const v=k=>xE(mzEdit[k]??'');
+  const npwzKunci=m&&m.npwz&&!mzBolehNpwz;
+  document.getElementById('mz-form-title').textContent=m?`Ubah Muzaki — ${m.muzakiId}`:'Tambah Muzaki/Donatur Baru';
+  document.getElementById('mz-form-body').innerHTML=`
+  <div id="mz-err" style="display:none;background:#fee2e2;color:#991b1b;border-radius:8px;padding:8px 12px;font-size:12.5px;margin-bottom:10px"></div>
+  <div class="bag-mz">1. Identitas Utama</div>
+  <div class="grid g2">
+    <div class="field c2"><label>Nama <span class="req">*</span></label><input id="mz-nama" value="${v('nama')}"/></div>
+    <div class="field"><label>Jenis Donatur <span class="req">*</span></label><select id="mz-jenisDonatur" onchange="mzAturForm()">${mzOpsi(MZ_OPT.jenisDonatur,mzEdit.jenisDonatur)}</select></div>
+    <div class="field"><label>Bentuk Entitas</label><select id="mz-bentukEntitas" onchange="mzAturForm()">${mzOpsi(MZ_OPT.bentukEntitas,mzEdit.bentukEntitas)}</select></div>
+    <div class="field"><label>Status</label><select id="mz-status">${mzOpsi(MZ_OPT.status,mzEdit.status||'Aktif',false)}</select></div>
+  </div>
+  <div class="bag-mz">2. NPWZ &amp; Identitas Legal</div>
+  <div class="grid g2">
+    <div class="field"><label>NPWZ <span class="hint">nomor resmi dari SIMBA</span></label><input id="mz-npwz" class="mono" value="${v('npwz')}" ${npwzKunci?'readonly title="Hanya Wakil Ketua I/III yang boleh mengubah NPWZ yang sudah terisi"':''}/>${npwzKunci?'<span class="hint">🔒 Mengubah NPWZ hanya oleh Wakil Ketua I / III</span>':''}</div>
+    <div class="field" style="justify-content:flex-end"><label style="display:flex;gap:6px;align-items:center;font-weight:500"><input type="checkbox" id="mz-npwzSamaDenganNik" style="width:auto" ${mzEdit.npwzSamaDenganNik?'checked':''} ${npwzKunci?'disabled':''} onchange="mzAturForm()"/> NPWZ sama dengan NIK/KTP</label></div>
+    <div class="field"><label>Jenis Identitas</label><select id="mz-jenisIdentitas">${mzOpsi(MZ_OPT.jenisIdentitas,mzEdit.jenisIdentitas)}</select></div>
+    <div class="field"><label>Nomor Identitas</label><input id="mz-nomorIdentitas" class="mono" maxlength="30" value="${v('nomorIdentitas')}" oninput="mzAturForm()"/></div>
+    <div class="field"><label>NPWP</label><input id="mz-npwp" class="mono" value="${v('npwp')}"/></div>
+  </div>
+  <div class="bag-mz">3. Data Pribadi/Instansi</div>
+  <div class="grid g2">
+    <div class="field"><label>Jenis Kelamin</label><select id="mz-jenisKelamin">${mzOpsi(MZ_OPT.jenisKelamin,mzEdit.jenisKelamin)}</select></div>
+    <div class="field"><label>Tempat Lahir</label><input id="mz-tempatLahir" value="${v('tempatLahir')}"/></div>
+    <div class="field"><label>Tanggal Lahir</label><input id="mz-tanggalLahir" type="date" value="${v('tanggalLahir')}"/></div>
+    <div class="field" id="mz-pekerjaan-wrap"><label>Pekerjaan</label><select id="mz-pekerjaan" onchange="mzAturForm()">${mzOpsi(MZ_OPT.pekerjaan,mzEdit.pekerjaan)}</select></div>
+    <div class="field" id="mz-nip-wrap"><label>NIP / NRP</label><input id="mz-nip" class="mono" value="${v('nip')}"/></div>
+    <div class="field c2"><label>Nama Instansi/Perusahaan <span class="req" id="mz-inst-req">*</span></label><input id="mz-namaInstansi" value="${v('namaInstansi')}"/><span class="hint">Wajib untuk Badan/Perusahaan atau Instansi Pemerintah.</span></div>
+    <div class="field"><label>UPZ Terkait</label><select id="mz-upzTerkait"><option value="">— Tidak ada —</option>${mzUpz.map(u=>`<option value="${xE(u.kode)}"${u.kode===mzEdit.upzTerkait?' selected':''}>${xE(u.kode)} — ${xE(u.nama)}</option>`).join('')}</select></div>
+  </div>
+  <div class="bag-mz">4. Alamat</div>
+  <div class="grid g2">
+    <div class="field c2"><label>Alamat</label><input id="mz-alamat" value="${v('alamat')}"/></div>
+    <div class="field"><label>Kelurahan</label><input id="mz-kelurahan" value="${v('kelurahan')}"/></div>
+    <div class="field"><label>Kecamatan</label><input id="mz-kecamatan" value="${v('kecamatan')}"/></div>
+    <div class="field"><label>Kota</label><input id="mz-kota" value="${v('kota')}"/></div>
+    <div class="field"><label>Provinsi</label><input id="mz-provinsi" value="${v('provinsi')}"/></div>
+    <div class="field"><label>Kode Pos</label><input id="mz-kodePos" inputmode="numeric" value="${v('kodePos')}"/></div>
+  </div>
+  <div class="bag-mz">5. Kontak</div>
+  <div class="grid g2">
+    <div class="field"><label>Nomor HP/Telepon <span class="hint">4 digit akhir dipakai untuk cek setoran</span></label><input id="mz-hp" type="tel" class="mono" value="${v('hp')}"/></div>
+    <div class="field"><label>WhatsApp</label><input id="mz-whatsapp" type="tel" class="mono" value="${v('whatsapp')}"/></div>
+    <div class="field c2"><label>Email</label><input id="mz-email" type="email" value="${v('email')}"/></div>
+  </div>
+  <div class="bag-mz">6. Preferensi</div>
+  <div class="grid g2">
+    <div class="field"><label>Metode Pembayaran Default</label><select id="mz-metodePembayaranDefault">${mzOpsi(MZ_OPT.metodePembayaranDefault,mzEdit.metodePembayaranDefault)}</select></div>
+    <div class="field"><label>Jenis Dana Default</label><select id="mz-jenisDanaDefault">${mzOpsi(MZ_OPT.jenisDanaDefault,mzEdit.jenisDanaDefault)}</select></div>
+    <div class="field c2"><label>Catatan</label><textarea id="mz-catatan" rows="2">${v('catatan')}</textarea></div>
+  </div>`;
+  mzAturForm(true);
+  openModal('modal-mz');
+}
+function mzEl(k){return document.getElementById('mz-'+k);}
+function mzAturForm(awal){
+  const jenis=mzEl('jenisDonatur').value, sama=mzEl('npwzSamaDenganNik'), nama=mzEl('nama'), npwz=mzEl('npwz');
+  const kunciNpwz=npwz.hasAttribute('readonly');
+  if(jenis==='Anonim'){nama.value='Donatur Anonim';nama.disabled=true;npwz.value='';npwz.disabled=true;sama.checked=false;sama.disabled=true;}
+  else{
+    if(nama.disabled){nama.disabled=false;if(nama.value==='Donatur Anonim')nama.value='';}
+    sama.disabled=kunciNpwz;npwz.disabled=sama.checked;
+    if(sama.checked){if(!mzEl('jenisIdentitas').value)mzEl('jenisIdentitas').value='NIK';npwz.value=mzEl('nomorIdentitas').value;}
+  }
+  const bentuk=mzEl('bentukEntitas').value, perorangan=bentuk==='Perorangan';
+  mzEl('pekerjaan-wrap').style.display=perorangan?'':'none';
+  mzEl('nip-wrap').style.display=(perorangan&&MZ_PEMERINTAH.includes(mzEl('pekerjaan').value))?'':'none';
+  mzEl('inst-req').style.display=(bentuk==='Badan/Perusahaan'||bentuk==='Instansi Pemerintah')?'inline':'none';
+}
+function mzBacaForm(){
+  const o={...mzEdit};
+  MZ_ISIAN.forEach(k=>{const e=mzEl(k);if(!e)return;o[k]=e.type==='checkbox'?e.checked:String(e.value).trim();});
+  if(mzEl('pekerjaan-wrap').style.display==='none')o.pekerjaan='';
+  if(mzEl('nip-wrap').style.display==='none')o.nip='';
+  return o;
+}
+function mzValidasi(o){
+  const e=[];
+  if(!o.nama)e.push('Nama wajib diisi.');
+  if(!o.jenisDonatur)e.push('Jenis Donatur wajib dipilih.');
+  if((o.bentukEntitas==='Badan/Perusahaan'||o.bentukEntitas==='Instansi Pemerintah')&&!o.namaInstansi)e.push('Nama Instansi/Perusahaan wajib diisi.');
+  if((o.jenisIdentitas==='NIK'||o.npwzSamaDenganNik)&&o.nomorIdentitas&&!/^\d{16}$/.test(o.nomorIdentitas))e.push('NIK harus 16 digit angka.');
+  if(o.npwzSamaDenganNik&&!o.nomorIdentitas)e.push('Isi NIK bila NPWZ sama dengan NIK.');
+  if(o.kodePos&&!/^\d+$/.test(o.kodePos))e.push('Kode Pos harus berupa angka.');
+  if(o.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(o.email))e.push('Format Email tidak valid.');
+  const gandaN=o.nomorIdentitas&&mzList.find(x=>x.muzakiId!==o.muzakiId&&x.nomorIdentitas===o.nomorIdentitas);
+  if(gandaN)e.push(`Nomor identitas sudah dipakai ${gandaN.nama} (${gandaN.muzakiId||'menunggu'}).`);
+  return e;
+}
+async function mzSimpan(){
+  const o=mzBacaForm(), err=mzValidasi(o), box=document.getElementById('mz-err');
+  if(err.length){box.innerHTML='<b>Perbaiki dulu:</b><br>'+err.map(xE).join('<br>');box.style.display='block';box.scrollIntoView({block:'nearest'});return;}
+  box.style.display='none';
+  if(!o.id_web)o.id_web='mzw_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  const kirim={};MZ_ISIAN.concat(['muzakiId','id_web']).forEach(k=>{if(o[k]!==undefined)kirim[k]=o[k];});
+  const btn=document.getElementById('mz-btn-simpan');btn.disabled=true;
+  try{
+    let r;
+    try{r=await dbApi('simpan_muzaki',{baris:[kirim]});}
+    catch(e){
+      const q=mzQ().filter(t=>t.data.id_web!==kirim.id_web);q.push({t:Date.now(),data:kirim});mzQSave(q);
+      if(!kirim.muzakiId)mzList.push({...kirim,_pending:true});else{const i=mzList.findIndex(x=>x.muzakiId===kirim.muzakiId);if(i>=0)mzList[i]={...mzList[i],...kirim,_pending:true};}
+      mzSimpanCache();mzRender();closeModal('modal-mz');toast('Offline — data muzaki disimpan di antrian dan dikirim otomatis saat online.',true);return;
+    }
+    if(!r.ok){if(r.kode==='AUTH'){dbLogout(true);return;}toast(r.pesan,true);return;}
+    const h=r.hasil[0];
+    if(!h.ok){box.innerHTML='<b>Ditolak server:</b><br>'+xE(h.pesan);box.style.display='block';return;}
+    closeModal('modal-mz');toast(`✓ Muzaki ${h.muzakiId} ${h.pesan==='baru'?'ditambahkan':'diperbarui'}.`);
+    await mzMuat(true);
+  }finally{btn.disabled=false;}
+}
+async function mzFlush(){
+  if(_mzFlush||!getToken()||!navigator.onLine)return;
+  const q=mzQ();if(!q.length)return;
+  _mzFlush=true;
+  try{
+    let r;try{r=await dbApi('simpan_muzaki',{baris:q.slice(0,50).map(t=>t.data)});}catch(e){return;}
+    if(!r.ok)return;
+    const tolak=r.hasil.filter(h=>!h.ok);
+    const kirim=new Set(q.slice(0,50).map(t=>t.data.id_web));
+    mzQSave(mzQ().filter(t=>!kirim.has(t.data.id_web)));
+    if(tolak.length)toast('Sebagian data muzaki ditolak server: '+tolak.map(h=>h.pesan).slice(0,2).join(' | '),true);
+    else toast('✓ Antrian muzaki terkirim.');
+    await mzMuat(true);
+  }finally{_mzFlush=false;}
+}
+function mzHapus(id){
+  const m=mzList.find(x=>x.muzakiId===id);if(!m)return;
+  showKonfirm('🗑️','Hapus Muzaki?',`"${m.nama}" (${id}) akan ditandai terhapus. Riwayat setorannya tetap tersimpan.`,async()=>{
+    try{const r=await dbApi('hapus_muzaki',{muzakiId:id});toast(r.ok?'✓ '+r.pesan:r.pesan,!r.ok);if(r.ok){closeModal('modal-mz-detail');mzMuat(true);}}
+    catch(e){toast('Tidak dapat terhubung ke server.',true);}
+  },'Hapus','btn-danger');
+}
+
+// ── detail + riwayat setoran ──
+let mzDetailId='',mzSetoran=[];
+async function mzDetail(id){
+  const m=mzList.find(x=>x.muzakiId===id);if(!m)return;
+  mzDetailId=id;
+  const dl=(l,v)=>v?`<div class="pj-dl"><div>${l}</div><div>${xE(v)}</div></div>`:'';
+  const upz=mzUpz.find(u=>u.kode===m.upzTerkait);
+  document.getElementById('mz-detail-title').textContent=m.nama;
+  document.getElementById('mz-detail-body').innerHTML=`
+    <div class="pj-2col"><div>${dl('ID Muzaki',m.muzakiId)}${dl('Jenis / Entitas',[m.jenisDonatur,m.bentukEntitas].filter(Boolean).join(' · '))}${dl('NPWZ',m.npwz)}${dl(m.jenisIdentitas||'Identitas',m.nomorIdentitas)}${dl('NPWP',m.npwp)}${dl('Pekerjaan',m.pekerjaan)}${dl('NIP/NRP',m.nip)}</div>
+    <div>${dl('Instansi',m.namaInstansi)}${dl('UPZ',upz?upz.kode+' — '+upz.nama:m.upzTerkait)}${dl('Alamat',[m.alamat,m.kelurahan,m.kecamatan,m.kota].filter(Boolean).join(', '))}${dl('HP / WA',[m.hp,m.whatsapp].filter(Boolean).join(' / '))}${dl('Email',m.email)}${dl('Preferensi',[m.metodePembayaranDefault,m.jenisDanaDefault].filter(Boolean).join(' · '))}${dl('Status',m.status)}</div></div>
+    <div class="bag-mz" style="margin-top:12px">Riwayat Setoran <span style="font-weight:400;color:var(--g500)">(dari Excel Buku Bukti Kas — baca saja)</span></div>
+    <div id="mz-riwayat">Memuat…</div>`;
+  document.getElementById('mz-detail-ftr').innerHTML=`
+    <button class="btn btn-ghost" type="button" style="color:#c0392b" onclick="mzHapus('${xE(id)}')">Hapus</button>
+    <button class="btn btn-outline" type="button" onclick="mzCetakKartu('${xE(id)}')" ${m.npwz?'':'disabled title="NPWZ belum diisi"'}>🪪 Cetak Kartu NPWZ</button>
+    <button class="btn btn-primary" type="button" onclick="closeModal('modal-mz-detail');mzForm('${xE(id)}')">Ubah Data</button>`;
+  openModal('modal-mz-detail');
+  mzMuatRiwayat();
+}
+async function mzMuatRiwayat(){
+  const box=document.getElementById('mz-riwayat');
+  let r;try{r=await dbApi('riwayat_muzaki',{muzakiId:mzDetailId});}catch(e){box.textContent='Offline — riwayat tidak dapat dimuat.';return;}
+  if(!r.ok){box.textContent=r.pesan;return;}
+  mzSetoran=r.setoran;
+  if(!r.setoran.length){box.innerHTML='<p style="color:var(--g500);font-size:13px">Belum ada setoran tercatat.</p>';return;}
+  box.innerHTML=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">${r.per_tahun.map(t=>`<span class="badge b-teal" style="font-size:12px">${t.tahun}: ${xRp(t.total)}</span>`).join('')}</div>
+  <div class="tbl-scroll"><table class="pj-tbl" style="min-width:620px"><thead><tr><th>Tanggal</th><th>No. Bukti</th><th>Jenis Dana</th><th>Metode</th><th style="text-align:right!important">Nilai</th><th>BSZ</th></tr></thead><tbody>
+  ${r.setoran.map(s=>`<tr><td>${xTgl(s.tanggal)}</td><td class="mono">${xE(s.no_bukti)}</td><td>${xE(s.jenis_dana)}${s.kode_kampanye?'<br><span class="badge b-gold">'+xE(s.kode_kampanye)+'</span>':''}</td><td>${xE(s.metode)}</td>
+    <td style="text-align:right!important">${xRp(s.nilai)}</td>
+    <td>${s.boleh_bsz?`<button class="btn btn-outline" type="button" onclick="mzCetakBsz('${xE(s.kunci)}')">${s.bsz?'Cetak ulang':'Terbitkan BSZ'}</button>${s.bsz?'<br><span class="mono" style="font-size:10.5px">'+xE(s.bsz)+'</span>'+(mzBolehBatal?` <a href="#" onclick="mzBatalBsz('${xE(s.bsz)}');return false" style="font-size:11px;color:#c0392b">batalkan</a>`:''):''}`:'<span style="color:var(--g500);font-size:11px">bukan zakat</span>'}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+// ── cetak: kartu NPWZ & BSZ ──
+function mzMuatQr(){
+  return new Promise(res=>{
+    if(window.qrcode)return res(true);
+    const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
+    s.onload=()=>res(!!window.qrcode);s.onerror=()=>res(false);document.head.appendChild(s);
+  });
+}
+function mzQrSvg(teks,ukuran){
+  if(!window.qrcode)return '';
+  try{const q=qrcode(0,'M');q.addData(teks);q.make();return q.createSvgTag({cellSize:ukuran||3,margin:0});}catch(e){return '';}
+}
+function mzBukaCetak(judul,isi,css){
+  const w=window.open('','_blank','width=1000,height=750,scrollbars=yes');
+  if(!w){toast('Popup diblokir browser. Izinkan popup untuk halaman ini.',true);return;}
+  w.document.write(`<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>${xE(judul)}</title><style>${DOK_CSS}${css||''}</style></head><body>${isi}</body></html>`);
+  w.document.close();w.onload=()=>setTimeout(()=>{w.focus();w.print();},400);
+}
+async function mzCetakKartu(id){
+  const m=mzList.find(x=>x.muzakiId===id);if(!m||!m.npwz)return;
+  await mzMuatQr();
+  const qr=mzQrSvg(location.origin+'/pengajuan.html#setoran',2);
+  const kartu=`<div class="kartu"><div class="k-atas"><img src="${DOK_LOGO}"/><div><b>BAZNAS KOTA LUBUK LINGGAU</b><br><span>KARTU NOMOR POKOK WAJIB ZAKAT</span></div></div>
+    <div class="k-npwz">${xE(m.npwz)}</div>
+    <div class="k-nama">${xE(m.nama)}</div>
+    <div class="k-kecil">${xE(m.namaInstansi||m.jenisDonatur||'')}${m.muzakiId?' · '+xE(m.muzakiId):''}</div>
+    <div class="k-bawah"><div class="k-ttd"><div>Ketua,</div><div class="k-ruang"></div><div><b><u>${xE(DOK_PIMPINAN.ketua.nama)}</u></b></div></div><div class="k-qr">${qr}<div>Cek setoran</div></div></div></div>`;
+  const css=`.kartu{width:85.6mm;height:54mm;border:1px solid #0d7c66;border-radius:3mm;padding:3mm 4mm;margin:10mm auto;font-family:Arial,sans-serif;position:relative;background:linear-gradient(135deg,#fff 60%,#e6f4f1)}
+  .k-atas{display:flex;gap:2mm;align-items:center;font-size:7pt;color:#0a6654}.k-atas img{width:9mm;height:9mm;object-fit:contain}.k-atas span{font-size:6.5pt;letter-spacing:.3px}
+  .k-npwz{font-family:"Courier New",monospace;font-size:13pt;font-weight:bold;letter-spacing:1px;margin-top:3mm}
+  .k-nama{font-size:10pt;font-weight:bold;margin-top:1mm;text-transform:uppercase}.k-kecil{font-size:6.5pt;color:#555}
+  .k-bawah{position:absolute;left:4mm;right:4mm;bottom:2.5mm;display:flex;justify-content:space-between;align-items:flex-end;font-size:6.5pt}
+  .k-ruang{height:7mm}.k-qr{text-align:center;font-size:5.5pt}.k-qr svg{width:13mm;height:13mm}
+  @media screen{body{background:#888}.kartu{background-color:#fff}}`;
+  mzBukaCetak('Kartu NPWZ — '+m.nama,kartu,css);
+  try{dbApi('catat_cetak',{jenis:'kartu_npwz',muzakiId:id});}catch(e){}
+}
+async function mzCetakBsz(kunci){
+  let r;try{r=await dbApi('bsz_terbit',{kunci_penerimaan:kunci});}catch(e){toast('Tidak dapat terhubung ke server.',true);return;}
+  if(!r.ok){toast(r.pesan,true);return;}
+  const qrOk=await mzMuatQr();
+  const urlCek=location.origin+'/pengajuan.html#bsz='+encodeURIComponent(r.nomor_bsz);
+  const qr=qrOk?mzQrSvg(urlCek,2):'';
+  const m=r.muzaki,s=r.setoran;
+  const idn=m.npwp?['NPWP',m.npwp]:[m.jenisIdentitas||'NIK',m.nomorIdentitas];
+  const row=(l,v)=>`<tr><td class="lbl">${l}</td><td class="sep">:</td><td>${v}</td></tr>`;
+  const isi=`<div class="hal bsz">${dKop()}
+    <div class="judul">BUKTI SETOR ZAKAT</div><div class="subjudul">Nomor: ${xE(r.nomor_bsz)}</div>
+    <table class="data">${row('Nama Muzaki',`<b>${xE(m.nama)}</b>`)}${m.namaInstansi?row('Instansi/Perusahaan',xE(m.namaInstansi)):''}
+      ${row('NPWZ',xE(m.npwz||'-'))}${row(xE(idn[0]),xE(idn[1]||'-'))}
+      ${row('Alamat',xE([m.alamat,m.kelurahan,m.kecamatan,m.kota].filter(Boolean).join(', ')||'-'))}</table>
+    <div class="sub">Telah menerima pembayaran zakat dengan rincian:</div>
+    <table class="grid"><thead><tr><th>No</th><th>Tanggal Setor</th><th>No. Bukti Kas</th><th>Jenis Zakat</th><th>Cara Bayar</th><th>Jumlah (Rp)</th></tr></thead>
+    <tbody><tr><td class="c">1</td><td class="c">${xE(dTgl(s.tanggal))}</td><td class="c">${xE(s.no_bukti||'-')}</td><td>${xE(s.jenis_dana)}</td><td class="c">${xE(s.metode||'-')}</td><td style="text-align:right">${Math.round(s.nilai).toLocaleString('id-ID')}</td></tr>
+    <tr><td colspan="5" style="text-align:right"><b>Jumlah</b></td><td style="text-align:right"><b>${Math.round(s.nilai).toLocaleString('id-ID')}</b></td></tr></tbody></table>
+    <p class="isi-surat"><b>Terbilang:</b> <i>${xE(terbilang(s.nilai))}</i></p>
+    <p class="isi-surat" style="font-size:9.5pt">Bukti Setor Zakat ini sah sebagai pengurang penghasilan kena pajak sesuai Undang-Undang Nomor 23 Tahun 2011 tentang Pengelolaan Zakat dan peraturan perpajakan yang berlaku, apabila ditandatangani dan dibubuhi cap BAZNAS Kota Lubuk Linggau.</p>
+    <table class="bsz-kaki"><tr><td class="qr">${qr?qr+'<div>Pindai untuk verifikasi keaslian</div>':'<div class="noqr">Verifikasi: '+xE(location.host)+'/pengajuan.html<br>menu Cek Setoran → Verifikasi BSZ</div>'}</td>
+    <td>${dTtd([{atas:'Lubuklinggau, '+xE(dTgl(r.tanggal_terbit)),jabatan:'Ketua BAZNAS Kota Lubuk Linggau',nama:DOK_PIMPINAN.ketua.nama}])}<div class="cap">(tanda tangan basah &amp; cap)</div></td></tr></table>
+    <div class="ket">Diterbitkan: ${xE(dTgl(r.tanggal_terbit))}${r.cetak_ulang?' · CETAK ULANG':''} · ID Muzaki ${xE(m.muzakiId)}</div>
+  </div>`;
+  const css=`.bsz{min-height:auto!important}.bsz-kaki{width:100%;margin-top:10mm;border-collapse:collapse}.bsz-kaki td{vertical-align:bottom}.bsz-kaki td.qr{width:40mm;text-align:center;font-size:8pt}.qr svg{width:28mm;height:28mm}.noqr{border:1px dashed #000;padding:3mm;font-size:8pt}.cap{text-align:center;font-size:8.5pt;color:#555}.ket{margin-top:8mm;font-size:8pt;color:#555;border-top:1px solid #ccc;padding-top:2mm}`;
+  mzBukaCetak('BSZ '+r.nomor_bsz,isi,css);
+  toast((r.cetak_ulang?'Cetak ulang ':'✓ BSZ terbit ')+r.nomor_bsz);
+  mzMuatRiwayat();
+}
+function mzBatalBsz(no){
+  showKonfirm('⚠️','Batalkan BSZ?',`BSZ ${no} akan dibatalkan (tidak sah lagi saat diverifikasi). Tulis alasan pada isian berikut.`,async()=>{
+    const alasan=prompt('Alasan pembatalan BSZ '+no+':');if(!alasan)return;
+    try{const r=await dbApi('bsz_batal',{nomor_bsz:no,alasan});toast(r.pesan,!r.ok);if(r.ok)mzMuatRiwayat();}catch(e){toast('Tidak dapat terhubung ke server.',true);}
+  },'Lanjut','btn-danger');
+}
+
+// ── Master UPZ ──
+function mzUpzBuka(){
+  document.getElementById('upz-body').innerHTML=`
+  <div class="grid g2" style="margin-bottom:10px">
+    <div class="field"><label>Kode UPZ <span class="req">*</span></label><input id="upz-kode" class="mono" placeholder="mis. UPZ-DINKES"/></div>
+    <div class="field"><label>Nama UPZ <span class="req">*</span></label><input id="upz-nama"/></div>
+    <div class="field"><label>Kategori</label><input id="upz-kategori" placeholder="Instansi / Masjid / Sekolah / Perusahaan"/></div>
+    <div class="field"><label>Status</label><select id="upz-status"><option>Aktif</option><option>Nonaktif</option></select></div>
+    <div class="field"><label>Kecamatan</label><input id="upz-kecamatan"/></div>
+    <div class="field"><label>Kelurahan</label><input id="upz-kelurahan"/></div>
+    <div class="field"><label>Kontak (nama)</label><input id="upz-kontakNama"/></div>
+    <div class="field"><label>Kontak (telepon)</label><input id="upz-kontakTelepon"/></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:12px"><button class="btn btn-primary" type="button" onclick="mzUpzSimpan()">Simpan UPZ</button><button class="btn btn-ghost" type="button" onclick="mzUpzBuka()">Kosongkan</button>
+  <span class="hint" style="align-self:center">Persentase Hak Amil per UPZ tetap diatur di Jurnal Harian/Excel.</span></div>
+  <div class="tbl-scroll"><table class="pj-tbl" style="min-width:560px"><thead><tr><th>Kode</th><th>Nama</th><th>Kategori</th><th>Kecamatan</th><th>Kontak</th><th></th></tr></thead><tbody>
+  ${mzUpz.length?mzUpz.map(u=>`<tr><td class="mono">${xE(u.kode)}</td><td>${xE(u.nama)}</td><td>${xE(u.kategori)}</td><td>${xE(u.kecamatan)}</td><td>${xE([u.kontakNama,u.kontakTelepon].filter(Boolean).join(' · '))}</td>
+    <td><button class="btn btn-ghost" type="button" onclick="mzUpzIsi('${xE(u.kode)}')">Ubah</button></td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--g500);padding:16px">Belum ada UPZ.</td></tr>'}
+  </tbody></table></div>`;
+  openModal('modal-upz');
+}
+function mzUpzIsi(kode){const u=mzUpz.find(x=>x.kode===kode);if(!u)return;['kode','nama','kategori','status','kecamatan','kelurahan','kontakNama','kontakTelepon'].forEach(k=>{const e=document.getElementById('upz-'+k);if(e)e.value=u[k]||(k==='status'?'Aktif':'');});document.getElementById('upz-kode').readOnly=true;}
+async function mzUpzSimpan(){
+  const d={};['kode','nama','kategori','status','kecamatan','kelurahan','kontakNama','kontakTelepon'].forEach(k=>d[k]=document.getElementById('upz-'+k).value.trim());
+  if(!d.kode||!d.nama){toast('Kode dan nama UPZ wajib diisi.',true);return;}
+  try{const r=await dbApi('simpan_upz',d);toast(r.ok?'✓ '+r.pesan:r.pesan,!r.ok);if(r.ok){await mzMuat(true);mzUpzBuka();}}catch(e){toast('Tidak dapat terhubung ke server.',true);}
+}
+
+function mzInit(){
+  mzBacaCache();
+  window.addEventListener('online',mzFlush);
+  setInterval(()=>{if(mzQ().length)mzFlush();},30000);
+}
+
+// ════════════════════════════════════════════
+// v8 — PUBLIKASI: LAPORAN PENYALURAN & KAMPANYE TERJADWAL + ALUR PERSETUJUAN
+// ════════════════════════════════════════════
+const KT_ST={DRAF:'Draf',MWK:'Menunggu Wakil Ketua',MK:'Menunggu Ketua',SETUJU:'Disetujui',TAYANG:'Tayang',AKHIR:'Berakhir',ARSIP:'Arsip'};
+const KT_DANA=['Zakat','Infak/Sedekah Terikat','Infak/Sedekah Tidak Terikat','DSKL'];
+let ktData={kampanye:[],laporan:[]},ktMode='kampanye',ktEdit=null,ktFotoBaru=[],ktFotoHapus=[],ktQris=null,ktKal=new Date();
+let ktFotoCache={};
+
+function ktBadge(s){const c={[KT_ST.DRAF]:'b-gray',[KT_ST.MWK]:'b-gold',[KT_ST.MK]:'b-gold',[KT_ST.SETUJU]:'b-blue',[KT_ST.TAYANG]:'b-teal',[KT_ST.AKHIR]:'b-red',[KT_ST.ARSIP]:'b-gray'}[s]||'b-gray';return `<span class="badge ${c}">${xE(s)}</span>`;}
+function ktGiliranSaya(o){const j=jabatanSaya();return (o.status_efektif===KT_ST.MWK&&j===o.bidang_wk)||(o.status_efektif===KT_ST.MK&&j==='KETUA');}
+function ktLinkPublik(id){return location.origin+'/k/'+encodeURIComponent(id);}
+
+async function ktMuat(silent){
+  if(!getToken())return;
+  const st=document.getElementById('kt-status');if(st)st.textContent='Memuat…';
+  let r;try{r=await dbApi('konten_daftar');}catch(e){if(st)st.textContent='Offline.';return;}
+  if(!r.ok){if(r.kode==='AUTH')dbLogout(true);else toast(r.pesan,true);return;}
+  if(r.jabatan)ssSet(SS_JABATAN,r.jabatan);
+  ktData=r;ktRender();
+  const giliran=r.kampanye.concat(r.laporan).filter(ktGiliranSaya).length;
+  const b=document.getElementById('kt-count');if(b){b.textContent=giliran;b.style.display=giliran?'inline-block':'none';}
+  if(st)st.textContent=`Anda: ${JAB_NAMA[jabatanSaya()]||jabatanSaya()}`+(giliran?` · ${giliran} menunggu persetujuan Anda`:'');
+}
+function ktPilihMode(m,btn){ktMode=m;document.querySelectorAll('.kt-mode').forEach(b=>b.classList.toggle('btn-primary',b===btn));document.querySelectorAll('.kt-mode').forEach(b=>b.classList.toggle('btn-outline',b!==btn));ktRender();}
+function ktRender(){
+  const box=document.getElementById('kt-isi');if(!box)return;
+  if(ktMode==='kalender')return ktRenderKalender(box);
+  let list=ktMode==='saya'?ktData.kampanye.concat(ktData.laporan).filter(ktGiliranSaya):ktData[ktMode]||[];
+  const f=document.getElementById('kt-filter').value;
+  if(f)list=list.filter(o=>o.status_efektif===f);
+  list=list.slice().sort((a,b)=>String(b.diubah_pada).localeCompare(String(a.diubah_pada)));
+  if(!list.length){box.innerHTML=`<div class="card"><div class="card-body" style="text-align:center;color:var(--g500)">${ktMode==='saya'?'Tidak ada konten yang menunggu persetujuan Anda.':'Belum ada '+(ktMode==='kampanye'?'kampanye':'laporan penyaluran')+'.'}</div></div>`;return;}
+  box.innerHTML=list.map(ktKartu).join('');
+}
+function ktKartu(o){
+  const kmp=o.jenis_konten==='kampanye', st=o.status_efektif, j=jabatanSaya();
+  const pers=kmp&&o.target?Math.min(100,Math.round(o.terkumpul/o.target*100)):0;
+  const aksi=[];
+  if(st===KT_ST.DRAF){aksi.push(`<button class="btn btn-outline" type="button" onclick="ktForm('${o.jenis_konten}','${xE(o.id)}')">Ubah</button>`,`<button class="btn btn-primary" type="button" onclick="ktAksi('konten_ajukan','${o.jenis_konten}','${xE(o.id)}')">Ajukan ke ${xE(JAB_NAMA[o.bidang_wk])}</button>`,`<button class="btn btn-ghost" type="button" style="color:#c0392b" onclick="ktAksi('konten_hapus','${o.jenis_konten}','${xE(o.id)}')">Hapus</button>`);}
+  if(ktGiliranSaya(o)){aksi.push(`<button class="btn btn-primary" type="button" onclick="ktPersetujuan('${o.jenis_konten}','${xE(o.id)}',true)">✓ Setujui</button>`,`<button class="btn btn-outline" type="button" onclick="ktPersetujuan('${o.jenis_konten}','${xE(o.id)}',false)">↩ Kembalikan</button>`);}
+  if([KT_ST.SETUJU,KT_ST.TAYANG,KT_ST.AKHIR].includes(st)&&(j!=='PETUGAS'||o.dibuat_oleh===ssGet(SS_NAMA)))aksi.push(`<button class="btn btn-outline" type="button" onclick="ktAksi('konten_revisi','${o.jenis_konten}','${xE(o.id)}')">Revisi</button>`);
+  if([KT_ST.TAYANG,KT_ST.AKHIR].includes(st)&&j!=='PETUGAS')aksi.push(`<button class="btn btn-ghost" type="button" onclick="ktAksi('konten_arsip','${o.jenis_konten}','${xE(o.id)}')">Arsipkan</button>`);
+  if([KT_ST.TAYANG,KT_ST.AKHIR].includes(st))aksi.push(`<button class="btn btn-ghost" type="button" onclick="ktSalin('${xE(ktLinkPublik(o.id))}')">🔗 Salin tautan</button>`);
+  aksi.push(`<button class="btn btn-ghost" type="button" onclick="ktRiwayat('${xE(o.id)}')">Riwayat</button>`);
+  return `<div class="card kt-kartu"><div class="card-body">
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:flex-start">
+      <div><div class="mono" style="font-size:11px;color:var(--g500)">${xE(o.id)} · ${kmp?'Kampanye':'Laporan Penyaluran'}</div>
+      <div style="font-weight:700;font-size:15px;margin:2px 0">${xE(o.judul)}</div>
+      <div style="font-size:12px;color:var(--g500)">${kmp?`${xE(o.jenis_dana)} · ${xE(o.program_penyaluran)} · ${xTgl(o.tanggal_mulai)} – ${xTgl(o.tanggal_berakhir)}`:`${xTgl(o.tanggal_kegiatan)} · ${xE(o.program)} · ${o.jumlah_penerima} penerima · ${xRp(o.total_nilai)} · ${xE(o.kecamatan)}`}</div></div>
+      <div style="text-align:right">${ktBadge(st)}<div style="font-size:11px;color:var(--g500);margin-top:3px">Persetujuan: ${xE(JAB_NAMA[o.bidang_wk])} → Ketua${o.waktu_tayang?'<br>Tayang: '+xE(new Date(o.waktu_tayang).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'})):''}</div></div>
+    </div>
+    ${kmp?`<div class="kt-prog"><div style="width:${pers}%"></div></div><div style="font-size:12px">${xRp(o.terkumpul)} dari ${xRp(o.target)} (${o.target?Math.round(o.terkumpul/o.target*100):0}%) · ${o.donatur} donatur</div>`:''}
+    ${o.catatan_persetujuan?`<div class="kt-catatan">📝 ${xE(o.catatan_persetujuan)}</div>`:''}
+    <div style="font-size:11px;color:var(--g500);margin-top:4px">Dibuat: ${xE(o.dibuat_oleh)}${o.disetujui_wk?' · WK: '+xE(o.disetujui_wk.replace(/\s*\(.*\)$/,'')):''}${o.disetujui_ketua?' · Ketua: '+xE(o.disetujui_ketua.replace(/\s*\(.*\)$/,'')):''} · ${o.foto_ids.length} foto</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${aksi.join('')}</div>
+  </div></div>`;
+}
+function ktSalin(t){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('✓ Tautan disalin: '+t)).catch(()=>prompt('Salin tautan:',t));}
+
+async function ktAksi(aksi,jenis,id,catatan){
+  const lanjut=async()=>{
+    let r;try{r=await dbApi(aksi,{jenis,id,catatan});}catch(e){toast('Tidak dapat terhubung ke server.',true);return;}
+    toast(r.ok?'✓ '+r.pesan:r.pesan,!r.ok);if(r.ok){closeModal('modal-kt-setuju');ktMuat(true);}
+  };
+  if(aksi==='konten_hapus')return showKonfirm('🗑️','Hapus Draf?',`Draf ${id} akan dihapus.`,lanjut,'Hapus','btn-danger');
+  if(aksi==='konten_revisi')return showKonfirm('✏️','Buka Revisi?',`${id} akan kembali ke Draf dan DITARIK dari halaman publik sampai disetujui ulang oleh Wakil Ketua dan Ketua.`,lanjut,'Buka Revisi','btn-primary');
+  return lanjut();
+}
+function ktPersetujuan(jenis,id,setuju){
+  const o=(ktData[jenis]||[]).find(x=>x.id===id);
+  document.getElementById('kt-setuju-title').textContent=(setuju?'Setujui — ':'Kembalikan — ')+id;
+  document.getElementById('kt-setuju-body').innerHTML=`<p style="font-size:13px;margin-bottom:8px"><b>${xE(o?o.judul:id)}</b><br>Tahap: ${xE(o?o.status_efektif:'')}</p>
+    <div class="field"><label>Catatan ${setuju?'(opsional)':'<span class="req">*</span> (wajib — alasan pengembalian)'}</label><textarea id="kt-catatan" rows="3"></textarea></div>
+    ${setuju&&o&&o.status_efektif===KT_ST.MK?`<p class="hint" style="margin-top:6px">${o.waktu_tayang&&o.waktu_tayang>new Date().toISOString()?'Setelah disetujui akan tayang otomatis pada '+xE(new Date(o.waktu_tayang).toLocaleString('id-ID')):'Setelah disetujui akan langsung tayang di halaman publik.'}</p>`:''}`;
+  document.getElementById('kt-setuju-ftr').innerHTML=`<button class="btn btn-ghost" type="button" onclick="closeModal('modal-kt-setuju')">Batal</button>
+    <button class="btn ${setuju?'btn-primary':'btn-danger'}" type="button" onclick="ktKirimPersetujuan('${jenis}','${xE(id)}',${setuju})">${setuju?'✓ Setujui':'↩ Kembalikan'}</button>`;
+  openModal('modal-kt-setuju');
+}
+function ktKirimPersetujuan(jenis,id,setuju){
+  const c=document.getElementById('kt-catatan').value.trim();
+  if(!setuju&&!c){toast('Catatan pengembalian wajib diisi.',true);return;}
+  ktAksi(setuju?'konten_setujui':'konten_kembalikan',jenis,id,c);
+}
+async function ktRiwayat(id){
+  let r;try{r=await dbApi('konten_riwayat',{id});}catch(e){toast('Offline.',true);return;}
+  document.getElementById('kt-setuju-title').textContent='Riwayat — '+id;
+  document.getElementById('kt-setuju-body').innerHTML=r.riwayat.length?`<table class="pj-tbl" style="min-width:0"><thead><tr><th>Waktu</th><th>Perubahan</th><th>Oleh</th><th>Catatan</th></tr></thead><tbody>${r.riwayat.map(x=>`<tr><td>${xE(new Date(x.waktu).toLocaleString('id-ID',{dateStyle:'short',timeStyle:'short'}))}</td><td>${xE(x.dari_status)} → <b>${xE(x.ke_status)}</b></td><td>${xE(x.oleh)}${x.jabatan?' ('+xE(x.jabatan)+')':''}</td><td>${xE(x.catatan)}</td></tr>`).join('')}</tbody></table>`:'<p>Belum ada riwayat persetujuan.</p>';
+  document.getElementById('kt-setuju-ftr').innerHTML=`<button class="btn btn-primary" type="button" onclick="closeModal('modal-kt-setuju')">Tutup</button>`;
+  openModal('modal-kt-setuju');
+}
+
+// ── foto: kompres di browser ──
+function ktKompres(file,maks=1600,q=0.8){
+  return new Promise((res,rej)=>{
+    if(!/^image\//.test(file.type))return rej(new Error('Bukan file gambar.'));
+    const img=new Image(),url=URL.createObjectURL(file);
+    img.onload=()=>{let w=img.width,h=img.height;const s=Math.min(1,maks/Math.max(w,h));w=Math.round(w*s);h=Math.round(h*s);
+      const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);URL.revokeObjectURL(url);
+      const d=c.toDataURL('image/jpeg',q);res({mime:'image/jpeg',base64:d.split(',')[1],pratinjau:d});};
+    img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('Gambar tidak terbaca.'));};img.src=url;
+  });
+}
+async function ktFotoUrl(fid){
+  if(ktFotoCache[fid])return ktFotoCache[fid];
+  try{const r=await dbApi('konten_foto',{foto:fid});if(r.ok)return (ktFotoCache[fid]=`data:${r.mime};base64,${r.base64}`);}catch(e){}
+  return '';
+}
+async function ktTambahFoto(inp){
+  const files=[...inp.files];inp.value='';
+  for(const f of files){
+    if(ktJumlahFoto()>=6){toast('Maksimal 6 foto.',true);break;}
+    try{ktFotoBaru.push(await ktKompres(f));}catch(e){toast(e.message,true);}
+  }
+  ktRenderFoto();
+}
+async function ktGantiQris(inp){const f=inp.files[0];inp.value='';if(!f)return;try{ktQris=await ktKompres(f,1200,0.9);ktRenderFoto();}catch(e){toast(e.message,true);}}
+function ktJumlahFoto(){return (ktEdit.foto_ids||[]).filter(f=>!ktFotoHapus.includes(f)).length+ktFotoBaru.length;}
+async function ktRenderFoto(){
+  const box=document.getElementById('kt-foto-list');if(!box)return;
+  const lama=(ktEdit.foto_ids||[]).filter(f=>!ktFotoHapus.includes(f));
+  box.innerHTML=lama.map(f=>`<div class="kt-th" data-f="${xE(f)}"><img alt="foto"/><button type="button" onclick="ktFotoHapus.push('${xE(f)}');ktRenderFoto()">×</button></div>`).join('')+
+    ktFotoBaru.map((f,i)=>`<div class="kt-th"><img src="${f.pratinjau}" alt="foto baru"/><button type="button" onclick="ktFotoBaru.splice(${i},1);ktRenderFoto()">×</button></div>`).join('');
+  box.querySelectorAll('.kt-th[data-f]').forEach(async el=>{el.querySelector('img').src=await ktFotoUrl(el.dataset.f);});
+  const q=document.getElementById('kt-qris-prev');
+  if(q){if(ktQris)q.innerHTML=`<img src="${ktQris.pratinjau}" style="max-height:90px"/>`;else if(ktEdit.qris_foto_id){q.innerHTML='<img style="max-height:90px"/>';q.querySelector('img').src=await ktFotoUrl(ktEdit.qris_foto_id);}else q.innerHTML='<span class="hint">Belum ada QRIS.</span>';}
+}
+
+// ── form konten ──
+function ktForm(jenis,id){
+  const o=id?(ktData[jenis]||[]).find(x=>x.id===id):null;
+  ktEdit=o?{...o}:{jenis_konten:jenis,foto_ids:[],bidang_wk:jenis==='kampanye'?'WK1':'WK2'};
+  ktFotoBaru=[];ktFotoHapus=[];ktQris=null;
+  const v=k=>xE(ktEdit[k]??'');
+  const wt=ktEdit.waktu_tayang?new Date(new Date(ktEdit.waktu_tayang).getTime()+7*3600e3).toISOString().slice(0,16):'';
+  const bidang=`<div class="field"><label>Disetujui oleh (tahap 1)</label><select id="kt-bidang_wk">${['WK1','WK2','WK3','WK4'].map(w=>`<option value="${w}"${w===ktEdit.bidang_wk?' selected':''}>${JAB_NAMA[w]}</option>`).join('')}</select><span class="hint">Tahap akhir selalu oleh Ketua.</span></div>
+    <div class="field"><label>Jadwal tayang <span class="hint">kosong = langsung setelah disetujui Ketua</span></label><input id="kt-waktu_tayang" type="datetime-local" value="${wt}"/></div>`;
+  const umum=`<div class="field c2"><label>Cerita</label><textarea id="kt-cerita" rows="5" placeholder="Ceritakan dengan bahasa sederhana dan hangat. Jangan cantumkan nama, NIK, alamat penerima, atau nominal per orang.">${v('cerita')}</textarea></div>
+    <div class="field c2"><label>Kutipan ayat/hadis (opsional)</label><input id="kt-kutipan" value="${v('kutipan')}" placeholder="mis. “Perumpamaan orang yang menginfakkan hartanya…” (QS. Al-Baqarah: 261)"/></div>
+    <div class="field c2"><label>Testimoni penerima (opsional)</label><textarea id="kt-testimoni" rows="2">${v('testimoni')}</textarea>
+      <label style="display:flex;gap:6px;align-items:center;font-weight:500;margin-top:4px"><input type="checkbox" id="kt-izin_testimoni" style="width:auto" ${ktEdit.izin_testimoni==='TRUE'?'checked':''}/> Ada izin tertulis penerima untuk memuat testimoni</label></div>
+    <div class="field c2"><label>Foto (maks. 6, otomatis dikompres)</label><div id="kt-foto-list" class="kt-foto"></div>
+      <input type="file" accept="image/*" multiple onchange="ktTambahFoto(this)"/>
+      <label style="display:flex;gap:6px;align-items:center;font-weight:600;margin-top:6px;color:#7c5c00"><input type="checkbox" id="kt-izin_foto" style="width:auto" ${ktEdit.izin_foto==='TRUE'?'checked':''}/> Penerima telah memberi persetujuan foto (utamakan foto tanpa wajah yang jelas)</label></div>`;
+  let isi;
+  if(jenis==='kampanye'){
+    isi=`<div class="grid g2">
+      <div class="field"><label>Kode kampanye <span class="req">*</span></label><input id="kt-kode_kampanye" class="mono" value="${v('kode_kampanye')}" ${o?'readonly':''} placeholder="KMP-${new Date().getFullYear()+1}-RAMADAN" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9-]/g,'')"/><span class="hint">Tidak bisa diubah setelah disimpan (dipakai Excel).</span></div>
+      <div class="field"><label>Judul <span class="req">*</span> <span class="hint">maks. 60–80 karakter</span></label><input id="kt-judul" maxlength="80" value="${v('judul')}"/></div>
+      <div class="field"><label>Jenis dana <span class="req">*</span></label><select id="kt-jenis_dana">${mzOpsi(KT_DANA,ktEdit.jenis_dana)}</select></div>
+      <div class="field"><label>Program penyaluran (tujuan dana) <span class="req">*</span></label><input id="kt-program_penyaluran" value="${v('program_penyaluran')}"/></div>
+      <div class="field"><label>Target (Rp) <span class="req">*</span></label><input id="kt-target" type="number" min="1" value="${v('target')}"/></div>
+      <div class="field"><label>Kata kunci <span class="hint">pisah dengan ; — untuk tebak otomatis di Excel</span></label><input id="kt-kata_kunci" value="${v('kata_kunci')}"/></div>
+      <div class="field"><label>Tanggal mulai <span class="req">*</span></label><input id="kt-tanggal_mulai" type="date" value="${v('tanggal_mulai')}"/></div>
+      <div class="field"><label>Tanggal berakhir <span class="req">*</span></label><input id="kt-tanggal_berakhir" type="date" value="${v('tanggal_berakhir')}"/></div>
+      <div class="field c2"><label>Rekening tujuan resmi</label><textarea id="kt-rekening_tujuan" rows="2" placeholder="BSI 7xxx a.n. BAZNAS Kota Lubuklinggau">${v('rekening_tujuan')}</textarea></div>
+      <div class="field c2"><label>QRIS resmi (opsional)</label><div id="kt-qris-prev"></div><input type="file" accept="image/*" onchange="ktGantiQris(this)"/></div>
+      ${bidang}${umum}</div>`;
+  }else{
+    isi=`<div class="grid g2">
+      <div class="field"><label>Tanggal kegiatan <span class="req">*</span></label><input id="kt-tanggal_kegiatan" type="date" value="${v('tanggal_kegiatan')}" onchange="ktHitungLaporan()"/></div>
+      <div class="field"><label>Judul <span class="req">*</span></label><input id="kt-judul" maxlength="80" value="${v('judul')}" placeholder="Hari Ini Kami Menyalurkan …"/></div>
+      <div class="field c2"><label>Program (angka diambil otomatis dari penyaluran tercatat Excel) <span class="req">*</span></label><div id="kt-program-pilih" class="hint">Pilih tanggal kegiatan dulu.</div></div>
+      ${bidang}${umum}</div>`;
+  }
+  document.getElementById('kt-form-title').textContent=(o?'Ubah ':'Buat ')+(jenis==='kampanye'?'Kampanye':'Laporan Penyaluran')+(o?' — '+o.id:'');
+  document.getElementById('kt-form-body').innerHTML=(o&&o.catatan_persetujuan?`<div class="kt-catatan" style="margin-bottom:10px">📝 ${xE(o.catatan_persetujuan)}</div>`:'')+isi;
+  openModal('modal-kt');ktRenderFoto();
+  if(jenis==='laporan'&&ktEdit.tanggal_kegiatan)ktHitungLaporan(ktEdit.program);
+}
+async function ktHitungLaporan(pilih){
+  const tgl=document.getElementById('kt-tanggal_kegiatan').value, box=document.getElementById('kt-program-pilih');
+  if(!tgl){box.textContent='Pilih tanggal kegiatan dulu.';return;}
+  box.textContent='Menghitung dari sheet Penyaluran…';
+  let r;try{r=await dbApi('laporan_hitung',{tanggal:tgl});}catch(e){box.textContent='Offline.';return;}
+  if(!r.ok){box.textContent=r.pesan;return;}
+  if(!r.program.length){box.innerHTML='<span style="color:#c0392b">Belum ada penyaluran tercatat pada tanggal ini (kirim dari Excel dulu).</span>';return;}
+  box.innerHTML=r.program.map((p,i)=>`<label class="kt-prog-opsi"><input type="radio" name="kt-program" value="${xE(p.program)}" ${(pilih?p.program.toLowerCase()===String(pilih).toLowerCase():i===0)?'checked':''} style="width:auto"/>
+    <b>${xE(p.program)}</b> — ${p.jumlah_penerima} penerima · ${xRp(p.total_nilai)}${p.kecamatan?' · '+xE(p.kecamatan):''}</label>`).join('');
+}
+async function ktSimpan(){
+  const jenis=ktEdit.jenis_konten,g=k=>{const e=document.getElementById('kt-'+k);return e?(e.type==='checkbox'?e.checked:e.value.trim()):undefined;};
+  const data={judul:g('judul'),cerita:g('cerita'),kutipan:g('kutipan'),testimoni:g('testimoni'),izin_testimoni:g('izin_testimoni'),izin_foto:g('izin_foto'),bidang_wk:g('bidang_wk'),waktu_tayang:g('waktu_tayang')};
+  if(jenis==='kampanye')['kode_kampanye','jenis_dana','program_penyaluran','target','tanggal_mulai','tanggal_berakhir','rekening_tujuan','kata_kunci'].forEach(k=>data[k]=g(k));
+  else{data.tanggal_kegiatan=g('tanggal_kegiatan');const p=document.querySelector('input[name=kt-program]:checked');data.program=p?p.value:'';}
+  if(ktJumlahFoto()&&!data.izin_foto){toast('Centang "Penerima telah memberi persetujuan foto" sebelum memuat foto.',true);return;}
+  if(data.testimoni&&!data.izin_testimoni){toast('Testimoni hanya boleh dimuat dengan izin tertulis penerima.',true);return;}
+  const btn=document.getElementById('kt-btn-simpan');btn.disabled=true;btn.textContent='Menyimpan…';
+  try{
+    const r=await dbApi('konten_simpan',{jenis,id:ktEdit.id||'',data,foto_baru:ktFotoBaru.map(f=>({mime:f.mime,base64:f.base64})),foto_hapus:ktFotoHapus,qris_baru:ktQris?{mime:ktQris.mime,base64:ktQris.base64}:null});
+    if(!r.ok){toast(r.pesan,true);return;}
+    closeModal('modal-kt');toast('✓ '+r.pesan+' Klik "Ajukan" bila sudah siap.');ktMuat(true);
+  }catch(e){toast('Tidak dapat terhubung ke server (foto besar butuh koneksi stabil).',true);}
+  finally{btn.disabled=false;btn.textContent='Simpan Draf';}
+}
+
+// ── kalender bulanan ──
+function ktGeserBulan(n){ktKal=new Date(ktKal.getFullYear(),ktKal.getMonth()+n,1);ktRender();}
+function ktRenderKalender(box){
+  const y=ktKal.getFullYear(),m=ktKal.getMonth(),awal=new Date(y,m,1),hari=new Date(y,m+1,0).getDate(),geser=(awal.getDay()+6)%7;
+  const ymd=d=>`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const kmp=ktData.kampanye.filter(o=>o.status_efektif!==KT_ST.ARSIP), lap=ktData.laporan;
+  let sel='';for(let i=0;i<geser;i++)sel+='<div class="kal-sel kosong"></div>';
+  for(let d=1;d<=hari;d++){
+    const t=ymd(d);
+    const ev=kmp.filter(o=>o.tanggal_mulai<=t&&o.tanggal_berakhir>=t).map(o=>`<div class="kal-ev kmp ${o.status_efektif===KT_ST.TAYANG?'on':''}" title="${xE(o.judul)} (${xE(o.status_efektif)})">${o.tanggal_mulai===t||d===1?xE(o.judul):'&nbsp;'}</div>`)
+      .concat(lap.filter(o=>o.tanggal_kegiatan===t).map(o=>`<div class="kal-ev lap" title="${xE(o.judul)}">📣 ${xE(o.program)}</div>`));
+    sel+=`<div class="kal-sel${t===new Date().toISOString().slice(0,10)?' hari-ini':''}"><div class="kal-tgl">${d}</div>${ev.join('')}</div>`;
+  }
+  box.innerHTML=`<div class="card"><div class="card-body">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><button class="btn btn-outline" type="button" onclick="ktGeserBulan(-1)">‹</button>
+    <b style="min-width:150px;text-align:center">${awal.toLocaleDateString('id-ID',{month:'long',year:'numeric'})}</b><button class="btn btn-outline" type="button" onclick="ktGeserBulan(1)">›</button>
+    <span class="hint" style="margin-left:auto"><span class="kal-ev kmp on" style="display:inline-block">Kampanye tayang</span> <span class="kal-ev kmp" style="display:inline-block">Kampanye lain</span> <span class="kal-ev lap" style="display:inline-block">Laporan</span></span></div>
+    <div class="kal">${['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map(h=>`<div class="kal-h">${h}</div>`).join('')}${sel}</div></div></div>`;
+}
+
+// ════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════
 loadStore();
@@ -4124,6 +4786,7 @@ document.getElementById('f-kota').value='Lubuklinggau';
 document.getElementById('f-provinsi').value='Sumatera Selatan';
 dbInit();
 document.getElementById('f-tglLahir').addEventListener('change',updateDesilBaznas);
+mzInit();
 </script>
 </body>
 </html>
