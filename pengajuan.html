@@ -15,6 +15,7 @@ header p{font-size:13px;opacity:.9;margin-top:2px}
 .tabs{display:flex;max-width:760px;margin:0 auto;background:#fff;border-bottom:1px solid var(--g300);position:sticky;top:0;z-index:5}
 .tabs button{flex:1;padding:13px 8px;border:0;background:none;font-size:14px;font-weight:700;color:var(--g500);border-bottom:3px solid transparent;cursor:pointer}
 .tabs button.on{color:var(--teal);border-bottom-color:var(--teal)}
+@media(max-width:420px){.tabs button{font-size:12.5px;padding:12px 4px}}
 main{max-width:760px;margin:0 auto;padding:16px}
 .card{background:#fff;border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:16px;overflow:hidden}
 .card h2{font-size:14px;background:var(--teal);color:#fff;padding:10px 16px;letter-spacing:.3px}
@@ -66,7 +67,8 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
 </header>
 <nav class="tabs">
   <button id="tab-f" class="on" onclick="tab('f')">📝 Ajukan Bantuan</button>
-  <button id="tab-s" onclick="tab('s')">🔎 Cek Status / Bantuan</button>
+  <button id="tab-s" onclick="tab('s')">🔎 Cek Status</button>
+  <button id="tab-z" onclick="tab('z')">💚 Cek Setoran</button>
 </nav>
 <main>
 
@@ -190,18 +192,30 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
   </div></div>
   <div id="s-hasil" class="card hidden"><div class="hasil" id="s-isi"></div></div>
 </section>
+
+<!-- ═════════ CEK SETORAN MUZAKI & VERIFIKASI BSZ ═════════ -->
+<section id="sec-z" class="hidden">
+  <div class="card"><h2>CEK SETORAN ZAKAT/INFAK</h2><div class="body grid">
+    <div class="full"><label>NPWZ atau NIK</label><input id="z-id" inputmode="numeric" maxlength="30" placeholder="Nomor NPWZ / NIK terdaftar" autocomplete="off"></div>
+    <div class="full"><label>4 digit terakhir nomor HP <span class="hint">yang terdaftar di BAZNAS</span></label><input id="z-hp" inputmode="numeric" maxlength="4" placeholder="mis. 7890" autocomplete="off"></div>
+    <div class="full"><button class="btn" id="btn-z" onclick="cekSetoran()">Cek Setoran</button></div>
+  </div></div>
+  <div id="z-hasil" class="card hidden"><div class="hasil" id="z-isi"></div></div>
+  <div class="card"><h2>VERIFIKASI BUKTI SETOR ZAKAT (BSZ)</h2><div class="body grid">
+    <div class="full"><label>Nomor BSZ <span class="hint">atau pindai QR pada BSZ</span></label><input id="b-no" placeholder="0001/BSZ/BAZNAS-LL/X/2026" style="text-transform:uppercase" maxlength="30"></div>
+    <div class="full"><button class="btn" id="btn-b" onclick="verifBsz()">Verifikasi</button></div>
+  </div></div>
+  <div id="b-hasil" class="card hidden"><div class="hasil" id="b-isi"></div></div>
+</section>
 </main>
-<footer>BAZNAS Kota Lubuklinggau · Data Anda dilindungi dan hanya digunakan untuk penyaluran ZIS.</footer>
+<footer>BAZNAS Kota Lubuklinggau · Data Anda dilindungi dan hanya digunakan untuk penyaluran ZIS.<br><a href="kabar.html" style="color:var(--teal);font-weight:700">Kabar penyaluran &amp; kampanye kebaikan →</a></footer>
 
 <script>
 const DB_URL='https://script.google.com/macros/s/AKfycbwcFWag2lgTgaaV5lKBWU_YDrhSHEAgPgXyrfFR9tq6uRyzrg5t_158fHzSBX6183me/exec';
 const dok={ktp:null,kk:null};
 
 function tab(t){
-  document.getElementById('sec-f').classList.toggle('hidden',t!=='f');
-  document.getElementById('sec-s').classList.toggle('hidden',t!=='s');
-  document.getElementById('tab-f').classList.toggle('on',t==='f');
-  document.getElementById('tab-s').classList.toggle('on',t==='s');
+  ['f','s','z'].forEach(x=>{document.getElementById('sec-'+x).classList.toggle('hidden',t!==x);document.getElementById('tab-'+x).classList.toggle('on',t===x);});
   window.scrollTo({top:0});
 }
 async function api(aksi,data){
@@ -323,6 +337,48 @@ async function cekMustahik(){
   }catch(err){box.classList.remove('hidden');isi.innerHTML='<p style="color:var(--red)">Gagal terhubung ke server. Coba lagi.</p>';}
   finally{b.disabled=false;b.textContent='Cek Status';}
 }
+async function cekSetoran(){
+  const id=v('z-id').replace(/\s+/g,''),hp=v('z-hp');
+  const box=document.getElementById('z-hasil'),isi=document.getElementById('z-isi');
+  box.classList.remove('hidden');
+  if(id.length<6||!/^\d{4}$/.test(hp)){isi.innerHTML='<p style="color:var(--red)">Isi NPWZ/NIK dan 4 digit terakhir nomor HP.</p>';return;}
+  const b=document.getElementById('btn-z');b.disabled=true;b.textContent='Memeriksa…';
+  try{
+    const r=await api('cek_setoran',{identitas:id,hp4:hp});
+    if(!r.ok){isi.innerHTML='<p style="color:var(--red)">'+esc(r.pesan)+'</p>';return;}
+    const rows=r.setoran.map(x=>'<tr><td>'+tglId(x.tanggal)+'</td><td>'+esc(x.jenis_dana||'-')+'</td><td class="n">'+rp(x.nilai)+'</td></tr>').join('');
+    isi.innerHTML='<div style="font-family:monospace;font-weight:800;font-size:15px">'+esc(r.muzakiId)+'</div>'+
+      '<div style="font-size:18px;font-weight:800;margin-top:2px">'+esc(r.nama)+'</div>'+
+      '<div class="st Diterima">'+esc(r.jenis_donatur||'Muzaki')+' terdaftar</div>'+
+      (r.per_tahun.length?'<div class="info">'+r.per_tahun.map(t=>'<div>Total '+esc(t.tahun)+'</div><div>'+rp(t.total)+'</div>').join('')+'</div>':'')+
+      '<h4 style="text-align:left;margin-top:16px;color:var(--teal-dark)">Riwayat setoran</h4>'+
+      (r.setoran.length?'<div style="overflow-x:auto"><table class="riw"><thead><tr><th>Tanggal</th><th>Jenis dana</th><th class="n">Nominal</th></tr></thead><tbody>'+rows+
+        '</tbody><tfoot><tr><td colspan="2">Total</td><td class="n">'+rp(r.total)+'</td></tr></tfoot></table></div>':'<p style="text-align:left;color:var(--g500)">Belum ada setoran tercatat.</p>')+
+      '<p style="font-size:12px;color:var(--g500);margin-top:12px;text-align:left">Jazakumullah khairan. Setoran dicatat berkala dari Buku Kas BAZNAS. Butuh Bukti Setor Zakat (BSZ) untuk pengurang pajak? Hubungi kantor BAZNAS (0812-7144-8282).</p>';
+  }catch(err){isi.innerHTML='<p style="color:var(--red)">Gagal terhubung ke server. Coba lagi.</p>';}
+  finally{b.disabled=false;b.textContent='Cek Setoran';}
+}
+async function verifBsz(){
+  const no=v('b-no').toUpperCase().replace(/\s+/g,'');
+  const box=document.getElementById('b-hasil'),isi=document.getElementById('b-isi');
+  box.classList.remove('hidden');
+  if(!/^\d{4}\/BSZ\/BAZNAS-LL\/[IVX]+\/\d{4}$/.test(no)){isi.innerHTML='<p style="color:var(--red)">Format nomor BSZ: 0001/BSZ/BAZNAS-LL/X/2026</p>';return;}
+  const b=document.getElementById('btn-b');b.disabled=true;b.textContent='Memeriksa…';
+  try{
+    const r=await api('verifikasi_bsz',{nomor_bsz:no});
+    if(!r.ok){isi.innerHTML='<p style="color:var(--red)">'+esc(r.pesan)+'</p>';return;}
+    if(!r.status){isi.innerHTML='<div class="st Tidak">❌ Tidak terdaftar</div><p>'+esc(r.pesan)+'</p>';return;}
+    isi.innerHTML='<div style="font-family:monospace;font-weight:800">'+esc(r.nomor_bsz)+'</div>'+
+      '<div class="st '+(r.sah?'Diterima':'Tidak')+'">'+(r.sah?'✅ BSZ SAH — terdaftar di BAZNAS Kota Lubuklinggau':'❌ BSZ ini sudah DIBATALKAN')+'</div>'+
+      '<div class="info"><div>Atas nama</div><div>'+esc(r.nama)+'</div><div>Tanggal setor</div><div>'+tglId(r.tanggal_setor)+'</div><div>Jenis</div><div>'+esc(r.jenis_dana)+'</div><div>Jumlah</div><div>'+rp(r.nilai)+'</div><div>Diterbitkan</div><div>'+tglId(r.tanggal_terbit)+'</div></div>';
+  }catch(err){isi.innerHTML='<p style="color:var(--red)">Gagal terhubung ke server. Coba lagi.</p>';}
+  finally{b.disabled=false;b.textContent='Verifikasi';}
+}
+(function(){
+  const h=decodeURIComponent(location.hash||'');
+  if(h==='#setoran'){tab('z');}
+  else if(h.startsWith('#bsz=')){tab('z');document.getElementById('b-no').value=h.slice(5);setTimeout(verifBsz,50);}
+})();
 async function cekStatus(){
   if(document.querySelector('input[name=jenis-cek]:checked').value==='mh')return cekMustahik();
   const no=v('s-no').toUpperCase(),tgl=v('s-tgl');
