@@ -91,3 +91,17 @@ body.kb{margin:0;background:var(--kb-latar);color:var(--kb-teks);font-family:sys
 @keyframes kbs{to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.kb-bar>i{transition:none}.kb-skel{animation:none}}
 :focus-visible{outline:3px solid var(--kb-emas);outline-offset:2px}
+
+/* v12 Perkembangan Beasiswa */
+.kb-bea-mini{background:var(--kb-pend-bg);color:var(--kb-pend-tx);border-radius:10px;padding:6px 10px;font-size:12.5px;margin:6px 0}
+.kb-bea-mini a{color:inherit;font-weight:700}
+.kb-bea .kb-ringkas{margin-bottom:10px}
+.kb-jen{display:grid;grid-template-columns:110px 1fr 36px;gap:8px;align-items:center;font-size:13.5px;margin:6px 0}
+.kb-jen .kb-bar{margin:0}.kb-jen b{text-align:right}
+.kb-tren{display:flex;gap:8px;align-items:flex-end;height:150px;background:var(--kb-kartu);border:1px solid var(--kb-garis);border-radius:12px;padding:10px}
+.kb-tren>div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;text-align:center}
+.kb-tren-bt{background:var(--kb-aksen);border-radius:6px 6px 0 0;color:#fff;font-size:12px;display:flex;align-items:flex-start;justify-content:center;padding-top:2px}
+.kb-tren small{font-size:10.5px;color:var(--kb-redup);margin-top:4px}
+.kb-cerita-bea{background:var(--kb-kartu);border:1px solid var(--kb-garis);border-radius:12px;padding:12px;margin-bottom:10px}
+.kb-cerita-bea h4{margin:2px 0 6px;font-size:15px}.kb-cerita-bea p{white-space:pre-line;margin:0 0 6px;font-size:14px}.kb-cerita-bea small{color:var(--kb-redup);font-size:12px}
+.kb-bea .kb-cap{font-size:11.5px;color:var(--kb-redup);text-align:center}
