@@ -73,11 +73,24 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
 .kel-kartu.saya{border-color:var(--teal);background:#f6fbfa}
 .kel-kartu .hd{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
 .kel-tag{display:inline-block;font-size:11.5px;font-weight:800;border-radius:12px;padding:2px 8px;background:var(--teal);color:#fff;margin-left:6px}
+.akhir-info{background:#fff4d6;border:1px solid #f0d78c;color:#6b4e00;border-radius:8px;padding:10px 12px;font-size:13.5px;text-align:left}
+.ref-info{background:var(--teal-light);border:1px solid #b2ddd6;color:var(--teal-dark);border-radius:8px;padding:10px 12px;font-size:13.5px}
+.kel-isi{background:#eef6ff;border:1px solid #bcd6f5;color:#1e3a8a;border-radius:8px;padding:10px 14px;font-size:13.5px;margin-bottom:14px;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.kel-isi button{background:none;border:0;color:#1e3a8a;text-decoration:underline;cursor:pointer;font-size:13px}
+.lb-st{display:inline-block;font-size:11.5px;font-weight:800;border-radius:12px;padding:2px 8px}
+.lb-st.Diterima{background:var(--teal-light);color:var(--teal-dark)}.lb-st.Menunggu{background:#fff4d6;color:#7c5c00}.lb-st.Perlu{background:#fdecea;color:var(--red)}.lb-st.Belum{background:var(--g100);color:var(--g500)}
+.lb-pil{border:1.5px solid var(--g300);border-radius:10px;padding:10px 12px;margin-top:8px;display:flex;gap:10px;align-items:flex-start;cursor:pointer;text-align:left;background:#fff}
+.lb-pil input{width:auto;margin-top:4px}
+.lb-pil.on{border-color:var(--teal);background:#f6fbfa}
+.bea-pub{background:#fff;border:1px solid #bcd6f5;border-radius:10px;padding:12px 14px;font-size:13.5px}
+.bea-pub .angka{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:8px}
+.bea-pub .angka div{background:#eef6ff;border-radius:8px;padding:8px;text-align:center}
+.bea-pub .angka b{display:block;font-size:20px;color:#1e40af}
 .kel-proses{background:#fff4d6;border:1px solid #f0d78c;border-radius:8px;padding:8px 12px;margin-top:8px;font-size:13px;text-align:left}
 @media print{
   @page{size:A4;margin:12mm}
   body{background:#fff;font-size:12pt}
-  header,nav.tabs,footer,#form-wrap,.no-print,#sec-s,#sec-z{display:none!important}
+  header,nav.tabs,footer,#form-wrap,.no-print,#sec-s,#sec-z,#sec-l{display:none!important}
   main{max-width:none;padding:0}.card{box-shadow:none}
   .hasil{padding:0}.cetak-saja{display:block}
   .berkas,.kantor{break-inside:avoid}
@@ -92,6 +105,7 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
 <nav class="tabs">
   <button id="tab-f" class="on" onclick="tab('f')">📝 Ajukan Bantuan</button>
   <button id="tab-s" onclick="tab('s')">🔎 Cek Status</button>
+  <button id="tab-l" onclick="tab('l')">🎓 Laporan Beasiswa</button>
   <button id="tab-z" onclick="tab('z')">💚 Cek Setoran</button>
 </nav>
 <main>
@@ -108,6 +122,7 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
     <div style="margin-top:6px">Pengajuan akan <strong>diverifikasi oleh petugas BAZNAS</strong> (termasuk kunjungan ke rumah). Mengisi formulir <strong>tidak dipungut biaya</strong> dan belum berarti pasti menerima bantuan.</div>
   </div>
 
+  <div id="kel-isi" class="kel-isi hidden"><span id="kel-isi-teks"></span><button type="button" onclick="batalKeluarga()">Kosongkan &amp; isi baru</button></div>
   <form id="fpj" autocomplete="off" novalidate>
     <div class="hp" aria-hidden="true"><label>Website<input id="website" tabindex="-1" autocomplete="off"></label></div>
 
@@ -155,8 +170,10 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
         <div class="grid">
           <div class="full"><label>Nama sekolah / kampus</label><input id="lembagaPendidikan" maxlength="120" placeholder="mis. SMAN 1 Lubuklinggau"></div>
           <div><label>Jenjang</label><select id="jenjangPendidikan"><option value="">— Pilih —</option><option>SD/MI</option><option>SMP/MTs</option><option>SMA/MA/SMK</option><option>D3</option><option>S1</option><option>S2</option><option>Pesantren</option><option>Lainnya</option></select></div>
+          <div id="kelas-wrap" class="hidden"><label>Kelas <span class="req">*</span></label><select id="kelas"><option value="">— Pilih —</option></select></div>
           <div><label>Program studi / kelas</label><input id="prodiKelas" maxlength="80" placeholder="mis. Kelas XI IPA"></div>
           <div><label>Semester <span class="hint">(bila kuliah)</span></label><input id="semester" maxlength="10" inputmode="numeric"></div>
+          <div id="info-akhir" class="full akhir-info hidden"></div>
           <div id="kuliah-wrap" class="full grid hidden" style="gap:12px">
             <div><label>Status kuliah <span class="req">*</span></label><select id="statusKuliah"><option value="">— Pilih —</option><option>Mahasiswa aktif</option><option>Calon mahasiswa</option></select></div>
             <div><label>Bukti KTM / surat keterangan aktif kuliah <span class="req" id="bukti-req">*</span> <span class="hint" id="bukti-hint"></span></label><div class="upl"><input type="file" id="f-bukti" accept="image/*,application/pdf"><div id="pv-bukti"></div></div></div>
@@ -168,9 +185,10 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
     </div></div>
 
     <div class="card"><h2>E. FOTO DOKUMEN</h2><div class="body grid">
-      <div><label><span id="lbl-ktp">Foto KTP</span> <span class="req">*</span></label><div class="upl"><input type="file" id="f-ktp" accept="image/*,application/pdf"><div id="pv-ktp"></div></div></div>
+      <div id="ref-info" class="full ref-info hidden"></div>
+      <div><label><span id="lbl-ktp">Foto KTP</span> <span class="req" id="ktp-req">*</span> <span class="hint" id="ktp-hint"></span></label><div class="upl"><input type="file" id="f-ktp" accept="image/*,application/pdf"><div id="pv-ktp"></div></div></div>
       <div id="kia-wrap" class="hidden"><label>Foto KIA / Kartu Pelajar anak <span class="hint">(bila ada)</span></label><div class="upl"><input type="file" id="f-kia" accept="image/*,application/pdf"><div id="pv-kia"></div></div></div>
-      <div><label>Foto Kartu Keluarga <span class="req">*</span></label><div class="upl"><input type="file" id="f-kk" accept="image/*,application/pdf"><div id="pv-kk"></div></div></div>
+      <div><label>Foto Kartu Keluarga <span class="req" id="kk-req">*</span> <span class="hint" id="kk-hint"></span></label><div class="upl"><input type="file" id="f-kk" accept="image/*,application/pdf"><div id="pv-kk"></div></div></div>
       <div class="full" style="font-size:12.5px;color:var(--g500)">Foto disimpan secara rahasia dan hanya dapat dibuka oleh petugas BAZNAS. Format JPG/PNG/PDF.</div>
     </div></div>
 
@@ -206,6 +224,8 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
   <p style="margin-top:6px">Simpan / foto layar <strong>Nomor Pengajuan</strong> berikut:</p>
   <div class="no" id="no-pj"></div>
   <div id="hasil-info" class="info" style="max-width:420px;margin:0 auto"></div>
+  <div id="hasil-akhir" class="akhir-info hidden" style="margin-top:12px"></div>
+  <div id="hasil-ref" class="ref-info hidden" style="margin-top:12px;text-align:left"></div>
   <div id="hasil-peringatan" class="hidden" style="background:#fff4d6;border:1px solid #f0d78c;border-radius:8px;padding:10px 14px;margin-top:12px;text-align:left;font-size:13.5px"></div>
   <div style="background:#fff4d6;border:1px solid #f0d78c;border-radius:8px;padding:12px 14px;margin-top:14px;text-align:left;font-size:14px">
     <strong>⚠️ Langkah berikutnya — WAJIB:</strong> Pengajuan baru akan diproses setelah Anda <strong>menyerahkan berkas persyaratan</strong> ke kantor BAZNAS paling lambat <span class="batas" id="batas-pj">14 hari</span>.
@@ -216,7 +236,8 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
   <div style="display:grid;gap:10px;margin-top:16px" class="no-print">
     <button class="btn" onclick="window.print()">🖨️ Cetak / Simpan Bukti Pengajuan (PDF)</button>
     <button class="btn ghost" onclick="tab('s');document.querySelector('input[name=jenis-cek][value=pj]').click();document.getElementById('s-no').value=document.getElementById('no-pj').textContent">Cek Status</button>
-    <button class="btn ghost" onclick="location.reload()">Isi Pengajuan Lain</button>
+    <button class="btn" id="btn-keluarga" style="background:#1e40af" onclick="ajukanKeluarga()">👨‍👩‍👧 Ajukan untuk anggota keluarga lain (satu KK)</button>
+    <button class="btn ghost" onclick="batalKeluarga()">Isi Pengajuan Lain</button>
   </div>
 </div></div>
 </section>
@@ -237,6 +258,36 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
   <div id="s-hasil" class="card hidden"><div class="hasil" id="s-isi"></div></div>
 </section>
 
+<!-- ═════════ LAPORAN BEASISWA (v12) ═════════ -->
+<section id="sec-l" class="hidden">
+  <div class="intro"><strong>Laporan perkembangan penerima beasiswa</strong> — dikirim tiap semester (Ganjil: Juli–Desember, batas 31 Januari; Genap: Januari–Juni, batas 31 Juli).
+    Orang tua dapat masuk memakai <strong>ID Mustahik + tanggal lahir</strong> anggota keluarga mana pun dalam satu Kartu Keluarga. Siapkan foto rapor / KHS.</div>
+  <div class="card" id="lb-login"><h2>MASUK</h2><div class="body grid">
+    <div><label>ID Mustahik <span class="hint">anggota keluarga mana pun</span></label><input id="lb-mid" placeholder="1674-2610-00007" inputmode="numeric" maxlength="15"></div>
+    <div><label>Tanggal lahir <span class="hint">pemilik ID di samping</span></label><input id="lb-tgl" type="date"></div>
+    <div class="full"><button class="btn" id="btn-lb" onclick="lbMasuk()">Masuk</button></div>
+    <div id="lb-err" class="full err"></div>
+  </div></div>
+  <div id="lb-isi" class="hidden">
+    <div class="card"><h2>PENERIMA BEASISWA DALAM KK</h2><div class="body" id="lb-daftar"></div></div>
+    <div class="card" id="lb-form-card"><h2>KIRIM LAPORAN SEMESTER</h2><div class="body grid">
+      <div class="hp" aria-hidden="true"><label>Website<input id="lb-website" tabindex="-1" autocomplete="off"></label></div>
+      <div class="full" id="lb-untuk" style="font-weight:700"></div>
+      <div><label>Semester <span class="req">*</span></label><select id="lb-periode"></select></div>
+      <div><label>Kelas / semester saat ini <span class="req">*</span></label><input id="lb-kelas" maxlength="30" placeholder="mis. IX atau Semester 5"></div>
+      <div><label>Rata-rata nilai <span class="req">*</span> <span class="hint">0–100 (IPK × 25)</span></label><input id="lb-nilai" inputmode="decimal" maxlength="6" placeholder="mis. 85,5"></div>
+      <div><label>Kehadiran (%) <span class="req">*</span></label><input id="lb-hadir" inputmode="decimal" maxlength="5" placeholder="mis. 95"></div>
+      <div class="full"><label>Prestasi <span class="hint">(bila ada)</span></label><input id="lb-prestasi" maxlength="300" placeholder="mis. Juara 2 lomba tahfiz tingkat kota"></div>
+      <div class="full"><label>Foto/scan rapor atau KHS <span class="req">*</span></label><div class="upl"><input type="file" id="f-rapor" accept="image/*,application/pdf"><div id="pv-rapor"></div></div></div>
+      <div class="full"><label class="consent"><input type="checkbox" id="lb-izin"><span>Kami mengizinkan BAZNAS menulis <strong>cerita singkat</strong> perkembangan ini untuk publikasi, <strong>dengan nama samaran</strong>, tanpa foto, tanpa nilai, dan tanpa nama sekolah bila penerima di bawah 18 tahun.</span></label></div>
+      <div class="full hidden" id="lb-cerita-wrap"><label>Cerita singkat <span class="hint">(opsional, akan disunting petugas)</span></label><textarea id="lb-cerita" maxlength="800"></textarea></div>
+      <div id="lb-err2" class="full err"></div>
+      <div class="full"><button class="btn" id="btn-lb-kirim" onclick="lbKirim()">Kirim Laporan</button></div>
+    </div></div>
+    <button class="btn ghost" onclick="lbKeluar()">Keluar</button>
+  </div>
+</section>
+
 <!-- ═════════ CEK SETORAN MUZAKI & VERIFIKASI BSZ ═════════ -->
 <section id="sec-z" class="hidden">
   <div class="card"><h2>CEK SETORAN ZAKAT/INFAK</h2><div class="body grid">
@@ -250,17 +301,19 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
     <div class="full"><button class="btn" id="btn-b" onclick="verifBsz()">Verifikasi</button></div>
   </div></div>
   <div id="b-hasil" class="card hidden"><div class="hasil" id="b-isi"></div></div>
+  <div id="z-beasiswa" class="hidden" style="margin-bottom:16px"></div>
 </section>
 </main>
 <footer>BAZNAS Kota Lubuklinggau · Data Anda dilindungi dan hanya digunakan untuk penyaluran ZIS.<br><a href="kabar.html" style="color:var(--teal);font-weight:700">Kabar penyaluran &amp; kampanye kebaikan →</a><br><a href="muzaki.html" style="color:var(--teal);font-weight:700">Ingin berzakat/berdonasi? Daftar sebagai Muzaki/Donatur →</a></footer>
 
 <script>
 const DB_URL='https://script.google.com/macros/s/AKfycbwcFWag2lgTgaaV5lKBWU_YDrhSHEAgPgXyrfFR9tq6uRyzrg5t_158fHzSBX6183me/exec';
-const dok={ktp:null,kk:null,bukti:null,kia:null};
+const dok={ktp:null,kk:null,bukti:null,kia:null,rapor:null};
 
 function tab(t){
-  ['f','s','z'].forEach(x=>{document.getElementById('sec-'+x).classList.toggle('hidden',t!==x);document.getElementById('tab-'+x).classList.toggle('on',t===x);});
+  ['f','s','l','z'].forEach(x=>{document.getElementById('sec-'+x).classList.toggle('hidden',t!==x);document.getElementById('tab-'+x).classList.toggle('on',t===x);});
   window.scrollTo({top:0});
+  if(t==='z')muatBeasiswaPublik();
 }
 async function api(aksi,data){
   const r=await fetch(DB_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({aksi,data})});
@@ -324,7 +377,7 @@ async function kompres(file){
   const out=c.toDataURL('image/jpeg',0.8);
   return{mime:'image/jpeg',base64:out.split(',')[1],preview:out,nama:file.name};
 }
-['ktp','kk','bukti','kia'].forEach(j=>document.getElementById('f-'+j).addEventListener('change',async e=>{
+['ktp','kk','bukti','kia','rapor'].forEach(j=>document.getElementById('f-'+j).addEventListener('change',async e=>{
   const pv=document.getElementById('pv-'+j);dok[j]=null;pv.innerHTML='';
   const f=e.target.files[0];if(!f)return;
   pv.textContent='Memproses…';
@@ -358,6 +411,10 @@ function aturKuliah(){
 document.getElementById('tanggalLahir').addEventListener('change',aturAnak);
 document.getElementById('tanggalLahir').addEventListener('input',aturAnak);
 ['kategoriBantuan','jenjangPendidikan','statusKuliah'].forEach(id=>document.getElementById(id).addEventListener('change',aturKuliah));
+['kategoriBantuan','jenjangPendidikan'].forEach(id=>document.getElementById(id).addEventListener('change',aturKelas));
+['kelas','semester'].forEach(id=>{document.getElementById(id).addEventListener('change',aturAkhir);document.getElementById(id).addEventListener('input',aturAkhir);});
+['noKK','tanggalLahir','nik_pengisi'].forEach(id=>document.getElementById(id).addEventListener('input',aturRef));
+document.getElementById('tanggalLahir').addEventListener('change',aturRef);
 document.getElementById('nik_pengisi').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,16);});
 
 function tampilErr(m){const e=document.getElementById('err');e.innerHTML=m;e.style.display=m?'block':'none';if(m)e.scrollIntoView({behavior:'smooth',block:'center'});}
@@ -368,8 +425,10 @@ document.getElementById('fpj').addEventListener('submit',async ev=>{
   const d={website:v('website'),diisi_oleh:diisi,persetujuan:document.getElementById('persetujuan').checked};
   ['nama','nik','noKK','jenisKelamin','statusKeluarga','tempatLahir','tanggalLahir','alamat','kecamatan','kelurahan','telepon',
    'pekerjaan','penghasilan','totalPengeluaran','jumlahAnggota','jumlahTanggungan','kondisiRumah','kategoriBantuan','kebutuhanUtama','alasan',
-   'nama_pengisi','hubungan_pengisi','hp_pengisi','nik_pengisi','lembagaPendidikan','jenjangPendidikan','prodiKelas','semester','statusKuliah'].forEach(k=>d[k]=v(k));
-  if(!/pendidikan|beasiswa/i.test(d.kategoriBantuan)){d.lembagaPendidikan='';d.jenjangPendidikan='';d.prodiKelas='';d.semester='';}
+   'nama_pengisi','hubungan_pengisi','hp_pengisi','nik_pengisi','lembagaPendidikan','jenjangPendidikan','prodiKelas','semester','statusKuliah','kelas'].forEach(k=>d[k]=v(k));
+  if(!/pendidikan|beasiswa/i.test(d.kategoriBantuan)){d.lembagaPendidikan='';d.jenjangPendidikan='';d.prodiKelas='';d.semester='';d.kelas='';}
+  if(!KELAS_JENJANG[d.jenjangPendidikan])d.kelas='';
+  const rf=refBerkas();if(rf.pj)d.ref_pj=rf.pj;
   const anak=adalahAnak(),kuliah=adalahKuliah();
   if(!kuliah)d.statusKuliah='';
   const s=[];
@@ -382,17 +441,18 @@ document.getElementById('fpj').addEventListener('submit',async ev=>{
   if(!/^(\+?62|0)8\d{7,12}$/.test(d.telepon.replace(/[\s-]/g,'')))s.push('Nomor HP/WA yang benar (08…)');
   if(!d.kategoriBantuan)s.push('Jenis bantuan');
   if(d.alasan.length<10)s.push('Alasan pengajuan (min. 10 huruf)');
-  if(!dok.ktp)s.push(anak?'Foto KTP orang tua/wali':'Foto KTP');
+  if(KELAS_JENJANG[d.jenjangPendidikan]&&!d.kelas)s.push('Kelas');
+  if(!dok.ktp&&!rf.ktp)s.push(anak?'Foto KTP orang tua/wali':'Foto KTP');
   if(anak&&(!d.nama_pengisi||!['Ayah','Ibu','Wali lain'].includes(d.hubungan_pengisi)||!/^\d{16}$/.test(d.nik_pengisi)||!d.hp_pengisi))s.push('Data orang tua/wali (nama, hubungan Ayah/Ibu/Wali lain, NIK 16 digit, No HP)');
   if(d.nik_pengisi&&!/^\d{16}$/.test(d.nik_pengisi))s.push('NIK pengisi 16 digit');
   if(kuliah&&!d.statusKuliah)s.push('Status kuliah');
   if(kuliah&&d.statusKuliah==='Mahasiswa aktif'&&!dok.bukti)s.push('Bukti KTM / surat keterangan aktif kuliah');
-  if(!dok.kk)s.push('Foto KK');
+  if(!dok.kk&&!rf.kk)s.push('Foto KK');
   if(diisi==='Diwakilkan'&&(!d.nama_pengisi||!d.hubungan_pengisi||!d.hp_pengisi))s.push('Data pengisi (nama, hubungan, No HP)');
   if(!d.persetujuan)s.push('Centang persetujuan');
   if(s.length){tampilErr('<strong>Mohon lengkapi:</strong> '+s.map(esc).join(', ')+'.');return;}
   if(diisi==='Sendiri'){d.nama_pengisi='';d.hubungan_pengisi='';d.hp_pengisi='';d.nik_pengisi='';}
-  d.ktp={mime:dok.ktp.mime,base64:dok.ktp.base64};d.kk={mime:dok.kk.mime,base64:dok.kk.base64};
+  if(dok.ktp)d.ktp={mime:dok.ktp.mime,base64:dok.ktp.base64};if(dok.kk)d.kk={mime:dok.kk.mime,base64:dok.kk.base64};
   if(kuliah&&dok.bukti)d.bukti_kuliah={mime:dok.bukti.mime,base64:dok.bukti.base64};
   if(anak&&dok.kia)d.kia={mime:dok.kia.mime,base64:dok.kia.base64};
   const btn=document.getElementById('btn-kirim');btn.disabled=true;btn.textContent='Mengirim… mohon tunggu';
@@ -410,6 +470,10 @@ document.getElementById('fpj').addEventListener('submit',async ev=>{
     const pw=document.getElementById('hasil-peringatan');
     const tp=(r.peringatan?'⚠️ '+esc(r.peringatan):'')+(r.diwakilkan_anak?(r.peringatan?'<br>':'')+'👨‍👩‍👦 Pengajuan tercatat atas nama anak; orang tua/wali ('+esc(d.nama_pengisi)+') tercatat sebagai pengisi.':'');
     pw.innerHTML=tp;pw.classList.toggle('hidden',!tp);
+    const ha=document.getElementById('hasil-akhir');ha.innerHTML=r.kelas_akhir?'🎓 <strong>Kelas akhir jenjang.</strong> '+esc(TEKS_KELAS_AKHIR):'';ha.classList.toggle('hidden',!r.kelas_akhir);
+    const hr=document.getElementById('hasil-ref'),bd=r.berkas_dari;
+    hr.innerHTML=bd?'📎 '+esc([bd.kk?'KK':'',bd.ktp_wali?'KTP wali':''].filter(Boolean).join('/'))+' sudah diterima pada pengajuan <strong>'+esc(bd.pj)+'</strong> — tidak perlu diserahkan dua kali.':'';hr.classList.toggle('hidden',!bd);
+    simpanKeluarga(d,r.no_pengajuan);
     document.getElementById('form-wrap').classList.add('hidden');
     document.getElementById('hasil').classList.remove('hidden');
     window.scrollTo({top:0});
@@ -453,6 +517,7 @@ async function cekMustahik(){
         '<div style="overflow-x:auto"><table class="riw"><thead><tr><th>Barang</th><th>Sejak</th><th>Status</th></tr></thead><tbody>'+
         r.barang.map(x=>'<tr><td>'+esc(x.jenis)+'</td><td>'+tglId(x.sejak)+'</td><td>'+esc(x.status)+'</td></tr>').join('')+'</tbody></table></div>'+
         '<p style="text-align:left;font-size:12.5px;background:#fff8e1;border:1px solid #f0d78c;border-radius:8px;padding:8px 10px;margin-top:8px">ℹ️ '+esc(r.catatan_barang)+'</p>':'')+
+      htmlLaporanBea(r.laporan_beasiswa)+
       '<p style="font-size:12px;color:var(--g500);margin-top:12px;text-align:left">Data penyaluran diperbarui berkala oleh BAZNAS Kota Lubuklinggau. Pertanyaan: hubungi kantor BAZNAS (0812-7144-8282).</p>';
   }catch(err){box.classList.remove('hidden');isi.innerHTML='<p style="color:var(--red)">Gagal terhubung ke server. Coba lagi.</p>';}
   finally{b.disabled=false;b.textContent='Cek Status';}
@@ -497,6 +562,7 @@ async function verifBsz(){
 (function(){
   const h=decodeURIComponent(location.hash||'');
   if(h==='#setoran'){tab('z');}
+  else if(h==='#laporan'){tab('l');}
   else if(h.startsWith('#bsz=')){tab('z');document.getElementById('b-no').value=h.slice(5);setTimeout(verifBsz,50);}
 })();
 async function cekKeluarga(){
@@ -516,7 +582,7 @@ async function cekKeluarga(){
         '<div class="info" style="margin-top:6px"><div>Jenis bantuan</div><div>'+esc(a.jenis_bantuan||'-')+'</div><div>Diterima '+esc(r.tahun)+'</div><div>'+rp(a.total_tahun_ini)+'</div></div>'+
         (rows?'<div style="overflow-x:auto"><table class="riw"><thead><tr><th>Tanggal</th><th>Program</th><th>Bentuk</th><th class="n">Nominal</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td colspan="3">Total ('+a.jumlah_penyaluran+' kali)</td><td class="n">'+rp(a.total)+'</td></tr></tfoot></table></div>'
           :'<p style="color:var(--g500);font-size:13px;margin-top:6px">Belum ada catatan penyaluran.</p>')+
-        (a.barang&&a.barang.length?'<div style="font-size:13px;margin-top:6px"><strong>Barang dipinjamkan:</strong> '+a.barang.map(x=>esc(x.jenis)+' ('+esc(x.status)+')').join(', ')+'</div>':'')+'</div>';
+        (a.barang&&a.barang.length?'<div style="font-size:13px;margin-top:6px"><strong>Barang dipinjamkan:</strong> '+a.barang.map(x=>esc(x.jenis)+' ('+esc(x.status)+')').join(', ')+'</div>':'')+htmlLaporanBea(a.laporan_beasiswa)+'</div>';
     }).join('');
     isi.innerHTML='<div class="kel-ringkas"><div style="font-size:13px;opacity:.9">Total bantuan keluarga tahun '+esc(r.tahun)+'</div><div class="big">'+rp(r.total_tahun_ini)+'</div>'+
       '<div style="font-size:12.5px;opacity:.9">'+r.jumlah_anggota+' anggota terdaftar sebagai mustahik · seluruhnya '+rp(r.total_semua)+'</div></div>'+
@@ -551,6 +617,157 @@ async function cekStatus(){
   }catch(err){box.classList.remove('hidden');isi.innerHTML='<p style="color:var(--red)">Gagal terhubung ke server. Coba lagi.</p>';}
   finally{b.disabled=false;b.textContent='Cek Status';}
 }
+
+// ═══════════ v12: kelas terstruktur, kelas akhir jenjang, anggota keluarga lain (satu KK), laporan beasiswa ═══════════
+var KELAS_JENJANG={'SD/MI':['I','II','III','IV','V','VI'],'SMP/MTs':['VII','VIII','IX'],'SMA/MA/SMK':['X','XI','XII']};
+var KELAS_AKHIR={'SD/MI':'VI','SMP/MTs':'IX','SMA/MA/SMK':'XII'},SEMESTER_AKHIR={D3:6,S1:8,S2:4};
+var TEKS_KELAS_AKHIR='Beasiswa jenjang ini berlaku sampai lulus. Untuk melanjutkan ke jenjang berikutnya, ajukan kembali setelah diterima di sekolah/kampus baru — ID Mustahik tetap sama.';
+var KEL_KUNCI='pj_keluarga_v12',BEA_PUB=null,LB={id:'',tgl:'',data:null,pilih:''};
+function aturKelas(){
+  const j=v('jenjangPendidikan'),sel=document.getElementById('kelas'),lama=sel.value,daftar=KELAS_JENJANG[j]||[];
+  sel.innerHTML='<option value="">— Pilih —</option>'+daftar.map(k=>'<option'+(k===lama?' selected':'')+'>'+k+'</option>').join('');
+  document.getElementById('kelas-wrap').classList.toggle('hidden',!daftar.length);
+  aturAkhir();
+}
+function kelasAkhirJenjang(){
+  const j=v('jenjangPendidikan');if(!/pendidikan|beasiswa/i.test(v('kategoriBantuan')))return false;
+  if(KELAS_AKHIR[j])return v('kelas')===KELAS_AKHIR[j];
+  const s=parseInt(v('semester').replace(/\D/g,''),10);return !!SEMESTER_AKHIR[j]&&s>=SEMESTER_AKHIR[j];
+}
+function aturAkhir(){
+  const el=document.getElementById('info-akhir'),a=kelasAkhirJenjang();
+  el.innerHTML=a?'🎓 <strong>Kelas akhir jenjang.</strong> '+esc(TEKS_KELAS_AKHIR):'';el.classList.toggle('hidden',!a);
+}
+// ── Anggota keluarga lain: data rumah tangga dibawa lewat sessionStorage (tidak mengambil data dari server) ──
+function bacaKel(){try{return JSON.parse(sessionStorage.getItem(KEL_KUNCI)||'null');}catch(e){return null;}}
+function simpanKeluarga(d,no){
+  // Calon wali bagi anggota anak: pemohon dewasa sebelumnya, atau wali yang mengisi untuk anak sebelumnya
+  const dewasa=!adalahAnak();
+  const wali=dewasa?{nama:d.nama,nik:d.nik,hp:d.telepon}:(d.nik_pengisi?{nama:d.nama_pengisi,nik:d.nik_pengisi,hp:d.hp_pengisi}:null);
+  const x={ref_pj:no,noKK:d.noKK,alamat:d.alamat,kelurahan:d.kelurahan,kecamatan:d.kecamatan,telepon:d.telepon,
+    ekonomi:{pekerjaan:d.pekerjaan,penghasilan:d.penghasilan,totalPengeluaran:d.totalPengeluaran,jumlahAnggota:d.jumlahAnggota,jumlahTanggungan:d.jumlahTanggungan,kondisiRumah:d.kondisiRumah},
+    wali:wali,pemohon:d.nama};
+  try{sessionStorage.setItem(KEL_KUNCI+'_baru',JSON.stringify(x));}catch(e){}
+}
+function ajukanKeluarga(){
+  try{const x=sessionStorage.getItem(KEL_KUNCI+'_baru');if(x)sessionStorage.setItem(KEL_KUNCI,x);sessionStorage.removeItem(KEL_KUNCI+'_baru');}catch(e){}
+  location.hash='';location.reload();
+}
+function batalKeluarga(){try{sessionStorage.removeItem(KEL_KUNCI);sessionStorage.removeItem(KEL_KUNCI+'_baru');}catch(e){}location.reload();}
+function isiKeluarga(){
+  const k=bacaKel();if(!k)return;
+  const set=(id,val)=>{const el=document.getElementById(id);if(!el||val==null||val==='')return;el.value=el.classList.contains('rp')?fmtRp(val):val;};
+  set('noKK',k.noKK);set('alamat',k.alamat);set('kelurahan',k.kelurahan);set('kecamatan',k.kecamatan);set('telepon',k.telepon);
+  Object.keys(k.ekonomi||{}).forEach(f=>set(f,k.ekonomi[f]));
+  document.getElementById('kel-isi-teks').innerHTML='👨‍👩‍👧 Mengisi untuk <strong>anggota keluarga lain</strong> (satu KK dengan pengajuan <strong>'+esc(k.ref_pj)+'</strong>). No. KK, alamat, dan data ekonomi rumah tangga sudah terisi — periksa kembali.';
+  document.getElementById('kel-isi').classList.remove('hidden');
+  aturRef();
+}
+// Bila pemohon baru anak: isi data wali dari pemohon sebelumnya (hubungan dipilih ulang)
+function isiWaliKeluarga(){
+  const k=bacaKel();if(!k||!k.wali||!adalahAnak())return;
+  if(!v('nama_pengisi'))document.getElementById('nama_pengisi').value=k.wali.nama||'';
+  if(!v('nik_pengisi'))document.getElementById('nik_pengisi').value=k.wali.nik||'';
+  if(!v('hp_pengisi'))document.getElementById('hp_pengisi').value=k.wali.hp||'';
+}
+function refBerkas(){
+  const k=bacaKel();if(!k||!k.ref_pj||v('noKK')!==k.noKK)return{pj:'',kk:false,ktp:false};
+  return{pj:k.ref_pj,kk:true,ktp:adalahAnak()&&!!k.wali&&v('nik_pengisi')===k.wali.nik};
+}
+function aturRef(){
+  isiWaliKeluarga();
+  const r=refBerkas(),el=document.getElementById('ref-info');
+  const apa=[r.kk?'KK':'',r.ktp?'KTP wali':''].filter(Boolean).join('/');
+  el.innerHTML=apa?'✅ '+esc(apa)+' sudah diterima pada pengajuan <strong>'+esc(r.pj)+'</strong>. Unggah ulang tidak wajib.':'';el.classList.toggle('hidden',!apa);
+  document.getElementById('kk-req').style.display=r.kk?'none':'';document.getElementById('kk-hint').textContent=r.kk?'(tidak wajib — sudah ada di '+r.pj+')':'';
+  document.getElementById('ktp-req').style.display=r.ktp?'none':'';document.getElementById('ktp-hint').textContent=r.ktp?'(tidak wajib — sudah ada di '+r.pj+')':'';
+}
+// ── Laporan / status beasiswa (keluarga yang sudah masuk boleh melihat nilai) ──
+function stLb(s){return '<span class="lb-st '+esc(String(s||'Belum').split(' ')[0])+'">'+esc(s||'Belum lapor')+'</span>';}
+function htmlLaporanBea(l){
+  if(!l||!l.length)return '';
+  return '<h4 style="text-align:left;margin-top:14px;color:#1e40af">🎓 Laporan beasiswa</h4><div style="overflow-x:auto"><table class="riw"><thead><tr><th>Semester</th><th>Kelas</th><th>Status</th><th class="n">Nilai</th><th class="n">Hadir</th></tr></thead><tbody>'+
+    l.map(x=>'<tr><td>'+esc(x.semester)+'</td><td>'+esc(x.kelas||'-')+'</td><td>'+stLb(x.status)+(x.catatan?'<div style="font-size:12px;color:var(--red)">'+esc(x.catatan)+'</div>':'')+'</td><td class="n">'+esc(x.rata_nilai||'-')+'</td><td class="n">'+(x.kehadiran?esc(x.kehadiran)+'%':'-')+'</td></tr>').join('')+'</tbody></table></div>';
+}
+document.getElementById('lb-mid').addEventListener('input',e=>{
+  const d=e.target.value.replace(/\D/g,'').slice(0,13);
+  e.target.value=d.length>8?d.slice(0,4)+'-'+d.slice(4,8)+'-'+d.slice(8):d.length>4?d.slice(0,4)+'-'+d.slice(4):d;
+});
+document.getElementById('lb-izin').addEventListener('change',e=>document.getElementById('lb-cerita-wrap').classList.toggle('hidden',!e.target.checked));
+function lbErr(id,m){const e=document.getElementById(id);e.innerHTML=m;e.style.display=m?'block':'none';}
+async function lbMasuk(ulang){
+  const id=ulang?LB.id:v('lb-mid'),tgl=ulang?LB.tgl:v('lb-tgl');lbErr('lb-err','');
+  if(!/^\d{4}-\d{4}-\d{5}$/.test(id)||!tgl){lbErr('lb-err','Isi ID Mustahik (contoh 1674-2610-00007) dan tanggal lahir.');return;}
+  const b=document.getElementById('btn-lb');b.disabled=true;b.textContent='Memeriksa…';
+  try{
+    const r=await api('lb_cek',{mustahikId:id,tanggalLahir:tgl});
+    if(!r.ok){lbErr('lb-err',esc(r.pesan));return;}
+    LB={id,tgl,data:r,pilih:LB.pilih};
+    if(!r.penerima.length){lbErr('lb-err','Tidak ada penerima beasiswa dalam Kartu Keluarga ini.');return;}
+    if(!r.penerima.some(p=>p.mustahikId===LB.pilih))LB.pilih=(r.penerima.find(p=>p.saya)||r.penerima[0]).mustahikId;
+    lbTampil();
+  }catch(err){lbErr('lb-err','Gagal terhubung ke server. Coba lagi.');}
+  finally{b.disabled=false;b.textContent='Masuk';}
+}
+function lbTampil(){
+  const r=LB.data;
+  document.getElementById('lb-login').classList.add('hidden');document.getElementById('lb-isi').classList.remove('hidden');
+  document.getElementById('lb-daftar').innerHTML='<p style="font-size:13px;color:var(--g500)">Laporan wajib: <strong>'+esc(r.periode_wajib)+'</strong> (batas '+tglPanjang(r.batas)+'). Pilih penerima yang akan dilaporkan:</p>'+
+    r.penerima.map(p=>{
+      const w=(p.laporan||[]).find(l=>l.semester===r.periode_wajib);
+      return '<label class="lb-pil'+(p.mustahikId===LB.pilih?' on':'')+'"><input type="radio" name="lb-p" value="'+esc(p.mustahikId)+'"'+(p.mustahikId===LB.pilih?' checked':'')+'><div style="flex:1">'+
+        '<div style="font-weight:800">'+esc(p.nama)+(p.saya?'<span class="kel-tag">Saya</span>':'')+'</div>'+
+        '<div style="font-size:12.5px;color:var(--g500)">'+esc(p.jenjang||'-')+(p.kelas?' · kelas '+esc(p.kelas):'')+(p.semester_kuliah?' · semester '+esc(p.semester_kuliah):'')+' · '+esc(p.status_beasiswa)+'</div>'+
+        '<div style="margin-top:4px">'+esc(r.periode_wajib)+': '+stLb(w?w.status:'Belum lapor')+(w&&w.catatan?' <span style="font-size:12px;color:var(--red)">'+esc(w.catatan)+'</span>':'')+'</div>'+
+        htmlLaporanBea(p.laporan)+'</div></label>';
+    }).join('');
+  document.querySelectorAll('input[name=lb-p]').forEach(x=>x.addEventListener('change',()=>{LB.pilih=x.value;lbTampil();}));
+  const p=r.penerima.find(x=>x.mustahikId===LB.pilih);
+  document.getElementById('lb-untuk').innerHTML='Laporan untuk: '+esc(p.nama)+' ('+esc(p.jenjang||'-')+')';
+  const sel=document.getElementById('lb-periode'),lama=sel.value;
+  sel.innerHTML=r.periode_pilihan.map(x=>'<option'+(x===(lama||r.periode_wajib)?' selected':'')+'>'+esc(x)+'</option>').join('');
+  if(!v('lb-kelas'))document.getElementById('lb-kelas').value=p.kelas||(p.semester_kuliah?'Semester '+p.semester_kuliah:'');
+}
+async function lbKirim(){
+  lbErr('lb-err2','');
+  const s=[],d={mustahikId:LB.id,tanggalLahir:LB.tgl,penerima:LB.pilih,website:v('lb-website'),periode:v('lb-periode'),kelas:v('lb-kelas'),
+    rata_nilai:v('lb-nilai').replace(',','.'),kehadiran:v('lb-hadir').replace(',','.').replace('%',''),prestasi:v('lb-prestasi'),
+    izin_cerita:document.getElementById('lb-izin').checked,cerita_singkat:v('lb-cerita')};
+  if(!d.kelas)s.push('Kelas / semester');
+  const n=+d.rata_nilai,h=+d.kehadiran;
+  if(d.rata_nilai===''||isNaN(n)||n<0||n>100)s.push('Rata-rata nilai 0–100');
+  if(d.kehadiran===''||isNaN(h)||h<0||h>100)s.push('Kehadiran 0–100%');
+  if(!dok.rapor)s.push('Foto/scan rapor');
+  if(s.length){lbErr('lb-err2','<strong>Mohon lengkapi:</strong> '+s.map(esc).join(', ')+'.');return;}
+  d.rapor={mime:dok.rapor.mime,base64:dok.rapor.base64};
+  const b=document.getElementById('btn-lb-kirim');b.disabled=true;b.textContent='Mengirim…';
+  try{
+    const r=await api('lb_kirim',d);
+    if(!r.ok){lbErr('lb-err2',esc(r.pesan||'Gagal mengirim.'));return;}
+    ['lb-nilai','lb-hadir','lb-prestasi','lb-cerita','f-rapor'].forEach(id=>document.getElementById(id).value='');
+    dok.rapor=null;document.getElementById('pv-rapor').innerHTML='';
+    await lbMasuk(true);
+    const e=document.getElementById('lb-err2');e.style.display='block';e.style.background='var(--teal-light)';e.style.borderColor='#b2ddd6';e.style.color='var(--teal-dark)';
+    e.innerHTML='✅ '+esc(r.pesan)+' Nomor laporan: <strong>'+esc(r.id_laporan)+'</strong>';
+  }catch(err){lbErr('lb-err2','Gagal terhubung ke server. Coba lagi.');}
+  finally{b.disabled=false;b.textContent='Kirim Laporan';}
+}
+function lbKeluar(){LB={id:'',tgl:'',data:null,pilih:''};document.getElementById('lb-isi').classList.add('hidden');document.getElementById('lb-login').classList.remove('hidden');document.getElementById('lb-tgl').value='';}
+// ── Ringkasan Perkembangan Beasiswa (agregat, tanpa data pribadi) di Cek Setoran ──
+async function muatBeasiswaPublik(){
+  const box=document.getElementById('z-beasiswa');if(!box||BEA_PUB)return;
+  try{
+    const r=await api('beasiswa_publik');if(!r.ok||!r.beasiswa)return;BEA_PUB=r.beasiswa;const b=r.beasiswa;
+    box.innerHTML='<div class="bea-pub"><strong style="color:#1e40af">🎓 Zakat Anda ikut menyekolahkan mereka</strong>'+
+      '<div class="angka"><div><b>'+esc(b.binaan_aktif)+'</b>penerima beasiswa aktif</div>'+
+      (b.persen_naik_kelas!=null?'<div><b>'+b.persen_naik_kelas+'%</b>naik kelas</div>':'')+
+      '<div><b>'+esc(b.lulus_jenjang)+'</b>lulus jenjang</div><div><b>'+esc(b.lanjut_jenjang)+'</b>lanjut jenjang</div></div>'+
+      '<div style="margin-top:8px"><a href="kabar.html#beasiswa" style="color:var(--teal);font-weight:700">Lihat Perkembangan Beasiswa →</a></div></div>';
+    box.classList.remove('hidden');
+  }catch(e){}
+}
+window.addEventListener('hashchange',()=>{const h=location.hash;if(h==='#laporan')tab('l');else if(h==='#setoran')tab('z');});
+aturKelas();isiKeluarga();
 </script>
 </body>
 </html>
