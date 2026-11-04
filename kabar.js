@@ -51,7 +51,7 @@
         <span class="kb-label kiri">${akhir ? 'Selesai' : 'Sisa ' + k.sisa_hari + ' hari'}</span><span class="kb-label kanan">${esc(k.jenis_dana)}</span></a>
       <div class="kb-isi">
         <h3><a href="#${esc(k.id)}" style="color:inherit;text-decoration:none">${esc(k.judul)}</a></h3>
-        <p class="kb-ajak">${esc(k.ringkas)}</p>
+        <p class="kb-ajak">${esc(k.ringkas)}</p>${ringkasBea(k)}
         <div class="kb-bar" role="progressbar" aria-valuenow="${k.persen}" aria-valuemin="0" aria-valuemax="100" aria-label="Tercapai ${k.persen}%"><i data-w="${Math.min(100, k.persen)}"></i></div>
         <div class="kb-kumpul"><span><b data-hitung="${k.terkumpul}" data-fmt="rp">${rp(k.terkumpul)}</b> terkumpul</span><span>${k.persen}%</span></div>
         <div class="kb-tiga"><div><b>${rpRingkas(k.target)}</b><small>Target</small></div><div><b>${k.donatur.toLocaleString('id-ID')}</b><small>Donatur</small></div><div><b>${akhir ? '—' : k.sisa_hari}</b><small>Hari lagi</small></div></div>
@@ -59,6 +59,32 @@
         `<div class="kb-aksi"><button class="kb-btn utama" type="button" data-donasi="${esc(k.id)}">Cara berdonasi</button>
           <a class="kb-btn wa" href="${waLink(k.judul, k.id, k.persen + '% tercapai')}" target="_blank" rel="noopener" aria-label="Bagikan lewat WhatsApp">${svgWa}</a></div>`}
       </div></article>`;
+  }
+  // v12: ringkasan & tab Perkembangan Beasiswa — hanya agregat (kelompok < 3 tampil "<3"), tanpa nama/nilai/sekolah perorangan
+  function ringkasBea(k) {
+    const b = data && data.beasiswa;
+    if (!b || programKelas(k.program) !== 'pend') return '';
+    return `<div class="kb-bea-mini">🎓 <b>${esc(b.binaan_aktif)}</b> penerima beasiswa aktif${b.persen_naik_kelas != null ? ' · <b>' + b.persen_naik_kelas + '%</b> naik kelas' : ''} · <a href="#" data-tab="beasiswa">Lihat perkembangan</a></div>`;
+  }
+  function panelBeasiswa() {
+    const b = data.beasiswa;
+    if (!b) return '<div class="kb-kosong">Data perkembangan beasiswa belum tersedia.</div>';
+    const maks = Math.max(1, ...b.per_jenjang.map(j => typeof j.jumlah === 'number' ? j.jumlah : 2));
+    const tr = b.tren_nilai || [];
+    return `<div class="kb-bea">
+      <div class="kb-ringkas"><div class="h"><strong>${esc(b.binaan_aktif)}</strong><small>penerima beasiswa aktif</small></div>
+        <div class="e"><strong>${b.persen_naik_kelas != null ? b.persen_naik_kelas + '%' : '—'}</strong><small>naik kelas${b.persen_naik_kelas != null ? ' (dari ' + esc(b.dasar_naik_kelas) + ' laporan)' : ' — data belum cukup'}</small></div></div>
+      <div class="kb-ringkas"><div class="h"><strong>${esc(b.lulus_jenjang)}</strong><small>lulus jenjang</small></div><div class="e"><strong>${esc(b.lanjut_jenjang)}</strong><small>lanjut ke jenjang berikutnya</small></div></div>
+      <div class="kb-judul-bag">Penerima per jenjang</div>
+      ${b.per_jenjang.length ? b.per_jenjang.map(j => `<div class="kb-jen"><span>${esc(j.jenjang)}</span><div class="kb-bar"><i data-w="${Math.round((typeof j.jumlah === 'number' ? j.jumlah : 2) / maks * 100)}"></i></div><b>${esc(j.jumlah)}</b></div>`).join('') : '<div class="kb-kosong">Belum ada data.</div>'}
+      <div class="kb-judul-bag">Tren rata-rata nilai</div>
+      ${tr.length ? `<div class="kb-tren">${tr.map(t => `<div><div class="kb-tren-bt" style="height:${Math.max(8, Math.round(t.rata))}%"><b>${t.rata}</b></div><small>${esc(t.semester)}</small></div>`).join('')}</div>`
+        : '<div class="kb-kosong" style="padding:14px">Tren ditampilkan setelah minimal 3 laporan per semester.</div>'}
+      <div class="kb-judul-bag">Cerita pilihan</div>
+      ${b.cerita.length ? b.cerita.map(c => `<article class="kb-cerita-bea"><small>${esc(c.jenjang)} · ${esc(new Date(c.tanggal + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }))}</small><h4>${esc(c.judul)}</h4><p>${esc(c.cerita)}</p><small>— ${esc(c.nama_samaran)} (nama samaran)</small></article>`).join('')
+        : '<div class="kb-kosong" style="padding:14px">Belum ada cerita yang ditayangkan.</div>'}
+      <p class="kb-cap" style="margin-top:12px">Angka agregat dari laporan semester yang telah diverifikasi petugas. Kelompok di bawah 3 orang ditampilkan "&lt;3". Nama, nilai, dan sekolah penerima tidak ditampilkan.</p>
+    </div>`;
   }
   function kartuKabar(x) {
     const kls = programKelas(x.program);
@@ -74,6 +100,7 @@
     if (!data) return;
     const h = decodeURIComponent(location.hash.slice(1));
     if (/^(KMP|PUB)-/.test(h)) return detail(h);
+    if (h === 'beasiswa') tabAktif = 'beasiswa';
     const tayang = data.kampanye.filter(k => k.status === 'Tayang'), selesai = data.kampanye.filter(k => k.status === 'Berakhir');
     const bln = new Date(data.bulan_ini.bulan + '-01T00:00:00').toLocaleDateString('id-ID', { month: 'long' });
     app.innerHTML = `
@@ -85,8 +112,9 @@
       <div class="kb-tabs" role="tablist">
         <button role="tab" aria-selected="${tabAktif === 'kampanye'}" data-tab="kampanye">Kampanye${tayang.length ? ' (' + tayang.length + ')' : ''}</button>
         <button role="tab" aria-selected="${tabAktif === 'kabar'}" data-tab="kabar">Kabar Penyaluran</button>
+        ${data.beasiswa ? `<button role="tab" aria-selected="${tabAktif === 'beasiswa'}" data-tab="beasiswa">Perkembangan Beasiswa</button>` : ''}
       </div>
-      <div id="kb-panel">${tabAktif === 'kampanye' ?
+      <div id="kb-panel">${tabAktif === 'beasiswa' ? panelBeasiswa() : tabAktif === 'kampanye' ?
         (tayang.length ? `<div class="kb-grid">${tayang.map(kartuKampanye).join('')}</div>` : '<div class="kb-kosong">Belum ada kampanye yang berjalan. Pantau terus halaman ini.</div>') +
         (selesai.length ? `<div class="kb-judul-bag">Kampanye selesai</div><div class="kb-grid">${selesai.map(kartuKampanye).join('')}</div>` : '')
         : `<div class="kb-ringkas"><div class="h"><strong data-hitung="${data.bulan_ini.penerima}">${data.bulan_ini.penerima}</strong><small>Penerima bulan ${esc(bln)}</small></div>
@@ -156,7 +184,7 @@
   document.addEventListener('click', e => {
     const t = e.target.closest('[data-tab],[data-donasi],[data-salin],[data-tutup]');
     if (!t) { if (e.target.id === 'kb-lembar') e.target.classList.remove('buka'); return; }
-    if (t.dataset.tab) { tabAktif = t.dataset.tab; render(); }
+    if (t.dataset.tab) { e.preventDefault(); tabAktif = t.dataset.tab; if (location.hash) history.replaceState(null, '', location.pathname); render(); if (tabAktif === 'beasiswa') document.querySelector('.kb-tabs').scrollIntoView({ behavior: 'smooth' }); }
     else if (t.dataset.donasi) bukaDonasi(t.dataset.donasi);
     else if (t.dataset.salin) { (navigator.clipboard ? navigator.clipboard.writeText(t.dataset.salin) : Promise.reject()).then(() => { t.textContent = '✓ Nomor rekening disalin'; }).catch(() => prompt('Salin nomor rekening:', t.dataset.salin)); }
     else if (t.hasAttribute('data-tutup')) document.getElementById('kb-lembar').classList.remove('buka');
