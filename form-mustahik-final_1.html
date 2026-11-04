@@ -535,6 +535,10 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg>
     Publikasi &amp; Kampanye <span id="kt-count" class="badge b-red" style="display:none;margin-left:4px">0</span>
   </button>
+  <button class="tab-btn" id="tab-lb-btn" onclick="switchTab('t-beasiswa',this);lbMuat(true)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg>
+    Beasiswa Binaan <span id="lb-count" class="badge b-red" style="display:none;margin-left:4px">0</span>
+  </button>
   <button class="tab-btn" id="tab-import-btn" onclick="switchTab('t-import',this)">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
     Import / Rollback
@@ -843,8 +847,10 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
             <div class="field"><label>Jenjang</label><select id="f-jenjangPend"><option value="">— Pilih —</option><option>SD/MI</option><option>SMP/MTs</option><option>SMA/MA/SMK</option><option>D3</option><option>S1</option><option>S2</option><option>Pesantren</option><option>Lainnya</option></select></div>
             <div class="field"><label>Program Studi / Kelas</label><input id="f-prodiKelas" type="text" maxlength="80" placeholder="mis. Ekonomi Syariah / Kelas XI IPA"/></div>
             <div class="field"><label>Semester</label><input id="f-semester" type="text" maxlength="10" placeholder="mis. 3"/></div>
+            <div class="field" id="f-kelas-wrap" style="display:none"><label>Kelas <span class="hint">SD–SMA</span></label><select id="f-kelas"><option value="">— Pilih —</option><option>I</option><option>II</option><option>III</option><option>IV</option><option>V</option><option>VI</option><option>VII</option><option>VIII</option><option>IX</option><option>X</option><option>XI</option><option>XII</option></select></div>
             <div class="field"><label>Status Kuliah <span class="hint">D3/S1/S2</span></label><select id="f-statusKuliah"><option value="">— Pilih —</option><option>Mahasiswa aktif</option><option>Calon mahasiswa</option></select></div>
           </div>
+          <div id="f-kelas-akhir" style="display:none;margin-top:6px"><span class="badge b-gold">🎓 Kelas akhir jenjang</span> <span style="font-size:12px;color:#6b4e00">Beasiswa jenjang ini berlaku sampai lulus; jenjang berikutnya diajukan kembali (ID Mustahik tetap).</span></div>
           <div id="usia-beasiswa-note" style="display:none;margin-top:6px;background:#fdecea;border:1px solid #f5c6c0;border-radius:6px;padding:6px 8px;font-size:12px"></div>
         </div>
         <div class="field">
@@ -1099,6 +1105,24 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
 </div>
 </div>
 
+<div id="t-beasiswa" class="tab-pane">
+<div class="main">
+  <div class="pg-title">Beasiswa Binaan</div>
+  <div class="pg-sub">Penerima beasiswa per jenjang &amp; status, laporan perkembangan per semester (Ganjil Jul–Des, batas 31 Jan · Genap Jan–Jun, batas 31 Jul), verifikasi, pengingat, dan cerita pilihan. Penerima yang didanai semester lalu tetapi laporannya belum <em>Diterima</em> ditandai <strong>Belum boleh dicairkan</strong> (pemblokiran pencairan di Excel).</div>
+  <div class="card"><div class="card-body" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <button class="btn btn-primary btn-sm lb-mode" type="button" onclick="lbPilihMode('penerima',this)">Penerima</button>
+    <button class="btn btn-outline btn-sm lb-mode" type="button" onclick="lbPilihMode('laporan',this)">Laporan</button>
+    <button class="btn btn-outline btn-sm lb-mode" type="button" onclick="lbPilihMode('pengingat',this)">⏰ Pengingat</button>
+    <button class="btn btn-outline btn-sm lb-mode" type="button" onclick="lbPilihMode('cerita',this)">✍️ Cerita</button>
+    <select id="lb-f-jenjang" onchange="lbRender()" style="max-width:160px"><option value="">Semua jenjang</option><option>SD/MI</option><option>SMP/MTs</option><option>SMA/MA/SMK</option><option>D3</option><option>S1</option><option>S2</option><option>Pesantren</option><option>Lainnya</option></select>
+    <select id="lb-f-status" onchange="lbRender()" style="max-width:160px"><option value="">Semua status</option><option>Aktif</option><option>Selesai jenjang</option><option>Lanjut jenjang</option><option>Berhenti</option></select>
+    <input id="lb-cari" type="text" placeholder="Cari nama / NIK / ID / sekolah" oninput="lbRender()" style="max-width:220px"/>
+    <button class="btn btn-outline btn-sm" type="button" onclick="lbMuat()">↻ Muat ulang</button>
+  </div><div class="card-body" id="lb-status" style="font-size:12px;color:var(--g500);padding-top:0"></div></div>
+  <div id="lb-isi"></div>
+</div>
+</div>
+
 <div id="t-import" class="tab-pane">
 <div class="main">
   <div class="pg-title">Import / Rollback Data</div>
@@ -1270,6 +1294,14 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
     <div class="modal-hdr"><h3 id="kt-setuju-title">Persetujuan</h3><button class="x-btn" onclick="closeModal('modal-kt-setuju')">×</button></div>
     <div class="modal-body" id="kt-setuju-body"></div>
     <div class="modal-ftr" id="kt-setuju-ftr"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-lb">
+  <div class="modal">
+    <div class="modal-hdr"><h3 id="lb-modal-title">Beasiswa</h3><button class="x-btn" onclick="closeModal('modal-lb')">×</button></div>
+    <div class="modal-body" id="lb-modal-body"></div>
+    <div class="modal-ftr" id="lb-modal-ftr" style="flex-wrap:wrap"></div>
   </div>
 </div>
 
@@ -2057,7 +2089,7 @@ function readForm(){
     detailRekomendasi:(()=>{const det=getDetailRekomendasi(d.desil||'',s??'');return det.teks;})(),
     // SROI dihitung saat simpan menggunakan nilai form terkini
     sroiRasio:'', sroiData:'',  // akan diisi di simpanData()
-    ...(()=>{const p=isPendidikan(gv('f-katBantuan'),gv('f-program'));return{lembagaPendidikan:p?gv('f-lembagaPend').trim():'',jenjangPendidikan:p?gv('f-jenjangPend'):'',prodiKelas:p?gv('f-prodiKelas').trim():'',semester:p?gv('f-semester').trim():''};})(),
+    ...(()=>{const p=isPendidikan(gv('f-katBantuan'),gv('f-program'));return{lembagaPendidikan:p?gv('f-lembagaPend').trim():'',jenjangPendidikan:p?gv('f-jenjangPend'):'',prodiKelas:p?gv('f-prodiKelas').trim():'',semester:p?gv('f-semester').trim():'',kelas:p&&V12_KELAS[gv('f-jenjangPend')]?gv('f-kelas'):''};})(),
     namaWali:gv('f-namaWali').trim(),nikWali:gv('f-nikWali').trim(),hubunganWali:gv('f-hubunganWali'),
     statusKuliah:isPendidikan(gv('f-katBantuan'),gv('f-program'))?gv('f-statusKuliah'):'',
     ...hitungDesilBaznas(gv('f-penghasilan'),gv('f-tglLahir')),
@@ -2084,7 +2116,7 @@ function fillForm(d){
   toggleRek();
   sv('f-asnaf',d.asnaf);sv('f-katBantuan',d.kategoriBantuan);sv('f-program',d.program);
   sv('f-nilaiModal',d.nilaiModal);sv('f-durasiProgram',d.durasiProgram);
-  sv('f-lembagaPend',d.lembagaPendidikan);sv('f-jenjangPend',d.jenjangPendidikan);sv('f-prodiKelas',d.prodiKelas);sv('f-semester',d.semester);togglePend();
+  sv('f-lembagaPend',d.lembagaPendidikan);sv('f-jenjangPend',d.jenjangPendidikan);sv('f-prodiKelas',d.prodiKelas);sv('f-semester',d.semester);togglePend();if(typeof v12AturKelas==='function'){v12AturKelas();sv('f-kelas',d.kelas||'');v12AturKelas();}
   sv('f-statusVerif',d.statusVerifikasi);sv('f-aktif',d.isActive);
   sv('f-namaWali',d.namaWali);sv('f-nikWali',d.nikWali);sv('f-hubunganWali',d.hubunganWali);sv('f-statusKuliah',d.statusKuliah);
   if(typeof aturWali==='function'){setTimeout(()=>{aturWali();kkPanelForm();},0);}
@@ -2173,6 +2205,8 @@ function simpanData(){
   if(!d.nama){toast('Nama mustahik wajib diisi!',true);return;}
   if(!/^\d{16}$/.test(d.nik)){toast('NIK wajib diisi 16 digit angka!',true);document.getElementById('f-nik').focus();return;}
   if(!d.asnaf){toast('Kategori Asnaf wajib dipilih!',true);return;}
+  {const u=kkUsia(d.tanggalLahir);if(u>=0&&u<18&&(!d.namaWali||!/^\d{16}$/.test(d.nikWali)||!d.hubunganWali)){toast('Penerima di bawah 18 tahun: data Orang Tua/Wali (nama, NIK 16 digit, hubungan) wajib diisi!',true);const w=document.getElementById('f-namaWali');if(w)w.focus();return;}}
+  if(isPendidikan(d.kategoriBantuan,d.program)&&V12_KELAS[d.jenjangPendidikan]&&!d.kelas){toast('Pilih Kelas sesuai jenjang '+d.jenjangPendidikan+'.',true);return;}
   if(d.metodeSalur==='Transfer Bank'){
     if(!d.namaBank){toast('Nama Bank wajib diisi untuk penyaluran via transfer!',true);return;}
     if(!/^\d{6,20}$/.test(d.noRekening)){toast('No. Rekening wajib diisi (6–20 digit angka)!',true);return;}
@@ -2218,7 +2252,7 @@ function simpanData(){
   }
   d._pending=true;
   saveStore();applyFilter();updateHeader();
-  dbEnqueueSimpan([{rec:d,nikLama,noPengajuan:eid?'':pjAktif}]);
+  dbEnqueueSimpan([{rec:d,nikLama,noPengajuan:pjAktif}]);
   resetForm();
   switchTab('t-daftar',document.querySelectorAll('.tab-btn')[0]);
   setTimeout(()=>window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}),200);
@@ -2813,6 +2847,7 @@ const COL_MAP={
   'Rekomendasi Bantuan':'rekomendasiSingkat','Detail Rekomendasi':'detailRekomendasi',
   'Tanggal Survey':'tanggalSurvey','Surveyor':'surveyor','Catatan Survey':'catatanSurvey',
   'Nama Wali':'namaWali','NIK Wali':'nikWali','Hubungan Wali':'hubunganWali','Status Kuliah':'statusKuliah',
+  'Kelas':'kelas','Status Beasiswa':'statusBeasiswa',
   'Lembaga Pendidikan':'lembagaPendidikan','Jenjang Pendidikan':'jenjangPendidikan','Prodi/Kelas':'prodiKelas','Semester':'semester',
   'Desil BAZNAS':'desilBaznas','Kelompok Pendapatan':'kelompokPendapatan','Jaring BAZNAS':'jaringBaznas','Had Kifayah':'statusHadKifayah','Status UMP':'statusUMP','Layak Z-Auto':'layakZAuto','Layak Z-Chicken':'layakZChicken','Prioritas Konsumtif':'prioritasKonsumtif',
   'Anggota Keluarga JSON':'anggotaKeluarga'
@@ -3632,7 +3667,7 @@ function pjRender(){
     <td>${pjTgl(p.waktu)}</td>
     <td style="font-weight:700">${pjEsc(p.nama)}</td>
     <td>${pjEsc(p.kelurahan)}, ${pjEsc(p.kecamatan)}</td>
-    <td>${pjEsc(p.kategoriBantuan)}</td>
+    <td>${pjEsc(p.kategoriBantuan)}${v12PjInfo(p)}</td>
     <td class="mono">${pjEsc(p.telepon)}</td>
     <td>${pjBadge(p.status)}${p.jadwal_kunjungan&&p.status===PJ_ST.jadwal?`<div style="font-size:11px;color:var(--g500)">📅 ${pjEsc(p.jadwal_kunjungan)}</div>`:''}${pjBerkasMini(p)}</td>
     <td><button class="btn btn-primary btn-sm" onclick="pjDetail('${pjEsc(p.no_pengajuan)}')">Buka</button></td></tr>`).join('')
@@ -3658,6 +3693,7 @@ function pjDetail(no){
       ${baris('Diisi oleh',p.diisi_oleh==='Diwakilkan'?pjEsc(p.nama_pengisi)+' ('+pjEsc(p.hubungan_pengisi)+') · '+pjEsc(p.hp_pengisi)+(p.nik_pengisi?'<br><span class="mono">NIK wali '+pjEsc(p.nik_pengisi)+'</span>':''):'Yang bersangkutan')}
       ${(()=>{const u=kkUsia(p.tanggalLahir);return u>=0&&u<18?baris('Usia',u+' tahun — <strong>atas nama anak</strong>, diwakili orang tua/wali'):'';})()}
       ${p.statusKuliah?baris('Status kuliah',pjEsc(p.statusKuliah)):''}
+      ${p.kelas?baris('Kelas',pjEsc(p.kelas)):''}${v12PjInfo(p)?baris('Penanda',v12PjInfo(p)):''}
       ${p.peringatan_wali?`<div style="background:#fff4d6;border:1px solid #f0d78c;border-radius:6px;padding:6px 8px;margin:6px 0;font-size:12.5px">⚠️ ${pjEsc(p.peringatan_wali)}</div>`:''}
       ${(()=>{const t=kkCatatanUsia(p.tanggalLahir,p.kategoriBantuan,KK_BATAS_USIA||0);return t?`<div style="background:#fdecea;border:1px solid #f5c6c0;border-radius:6px;padding:6px 8px;margin:6px 0;font-size:12.5px">${pjEsc(t)}</div>`:'';})()}
       ${baris('Persetujuan data',pjEsc(p.persetujuan))}
@@ -3726,6 +3762,7 @@ function pjTolak(no){
 function pjLengkapi(no){
   const p=pjList.find(x=>x.no_pengajuan===no);if(!p)return;
   const dup=dataList.find(x=>x.nik===p.nik);
+  if(dup&&isPendidikan(p.kategoriBantuan)){v12LanjutJenjang(p,dup);return;}
   if(dup){toast('NIK ini sudah ada di Daftar Mustahik ('+dup.nama+').',true);return;}
   if(p.berkas_status&&p.berkas_status!=='Lengkap'&&!pjLengkapi._lanjut){
     showKonfirm('📎','Berkas belum lengkap','Status berkas pengajuan '+no+': '+p.berkas_status+'. Tetap lanjut melengkapi & menerima?',()=>{pjLengkapi._lanjut=true;try{pjLengkapi(no);}finally{pjLengkapi._lanjut=false;}},'Ya, Lanjutkan','btn-primary');
@@ -3737,7 +3774,7 @@ function pjLengkapi(no){
     statusKeluarga:p.statusKeluarga,alamat:p.alamat,kelurahan:p.kelurahan,kecamatan:p.kecamatan,kota:p.kota||'Lubuklinggau',provinsi:'Sumatera Selatan',
     telepon:p.telepon,pekerjaan:p.pekerjaan,penghasilan:p.penghasilan,jumlahAnggota:p.jumlahAnggota,totalPengeluaran:p.totalPengeluaran,
     jumlahTanggungan:p.jumlahTanggungan,kondisiRumah:p.kondisiRumah,kebutuhanUtama:p.kebutuhanUtama,kategoriBantuan:p.kategoriBantuan,
-    lembagaPendidikan:p.lembagaPendidikan,jenjangPendidikan:p.jenjangPendidikan,prodiKelas:p.prodiKelas,semester:p.semester,
+    lembagaPendidikan:p.lembagaPendidikan,jenjangPendidikan:p.jenjangPendidikan,prodiKelas:p.prodiKelas,semester:p.semester,kelas:p.kelas,
     statusVerifikasi:'belum_verifikasi',isActive:'true',statusKuliah:p.statusKuliah,
     ...(p.nik_pengisi&&(['Ayah','Ibu','Wali lain'].includes(p.hubungan_pengisi)||(kkUsia(p.tanggalLahir)>=0&&kkUsia(p.tanggalLahir)<18))?{namaWali:p.nama_pengisi,nikWali:p.nik_pengisi,hubunganWali:['Ayah','Ibu','Wali lain'].includes(p.hubungan_pengisi)?p.hubungan_pengisi:'Wali lain'}:{}),
     catatanSurvey:'Dari pengajuan mandiri '+p.no_pengajuan+(p.diisi_oleh==='Diwakilkan'?' (diisikan '+p.nama_pengisi+', '+p.hubungan_pengisi+')':'')+'. Alasan: '+p.alasan});
@@ -4893,7 +4930,7 @@ async function pjBerkasIsi(no){
     <div class="pj-2col"><div>${b.wajib.map(x=>cek(x,true)).join('')}</div><div>${b.pendukung.map(x=>cek(x,false)).join('')}</div></div>
     <div style="margin-top:6px"><label style="font-size:11.5px">Berkas lain yang diterima (opsional)</label><input id="pj-bk-lain" type="text" maxlength="300" value="${pjEsc(p.berkas_lainnya)}" ${bisaUbah?'':'disabled'}/></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-      ${bisaUbah?`<button class="btn btn-primary btn-sm" type="button" onclick="pjBerkasSimpan('${pjEsc(no)}')">💾 Simpan &amp; Cetak Tanda Terima</button>`:''}
+      ${bisaUbah?`<button class="btn btn-primary btn-sm" type="button" onclick="pjBerkasSimpan('${pjEsc(no)}')">💾 Simpan &amp; Cetak Tanda Terima</button>`:''}${p.ref_berkas_pj?`<span style="font-size:11.5px;color:var(--teal-dark)">📎 Berkas bertanda <b>ada (${pjEsc(p.ref_berkas_pj)})</b> sudah diterima pada pengajuan satu KK.</span>`:''}
       ${p.no_tanda_terima?`<button class="btn btn-outline btn-sm" type="button" onclick="cetakTandaTerima('${pjEsc(no)}')">🖨️ Cetak Ulang Tanda Terima</button>`:''}</div>`;
 }
 async function pjBerkasSimpan(no){
@@ -5283,6 +5320,225 @@ function v10Init(){
 }
 
 // ════════════════════════════════════════════
+// v12 — Beasiswa Binaan: daftar penerima per jenjang & status, laporan per semester + verifikasi,
+//        pengingat laporan, label "Belum boleh dicairkan", cerita pilihan (WK2 → Ketua),
+//        kelas terstruktur, kelas akhir jenjang, lanjut jenjang, berkas satu KK
+// ════════════════════════════════════════════
+const V12_KELAS={'SD/MI':['I','II','III','IV','V','VI'],'SMP/MTs':['VII','VIII','IX'],'SMA/MA/SMK':['X','XI','XII']};
+const V12_AKHIR={'SD/MI':'VI','SMP/MTs':'IX','SMA/MA/SMK':'XII'},V12_SEM_AKHIR={D3:6,S1:8,S2:4};
+const V12_STATUS=['Aktif','Selesai jenjang','Lanjut jenjang','Berhenti'];
+let lbData=null,lbMode='penerima';
+function v12E(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function v12KelasAkhir(j,k,s){if(V12_AKHIR[j])return V12_AKHIR[j]===String(k||'').toUpperCase();const n=parseInt(String(s||'').replace(/\D/g,''),10);return !!V12_SEM_AKHIR[j]&&n>=V12_SEM_AKHIR[j];}
+function v12BadgeAkhir(){return '<span class="badge b-gold" title="Kelas akhir jenjang">🎓 Kelas akhir jenjang</span>';}
+
+// ── Form Tambah/Edit: kelas mengikuti jenjang + penanda kelas akhir ──
+function v12AturKelas(){
+  const j=gv('f-jenjangPend'),sel=document.getElementById('f-kelas'),w=document.getElementById('f-kelas-wrap');if(!sel)return;
+  const daftar=V12_KELAS[j]||[];
+  [...sel.options].forEach(o=>{if(o.value)o.hidden=!daftar.includes(o.value);});
+  if(sel.value&&!daftar.includes(sel.value))sel.value='';
+  w.style.display=daftar.length?'':'none';
+  const n=document.getElementById('f-kelas-akhir');
+  if(n){const a=isPendidikan(gv('f-katBantuan'),gv('f-program'))&&v12KelasAkhir(j,sel.value,gv('f-semester'));n.style.display=a?'':'none';}
+}
+
+// ── Pengajuan Masuk: kelas akhir, lanjut jenjang, berkas dari pengajuan lain satu KK ──
+function v12PjInfo(p){
+  const h=[];
+  if(p.kelas_akhir==='TRUE')h.push(v12BadgeAkhir());
+  if(isPendidikan(p.kategoriBantuan)&&dataList.some(x=>x.nik===p.nik))h.push('<span class="badge b-blue">↗ Lanjut jenjang</span>');
+  if(p.ref_berkas_pj)h.push('<span class="badge b-teal" title="KK/KTP wali dari pengajuan lain satu KK">📎 '+v12E(p.ref_berkas_pj)+'</span>');
+  return h.length?'<div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">'+h.join('')+'</div>':'';
+}
+function v12BerkasRef(no){
+  const p=pjList.find(x=>x.no_pengajuan===no),box=document.getElementById('pj-berkas-box');
+  if(!p||!box||!p.ref_berkas_pj)return;
+  const anak=kkUsia(p.tanggalLahir)>=0&&kkUsia(p.tanggalLahir)<18;
+  box.querySelectorAll('.pj-bk').forEach(c=>{
+    const v=c.value,kk=/\bKK\b|Kartu Keluarga/i.test(v),ktp=anak&&!p.file_ktp&&/KTP/i.test(v)&&/(orang tua|wali)/i.test(v);
+    if(!(kk&&!p.file_kk)&&!ktp)return;
+    if(c.parentElement.querySelector('.v12-ref'))return;
+    const s=document.createElement('span');s.className='badge b-teal v12-ref';s.style.marginLeft='4px';s.textContent='ada ('+p.ref_berkas_pj+')';
+    c.parentElement.appendChild(s);
+  });
+}
+// Lanjut jenjang: NIK sudah mustahik & bantuan pendidikan → buka data lama, timpa data pendidikan dari pengajuan baru
+function v12LanjutJenjang(p,dup){
+  closeModal('modal-pj');
+  editData(dup.id);
+  const set=(id,v)=>{const el=document.getElementById(id);if(el&&v!==undefined&&v!==null&&v!=='')el.value=v;};
+  set('f-katBantuan',p.kategoriBantuan);set('f-lembagaPend',p.lembagaPendidikan);set('f-jenjangPend',p.jenjangPendidikan);
+  set('f-prodiKelas',p.prodiKelas);set('f-semester',p.semester);set('f-statusKuliah',p.statusKuliah);
+  togglePend();v12AturKelas();set('f-kelas',p.kelas);v12AturKelas();
+  const c=document.getElementById('f-catatanSurvey');if(c)c.value=((c.value||'')+(c.value?'\n':'')+'Lanjut jenjang dari pengajuan '+p.no_pengajuan+' ('+[p.jenjangPendidikan,p.lembagaPendidikan].filter(Boolean).join(', ')+').').slice(0,1000);
+  pjAktif=p.no_pengajuan;
+  const bn=document.getElementById('pj-banner');
+  if(bn){bn.style.display='block';bn.innerHTML='↗ <strong>Lanjut jenjang</strong> — pengajuan <strong>'+v12E(p.no_pengajuan)+'</strong> untuk mustahik <strong>'+v12E(dup.mustahikId||dup.nama)+'</strong>. Data pendidikan sudah diganti dengan jenjang baru; ID Mustahik tetap sama. Periksa lalu <strong>Simpan Perubahan</strong> — pengajuan otomatis <em>Diterima</em>.';}
+}
+
+// ── Menu Beasiswa Binaan ──
+function lbBadge(s){const c={Diterima:'b-teal',Menunggu:'b-gold','Perlu dilengkapi':'b-red','Belum lapor':'b-gray'}[s]||'b-gray';return `<span class="badge ${c}">${v12E(s||'Belum lapor')}</span>`;}
+async function lbMuat(silent){
+  if(!getToken())return;
+  const st=document.getElementById('lb-status');if(st)st.textContent='Memuat…';
+  try{
+    const r=await dbApi('lb_daftar');
+    if(!r.ok){if(r.kode==='AUTH')dbLogout(true);else if(!silent)toast(r.pesan,true);return;}
+    lbData=r;lbRender();
+  }catch(e){if(st)st.textContent='Offline — data beasiswa tidak dapat dimuat.';}
+}
+function lbPilihMode(m,btn){lbMode=m;document.querySelectorAll('.lb-mode').forEach(b=>{b.classList.toggle('btn-primary',b===btn);b.classList.toggle('btn-outline',b!==btn);});lbRender();}
+function lbRender(){
+  const box=document.getElementById('lb-isi');if(!box||!lbData)return;
+  const r=lbData,jen=gv('lb-f-jenjang'),sb=gv('lb-f-status'),q=(gv('lb-cari')||'').toLowerCase();
+  const terlambat=r.penerima.filter(p=>p.terlambat).length,blm=r.penerima.filter(p=>p.belum_boleh_cair).length,tunggu=r.laporan.filter(l=>l.status_verifikasi==='Menunggu').length;
+  const c=document.getElementById('lb-count');if(c){c.textContent=tunggu;c.style.display=tunggu?'inline-block':'none';}
+  document.getElementById('lb-status').textContent=`Semester berjalan ${r.periode.berjalan} · laporan wajib ${r.periode.lalu} (batas ${pjTgl(r.periode.batas_lalu)}) · ${tunggu} menunggu verifikasi · ${terlambat} terlambat · ${blm} belum boleh dicairkan`;
+  const cocok=p=>(!jen||p.jenjang===jen)&&(!sb||p.statusBeasiswa===sb)&&(!q||[p.nama,p.nik,p.mustahikId,p.lembaga].join(' ').toLowerCase().includes(q));
+  if(lbMode==='penerima'){
+    const rows=r.penerima.filter(cocok);
+    box.innerHTML=`<div class="card"><div class="tbl-scroll"><table class="pj-tbl"><thead><tr><th>Penerima</th><th>Jenjang / Kelas</th><th>Status beasiswa</th><th>Laporan ${v12E(r.periode.lalu)}</th><th>Riwayat</th><th>Aksi</th></tr></thead><tbody>`+
+      (rows.length?rows.map(p=>`<tr>
+        <td><div style="font-weight:700">${v12E(p.nama)}</div><div class="mono" style="font-size:11px;color:var(--g500)">${v12E(p.mustahikId)}</div></td>
+        <td>${v12E(p.jenjang||'—')}${p.kelas?' · kelas '+v12E(p.kelas):''}${p.semester?' · smt '+v12E(p.semester):''}<div style="font-size:11px;color:var(--g500)">${v12E(p.lembaga||'')}</div>${v12KelasAkhir(p.jenjang,p.kelas,p.semester)?v12BadgeAkhir():''}</td>
+        <td><select onchange="lbUbahStatus('${v12E(p.mustahikId)}',this)" style="min-width:140px">${V12_STATUS.map(s=>`<option${s===p.statusBeasiswa?' selected':''}>${s}</option>`).join('')}</select></td>
+        <td>${lbBadge(p.laporan_lalu)}${p.terlambat?'<div><span class="badge b-red">⏰ Terlambat</span></div>':''}${p.belum_boleh_cair?'<div style="margin-top:3px"><span class="badge b-red" title="Didanai semester lalu, laporan belum Diterima">⛔ Belum boleh dicairkan</span></div>':''}</td>
+        <td style="font-size:11.5px">${(p.riwayat||[]).map(x=>v12E([x.jenjang,x.kelas,x.status].filter(Boolean).join(' · '))).join('<br>')||'—'}</td>
+        <td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="lbFormLaporan('${v12E(p.mustahikId)}')">+ Laporan</button></td></tr>`).join('')
+      :'<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--g500)">Belum ada penerima beasiswa.</td></tr>')+'</tbody></table></div></div>';
+  }else if(lbMode==='laporan'){
+    const nikOk=new Set(r.penerima.filter(cocok).map(p=>p.nik));
+    const rows=r.laporan.filter(l=>nikOk.has(l.nik));
+    box.innerHTML=`<div class="card"><div class="tbl-scroll"><table class="pj-tbl"><thead><tr><th>No</th><th>Penerima</th><th>Semester</th><th>Kelas</th><th>Nilai / Hadir</th><th>Status</th><th>Aksi</th></tr></thead><tbody>`+
+      (rows.length?rows.map(l=>{const p=r.penerima.find(x=>x.nik===l.nik)||{};return `<tr>
+        <td class="mono" style="font-weight:700">${v12E(l.id_laporan)}<div style="font-size:11px;color:var(--g500);font-weight:400">${v12E(l.sumber_input||'')}</div></td>
+        <td>${v12E(p.nama||'')}<div class="mono" style="font-size:11px;color:var(--g500)">${v12E(l.mustahikId)}</div></td>
+        <td>${v12E(l.semester)}</td><td>${v12E(l.kelas||'—')}</td><td>${v12E(l.rata_nilai)} / ${v12E(l.kehadiran)}%${l.prestasi?'<div style="font-size:11px">🏅 '+v12E(l.prestasi)+'</div>':''}</td>
+        <td>${lbBadge(l.status_verifikasi)}${l.catatan_petugas?'<div style="font-size:11px">'+v12E(l.catatan_petugas)+'</div>':''}${l.izin_cerita==='TRUE'?'<div style="font-size:11px;color:var(--teal-dark)">✍️ izin cerita</div>':''}</td>
+        <td style="white-space:nowrap"><button class="btn btn-primary btn-sm" onclick="lbBuka('${v12E(l.id_laporan)}')">Buka</button></td></tr>`;}).join('')
+      :'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--g500)">Belum ada laporan.</td></tr>')+'</tbody></table></div></div>';
+  }else if(lbMode==='pengingat'){
+    const rows=r.penerima.filter(p=>cocok(p)&&p.statusBeasiswa==='Aktif'&&p.laporan_lalu!=='Diterima'&&p.laporan_lalu!=='Menunggu');
+    const wa=p=>{const d=dataList.find(x=>x.nik===p.nik)||{};const hp=String(d.telepon||'').replace(/\D/g,'').replace(/^0/,'62');
+      const t=`Assalamu'alaikum. BAZNAS Kota Lubuklinggau mengingatkan laporan beasiswa ${r.periode.lalu} untuk ID ${p.mustahikId} (batas ${pjTgl(r.periode.batas_lalu)}). Kirim lewat menu Laporan Beasiswa: ${location.origin}/pengajuan.html#laporan — masuk dengan ID Mustahik + tanggal lahir. Terima kasih.`;
+      return hp?`<a class="btn btn-outline btn-sm" target="_blank" rel="noopener" href="https://wa.me/${hp}?text=${encodeURIComponent(t)}">WhatsApp</a>`:'<span style="font-size:11px;color:var(--g500)">HP kosong</span>';};
+    box.innerHTML=`<div class="card"><div class="card-body" style="font-size:12.5px">Penerima <strong>Aktif</strong> yang belum mengirim / perlu melengkapi laporan <strong>${v12E(r.periode.lalu)}</strong> (batas ${pjTgl(r.periode.batas_lalu)}). Pesan WhatsApp hanya berisi ID Mustahik, tanpa NIK.</div>
+      <div class="tbl-scroll"><table class="pj-tbl"><thead><tr><th>Penerima</th><th>Jenjang</th><th>Status laporan</th><th>Pengingat</th></tr></thead><tbody>`+
+      (rows.length?rows.map(p=>`<tr><td>${v12E(p.nama)}<div class="mono" style="font-size:11px;color:var(--g500)">${v12E(p.mustahikId)}</div></td><td>${v12E(p.jenjang||'—')}</td>
+        <td>${lbBadge(p.laporan_lalu)}${p.terlambat?' <span class="badge b-red">⏰ Terlambat</span>':''}${p.belum_boleh_cair?' <span class="badge b-red">⛔ Belum boleh dicairkan</span>':''}</td><td>${wa(p)}</td></tr>`).join('')
+      :'<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--g500)">Semua laporan sudah masuk. Alhamdulillah.</td></tr>')+'</tbody></table></div></div>';
+  }else{
+    const jab=r.jabatan||ssGet('baznas_jabatan')||'PETUGAS';
+    const aksi=c=>{const s=c.status_efektif||c.status,b=[];
+      if(s==='Draf')b.push(`<button class="btn btn-outline btn-sm" onclick="lbCeritaForm('${v12E(c.id_laporan)}','${v12E(c.id)}')">Ubah</button>`,`<button class="btn btn-primary btn-sm" onclick="lbCeritaAksi('konten_ajukan','${v12E(c.id)}')">Ajukan ke WK2</button>`);
+      if((s==='Menunggu Wakil Ketua'&&jab===c.bidang_wk)||(s==='Menunggu Ketua'&&jab==='KETUA'))b.push(`<button class="btn btn-primary btn-sm" onclick="lbCeritaAksi('konten_setujui','${v12E(c.id)}')">Setujui</button>`,`<button class="btn btn-danger btn-sm" onclick="lbCeritaAksi('konten_kembalikan','${v12E(c.id)}')">Kembalikan</button>`);
+      if(s==='Tayang'||s==='Disetujui')b.push(`<button class="btn btn-outline btn-sm" onclick="lbCeritaAksi('konten_arsip','${v12E(c.id)}')">Arsipkan</button>`);
+      return b.join(' ');};
+    const sumber=r.laporan.filter(l=>l.status_verifikasi==='Diterima'&&l.izin_cerita==='TRUE'&&!r.cerita.some(c=>c.id_laporan===l.id_laporan));
+    box.innerHTML=`<div class="card"><div class="card-body" style="font-size:12.5px">Cerita pilihan hanya dari laporan <strong>Diterima</strong> yang memberi <strong>izin cerita</strong>. Wajib nama samaran, tanpa foto, tanpa nilai perorangan, tanpa nama sekolah bila penerima &lt; 18 tahun. Alur: Draf → Wakil Ketua II → Ketua → tayang di kabar.html.</div>
+      ${sumber.length?`<div class="card-body" style="border-top:1px solid var(--g100)"><strong style="font-size:12.5px">Laporan dengan izin cerita:</strong> ${sumber.map(l=>`<button class="btn btn-outline btn-sm" style="margin:2px" onclick="lbCeritaForm('${v12E(l.id_laporan)}','')">✍️ ${v12E(l.id_laporan)} · ${v12E(l.jenjang)}</button>`).join('')}</div>`:''}
+      <div class="tbl-scroll"><table class="pj-tbl"><thead><tr><th>ID</th><th>Judul / nama samaran</th><th>Jenjang</th><th>Status</th><th>Aksi</th></tr></thead><tbody>`+
+      (r.cerita.length?r.cerita.map(c=>`<tr><td class="mono">${v12E(c.id)}</td><td><strong>${v12E(c.judul)}</strong><div style="font-size:11.5px">${v12E(c.nama_samaran)} — ${v12E(String(c.cerita||'').slice(0,90))}…</div>${c.catatan_persetujuan?'<div style="font-size:11px;color:#c0392b">'+v12E(c.catatan_persetujuan)+'</div>':''}</td>
+        <td>${v12E(c.jenjang)}</td><td>${pjBadge(c.status_efektif||c.status)}</td><td style="white-space:nowrap">${aksi(c)}</td></tr>`).join('')
+      :'<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--g500)">Belum ada cerita.</td></tr>')+'</tbody></table></div></div>';
+  }
+}
+async function lbUbahStatus(mid,sel){
+  const st=sel.value;
+  try{const r=await dbApi('lb_status',{mustahikId:mid,statusBeasiswa:st});toast(r.ok?'✓ '+r.pesan:(r.pesan||'Gagal.'),!r.ok);if(r.ok){const p=lbData.penerima.find(x=>x.mustahikId===mid);if(p)p.statusBeasiswa=st;const d=dataList.find(x=>x.mustahikId===mid);if(d){d.statusBeasiswa=st;saveStore();}}else lbMuat(true);}
+  catch(e){toast('Gagal terhubung ke server.',true);lbMuat(true);}
+}
+function lbModal(judul,isi,ftr){
+  document.getElementById('lb-modal-title').textContent=judul;document.getElementById('lb-modal-body').innerHTML=isi;document.getElementById('lb-modal-ftr').innerHTML=ftr;openModal('modal-lb');
+}
+let _lbRapor=null;
+async function lbBacaRapor(inp){
+  _lbRapor=null;const f=inp.files[0];if(!f)return;
+  if(f.size>5*1024*1024){toast('File rapor maksimal 5 MB.',true);inp.value='';return;}
+  const u=await new Promise((ok,no)=>{const fr=new FileReader();fr.onload=()=>ok(fr.result);fr.onerror=no;fr.readAsDataURL(f);});
+  _lbRapor={mime:f.type||'application/octet-stream',base64:String(u).split(',')[1]};
+}
+function lbFormLaporan(mid){
+  const p=lbData.penerima.find(x=>x.mustahikId===mid);if(!p)return;_lbRapor=null;
+  const opsi=[lbData.periode.lalu,lbData.periode.berjalan];
+  lbModal('Input Laporan — '+p.nama,`<div style="font-size:12.5px;margin-bottom:8px">Diisi petugas saat kunjungan. <span class="mono">${v12E(p.mustahikId)}</span> · ${v12E(p.jenjang||'')}</div>
+    <div class="grid g2">
+      <div class="field"><label>Semester</label><select id="lb-i-per">${opsi.map(o=>`<option>${v12E(o)}</option>`).join('')}</select></div>
+      <div class="field"><label>Kelas / semester</label><input id="lb-i-kelas" value="${v12E(p.kelas||(p.semester?'Semester '+p.semester:''))}" maxlength="30"/></div>
+      <div class="field"><label>Rata-rata nilai (0–100)</label><input id="lb-i-nilai" inputmode="decimal" maxlength="6"/></div>
+      <div class="field"><label>Kehadiran (%)</label><input id="lb-i-hadir" inputmode="decimal" maxlength="5"/></div>
+      <div class="field" style="grid-column:1/-1"><label>Prestasi</label><input id="lb-i-prestasi" maxlength="300"/></div>
+      <div class="field" style="grid-column:1/-1"><label>Foto/scan rapor <span class="hint">(opsional bila petugas)</span></label><input type="file" accept="image/*,application/pdf" onchange="lbBacaRapor(this)"/></div>
+      <label style="grid-column:1/-1;display:flex;gap:6px;font-weight:400;font-size:12.5px"><input type="checkbox" id="lb-i-izin" style="width:auto"/> Penerima/wali mengizinkan cerita singkat (nama samaran)</label>
+    </div>`,
+    `<button class="btn btn-outline" onclick="closeModal('modal-lb')">Batal</button><button class="btn btn-primary" onclick="lbSimpanLaporan('${v12E(mid)}')">Simpan Laporan</button>`);
+}
+async function lbSimpanLaporan(mid){
+  const d={mustahikId:mid,periode:gv('lb-i-per'),kelas:gv('lb-i-kelas').trim(),rata_nilai:gv('lb-i-nilai').replace(',','.'),kehadiran:gv('lb-i-hadir').replace(',','.'),prestasi:gv('lb-i-prestasi').trim(),izin_cerita:document.getElementById('lb-i-izin').checked};
+  if(_lbRapor)d.rapor=_lbRapor;
+  try{const r=await dbApi('lb_simpan',d);if(!r.ok){toast(r.pesan||'Gagal.',true);return;}toast('✓ '+r.pesan);closeModal('modal-lb');lbMuat(true);}
+  catch(e){toast('Gagal terhubung ke server — laporan perlu koneksi internet.',true);}
+}
+function lbBuka(id){
+  const l=lbData.laporan.find(x=>x.id_laporan===id);if(!l)return;
+  const p=lbData.penerima.find(x=>x.nik===l.nik)||{};
+  const row=(a,b)=>`<div class="pj-dl"><div>${a}</div><div>${b||'—'}</div></div>`;
+  const final=l.status_verifikasi==='Diterima';
+  lbModal('Laporan '+id,`<div style="font-size:13px">${row('Penerima',v12E(p.nama)+' · <span class="mono">'+v12E(l.mustahikId)+'</span>')}${row('Jenjang / lembaga',v12E([l.jenjang,l.lembaga].filter(Boolean).join(' · ')))}
+      ${row('Semester',v12E(l.semester))}${row('Kelas',v12E(l.kelas))}${row('Rata-rata nilai',v12E(l.rata_nilai))}${row('Kehadiran',v12E(l.kehadiran)+'%')}${row('Prestasi',v12E(l.prestasi))}
+      ${row('Dikirim',v12E(l.tanggal_laporan)+' · '+v12E(l.sumber_input))}${row('Status',lbBadge(l.status_verifikasi)+(l.diverifikasi_oleh?' oleh '+v12E(l.diverifikasi_oleh)+' '+v12E(l.tanggal_verifikasi):''))}
+      ${l.izin_cerita==='TRUE'?row('Izin cerita','Ya'+(l.cerita_singkat?' — “'+v12E(l.cerita_singkat)+'”':'')):''}</div>
+    <div id="lb-rapor" style="margin-top:10px;text-align:center">${l.ada_rapor?`<button class="btn btn-outline btn-sm" onclick="lbRapor('${v12E(id)}')">Tampilkan rapor</button>`:'<span style="font-size:12px;color:var(--g500)">Rapor belum diunggah.</span>'}</div>
+    ${final?'':`<div style="background:#f8fafb;border:1px solid var(--g200);border-radius:8px;padding:10px;margin-top:12px">
+      <div style="font-weight:700;font-size:12.5px;margin-bottom:6px">Verifikasi</div>
+      <div class="grid g2"><div class="field"><label>Naik kelas / lulus semester?</label><select id="lb-v-naik"><option value="">—</option><option>Ya</option><option>Tidak</option></select></div>
+      <div class="field"><label>Catatan petugas</label><input id="lb-v-cat" maxlength="400" value="${v12E(l.catatan_petugas)}"/></div></div></div>`}`,
+    final?`<button class="btn btn-outline" onclick="closeModal('modal-lb')">Tutup</button>`
+    :`<button class="btn btn-outline" onclick="closeModal('modal-lb')">Tutup</button><button class="btn btn-danger" onclick="lbVerif('${v12E(id)}','Perlu dilengkapi')">Perlu dilengkapi</button><button class="btn btn-primary" onclick="lbVerif('${v12E(id)}','Diterima')">✓ Diterima</button>`);
+}
+async function lbRapor(id){
+  const box=document.getElementById('lb-rapor');box.textContent='Memuat…';
+  try{const r=await dbApi('lb_file',{id_laporan:id});if(!r.ok){box.textContent=r.pesan||'Gagal.';return;}
+    const bin=atob(r.base64),u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+    const url=URL.createObjectURL(new Blob([u8],{type:r.mime}));
+    box.innerHTML=r.mime==='application/pdf'?`<a class="btn btn-outline btn-sm" href="${url}" target="_blank" rel="noopener">Buka PDF</a>`:`<a href="${url}" target="_blank" rel="noopener"><img src="${url}" style="max-width:100%;max-height:260px;border-radius:6px"/></a>`;
+  }catch(e){box.textContent='Offline — tidak dapat memuat rapor.';}
+}
+async function lbVerif(id,st){
+  const cat=gv('lb-v-cat').trim();
+  if(st==='Perlu dilengkapi'&&cat.length<5){toast('Isi catatan apa yang perlu dilengkapi.',true);document.getElementById('lb-v-cat').focus();return;}
+  try{const r=await dbApi('lb_verifikasi',{id_laporan:id,status:st,catatan:cat,naik_kelas:gv('lb-v-naik')});
+    if(!r.ok){toast(r.pesan||'Gagal.',true);return;}toast('✓ '+r.pesan);closeModal('modal-lb');lbMuat(true);}
+  catch(e){toast('Gagal terhubung ke server.',true);}
+}
+function lbCeritaForm(idl,idc){
+  const c=idc?lbData.cerita.find(x=>x.id===idc):null,l=lbData.laporan.find(x=>x.id_laporan===idl)||{};
+  lbModal(c?'Ubah Cerita '+idc:'Cerita Baru dari '+idl,`<div style="font-size:12px;background:#fff4d6;border-radius:6px;padding:6px 8px;margin-bottom:8px">Gunakan <strong>nama samaran</strong>. Jangan cantumkan nama asli, nilai, foto, atau nama sekolah (bila &lt; 18 th). ${l.cerita_singkat?'<br>Cerita dari keluarga: “'+v12E(l.cerita_singkat)+'”':''}</div>
+    <div class="field"><label>Judul</label><input id="lb-c-judul" maxlength="80" value="${v12E(c?c.judul:'')}"/></div>
+    <div class="field"><label>Nama samaran</label><input id="lb-c-samaran" maxlength="40" value="${v12E(c?c.nama_samaran:'')}"/></div>
+    <div class="field"><label>Cerita (maks. 1500 huruf)</label><textarea id="lb-c-isi" maxlength="1500" style="min-height:140px">${v12E(c?c.cerita:'')}</textarea></div>`,
+    `<button class="btn btn-outline" onclick="closeModal('modal-lb')">Batal</button><button class="btn btn-primary" onclick="lbCeritaSimpan('${v12E(idl)}','${v12E(idc||'')}')">Simpan Draf</button>`);
+}
+async function lbCeritaSimpan(idl,idc){
+  const data={id_laporan:idl,judul:gv('lb-c-judul').trim(),nama_samaran:gv('lb-c-samaran').trim(),cerita:gv('lb-c-isi').trim()};
+  try{const r=await dbApi('cerita_simpan',idc?{id:idc,data}:{data});if(!r.ok){toast(r.pesan||'Gagal.',true);return;}toast('✓ '+r.pesan);closeModal('modal-lb');lbMuat(true);}
+  catch(e){toast('Gagal terhubung ke server.',true);}
+}
+async function lbCeritaAksi(aksi,id){
+  const d={jenis:'cerita',id};
+  if(aksi==='konten_kembalikan'){const c=prompt('Catatan pengembalian (wajib):');if(!c)return;d.catatan=c;}
+  try{const r=await dbApi(aksi,d);toast(r.ok?'✓ '+(r.pesan||'Berhasil.'):(r.pesan||'Gagal.'),!r.ok);if(r.ok)lbMuat(true);}
+  catch(e){toast('Gagal terhubung ke server.',true);}
+}
+function v12Init(){
+  if(typeof pjBerkasIsi==='function'&&!pjBerkasIsi._v12){const asli=pjBerkasIsi;pjBerkasIsi=async function(no){await asli(no);v12BerkasRef(no);};pjBerkasIsi._v12=true;}
+  ['f-jenjangPend','f-kelas','f-katBantuan','f-semester'].forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener('change',v12AturKelas);el.addEventListener('input',v12AturKelas);}});
+  v12AturKelas();
+  if(getToken())setTimeout(()=>lbMuat(true),1500);
+}
+
+// ════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════
 loadStore();
@@ -5297,6 +5553,7 @@ document.getElementById('f-tglLahir').addEventListener('change',updateDesilBazna
 mzInit();
 v9Init();
 v10Init();
+v12Init();
 </script>
 </body>
 </html>
