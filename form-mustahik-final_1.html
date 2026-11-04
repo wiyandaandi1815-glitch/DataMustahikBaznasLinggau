@@ -147,6 +147,7 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
 .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
 .b-green{background:#d1fae5;color:#065f46;}
 .b-gold{background:#fff4d6;color:#7c5c00;}
+.kk-panel{border:1.5px solid #9fd6c6;background:#f3fbf8;border-radius:10px;padding:10px 12px;font-size:12.5px;margin:8px 0}
 /* v8 muzaki & publikasi */
 .bag-mz{font-weight:700;font-size:12.5px;color:var(--teal-dark);background:var(--teal-light);border-left:4px solid var(--teal);padding:4px 10px;border-radius:4px;margin:12px 0 8px}
 .bag-mz:first-of-type{margin-top:0}
@@ -684,6 +685,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
 <div id="t-form" class="tab-pane">
 <div class="main">
   <div id="form-title" class="pg-title">Tambah Mustahik Baru</div>
+  <div id="kk-panel-form"></div>
   <div id="pj-banner" style="display:none;background:#fff8e1;border:1.5px solid #f0d78c;border-radius:10px;padding:10px 14px;font-size:13px;margin:6px 0 10px"></div>
   <div class="pg-sub">Lengkapi data di bawah ini. Field <span style="color:var(--red)">*</span> wajib diisi.</div>
 
@@ -714,6 +716,15 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
         <div class="field"><label>Tanggal Lahir</label><input id="f-tglLahir" type="date"/></div>
         <div class="field"><label>Status Keluarga</label><select id="f-statusKel"><option value="">— Pilih —</option><option>Kepala Keluarga</option><option>Istri</option><option>Anak</option><option>Orang Tua</option><option>Lainnya</option></select></div>
         <div class="field"><label>Jumlah Tanggungan</label><input id="f-tanggungan" type="number" min="0" placeholder="0"/></div>
+        <div id="wali-wrap" style="display:none;grid-column:1/-1;background:#eef6ff;border:1.5px solid #bcd6f5;border-radius:10px;padding:10px 12px">
+          <div style="font-weight:800;font-size:12px;color:#1e40af;margin-bottom:6px">👨‍👩‍👦 ORANG TUA / WALI (penerima di bawah 18 tahun)</div>
+          <div id="wali-note" style="font-size:12px;color:#1e3a8a;margin-bottom:6px">Penerima di bawah 18 tahun. Rekening boleh atas nama orang tua/wali — bila nama pemilik rekening sama dengan nama wali, Hubungan Pemilik Rekening terisi otomatis.</div>
+          <div class="grid g2">
+            <div class="field"><label>Nama Orang Tua/Wali</label><input id="f-namaWali" type="text" maxlength="100" placeholder="Nama sesuai KTP"/></div>
+            <div class="field"><label>NIK Orang Tua/Wali</label><input id="f-nikWali" type="text" inputmode="numeric" maxlength="16" class="mono" placeholder="16 digit"/></div>
+            <div class="field"><label>Hubungan Wali</label><select id="f-hubunganWali"><option value="">— Pilih —</option><option>Ayah</option><option>Ibu</option><option>Wali lain</option></select></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -832,7 +843,9 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
             <div class="field"><label>Jenjang</label><select id="f-jenjangPend"><option value="">— Pilih —</option><option>SD/MI</option><option>SMP/MTs</option><option>SMA/MA/SMK</option><option>D3</option><option>S1</option><option>S2</option><option>Pesantren</option><option>Lainnya</option></select></div>
             <div class="field"><label>Program Studi / Kelas</label><input id="f-prodiKelas" type="text" maxlength="80" placeholder="mis. Ekonomi Syariah / Kelas XI IPA"/></div>
             <div class="field"><label>Semester</label><input id="f-semester" type="text" maxlength="10" placeholder="mis. 3"/></div>
+            <div class="field"><label>Status Kuliah <span class="hint">D3/S1/S2</span></label><select id="f-statusKuliah"><option value="">— Pilih —</option><option>Mahasiswa aktif</option><option>Calon mahasiswa</option></select></div>
           </div>
+          <div id="usia-beasiswa-note" style="display:none;margin-top:6px;background:#fdecea;border:1px solid #f5c6c0;border-radius:6px;padding:6px 8px;font-size:12px"></div>
         </div>
         <div class="field">
           <label>Nilai Bantuan / Modal (Rp)
@@ -2045,6 +2058,8 @@ function readForm(){
     // SROI dihitung saat simpan menggunakan nilai form terkini
     sroiRasio:'', sroiData:'',  // akan diisi di simpanData()
     ...(()=>{const p=isPendidikan(gv('f-katBantuan'),gv('f-program'));return{lembagaPendidikan:p?gv('f-lembagaPend').trim():'',jenjangPendidikan:p?gv('f-jenjangPend'):'',prodiKelas:p?gv('f-prodiKelas').trim():'',semester:p?gv('f-semester').trim():''};})(),
+    namaWali:gv('f-namaWali').trim(),nikWali:gv('f-nikWali').trim(),hubunganWali:gv('f-hubunganWali'),
+    statusKuliah:isPendidikan(gv('f-katBantuan'),gv('f-program'))?gv('f-statusKuliah'):'',
     ...hitungDesilBaznas(gv('f-penghasilan'),gv('f-tglLahir')),
     tanggalSurvey:gv('f-tglSurvey'),surveyor:gv('f-surveyor').trim(),
     catatanSurvey:gv('f-catatanSurvey').trim(),
@@ -2071,6 +2086,8 @@ function fillForm(d){
   sv('f-nilaiModal',d.nilaiModal);sv('f-durasiProgram',d.durasiProgram);
   sv('f-lembagaPend',d.lembagaPendidikan);sv('f-jenjangPend',d.jenjangPendidikan);sv('f-prodiKelas',d.prodiKelas);sv('f-semester',d.semester);togglePend();
   sv('f-statusVerif',d.statusVerifikasi);sv('f-aktif',d.isActive);
+  sv('f-namaWali',d.namaWali);sv('f-nikWali',d.nikWali);sv('f-hubunganWali',d.hubunganWali);sv('f-statusKuliah',d.statusKuliah);
+  if(typeof aturWali==='function'){setTimeout(()=>{aturWali();kkPanelForm();},0);}
   sv('f-pekerjaan',d.pekerjaan);sv('f-penghasilan',d.penghasilan);
   sv('f-jmlAnggota',d.jumlahAnggota);sv('f-pengeluaran',d.totalPengeluaran);
   sv('f-kondisiRumah',d.kondisiRumah);sv('f-kebutuhan',d.kebutuhanUtama);
@@ -2390,6 +2407,8 @@ function lihatDetail(id){
   document.getElementById('btn-modal-edit').onclick=()=>editData(id);
   document.getElementById('btn-modal-dok').dataset.id=id;
   openModal('modal-detail');
+  {const kb=document.getElementById('modal-detail-body');if(kb&&!document.getElementById('kk-panel-det')){const x=document.createElement('div');x.id='kk-panel-det';x.style.marginTop='10px';kb.appendChild(x);}
+   kkPanel('kk-panel-det',d.noKK,{nikSaya:d.nik,paksa:true});}
 }
 
 // ════════════════════════════════════════════
@@ -2793,6 +2812,7 @@ const COL_MAP={
   'Riwayat Medis':'riwayatMedis','Skor IZN Kesehatan':'iznSkor','Kategori IZN':'iznKategori',
   'Rekomendasi Bantuan':'rekomendasiSingkat','Detail Rekomendasi':'detailRekomendasi',
   'Tanggal Survey':'tanggalSurvey','Surveyor':'surveyor','Catatan Survey':'catatanSurvey',
+  'Nama Wali':'namaWali','NIK Wali':'nikWali','Hubungan Wali':'hubunganWali','Status Kuliah':'statusKuliah',
   'Lembaga Pendidikan':'lembagaPendidikan','Jenjang Pendidikan':'jenjangPendidikan','Prodi/Kelas':'prodiKelas','Semester':'semester',
   'Desil BAZNAS':'desilBaznas','Kelompok Pendapatan':'kelompokPendapatan','Jaring BAZNAS':'jaringBaznas','Had Kifayah':'statusHadKifayah','Status UMP':'statusUMP','Layak Z-Auto':'layakZAuto','Layak Z-Chicken':'layakZChicken','Prioritas Konsumtif':'prioritasKonsumtif',
   'Anggota Keluarga JSON':'anggotaKeluarga'
@@ -3595,6 +3615,7 @@ async function pjMuat(silent){
     const r=await dbApi('pengajuan_daftar');
     if(!r.ok){if(r.kode==='AUTH')dbLogout(true);else if(!silent)toast(r.pesan,true);return;}
     pjList=r.data||[];
+    if(r.batas_usia_beasiswa!==undefined&&typeof KK_BATAS_USIA!=='undefined')KK_BATAS_USIA=+r.batas_usia_beasiswa||0;
     pjRender();
   }catch(err){if(st)st.textContent='Offline — daftar pengajuan tidak dapat dimuat.';}
 }
@@ -3624,6 +3645,7 @@ function pjDetail(no){
   const final=p.status===PJ_ST.terima||p.status===PJ_ST.tolak;
   const kedaluwarsa=p.status===PJ_ST.kedaluwarsa;
   document.getElementById('pj-modal-title').textContent='Pengajuan '+p.no_pengajuan;
+  setTimeout(()=>kkPanel('kk-panel-pj',p.noKK,{nikSaya:p.nik,noSaya:no,jadwal:!(p.status===PJ_ST.terima||p.status===PJ_ST.tolak)}),0);
   document.getElementById('pj-modal-body').innerHTML=`
     <div style="margin-bottom:10px">${pjBadge(p.status)} <span style="font-size:12px;color:var(--g500)">Diajukan ${pjTgl(p.waktu)}${p.ditangani_oleh?' · ditangani '+pjEsc(p.ditangani_oleh):''}${p.mustahikId?' · ID Mustahik <strong>'+pjEsc(p.mustahikId)+'</strong>':''}</span></div>
     <div style="font-size:13px">
@@ -3633,13 +3655,20 @@ function pjDetail(no){
       ${baris('Pekerjaan',pjEsc(p.pekerjaan))}${baris('Penghasilan / bulan',fRpPj(p.penghasilan))}${baris('Pengeluaran / bulan',fRpPj(p.totalPengeluaran))}
       ${baris('Anggota serumah / tanggungan',pjEsc(p.jumlahAnggota||'—')+' / '+pjEsc(p.jumlahTanggungan||'—'))}${baris('Kondisi rumah',pjEsc(p.kondisiRumah))}
       ${baris('Bantuan diajukan',pjEsc(p.kategoriBantuan))}${p.lembagaPendidikan||p.jenjangPendidikan?baris('Pendidikan',[p.lembagaPendidikan,p.jenjangPendidikan,p.prodiKelas,p.semester?'Semester '+p.semester:''].filter(Boolean).map(pjEsc).join(' · ')):''}${baris('Kebutuhan mendesak',pjEsc(p.kebutuhanUtama))}${baris('Alasan',pjEsc(p.alasan))}
-      ${baris('Diisi oleh',p.diisi_oleh==='Diwakilkan'?pjEsc(p.nama_pengisi)+' ('+pjEsc(p.hubungan_pengisi)+') · '+pjEsc(p.hp_pengisi):'Yang bersangkutan')}
+      ${baris('Diisi oleh',p.diisi_oleh==='Diwakilkan'?pjEsc(p.nama_pengisi)+' ('+pjEsc(p.hubungan_pengisi)+') · '+pjEsc(p.hp_pengisi)+(p.nik_pengisi?'<br><span class="mono">NIK wali '+pjEsc(p.nik_pengisi)+'</span>':''):'Yang bersangkutan')}
+      ${(()=>{const u=kkUsia(p.tanggalLahir);return u>=0&&u<18?baris('Usia',u+' tahun — <strong>atas nama anak</strong>, diwakili orang tua/wali'):'';})()}
+      ${p.statusKuliah?baris('Status kuliah',pjEsc(p.statusKuliah)):''}
+      ${p.peringatan_wali?`<div style="background:#fff4d6;border:1px solid #f0d78c;border-radius:6px;padding:6px 8px;margin:6px 0;font-size:12.5px">⚠️ ${pjEsc(p.peringatan_wali)}</div>`:''}
+      ${(()=>{const t=kkCatatanUsia(p.tanggalLahir,p.kategoriBantuan,KK_BATAS_USIA||0);return t?`<div style="background:#fdecea;border:1px solid #f5c6c0;border-radius:6px;padding:6px 8px;margin:6px 0;font-size:12.5px">${pjEsc(t)}</div>`:'';})()}
       ${baris('Persetujuan data',pjEsc(p.persetujuan))}
     </div>
     <div class="pj-2col" style="margin-top:12px">
-      <div style="border:1px solid var(--g200);border-radius:8px;padding:8px;text-align:center"><div style="font-weight:700;font-size:12px;margin-bottom:6px">KTP</div><div id="pj-dok-ktp"><button class="btn btn-outline btn-sm" onclick="pjLihatDok('${pjEsc(no)}','ktp')">Tampilkan</button></div></div>
+      <div style="border:1px solid var(--g200);border-radius:8px;padding:8px;text-align:center"><div style="font-weight:700;font-size:12px;margin-bottom:6px">${kkUsia(p.tanggalLahir)>=0&&kkUsia(p.tanggalLahir)<18?'KTP orang tua/wali':'KTP'}</div><div id="pj-dok-ktp"><button class="btn btn-outline btn-sm" onclick="pjLihatDok('${pjEsc(no)}','ktp')">Tampilkan</button></div></div>
       <div style="border:1px solid var(--g200);border-radius:8px;padding:8px;text-align:center"><div style="font-weight:700;font-size:12px;margin-bottom:6px">Kartu Keluarga</div><div id="pj-dok-kk"><button class="btn btn-outline btn-sm" onclick="pjLihatDok('${pjEsc(no)}','kk')">Tampilkan</button></div></div>
+      ${p.file_bukti_kuliah?`<div style="border:1px solid var(--g200);border-radius:8px;padding:8px;text-align:center"><div style="font-weight:700;font-size:12px;margin-bottom:6px">Bukti kuliah (KTM/surat aktif)</div><div id="pj-dok-bukti"><button class="btn btn-outline btn-sm" onclick="pjLihatDok('${pjEsc(no)}','bukti')">Tampilkan</button></div></div>`:''}
+      ${p.file_kia?`<div style="border:1px solid var(--g200);border-radius:8px;padding:8px;text-align:center"><div style="font-weight:700;font-size:12px;margin-bottom:6px">KIA / Kartu Pelajar</div><div id="pj-dok-kia"><button class="btn btn-outline btn-sm" onclick="pjLihatDok('${pjEsc(no)}','kia')">Tampilkan</button></div></div>`:''}
     </div>
+    <div id="kk-panel-pj" style="margin-top:12px"></div>
     ${pjBerkasPanel(p,final)}
     ${final?'':`<div style="background:var(--g50,#f8fafb);border:1px solid var(--g200);border-radius:8px;padding:10px;margin-top:12px">
       <div style="font-weight:700;font-size:12.5px;margin-bottom:6px">Tindak lanjut — kunjungan / survei lapangan</div>
@@ -3709,10 +3738,12 @@ function pjLengkapi(no){
     telepon:p.telepon,pekerjaan:p.pekerjaan,penghasilan:p.penghasilan,jumlahAnggota:p.jumlahAnggota,totalPengeluaran:p.totalPengeluaran,
     jumlahTanggungan:p.jumlahTanggungan,kondisiRumah:p.kondisiRumah,kebutuhanUtama:p.kebutuhanUtama,kategoriBantuan:p.kategoriBantuan,
     lembagaPendidikan:p.lembagaPendidikan,jenjangPendidikan:p.jenjangPendidikan,prodiKelas:p.prodiKelas,semester:p.semester,
-    statusVerifikasi:'belum_verifikasi',isActive:'true',
+    statusVerifikasi:'belum_verifikasi',isActive:'true',statusKuliah:p.statusKuliah,
+    ...(p.nik_pengisi&&(['Ayah','Ibu','Wali lain'].includes(p.hubungan_pengisi)||(kkUsia(p.tanggalLahir)>=0&&kkUsia(p.tanggalLahir)<18))?{namaWali:p.nama_pengisi,nikWali:p.nik_pengisi,hubunganWali:['Ayah','Ibu','Wali lain'].includes(p.hubungan_pengisi)?p.hubungan_pengisi:'Wali lain'}:{}),
     catatanSurvey:'Dari pengajuan mandiri '+p.no_pengajuan+(p.diisi_oleh==='Diwakilkan'?' (diisikan '+p.nama_pengisi+', '+p.hubungan_pengisi+')':'')+'. Alasan: '+p.alasan});
   tampilUser();
   pjAktif=no;
+  if(typeof aturWali==='function'){aturWali();kkPanelForm();}
   const bn=document.getElementById('pj-banner');
   if(bn){bn.style.display='block';bn.innerHTML='📥 Melengkapi pengajuan mandiri <strong>'+pjEsc(no)+'</strong> — lengkapi Asnaf, kesehatan/IZN, rekening, dan hasil verifikasi lapangan, lalu <strong>Simpan Data</strong>. Pengajuan otomatis berstatus <em>Diterima</em>.';}
 }
@@ -3796,7 +3827,7 @@ function dokFormulir(d){
       ${!b&&(d.lembagaPendidikan||d.jenjangPendidikan)?r('Pendidikan',[d.lembagaPendidikan,d.jenjangPendidikan,d.prodiKelas,d.semester?'Semester '+d.semester:''].filter(Boolean).join(' · ')):''}
       <tr><td class="lbl">Metode Penyaluran</td><td class="sep">:</td><td>${b?dCek(['Tunai','Transfer Bank','Barang/Natura'],'',3):dV(d.metodeSalur)}</td></tr></table>
     ${dDua(r('Bank / No. Rekening',b?'':[d.namaBank,d.noRekening].filter(Boolean).join(' / ')),r('Atas Nama / Hubungan',b?'':[d.namaPemilikRek,d.hubunganRek].filter(Boolean).join(' / ')))}
-    <div class="pernyataan">Dengan ini saya menyatakan bahwa data yang saya berikan di atas adalah <b>benar</b> dan dapat dipertanggungjawabkan. Saya bersedia data ini diverifikasi oleh petugas BAZNAS Kota Lubuklinggau dan apabila di kemudian hari terbukti tidak benar, saya bersedia menerima konsekuensi sesuai ketentuan yang berlaku.</div>
+    <div class="pernyataan">Dengan ini saya menyatakan bahwa data yang saya berikan di atas adalah <b>benar</b> dan dapat dipertanggungjawabkan. Saya bersedia data ini diverifikasi oleh petugas BAZNAS Kota Lubuklinggau dan apabila di kemudian hari terbukti tidak benar, saya bersedia menerima konsekuensi sesuai ketentuan yang berlaku. Data bantuan saya dapat dilihat oleh anggota keluarga dalam Kartu Keluarga yang sama melalui Cek Status Keluarga.</div>
     <div class="tgl-ttd">${dTempatTgl(b?null:d)}</div>
     ${dTtd([{atas:'Mengetahui,',jabatan:'Ketua RT / Lurah'},{atas:'&nbsp;',jabatan:'Petugas Survei',nama:dSurveyor(b?null:d)},{atas:'&nbsp;',jabatan:'Pemohon',nama:b?'':d.nama}])}
     <div class="c" style="margin-top:2px">Menyetujui,</div>
@@ -4954,25 +4985,28 @@ function svKontrol(f,isi){
   if(ctl.type==='date')return {lebar:false,html:v?`<div class="sv-isi">${dE(dTgl(v))}</div>`:'<div class="sv-garis tgl">____ / ____ / ________</div>'};
   return {lebar:false,html:v!==undefined&&v!==null&&String(v).trim()!==''?`<div class="sv-isi">${dE(v)}</div>`:'<div class="sv-garis"></div>'};
 }
-function svBagian(card,isi,anggotaN){
+function svIdField(f){const c=f.querySelector(':scope>select,:scope>input,:scope>textarea');return c?c.id:(f.querySelector(':scope>.penyakit-grid')?'penyakit-grid':'');}
+function svBagian(card,isi,anggotaN,filter){
   const h=card.querySelector('.card-header h2'),no=card.querySelector('.card-header .sec-num');
   let out=`<div class="bag">${no?dE(no.textContent.trim())+'. ':''}${dE(h.textContent.trim())}</div>`;
   if(card.querySelector('#ak-tbody')){
+    if(filter&&!filter('ak'))return '';
     const th=[...card.querySelectorAll('thead th')].map(x=>x.textContent.trim()).filter(Boolean);
     out+=`<table class="grid sv-ak"><thead><tr>${th.map(t=>`<th>${dE(t)}</th>`).join('')}</tr></thead><tbody>${
       Array.from({length:anggotaN},(_,i)=>`<tr>${th.map((t,j)=>`<td>${j===0?i+1:''}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
     return out;
   }
-  let grup='';
+  let grup='',n=0;
   out+='<div class="sv-grid">';
   card.querySelectorAll('.field').forEach(f=>{
     const lbl=f.querySelector(':scope>label');if(!lbl)return;
-    const k=svKontrol(f,isi);if(!k)return;
-    const g=f.closest('#pend-wrap')?'🎓 Data Pendidikan — diisi bila bantuan pendidikan/beasiswa':f.closest('#rek-wrap')?'Diisi bila metode penyaluran Transfer Bank':'';
+    if(filter&&!filter(svIdField(f)))return;
+    const k=svKontrol(f,isi);if(!k)return;n++;
+    const g=f.closest('#pend-wrap')?'🎓 Data Pendidikan — diisi bila bantuan pendidikan/beasiswa':f.closest('#rek-wrap')?'Diisi bila metode penyaluran Transfer Bank':f.closest('#wali-wrap')?'Orang tua/wali — diisi bila penerima di bawah 18 tahun':'';
     if(g&&g!==grup){out+=`<div class="sv-sub">${dE(g)}</div>`;}grup=g;
     out+=`<div class="sv-f${k.lebar?' lebar':''}"><div class="sv-l">${dE(svTeksLabel(lbl))}</div>${k.html}</div>`;
   });
-  return out+'</div>';
+  return n?out+'</div>':'';
 }
 function cetakFormulirSurvei(no){
   const p=pjList.find(x=>x.no_pengajuan===no);if(!p)return;
@@ -5014,7 +5048,7 @@ function cetakFormulirSurvei(no){
       <td style="width:50%"><b>Rekomendasi surveyor</b><div class="sv-op"><span><b class="kotak"></b> Layak dibantu</span><span><b class="kotak"></b> Tidak layak</span><span><b class="kotak"></b> Perlu verifikasi ulang</span></div></td>
       <td><b>Dokumentasi (foto)</b><div class="sv-op"><span><b class="kotak"></b> Rumah tampak depan</span><span><b class="kotak"></b> Bagian dalam</span><span><b class="kotak"></b> Pemohon &amp; petugas</span><span><b class="kotak"></b> Usaha/lainnya</span></div></td></tr>
       <tr><td colspan="2"><b>Alasan / temuan penting</b><div class="sv-garis"></div><div class="sv-garis"></div></td></tr></table>
-    <div class="pernyataan">Saya menyatakan data di atas <b>benar</b> sesuai keadaan sebenarnya dan bersedia diverifikasi. Apabila di kemudian hari terbukti tidak benar, saya bersedia menerima konsekuensi sesuai ketentuan yang berlaku.</div>
+    <div class="pernyataan">Saya menyatakan data di atas <b>benar</b> sesuai keadaan sebenarnya dan bersedia diverifikasi. Apabila di kemudian hari terbukti tidak benar, saya bersedia menerima konsekuensi sesuai ketentuan yang berlaku. ${dE(TEKS_PERSETUJUAN_KK)}</div>
     <div class="tgl-ttd">Lubuklinggau, ..............................</div>
     ${dTtd([{atas:'Pemohon,',jabatan:'Calon Mustahik',nama:p.nama},{atas:'Mengetahui,',jabatan:'Ketua RT / Lurah'},{atas:'Surveyor,',jabatan:'Petugas BAZNAS'}])}
   </div>`;
@@ -5064,6 +5098,191 @@ async function mzolTolak(no){
 function v9Init(){RP_KOLOM.forEach(rpPasang);}
 
 // ════════════════════════════════════════════
+// v10 — Keluarga (satu No. KK): wali anak, panel Satu Kartu Keluarga, jadwal & survei per KK,
+//        salin data ekonomi rumah tangga, status kuliah & batas usia beasiswa
+// ════════════════════════════════════════════
+const TEKS_PERSETUJUAN_KK='Data bantuan saya dapat dilihat oleh anggota keluarga dalam Kartu Keluarga yang sama melalui Cek Status Keluarga.';
+const KK_EKONOMI=[['jumlahAnggota','f-jmlAnggota','Jumlah anggota'],['penghasilan','f-penghasilan','Penghasilan keluarga'],['totalPengeluaran','f-pengeluaran','Pengeluaran keluarga'],
+  ['kondisiRumah','f-kondisiRumah','Kondisi rumah'],['statusJkn','f-jkn','JKN/BPJS'],['anggotaSakit','f-anggotaSakit','Anggota sakit kronis']];
+const KK_RT_IDS=['ak','f-alamat','f-kelurahan','f-kecamatan','f-kota','f-provinsi','f-kodePos','f-penghasilan','f-jmlAnggota','f-pengeluaran','f-kondisiRumah','f-jkn','f-faskes','f-anggotaSakit'];
+let KK_BATAS_USIA=null; const _kkCache={};
+
+function kkUsia(t){t=String(t||'').slice(0,10);if(!/^\d{4}-\d{2}-\d{2}$/.test(t))return -1;const n=new Date(),[y,m,d]=t.split('-').map(Number);let u=n.getFullYear()-y;if(n.getMonth()+1<m||(n.getMonth()+1===m&&n.getDate()<d))u--;return u;}
+function kkDigit(x){return String(x||'').replace(/\D/g,'');}
+async function kkBatasUsia(){
+  if(KK_BATAS_USIA!==null)return KK_BATAS_USIA;
+  try{const r=await dbApi('keluarga_kk',{noKK:''});if(r.ok)KK_BATAS_USIA=+r.batas_usia_beasiswa||0;}catch(e){}
+  return KK_BATAS_USIA||0;
+}
+function kkCatatanUsia(tgl,kat,batas){
+  const u=kkUsia(tgl);
+  if(!batas||u<0||!/pendidikan|beasiswa/i.test(kat||'')||u<=batas)return '';
+  return `⚠️ Usia pemohon ${u} tahun melebihi batas usia beasiswa (${batas} tahun). Catatan kelayakan untuk pertimbangan petugas/pimpinan — bukan penolakan otomatis.`;
+}
+async function kkAmbil(noKK,paksa){
+  const kk=kkDigit(noKK);if(kk.length!==16)return null;
+  const c=_kkCache[kk];if(c&&!paksa&&Date.now()-c.t<30000)return c.r;
+  try{const r=await dbApi('keluarga_kk',{noKK:kk});if(!r.ok){if(r.kode==='AUTH')dbLogout(true);return null;}
+    _kkCache[kk]={t:Date.now(),r};if(r.batas_usia_beasiswa!==undefined)KK_BATAS_USIA=+r.batas_usia_beasiswa||0;return r;}catch(e){return null;}
+}
+
+// ── Panel "Satu Kartu Keluarga" (informasi, bukan penolakan) ──
+async function kkPanel(boxId,noKK,opsi){
+  opsi=opsi||{};
+  const box=document.getElementById(boxId);if(!box)return;
+  const kk=kkDigit(noKK);
+  if(kk.length!==16){box.innerHTML='';return;}
+  box.innerHTML='<div class="kk-panel" style="color:var(--g500)">Memeriksa anggota Kartu Keluarga…</div>';
+  const r=await kkAmbil(kk,opsi.paksa);
+  if(!document.getElementById(boxId))return;
+  if(!r){box.innerHTML='';return;}
+  const lain=r.anggota.filter(a=>a.nik!==opsi.nikSaya&&!(opsi.noSaya&&a.no===opsi.noSaya));
+  if(!lain.length){box.innerHTML='';return;}
+  const pjLain=r.anggota.filter(a=>a.sumber==='pengajuan');
+  const baris=r.anggota.map(a=>{
+    const saya=a.nik===opsi.nikSaya||(opsi.noSaya&&a.no===opsi.noSaya);
+    const buka=a.sumber==='pengajuan'?`<button class="btn btn-outline btn-sm" type="button" onclick="kkBuka('pj','${pjEsc(a.no)}')">Buka</button>`
+      :a.sumber==='mustahik'?`<button class="btn btn-outline btn-sm" type="button" onclick="kkBuka('mh','${pjEsc(a.nik)}')">Buka</button>`:'';
+    return `<tr${saya?' style="background:#f0faf7"':''}><td><strong>${pjEsc(a.nama)}</strong>${saya?' <span class="badge b-teal">ini</span>':''}<div style="font-size:11px;color:var(--g500)">${pjEsc(a.hubungan||'')}${a.sumber==='mustahik'?' · '+pjEsc(a.mustahikId):a.sumber==='pengajuan'?' · '+pjEsc(a.no):''}</div></td>
+      <td style="font-size:12px">${pjEsc(a.peran)}</td><td style="font-size:12px">${pjEsc(a.kategoriBantuan||'—')}</td>
+      <td style="font-size:12px">${a.sumber==='mustahik'?'Mustahik · '+pjEsc(a.status):pjEsc(a.status)}${a.jadwal?'<div style="font-size:10.5px;color:var(--g500)">📅 '+pjEsc(a.jadwal)+'</div>':''}</td>
+      <td style="white-space:nowrap">${saya?'':buka}</td></tr>`;
+  }).join('');
+  const salin=opsi.salin?r.anggota.filter(a=>a.nik!==opsi.nikSaya&&KK_EKONOMI.some(([k])=>String(a[k]||'').trim())).map(a=>
+    `<button class="btn btn-outline btn-sm" type="button" onclick="kkSalinEkonomi('${kk}','${pjEsc(a.nik)}')">📋 Salin data ekonomi rumah tangga dari ${pjEsc(a.nama)}</button>`).join(' '):'';
+  const aksiPj=opsi.jadwal&&pjLain.length?`<button class="btn btn-blue btn-sm" type="button" onclick="kkSamakanJadwal('${kk}','${pjEsc(opsi.noSaya||'')}')">📅 Samakan jadwal untuk semua pengajuan KK ini (${pjLain.length})</button>
+      ${pjLain.length>1?`<button class="btn btn-outline btn-sm" type="button" onclick="cetakFormulirSurveiKK('${kk}')">🖨️ Cetak Formulir Survei KK (${pjLain.length} pemohon)</button>`:''}`:'';
+  box.innerHTML=`<div class="kk-panel">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px"><strong style="font-size:13px">👨‍👩‍👧 Satu Kartu Keluarga</strong>
+      <span style="font-size:11.5px;color:var(--g500)">${r.anggota.length} orang dengan No. KK yang sama · informasi, bukan penolakan</span></div>
+    <div style="font-size:12px;background:#fff;border:1px solid var(--g200);border-radius:6px;padding:5px 8px;margin-bottom:6px">Bantuan tahun ${pjEsc(r.ringkas.tahun)}: <strong>${r.ringkas.penerima} penerima</strong> · total <strong>${r.ringkas.total?fRpPj(r.ringkas.total):'Rp 0'}</strong> (dari Penyaluran) — bahan pertimbangan pimpinan</div>
+    <div class="tbl-scroll"><table class="pj-tbl" style="min-width:560px"><thead><tr><th>Nama</th><th>Peran</th><th>Jenis bantuan</th><th>Status</th><th></th></tr></thead><tbody>${baris}</tbody></table></div>
+    ${aksiPj||salin?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${aksiPj}${salin}</div>`:''}</div>`;
+}
+function kkBuka(jenis,kunci){
+  if(jenis==='pj'){
+    closeModal('modal-detail');
+    const ada=pjList.find(x=>x.no_pengajuan===kunci);
+    if(ada){switchTab('t-pengajuan',document.getElementById('tab-pj-btn'));pjDetail(kunci);return;}
+    switchTab('t-pengajuan',document.getElementById('tab-pj-btn'));pjMuat(true).then(()=>pjDetail(kunci));return;
+  }
+  const d=dataList.find(x=>x.nik===kunci);
+  if(!d){toast('Data mustahik belum ada di perangkat ini — klik Sinkron/Muat ulang.',true);return;}
+  closeModal('modal-pj');lihatDetail(d.id);
+}
+async function kkSamakanJadwal(kk,noSaya){
+  const el=document.getElementById('pj-jadwal'),j=el?el.value:'';
+  if(!j){toast('Isi tanggal Jadwal kunjungan dulu, lalu klik Samakan jadwal.',true);if(el)el.focus();return;}
+  try{
+    const r=await dbApi('jadwal_kk',{noKK:kk,jadwal:j});
+    if(!r.ok){toast(r.pesan||'Gagal menyamakan jadwal.',true);return;}
+    toast('✓ '+r.pesan);delete _kkCache[kk];
+    await pjMuat(true);if(noSaya)pjDetail(noSaya);
+  }catch(e){toast('Gagal terhubung ke server.',true);}
+}
+function kkSalinEkonomi(kk,nik){
+  const c=_kkCache[kk];const a=c&&c.r.anggota.find(x=>x.nik===nik);if(!a)return;
+  const isi=KK_EKONOMI.filter(([k])=>String(a[k]||'').trim());
+  isi.forEach(([k,id])=>{const el=document.getElementById(id);if(el)el.value=a[k];});
+  try{hitungDesil();}catch(e){}try{updateIZN();}catch(e){}try{if(typeof updateDesilBaznas==='function')updateDesilBaznas();}catch(e){}try{updateSROIPreview();}catch(e){}
+  toast('✓ Data ekonomi rumah tangga disalin dari '+a.nama+': '+isi.map(x=>x[2]).join(', ')+'. Data pribadi tidak disalin.');
+}
+
+// ── Formulir Survei per KK: bagian rumah tangga sekali, bagian pribadi per pemohon ──
+function cetakFormulirSurveiKK(kk){
+  const urutSK=['Kepala Keluarga','Istri','Anak','Orang Tua','Lainnya'],ur=x=>{const i=urutSK.indexOf(x.statusKeluarga);return i<0?9:i;};
+  const daftar=pjList.filter(p=>kkDigit(p.noKK)===kk&&[PJ_ST.menunggu,PJ_ST.jadwal,PJ_ST.kedaluwarsa].includes(p.status)).sort((a,b)=>ur(a)-ur(b));
+  if(!daftar.length){toast('Tidak ada pengajuan KK ini yang masih diproses.',true);return;}
+  const form=document.getElementById('t-form');
+  const cards=[...form.querySelectorAll('.card')].filter(c=>c.querySelector('.card-header h2')&&!SV_LEWATI.includes(c.id));
+  const rt=id=>KK_RT_IDS.includes(id),pribadi=id=>!KK_RT_IDS.includes(id);
+  const skorRT=p=>['penghasilan','totalPengeluaran','jumlahAnggota','kondisiRumah'].filter(k=>String(p[k]||'').trim()).length*2+(p.statusKeluarga==='Kepala Keluarga'?1:0);
+  const utama=[...daftar].sort((a,b)=>skorRT(b)-skorRT(a))[0];
+  const anggotaN=Math.min(12,Math.max(6,(+utama.jumlahAnggota||0)+1));
+  const isiRT=svPrefill(utama);
+  const tabel=daftar.map((p,i)=>`<tr><td class="c">${i+1}</td><td>${dE(p.nama)}</td><td>${dE(p.no_pengajuan)}</td><td>${dE(p.statusKeluarga||'')}</td><td>${dE(p.kategoriBantuan)}${p.nik_pengisi?'<br><i>diwakili '+dE(p.nama_pengisi)+' ('+dE(p.hubungan_pengisi)+')</i>':''}</td><td>${dE(p.berkas_status||'—')}</td></tr>`).join('');
+  const jadwal=[...new Set(daftar.map(p=>p.jadwal_kunjungan).filter(Boolean))];
+  const perPemohon=daftar.map((p,i)=>{
+    const isi=svPrefill(p);
+    return `<div class="sv-pemohon"><div class="sv-ph">PEMOHON ${i+1} dari ${daftar.length}: ${dE(p.nama)} — ${dE(p.no_pengajuan)} · ${dE(p.kategoriBantuan)}</div>
+      ${p.catatan_petugas?`<div class="sv-catat">Catatan petugas: ${dE(p.catatan_petugas)}</div>`:''}
+      ${p.alasan?`<div class="sv-catat">Alasan pemohon: ${dE(p.alasan)}</div>`:''}
+      ${cards.map(c=>svBagian(c,isi,anggotaN,pribadi)).join('')}
+      <table class="sv-hasil" style="width:100%;font-size:9.5pt"><tr><td><b>Rekomendasi surveyor</b><div class="sv-op"><span><b class="kotak"></b> Layak dibantu</span><span><b class="kotak"></b> Tidak layak</span><span><b class="kotak"></b> Perlu verifikasi ulang</span></div></td></tr>
+      <tr><td><b>Alasan / temuan</b><div class="sv-garis"></div></td></tr></table>
+      ${dTtd([{atas:'Pemohon'+(p.nik_pengisi?' / Wali,':','),jabatan:p.nik_pengisi?'Orang tua/wali':'Calon Mustahik',nama:p.nik_pengisi?p.nama_pengisi:p.nama}])}</div>`;
+  }).join('');
+  const css=DOK_CSS+`
+    .sv-info{border:1px solid #000;padding:3px 6px;font-size:9.5pt;margin-bottom:4px}
+    .sv-catat{font-size:8.5pt;font-style:italic;margin:2px 0 4px}
+    .sv-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px}
+    .sv-f{break-inside:avoid;padding:1px 0}.sv-f.lebar{grid-column:1/-1}
+    .sv-l{font-weight:bold;font-size:9.5pt}
+    .sv-isi{font-family:"Times New Roman",serif;font-style:italic;border-bottom:1px dotted #000;min-height:5mm;padding-left:2px}
+    .sv-garis{border-bottom:1px dotted #000;height:6mm}.sv-garis.tgl{border:0;height:auto;padding-top:2px;letter-spacing:1px}
+    .sv-op{display:flex;flex-wrap:wrap;gap:1px 12px;font-size:9.5pt}.sv-op.k3{display:grid;grid-template-columns:repeat(3,1fr)}
+    .sv-sub{grid-column:1/-1;font-size:9pt;font-weight:bold;font-style:italic;margin-top:3px;border-bottom:1px solid #999}
+    table.sv-ak td{height:6.5mm}table.sv-ak td:first-child{width:7mm;text-align:center}
+    .sv-hasil td{padding:1px 4px;vertical-align:top}.bag{break-after:avoid}
+    .sv-blok{font-weight:bold;font-size:11pt;border-bottom:2px solid #000;margin:8px 0 4px}
+    .sv-pemohon{break-before:page}.sv-ph{font-weight:bold;font-size:11pt;background:#e6f4f1;border:1px solid #0d7c66;padding:2px 6px;margin-bottom:4px}`;
+  const html=`<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Formulir Survei KK — ${dE(daftar.map(p=>p.no_pengajuan).join(', '))}</title><style>${css}</style></head><body><div class="hal">${dKop()}
+    <div class="judul">FORMULIR SURVEI RUMAH TANGGA (SATU KARTU KELUARGA)</div>
+    <div class="subjudul">Isian sama dengan menu <i>Tambah Mustahik Baru</i> — bagian rumah tangga diisi sekali, bagian pribadi per pemohon</div>
+    <div class="sv-info"><b>Jadwal kunjungan</b>: ${dE(jadwal.map(dTgl).join(', ')||'—')} · <b>Jumlah pemohon</b>: ${daftar.length}</div>
+    <table class="grid"><thead><tr><th>No</th><th>Nama pemohon</th><th>No. Pengajuan</th><th>Status keluarga</th><th>Bantuan diajukan</th><th>Berkas</th></tr></thead><tbody>${tabel}</tbody></table>
+    <div class="sv-catat">Isian bercetak miring berasal dari pengajuan online — periksa di lapangan; coret &amp; tulis yang benar bila tidak sesuai.</div>
+    <div class="sv-blok">BAGIAN RUMAH TANGGA (diisi sekali untuk semua pemohon)</div>
+    ${cards.map(c=>svBagian(c,isiRT,anggotaN,rt)).join('')}
+    <div class="bag">DOKUMENTASI</div><div class="sv-op"><span><b class="kotak"></b> Rumah tampak depan</span><span><b class="kotak"></b> Bagian dalam</span><span><b class="kotak"></b> Pemohon &amp; petugas</span><span><b class="kotak"></b> Usaha/lainnya</span></div>
+    <div class="pernyataan">Kami menyatakan data rumah tangga di atas <b>benar</b> sesuai keadaan sebenarnya dan bersedia diverifikasi. ${dE(TEKS_PERSETUJUAN_KK)}</div>
+    <div class="tgl-ttd">Lubuklinggau, ..............................</div>
+    ${dTtd([{atas:'Kepala Keluarga,',jabatan:'Kepala Keluarga'},{atas:'Mengetahui,',jabatan:'Ketua RT / Lurah'},{atas:'Surveyor,',jabatan:'Petugas BAZNAS'}])}
+    ${perPemohon}</div></body></html>`;
+  const w=window.open('','_blank','width=900,height=750,scrollbars=yes');
+  if(!w){toast('Popup diblokir browser. Izinkan popup untuk halaman ini.',true);return;}
+  w.document.write(html);w.document.close();
+  w.onload=()=>setTimeout(()=>{w.focus();w.print();},400);
+  toast('✓ Formulir Survei KK dibuka ('+daftar.length+' pemohon).');
+}
+
+// ── Form Tambah Mustahik: wali anak, rekening a.n. orang tua, status kuliah, catatan usia ──
+function aturWali(){
+  const w=document.getElementById('wali-wrap');if(!w)return;
+  const u=kkUsia(gv('f-tglLahir')),anak=u>=0&&u<18;
+  w.style.display=(anak||gv('f-namaWali')||gv('f-nikWali'))?'':'none';
+  const n=document.getElementById('wali-note');if(n)n.style.display=anak?'':'none';
+  aturRekWali();aturCatatanUsia();
+}
+function aturRekWali(){
+  const u=kkUsia(gv('f-tglLahir')),nw=gv('f-namaWali').trim(),nr=gv('f-namaRek').trim();
+  if(u>=0&&u<18&&nw&&nr&&normNama(nw)===normNama(nr)){
+    const h=document.getElementById('f-hubRek');if(h){h.value=gv('f-hubunganWali')==='Wali lain'?'Wali':'Orang Tua';}
+    cekNamaRek();
+  }
+}
+async function aturCatatanUsia(){
+  const el=document.getElementById('usia-beasiswa-note');if(!el)return;
+  const kat=gv('f-katBantuan')+' '+gv('f-program');
+  if(!/pendidikan|beasiswa/i.test(kat)){el.style.display='none';return;}
+  const t=kkCatatanUsia(gv('f-tglLahir'),kat,await kkBatasUsia());
+  el.textContent=t;el.style.display=t?'':'none';
+}
+let _kkFormT=0;
+function kkPanelForm(){
+  clearTimeout(_kkFormT);
+  _kkFormT=setTimeout(()=>kkPanel('kk-panel-form',gv('f-noKK'),{nikSaya:gv('f-nik').trim(),noSaya:pjAktif||'',salin:true}),400);
+}
+function v10Init(){
+  ['f-tglLahir'].forEach(id=>{const e=document.getElementById(id);if(e){e.addEventListener('change',aturWali);e.addEventListener('input',aturWali);}});
+  ['f-namaWali','f-nikWali','f-hubunganWali','f-namaRek'].forEach(id=>{const e=document.getElementById(id);if(e){e.addEventListener('input',aturRekWali);e.addEventListener('change',aturRekWali);}});
+  const nw=document.getElementById('f-nikWali');if(nw)nw.addEventListener('input',()=>{nw.value=nw.value.replace(/\D/g,'').slice(0,16);});
+  ['f-katBantuan','f-program'].forEach(id=>{const e=document.getElementById(id);if(e)e.addEventListener('change',aturCatatanUsia);});
+  const kk=document.getElementById('f-noKK');if(kk){kk.addEventListener('input',kkPanelForm);kk.addEventListener('change',kkPanelForm);}
+  aturWali();
+}
+
+// ════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════
 loadStore();
@@ -5077,6 +5296,7 @@ dbInit();
 document.getElementById('f-tglLahir').addEventListener('change',updateDesilBaznas);
 mzInit();
 v9Init();
+v10Init();
 </script>
 </body>
 </html>
