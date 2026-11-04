@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daftar Muzaki/Donatur — BAZNAS Kota Lubuklinggau</title>
+<meta name="description" content="Pendaftaran online Muzaki, Munfiq, dan Donatur BAZNAS Kota Lubuklinggau">
+<style>
+:root{--teal:#0d7c66;--teal-dark:#0a6654;--teal-light:#e6f4f1;--gold:#c9a227;--red:#c0392b;--g50:#f8fafb;--g100:#f1f4f6;--g300:#d3dae0;--g500:#6b7780;--g700:#36424a;--radius:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--g50);color:var(--g700);font-size:15px;line-height:1.5}
+header{background:var(--teal);color:#fff;padding:18px 16px;text-align:center}
+header h1{font-size:19px;font-weight:800}
+header p{font-size:13px;opacity:.9;margin-top:2px}
+.tabs{display:flex;max-width:760px;margin:0 auto;background:#fff;border-bottom:1px solid var(--g300);position:sticky;top:0;z-index:5}
+.tabs button{flex:1;padding:13px 8px;border:0;background:none;font-size:14px;font-weight:700;color:var(--g500);border-bottom:3px solid transparent;cursor:pointer}
+.tabs button.on{color:var(--teal);border-bottom-color:var(--teal)}
+@media(max-width:420px){.tabs button{font-size:12.5px;padding:12px 4px}}
+main{max-width:760px;margin:0 auto;padding:16px}
+.card{background:#fff;border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:16px;overflow:hidden}
+.card h2{font-size:14px;background:var(--teal);color:#fff;padding:10px 16px;letter-spacing:.3px}
+.card .body{padding:16px}
+.intro{background:var(--teal-light);border:1px solid #b2ddd6;border-radius:var(--radius);padding:14px 16px;font-size:13.5px;margin-bottom:16px}
+.intro ul{margin:6px 0 0 18px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.full{grid-column:1/-1}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
+label{display:block;font-size:13px;font-weight:700;margin-bottom:4px}
+label .req{color:var(--red)}
+label .hint{font-weight:400;color:var(--g500);font-size:12px}
+input,select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--g300);border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:inherit}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,124,102,.12)}
+textarea{min-height:80px;resize:vertical}
+.radio{display:flex;gap:16px;flex-wrap:wrap}
+.radio label{font-weight:400;display:flex;align-items:center;gap:6px;cursor:pointer}
+.radio input{width:auto}
+.upl{border:2px dashed var(--g300);border-radius:8px;padding:12px;text-align:center;font-size:13px;color:var(--g500)}
+.upl img{max-width:100%;max-height:160px;margin-top:8px;border-radius:6px}
+.upl .ok{color:var(--teal);font-weight:700}
+.consent{display:flex;gap:10px;align-items:flex-start;font-size:13.5px}
+.consent input{width:20px;height:20px;margin-top:2px;flex:none}
+.btn{display:inline-flex;justify-content:center;align-items:center;gap:6px;width:100%;padding:14px;border:0;border-radius:8px;background:var(--teal);color:#fff;font-size:16px;font-weight:800;cursor:pointer}
+.btn:disabled{opacity:.6;cursor:wait}
+.btn.ghost{background:#fff;color:var(--teal);border:1.5px solid var(--teal)}
+.err{background:#fdecea;border:1px solid #f5c6c0;color:var(--red);border-radius:8px;padding:10px 14px;font-size:13.5px;margin-bottom:12px;display:none}
+.hasil{text-align:center;padding:24px 16px}
+.hasil .no{font-family:ui-monospace,Consolas,monospace;font-size:26px;font-weight:800;color:var(--teal-dark);letter-spacing:1px;background:var(--teal-light);border-radius:8px;padding:12px;margin:12px 0}
+.st{display:inline-block;padding:6px 14px;border-radius:20px;font-weight:800;font-size:14px;margin:8px 0}
+.st.Berkas{background:#fdecea;color:var(--red)}.st.Menunggu{background:#fff4d6;color:#7c5c00}.st.Dijadwalkan{background:#e3efff;color:#1d4e9e}.st.Diterima{background:var(--teal-light);color:var(--teal-dark)}.st.Tidak{background:#fdecea;color:var(--red)}
+.riw{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:10px;text-align:left}
+.riw th,.riw td{padding:7px 6px;border-bottom:1px solid var(--g100)}
+.riw th{font-size:12px;color:var(--g500);font-weight:700}
+.riw td.n,.riw th.n{text-align:right;white-space:nowrap}
+.riw tfoot td{font-weight:800;border-top:2px solid var(--teal);border-bottom:0}
+.info{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;text-align:left;font-size:14px;margin-top:10px}
+.info div:nth-child(odd){color:var(--g500)}
+.info div:nth-child(even){font-weight:700}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px}
+.hidden{display:none}
+.berkas{background:#fffaf0;border:1px solid #f0d78c;border-radius:8px;padding:12px 14px;font-size:13.5px;text-align:left}
+.berkas h4{font-size:14px;color:#7c5c00;margin-bottom:6px}
+.berkas ol{margin:4px 0 6px 20px}.berkas li{margin-bottom:3px}
+.berkas .sub{font-weight:700;font-size:12.5px;color:var(--g500);margin-top:8px}
+.kantor{background:var(--teal-light);border:1px solid #b2ddd6;border-radius:8px;padding:12px 14px;font-size:13.5px;text-align:left;margin-top:12px}
+.kantor b{color:var(--teal-dark)}
+.batas{display:inline-block;background:#fdecea;color:var(--red);font-weight:800;border-radius:6px;padding:2px 8px}
+.cetak-saja{display:none}
+@media print{
+  @page{size:A4;margin:12mm}
+  body{background:#fff;font-size:12pt}
+  header,nav.tabs,footer,#form-wrap,.no-print,#sec-s,#sec-z{display:none!important}
+  main{max-width:none;padding:0}.card{box-shadow:none}
+  .hasil{padding:0}.cetak-saja{display:block}
+  .berkas,.kantor{break-inside:avoid}
+}
+
+.pilih{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.pilih label{font-weight:600;border:1.5px solid var(--g300);border-radius:8px;padding:10px;display:flex;gap:8px;align-items:center;cursor:pointer;margin:0}
+.pilih input{width:auto}
+.pilih label:has(input:checked){border-color:var(--teal);background:var(--teal-light);color:var(--teal-dark)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Daftar Muzaki / Donatur</h1>
+  <p>Badan Amil Zakat Nasional Kota Lubuklinggau</p>
+</header>
+<main>
+<div id="form-wrap">
+  <div class="intro">
+    <strong>Assalamu'alaikum.</strong> Isi formulir ini untuk terdaftar sebagai <strong>Muzaki</strong> (pembayar zakat), <strong>Munfiq</strong> (pemberi infak/sedekah), atau <strong>Donatur</strong> BAZNAS Kota Lubuklinggau. Manfaatnya:
+    <ul><li>Mendapat <strong>NPWZ</strong> (Nomor Pokok Wajib Zakat) dari petugas</li>
+    <li>Riwayat setoran dapat dicek kapan saja lewat menu <strong>Cek Setoran</strong></li>
+    <li><strong>Bukti Setor Zakat (BSZ)</strong> resmi untuk pengurang penghasilan kena pajak</li></ul>
+    <div style="margin-top:6px;font-size:12.5px">Waktu mengisi ± 3 menit. Tanda <span style="color:var(--red)">*</span> wajib diisi.</div>
+  </div>
+  <form id="fmz" novalidate>
+    <div class="hp" aria-hidden="true"><label>Website</label><input id="website" tabindex="-1" autocomplete="off"></div>
+
+    <div class="card"><h2>A. JENIS PENDAFTAR</h2><div class="body grid">
+      <div class="full"><label>Saya mendaftar sebagai <span class="req">*</span></label>
+        <div class="pilih" id="jenis">
+          <label><input type="radio" name="jenis" value="Muzaki" checked> Muzaki</label>
+          <label><input type="radio" name="jenis" value="Munfiq"> Munfiq</label>
+          <label><input type="radio" name="jenis" value="Donatur"> Donatur</label>
+          <label><input type="radio" name="jenis" value="CSR"> CSR</label>
+          <label><input type="radio" name="jenis" value="Lainnya"> Lainnya</label></div></div>
+      <div class="full"><label>Bentuk <span class="req">*</span></label>
+        <div class="pilih" id="bentuk">
+          <label><input type="radio" name="bentuk" value="Perorangan" checked> Perorangan</label>
+          <label><input type="radio" name="bentuk" value="Badan/Perusahaan"> Badan/Perusahaan</label>
+          <label><input type="radio" name="bentuk" value="Instansi Pemerintah"> Instansi Pemerintah</label>
+          <label><input type="radio" name="bentuk" value="Komunitas"> Komunitas</label>
+          <label><input type="radio" name="bentuk" value="Lainnya"> Lainnya</label></div></div>
+    </div></div>
+
+    <div class="card"><h2 id="judul-b">B. DATA DIRI</h2><div class="body grid">
+      <div class="full lbg hidden"><label>Nama lembaga / perusahaan / instansi <span class="req">*</span></label><input id="namaInstansi" maxlength="150" placeholder="mis. PT Sumber Rezeki / Dinas Kesehatan"></div>
+      <div class="full lbg hidden"><label>Nama penanggung jawab (PIC) <span class="req">*</span></label><input id="pic" maxlength="80"></div>
+      <div class="full org"><label>Nama lengkap <span class="req">*</span> <span class="hint">sesuai KTP</span></label><input id="nama" maxlength="120" autocomplete="name"></div>
+      <div class="org"><label>NIK <span class="req">*</span> <span class="hint">16 digit</span></label><input id="nik" inputmode="numeric" maxlength="16" autocomplete="off"></div>
+      <div class="org"><label>Jenis kelamin <span class="req">*</span></label><select id="jenisKelamin"><option value="">— Pilih —</option><option>Laki-laki</option><option>Perempuan</option></select></div>
+      <div class="org"><label>Tempat lahir</label><input id="tempatLahir" maxlength="60"></div>
+      <div class="org"><label>Tanggal lahir</label><input id="tanggalLahir" type="date"></div>
+      <div class="org full"><label>Pekerjaan</label><select id="pekerjaan"><option value="">— Pilih —</option><option>Belum/Tidak Bekerja</option><option>Mengurus Rumah Tangga</option><option>Pelajar/Mahasiswa</option><option>Pensiunan</option><option>Wiraswasta</option><option>Swasta</option><option>PNS (Pegawai Negeri Sipil)</option><option>TNI (Tentara Nasional Indonesia)</option><option>POLRI</option><option>Karyawan Swasta</option><option>Karyawan BUMN</option><option>Karyawan BUMD</option><option>Karyawan Honorer</option><option>Buruh Harian Lepas</option><option>Buruh Tani/Perkebunan</option><option>Buruh Nelayan/Perikanan</option><option>Buruh Peternakan</option><option>Pembantu Rumah Tangga</option><option>Tukang Cukur</option><option>Tukang Listrik</option><option>Tukang Batu</option><option>Tukang Kayu</option><option>Tukang Sol Sepatu</option><option>Tukang Las/Pandai Besi</option><option>Tukang Jahit</option><option>Tukang Gigi</option><option>Penata Rambut</option><option>Penata Rias</option><option>Mekanik</option><option>Sopir</option><option>Montir</option><option>Pedagang</option><option>Petani</option><option>Peternak</option><option>Nelayan</option><option>Industri Rumah Tangga</option><option>Pengrajin</option><option>Seniman</option><option>Wartawan</option><option>Ustadz/Mubaligh</option><option>Juru Masak</option><option>Penjaga Toko</option><option>Penjaga Warung</option><option>Pendeta</option><option>Pastur</option><option>Perawat</option><option>Bidan</option><option>Dokter</option><option>Apoteker</option><option>Psikiater</option><option>Psikolog</option><option>Guru</option><option>Dosen</option><option>Tenaga Pengajar</option><option>Konsultan</option><option>Notaris</option><option>Pengacara</option><option>Hakim</option><option>Jaksa</option><option>Arsitek</option><option>Akuntan</option><option>Desainer</option><option>Manajer</option><option>Direktur</option><option>Programmer</option><option>Analis Sistem</option><option>Teknisi</option><option>Wakil Gubernur</option><option>Gubernur</option><option>Wakil Bupati</option><option>Bupati</option><option>Anggota DPRD Provinsi</option><option>Anggota DPRD Kabupaten</option><option>Tenaga Tata Usaha</option><option>Editor</option><option>Penulis</option><option>Penyiar</option><option>Presenter</option><option>Peneliti</option><option>Fotografer</option><option>Videografer</option><option>Duta Besar</option><option>Waiter/Waitress</option><option>Biarawati</option><option>Satpam</option><option>Petugas Kebersihan</option><option>Pramugari/Pramugara</option><option>Masinis</option><option>Pilot</option><option>Nahkoda</option><option>ABK (Anak Buah Kapal)</option><option>Penerjemah</option><option>Pemandu Wisata</option><option>Travel Agent</option><option>Pegawai Bank</option><option>Pegawai Asuransi</option><option>Pegawai Pajak</option><option>Pegawai Bea Cukai</option><option>Pegawai Imigrasi</option><option>Pegawai Perusahaan Startup</option><option>Asisten Ahli</option><option>Promotor Acara</option><option>Anggota Lembaga Tinggi</option><option>Investor</option><option>Lainnya</option></select></div>
+      <div><label>NPWP <span class="hint" id="npwp-hint">(bila ada)</span></label><input id="npwp" inputmode="numeric" maxlength="25" placeholder="99.999.999.9-999.000" autocomplete="off"></div>
+      <div><label>NPWZ <span class="hint">(bila sudah punya)</span></label><input id="npwz" maxlength="30" autocomplete="off"></div>
+    </div></div>
+
+    <div class="card"><h2>C. ALAMAT &amp; KONTAK</h2><div class="body grid">
+      <div class="full"><label>Alamat <span class="req">*</span></label><textarea id="alamat" maxlength="250" style="min-height:64px" placeholder="Jalan, nomor, RT/RW"></textarea></div>
+      <div><label>Kecamatan <span class="req">*</span></label><input id="kecamatan" list="dl-kec" maxlength="60"></div>
+      <div><label>Kelurahan</label><input id="kelurahan" maxlength="60"></div>
+      <div><label>Kota/Kabupaten</label><input id="kota" maxlength="60" value="Lubuklinggau"></div>
+      <div><label>Kode pos</label><input id="kodePos" inputmode="numeric" maxlength="5"></div>
+      <div><label>No HP/WhatsApp <span class="req">*</span></label><input id="hp" type="tel" inputmode="tel" maxlength="16" placeholder="08…" autocomplete="tel"></div>
+      <div><label>Email <span class="hint">(untuk kirim BSZ)</span></label><input id="email" type="email" maxlength="100" autocomplete="email"></div>
+      <datalist id="dl-kec"><option>Lubuk Linggau Barat I</option><option>Lubuk Linggau Barat II</option><option>Lubuk Linggau Selatan I</option><option>Lubuk Linggau Selatan II</option><option>Lubuk Linggau Timur I</option><option>Lubuk Linggau Timur II</option><option>Lubuk Linggau Utara I</option><option>Lubuk Linggau Utara II</option></datalist>
+    </div></div>
+
+    <div class="card"><h2>D. RENCANA PENYALURAN</h2><div class="body grid">
+      <div><label>Dana yang akan disalurkan</label><select id="jenisDanaDefault"><option value="">— Pilih —</option><option>Zakat</option><option>Infak/Sedekah</option><option>DSKL</option><option>Lainnya</option></select></div>
+      <div><label>Cara membayar</label><select id="metodePembayaranDefault"><option value="">— Pilih —</option><option>Tunai</option><option>Transfer Bank</option><option>QRIS</option><option value="Payroll">Potong gaji (payroll)</option><option>Lainnya</option></select></div>
+      <div class="full"><label>Pesan / catatan <span class="hint">(opsional)</span></label><textarea id="catatan" maxlength="300" style="min-height:60px" placeholder="mis. ingin zakat penghasilan rutin tiap bulan"></textarea></div>
+    </div></div>
+
+    <div class="card"><div class="body">
+      <label class="consent"><input type="checkbox" id="persetujuan">
+        <span>Saya menyatakan data yang diisi <strong>benar</strong> dan <strong>menyetujui</strong> BAZNAS Kota Lubuklinggau menyimpan serta memverifikasi data ini untuk keperluan pencatatan zakat, infak, dan sedekah (termasuk penerbitan NPWZ dan BSZ), sesuai UU No. 27 Tahun 2022 tentang Pelindungan Data Pribadi.</span></label>
+    </div></div>
+
+    <div id="err" class="err"></div>
+    <button type="submit" id="btn-kirim" class="btn">Kirim Pendaftaran</button>
+  </form>
+</div>
+
+<div id="hasil" class="card hidden"><div class="hasil">
+  <div style="font-size:44px">✅</div>
+  <h3 style="font-size:19px;color:var(--teal-dark)">Pendaftaran terkirim</h3>
+  <p style="margin-top:6px">Nomor pendaftaran Anda:</p>
+  <div class="no" id="no-dm"></div>
+  <p style="font-size:14px;text-align:left">Jazakumullah khairan. Petugas BAZNAS akan <strong>memverifikasi</strong> data Anda dan menghubungi melalui <strong>WhatsApp</strong> untuk menyampaikan <strong>NPWZ</strong>. Simpan / foto layar nomor di atas.</p>
+  <div class="kantor" id="bayar"></div>
+  <div class="kantor" id="kantor"></div>
+  <div style="display:grid;gap:10px;margin-top:16px">
+    <a class="btn" href="pengajuan.html#setoran" style="text-decoration:none">💚 Cek Setoran</a>
+    <a class="btn ghost" href="kabar.html" style="text-decoration:none">Lihat kampanye kebaikan</a>
+  </div>
+</div></div>
+</main>
+<footer>BAZNAS Kota Lubuklinggau · Data Anda dilindungi dan hanya digunakan untuk pencatatan ZIS.<br><a href="kabar.html" style="color:var(--teal);font-weight:700">Kabar penyaluran &amp; kampanye →</a> · <a href="pengajuan.html#setoran" style="color:var(--teal);font-weight:700">Cek setoran →</a></footer>
+
+<script>
+const DB_URL='https://script.google.com/macros/s/AKfycbwcFWag2lgTgaaV5lKBWU_YDrhSHEAgPgXyrfFR9tq6uRyzrg5t_158fHzSBX6183me/exec';
+async function api(aksi,data){
+  const r=await fetch(DB_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({aksi,data})});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
+function v(id){return (document.getElementById(id).value||'').trim();}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function pilihan(n){return document.querySelector('input[name='+n+']:checked').value;}
+function aturBentuk(){
+  const org=pilihan('bentuk')==='Perorangan';
+  document.querySelectorAll('.org').forEach(e=>e.classList.toggle('hidden',!org));
+  document.querySelectorAll('.lbg').forEach(e=>e.classList.toggle('hidden',org));
+  document.getElementById('judul-b').textContent=org?'B. DATA DIRI':'B. DATA LEMBAGA';
+}
+document.querySelectorAll('input[name=bentuk]').forEach(r=>r.addEventListener('change',aturBentuk));
+aturBentuk();
+document.getElementById('nik').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,16);});
+document.getElementById('kodePos').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,5);});
+function tampilErr(m){const e=document.getElementById('err');e.innerHTML=m;e.style.display=m?'block':'none';if(m)e.scrollIntoView({behavior:'smooth',block:'center'});}
+
+document.getElementById('fmz').addEventListener('submit',async ev=>{
+  ev.preventDefault();tampilErr('');
+  const org=pilihan('bentuk')==='Perorangan';
+  const d={website:v('website'),jenisDonatur:pilihan('jenis'),bentukEntitas:pilihan('bentuk'),persetujuan:document.getElementById('persetujuan').checked};
+  ['npwp','npwz','alamat','kecamatan','kelurahan','kota','kodePos','hp','email','jenisDanaDefault','metodePembayaranDefault','catatan'].forEach(k=>d[k]=v(k));
+  if(org){
+    ['nama','jenisKelamin','tempatLahir','tanggalLahir','pekerjaan'].forEach(k=>d[k]=v(k));
+    d.jenisIdentitas='NIK';d.nomorIdentitas=v('nik');
+  }else{
+    d.nama=v('namaInstansi');d.namaInstansi=v('namaInstansi');
+    d.catatan=('PIC: '+v('pic')+(d.catatan?'. '+d.catatan:'')).slice(0,500);
+    if(d.npwp){d.jenisIdentitas='NPWP';d.nomorIdentitas=d.npwp.replace(/\D/g,'');}
+  }
+  d.hp=d.hp.replace(/[\s-]/g,'');d.whatsapp=d.hp;
+  const s=[];
+  if(org){
+    if(d.nama.length<3)s.push('Nama lengkap');
+    if(!/^\d{16}$/.test(d.nomorIdentitas))s.push('NIK 16 digit');
+    if(!d.jenisKelamin)s.push('Jenis kelamin');
+  }else{
+    if(d.nama.length<3)s.push('Nama lembaga');
+    if(v('pic').length<3)s.push('Nama penanggung jawab');
+  }
+  if(d.npwp&&d.npwp.replace(/\D/g,'').length<15)s.push('NPWP (15/16 digit)');
+  if(!d.alamat||!d.kecamatan)s.push('Alamat dan kecamatan');
+  if(!/^(\+?62|0)8\d{7,12}$/.test(d.hp))s.push('Nomor HP/WA yang benar (08…)');
+  if(d.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email))s.push('Email yang benar');
+  if(!d.persetujuan)s.push('Centang persetujuan');
+  if(s.length){tampilErr('<strong>Mohon lengkapi:</strong> '+s.map(esc).join(', ')+'.');return;}
+  const btn=document.getElementById('btn-kirim');btn.disabled=true;btn.textContent='Mengirim… mohon tunggu';
+  try{
+    const r=await api('daftar_muzaki_online',d);
+    if(!r.ok){tampilErr(esc(r.pesan||'Pendaftaran gagal dikirim.')+(r.kode==='SUDAH'?' <a href="pengajuan.html#setoran">Cek Setoran →</a>':''));return;}
+    document.getElementById('no-dm').textContent=r.no_daftar;
+    document.getElementById('bayar').innerHTML='<b>💳 Cara menyalurkan</b><br>'+(r.info_bayar?esc(r.info_bayar).replace(/\n/g,'<br>'):
+      'Setor <b>tunai di kantor BAZNAS</b> (langsung mendapat Bukti Setor Zakat), atau minta <b>nomor rekening resmi</b> kepada petugas saat dihubungi. '+
+      'Pastikan transfer hanya ke rekening atas nama <b>BAZNAS Kota Lubuklinggau</b>.');
+    const k=r.kantor||{};
+    document.getElementById('kantor').innerHTML=k.alamat?'<b>📍 Kantor BAZNAS Kota Lubuklinggau</b><br>'+esc(k.alamat)+'<br><b>🕘</b> '+esc(k.jam)+(k.telp?'<br><b>📞</b> '+esc(k.telp):''):'';
+    document.getElementById('form-wrap').classList.add('hidden');
+    document.getElementById('hasil').classList.remove('hidden');
+    window.scrollTo({top:0});
+  }catch(err){
+    tampilErr('Gagal terhubung ke server. Periksa koneksi internet Anda, lalu tekan <strong>Kirim Pendaftaran</strong> lagi.');
+  }finally{btn.disabled=false;btn.textContent='Kirim Pendaftaran';}
+});
+</script>
+</body>
+</html>
