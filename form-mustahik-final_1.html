@@ -1029,12 +1029,12 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
 <div id="t-pengajuan" class="tab-pane">
 <div class="main">
   <div class="pg-title">Pengajuan Masuk</div>
-  <div class="pg-sub">Pengajuan mandiri dari calon mustahik melalui formulir publik <a href="pengajuan.html" target="_blank" rel="noopener"><strong>pengajuan.html</strong></a>. Verifikasi, jadwalkan kunjungan, lalu <strong>Lengkapi &amp; Terima</strong> untuk memindahkannya ke Daftar Mustahik.</div>
+  <div class="pg-sub">Pengajuan mandiri dari calon mustahik melalui formulir publik <a href="pengajuan.html" target="_blank" rel="noopener"><strong>pengajuan.html</strong></a>. Alur: pemohon menyerahkan berkas di kantor → <strong>centang berkas &amp; cetak Tanda Terima</strong> → jadwalkan kunjungan &amp; <strong>cetak Formulir Survei</strong> → <strong>Lengkapi &amp; Terima</strong>. Berkas tidak diserahkan dalam 14 hari → otomatis <em>Berkas tidak diserahkan</em>.</div>
   <div class="card"><div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
     <select id="pj-filter" onchange="pjRender()" style="max-width:220px">
       <option value="aktif">Perlu tindak lanjut</option><option value="Menunggu verifikasi">Menunggu verifikasi</option>
       <option value="Dijadwalkan kunjungan">Dijadwalkan kunjungan</option><option value="Diterima">Diterima</option>
-      <option value="Tidak memenuhi syarat">Tidak memenuhi syarat</option><option value="">Semua</option></select>
+      <option value="Tidak memenuhi syarat">Tidak memenuhi syarat</option><option value="Berkas tidak diserahkan">Berkas tidak diserahkan</option><option value="">Semua</option></select>
     <input id="pj-cari" type="text" placeholder="Cari no/nama/NIK/kelurahan" oninput="pjRender()" style="max-width:260px"/>
     <button class="btn btn-outline" type="button" onclick="pjMuat()">↻ Muat ulang</button>
     <span id="pj-status" style="font-size:12px;color:var(--g500);margin-left:auto"></span>
@@ -1054,6 +1054,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
     <button class="btn btn-primary" type="button" onclick="mzForm()">+ Tambah Muzaki</button>
     <input id="mz-cari" type="text" placeholder="Cari nama, NIK, NPWP, NPWZ, ID" oninput="mzRender()" style="max-width:260px"/>
     <select id="mz-filter" onchange="mzRender()" style="max-width:190px"><option value="">Semua jenis</option><option>Muzaki</option><option>Munfiq</option><option>Donatur</option><option>CSR</option><option>UPZ</option><option>Anonim</option><option>Lainnya</option></select>
+    <button class="btn btn-outline" type="button" onclick="mzolBuka()">📥 Pendaftaran Online <span id="mzol-count" class="badge b-red" style="display:none;margin-left:4px">0</span></button>
     <button class="btn btn-outline" type="button" onclick="mzUpzBuka()">🏢 Master UPZ</button>
     <button class="btn btn-outline" type="button" onclick="mzMuat()">↻ Muat ulang</button>
     <span id="mz-status" style="font-size:12px;color:var(--g500);margin-left:auto"></span>
@@ -1230,6 +1231,12 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
     <div class="modal-hdr"><h3 id="mz-detail-title">Detail</h3><button class="x-btn" onclick="closeModal('modal-mz-detail')">×</button></div>
     <div class="modal-body" id="mz-detail-body"></div>
     <div class="modal-ftr" id="mz-detail-ftr" style="flex-wrap:wrap"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-mzol">
+  <div class="modal" style="max-width:980px">
+    <div class="modal-hdr"><h3>📥 Pendaftaran Muzaki/Donatur Online</h3><button class="x-btn" onclick="closeModal('modal-mzol')">×</button></div>
+    <div class="modal-body" id="mzol-body"></div>
   </div>
 </div>
 <div class="modal-overlay" id="modal-upz">
@@ -3574,9 +3581,9 @@ function dbInit(){
 // PENGAJUAN MANDIRI — antrean dari formulir publik (pengajuan.html)
 // ════════════════════════════════════════════
 let pjList=[], pjAktif='';
-const PJ_ST={menunggu:'Menunggu verifikasi',jadwal:'Dijadwalkan kunjungan',terima:'Diterima',tolak:'Tidak memenuhi syarat'};
+const PJ_ST={menunggu:'Menunggu verifikasi',jadwal:'Dijadwalkan kunjungan',terima:'Diterima',tolak:'Tidak memenuhi syarat',kedaluwarsa:'Berkas tidak diserahkan'};
 function pjEsc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function pjBadge(st){const c={[PJ_ST.menunggu]:'b-gold',[PJ_ST.jadwal]:'b-blue',[PJ_ST.terima]:'b-teal',[PJ_ST.tolak]:'b-red'}[st]||'b-gray';return `<span class="badge ${c}">${pjEsc(st)}</span>`;}
+function pjBadge(st){const c={[PJ_ST.menunggu]:'b-gold',[PJ_ST.jadwal]:'b-blue',[PJ_ST.terima]:'b-teal',[PJ_ST.tolak]:'b-red',[PJ_ST.kedaluwarsa]:'b-gray'}[st]||'b-gray';return `<span class="badge ${c}">${pjEsc(st)}</span>`;}
 function pjTgl(iso){const d=new Date(iso);return isNaN(d)?pjEsc(iso):d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});}
 function fRpPj(v){return v?('Rp '+Number(v).toLocaleString('id-ID')):'—';}
 
@@ -3606,7 +3613,7 @@ function pjRender(){
     <td>${pjEsc(p.kelurahan)}, ${pjEsc(p.kecamatan)}</td>
     <td>${pjEsc(p.kategoriBantuan)}</td>
     <td class="mono">${pjEsc(p.telepon)}</td>
-    <td>${pjBadge(p.status)}${p.jadwal_kunjungan&&p.status===PJ_ST.jadwal?`<div style="font-size:11px;color:var(--g500)">📅 ${pjEsc(p.jadwal_kunjungan)}</div>`:''}</td>
+    <td>${pjBadge(p.status)}${p.jadwal_kunjungan&&p.status===PJ_ST.jadwal?`<div style="font-size:11px;color:var(--g500)">📅 ${pjEsc(p.jadwal_kunjungan)}</div>`:''}${pjBerkasMini(p)}</td>
     <td><button class="btn btn-primary btn-sm" onclick="pjDetail('${pjEsc(p.no_pengajuan)}')">Buka</button></td></tr>`).join('')
     :'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--g500)">Belum ada pengajuan.</td></tr>';
 }
@@ -3615,6 +3622,7 @@ function pjDetail(no){
   const p=pjList.find(x=>x.no_pengajuan===no);if(!p)return;
   const baris=(l,v)=>`<div class="pj-dl"><div>${l}</div><div>${v||'—'}</div></div>`;
   const final=p.status===PJ_ST.terima||p.status===PJ_ST.tolak;
+  const kedaluwarsa=p.status===PJ_ST.kedaluwarsa;
   document.getElementById('pj-modal-title').textContent='Pengajuan '+p.no_pengajuan;
   document.getElementById('pj-modal-body').innerHTML=`
     <div style="margin-bottom:10px">${pjBadge(p.status)} <span style="font-size:12px;color:var(--g500)">Diajukan ${pjTgl(p.waktu)}${p.ditangani_oleh?' · ditangani '+pjEsc(p.ditangani_oleh):''}${p.mustahikId?' · ID Mustahik <strong>'+pjEsc(p.mustahikId)+'</strong>':''}</span></div>
@@ -3632,12 +3640,19 @@ function pjDetail(no){
       <div style="border:1px solid var(--g200);border-radius:8px;padding:8px;text-align:center"><div style="font-weight:700;font-size:12px;margin-bottom:6px">KTP</div><div id="pj-dok-ktp"><button class="btn btn-outline btn-sm" onclick="pjLihatDok('${pjEsc(no)}','ktp')">Tampilkan</button></div></div>
       <div style="border:1px solid var(--g200);border-radius:8px;padding:8px;text-align:center"><div style="font-weight:700;font-size:12px;margin-bottom:6px">Kartu Keluarga</div><div id="pj-dok-kk"><button class="btn btn-outline btn-sm" onclick="pjLihatDok('${pjEsc(no)}','kk')">Tampilkan</button></div></div>
     </div>
+    ${pjBerkasPanel(p,final)}
     ${final?'':`<div style="background:var(--g50,#f8fafb);border:1px solid var(--g200);border-radius:8px;padding:10px;margin-top:12px">
-      <div style="font-weight:700;font-size:12.5px;margin-bottom:6px">Tindak lanjut</div>
+      <div style="font-weight:700;font-size:12.5px;margin-bottom:6px">Tindak lanjut — kunjungan / survei lapangan</div>
+      ${kedaluwarsa?'<div style="font-size:12px;background:#fdecea;border-radius:6px;padding:6px 8px;margin-bottom:6px">⏰ Berkas tidak diserahkan sampai batas waktu. Simpan jadwal / centang berkas untuk <strong>mengaktifkan kembali</strong> (batas diperpanjang 14 hari).</div>':''}
       <div class="pj-2col">
         <div><label style="font-size:11.5px">Jadwal kunjungan</label><input id="pj-jadwal" type="date" value="${pjEsc(p.jadwal_kunjungan)}"/></div>
         <div><label style="font-size:11.5px">Catatan petugas (internal)</label><input id="pj-catatan" type="text" maxlength="300" value="${pjEsc(p.catatan_petugas)}"/></div>
-      </div></div>`}
+      </div>
+      ${p.jadwal_kunjungan?`<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#eef6ff;border:1px solid #bcd6f5;border-radius:8px;padding:8px 10px">
+        <span style="font-size:12.5px;flex:1;min-width:200px">📋 Jadwal survei <strong>${pjEsc(pjTglPanjang(p.jadwal_kunjungan))}</strong>. Bawa formulir survei (isian sama persis dengan <em>Tambah Mustahik Baru</em>) agar tidak ada data yang terlewat.</span>
+        <button class="btn btn-blue btn-sm" type="button" onclick="cetakFormulirSurvei('${pjEsc(no)}')">🖨️ Cetak Formulir Survei</button></div>`
+        :'<div style="font-size:11.5px;color:var(--g500);margin-top:6px">Isi tanggal kunjungan &amp; catatan, lalu <strong>Simpan Jadwal Kunjungan</strong> — tombol <strong>Cetak Formulir Survei</strong> akan muncul di sini.</div>'}
+      </div>`}
     ${final&&p.catatan_petugas?`<div style="margin-top:10px;font-size:12.5px"><strong>Catatan petugas:</strong> ${pjEsc(p.catatan_petugas)}</div>`:''}`;
   document.getElementById('pj-modal-ftr').innerHTML=final
     ?`<button class="btn btn-outline" onclick="closeModal('modal-pj')">Tutup</button>`
@@ -3668,10 +3683,11 @@ async function pjUbahStatus(no,status,extra){
     toast('✓ '+r.pesan);closeModal('modal-pj');await pjMuat(true);return true;
   }catch(err){toast('Gagal terhubung ke server — perubahan status pengajuan perlu koneksi internet.',true);return false;}
 }
-function pjJadwal(no){
+async function pjJadwal(no){
   const j=document.getElementById('pj-jadwal').value;
   if(!j){toast('Isi tanggal jadwal kunjungan.',true);return;}
-  pjUbahStatus(no,PJ_ST.jadwal,{jadwal:j,catatan:document.getElementById('pj-catatan').value});
+  const ok=await pjUbahStatus(no,PJ_ST.jadwal,{jadwal:j,catatan:document.getElementById('pj-catatan').value});
+  if(ok){pjDetail(no);toast('✓ Jadwal disimpan — klik "Cetak Formulir Survei" untuk dibawa ke lapangan.');}
 }
 function pjTolak(no){
   const c=document.getElementById('pj-catatan').value.trim();
@@ -3682,6 +3698,10 @@ function pjLengkapi(no){
   const p=pjList.find(x=>x.no_pengajuan===no);if(!p)return;
   const dup=dataList.find(x=>x.nik===p.nik);
   if(dup){toast('NIK ini sudah ada di Daftar Mustahik ('+dup.nama+').',true);return;}
+  if(p.berkas_status&&p.berkas_status!=='Lengkap'&&!pjLengkapi._lanjut){
+    showKonfirm('📎','Berkas belum lengkap','Status berkas pengajuan '+no+': '+p.berkas_status+'. Tetap lanjut melengkapi & menerima?',()=>{pjLengkapi._lanjut=true;try{pjLengkapi(no);}finally{pjLengkapi._lanjut=false;}},'Ya, Lanjutkan','btn-primary');
+    return;
+  }
   closeModal('modal-pj');
   bukaFormBaru();
   fillForm({nama:p.nama,nik:p.nik,noKK:p.noKK,noKTP:p.nik,jenisKelamin:p.jenisKelamin,tempatLahir:p.tempatLahir,tanggalLahir:p.tanggalLahir,
@@ -4227,6 +4247,7 @@ const MZ_PEMERINTAH=['PNS (Pegawai Negeri Sipil)','TNI (Tentara Nasional Indones
 const MZ_ISIAN=['nama','jenisDonatur','bentukEntitas','status','npwz','npwzSamaDenganNik','jenisIdentitas','nomorIdentitas','npwp','jenisKelamin','tempatLahir','tanggalLahir','pekerjaan','nip','namaInstansi','upzTerkait','alamat','kelurahan','kecamatan','kota','provinsi','kodePos','hp','whatsapp','email','metodePembayaranDefault','jenisDanaDefault','catatan'];
 const MZ_CACHE='baznas_muzaki_v1', MZ_Q='baznas_antrian_mz_v1', SS_JABATAN='baznas_jabatan';
 const JAB_NAMA={PETUGAS:'Petugas',WK1:'Wakil Ketua I',WK2:'Wakil Ketua II',WK3:'Wakil Ketua III',WK4:'Wakil Ketua IV',KETUA:'Ketua'};
+let mzDaftar=[];
 let mzList=[],mzUpz=[],mzRingkas={},mzBolehNpwz=false,mzBolehBatal=false,mzEdit=null,mzMuatSekali=false,_mzFlush=false;
 
 function xE(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -4254,6 +4275,7 @@ async function mzMuat(silent){
   mzList=r.muzaki.concat(tunda.filter(t=>!t.data.muzakiId).map(t=>({...t.data,_pending:true})));
   tunda.filter(t=>t.data.muzakiId).forEach(t=>{const i=mzList.findIndex(x=>x.muzakiId===t.data.muzakiId);if(i>=0)mzList[i]={...mzList[i],...t.data,_pending:true};});
   mzUpz=r.upz;mzRingkas=r.ringkas||{};mzMuatSekali=true;
+  mzDaftar=r.pendaftaran||[];if(typeof mzolRender==='function')mzolRender();
   mzSimpanCache();mzRender();
   if(st)st.textContent=`${r.muzaki.length} muzaki · ${r.upz.length} UPZ`+(tunda.length?` · ${tunda.length} menunggu terkirim`:'');
   if(!silent)toast('✓ Data muzaki dimuat.');
@@ -4281,12 +4303,12 @@ function mzRender(){
 }
 
 // ── form ──
-function mzForm(id){
+function mzForm(id,pre){
   const m=id?mzList.find(x=>x.muzakiId===id):null;
-  mzEdit=m?{...m}:{status:'Aktif',kota:'Lubuklinggau',provinsi:'Sumatera Selatan'};
+  mzEdit=m?{...m}:(pre?{status:'Aktif',...pre}:{status:'Aktif',kota:'Lubuklinggau',provinsi:'Sumatera Selatan'});
   const v=k=>xE(mzEdit[k]??'');
   const npwzKunci=m&&m.npwz&&!mzBolehNpwz;
-  document.getElementById('mz-form-title').textContent=m?`Ubah Muzaki — ${m.muzakiId}`:'Tambah Muzaki/Donatur Baru';
+  document.getElementById('mz-form-title').textContent=m?`Ubah Muzaki — ${m.muzakiId}`:(pre&&pre.daftar_no?`Terima Pendaftaran Online — ${pre.daftar_no}`:'Tambah Muzaki/Donatur Baru');
   document.getElementById('mz-form-body').innerHTML=`
   <div id="mz-err" style="display:none;background:#fee2e2;color:#991b1b;border-radius:8px;padding:8px 12px;font-size:12.5px;margin-bottom:10px"></div>
   <div class="bag-mz">1. Identitas Utama</div>
@@ -4378,7 +4400,7 @@ async function mzSimpan(){
   if(err.length){box.innerHTML='<b>Perbaiki dulu:</b><br>'+err.map(xE).join('<br>');box.style.display='block';box.scrollIntoView({block:'nearest'});return;}
   box.style.display='none';
   if(!o.id_web)o.id_web='mzw_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-  const kirim={};MZ_ISIAN.concat(['muzakiId','id_web']).forEach(k=>{if(o[k]!==undefined)kirim[k]=o[k];});
+  const kirim={};MZ_ISIAN.concat(['muzakiId','id_web','daftar_no']).forEach(k=>{if(o[k]!==undefined)kirim[k]=o[k];});
   const btn=document.getElementById('mz-btn-simpan');btn.disabled=true;
   try{
     let r;
@@ -4775,6 +4797,273 @@ function ktRenderKalender(box){
 }
 
 // ════════════════════════════════════════════
+// v9 — Format Rupiah · Kelengkapan Berkas & Tanda Terima · Formulir Survei · Pendaftaran Muzaki Online
+// ════════════════════════════════════════════
+
+// ── 1. Format Rupiah otomatis di kolom uang (nilai yang dibaca kode tetap angka murni) ──
+const RP_KOLOM=['f-penghasilan','f-pengeluaran','f-pengeluaranKes','f-nilaiModal'];
+function rpFormat(x){
+  if(typeof x==='number')x=String(Math.round(x));
+  else if(/^\s*\d+[.,]\d{1,2}\s*$/.test(String(x??'')))x=String(Math.round(parseFloat(String(x).replace(',','.'))));
+  x=String(x??'').replace(/\D/g,'').replace(/^0+(?=\d)/,'').slice(0,13);
+  return x?'Rp '+x.replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'';
+}
+function rpPasang(id){
+  const el=document.getElementById(id);if(!el||el._rp)return;
+  const D=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  el.type='text';el.inputMode='numeric';el.autocomplete='off';el.placeholder='Rp 0';
+  el.removeAttribute('min');el.removeAttribute('step');el._rp=true;
+  const awal=D.get.call(el);
+  Object.defineProperty(el,'value',{configurable:true,
+    get(){return D.get.call(el).replace(/\D/g,'');},
+    set(v){D.set.call(el,rpFormat(v));}});
+  el.addEventListener('input',()=>{
+    const raw=D.get.call(el),sisi=raw.length-(el.selectionStart??raw.length);
+    D.set.call(el,rpFormat(raw));
+    const p=Math.max(0,D.get.call(el).length-sisi);try{el.setSelectionRange(p,p);}catch(e){}
+  },true);
+  if(awal)el.value=awal;
+}
+
+// ── 2. Kelengkapan berkas pengajuan ──
+const PJ_BERKAS_LS='baznas_berkas_cfg_v1';
+let PJ_BERKAS=null;
+async function pjBerkasCfg(){
+  if(PJ_BERKAS)return PJ_BERKAS;
+  try{const r=await dbApi('daftar_berkas');if(r.ok){PJ_BERKAS=r;lsSet(PJ_BERKAS_LS,JSON.stringify(r));return r;}}catch(e){}
+  try{PJ_BERKAS=JSON.parse(lsGet(PJ_BERKAS_LS)||'null');}catch(e){}
+  return PJ_BERKAS;
+}
+function pjBerkasDaftar(cfg,kategori){return cfg&&cfg.berkas?(cfg.berkas[kategori]||cfg.berkas['Zakat Konsumtif']):null;}
+function pjBerkasTerima(p){try{return JSON.parse(p.berkas_diterima||'[]');}catch(e){return[];}}
+function pjTglPanjang(s){if(!s)return '';const d=new Date(String(s).length===10?s+'T00:00:00':s);return isNaN(d)?String(s):d.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
+function pjBerkasBadge(st){return st?`<span class="badge ${st==='Lengkap'?'b-teal':st==='Belum lengkap'?'b-gold':'b-gray'}">📎 ${pjEsc(st)}</span>`:'';}
+function pjBerkasMini(p){
+  if(!p.berkas_status||p.status===PJ_ST.terima||p.status===PJ_ST.tolak)return '';
+  const tel=p.berkas_status==='Belum diserahkan'&&p.batas_berkas&&p.status===PJ_ST.menunggu;
+  return `<div style="margin-top:3px">${pjBerkasBadge(p.berkas_status)}${tel?`<div style="font-size:10.5px;color:var(--g500)">batas ${pjEsc(pjTgl(p.batas_berkas))}</div>`:''}</div>`;
+}
+function pjBerkasPanel(p,final){
+  setTimeout(()=>pjBerkasIsi(p.no_pengajuan),0);
+  return `<div id="pj-berkas-box" style="border:1.5px solid #f0d78c;background:#fffaf0;border-radius:8px;padding:10px;margin-top:12px;font-size:12.5px">Memuat daftar berkas…</div>`;
+}
+async function pjBerkasIsi(no){
+  const box=document.getElementById('pj-berkas-box');if(!box)return;
+  const p=pjList.find(x=>x.no_pengajuan===no);if(!p)return;
+  const cfg=await pjBerkasCfg(),b=pjBerkasDaftar(cfg,p.kategoriBantuan);
+  if(!document.getElementById('pj-berkas-box'))return;
+  if(!b){box.innerHTML='Daftar berkas belum dapat dimuat (offline). Coba muat ulang saat online.';return;}
+  const ada=pjBerkasTerima(p),bisaUbah=p.status!==PJ_ST.tolak&&p.status!==PJ_ST.terima;
+  const cek=(x,w)=>`<label style="display:flex;gap:6px;align-items:flex-start;font-weight:400;margin:2px 0;font-size:12.5px"><input type="checkbox" class="pj-bk" value="${pjEsc(x)}" style="width:auto;margin-top:2px" ${ada.includes(x)?'checked':''} ${bisaUbah?'':'disabled'}/> <span>${pjEsc(x)}${w?' <b style="color:#c0392b">*</b>':''}</span></label>`;
+  const info=p.tgl_berkas?`<div style="font-size:11.5px;color:var(--g500);margin-top:2px">Terakhir diterima ${pjEsc(pjTgl(p.tgl_berkas))} oleh ${pjEsc(p.petugas_berkas)} · <span class="mono">${pjEsc(p.no_tanda_terima)}</span>${+p.berkas_ke>1?' (penyerahan ke-'+pjEsc(p.berkas_ke)+')':''}</div>`:'';
+  const batas=p.berkas_status==='Belum diserahkan'&&p.batas_berkas&&p.status===PJ_ST.menunggu?` <span style="font-size:11.5px;color:#c0392b">· batas serah ${pjEsc(pjTglPanjang(p.batas_berkas))}</span>`:'';
+  box.innerHTML=`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><strong style="font-size:13px">📎 Kelengkapan Berkas</strong>${pjBerkasBadge(p.berkas_status||'Belum diserahkan')}${batas}</div>${info}
+    <div style="font-size:11.5px;color:var(--g500);margin:6px 0 4px">Jenis bantuan: <strong>${pjEsc(p.kategoriBantuan)}</strong> · centang berkas yang <strong>diserahkan pemohon di kantor</strong> (<b style="color:#c0392b">*</b> wajib).</div>
+    <div class="pj-2col"><div>${b.wajib.map(x=>cek(x,true)).join('')}</div><div>${b.pendukung.map(x=>cek(x,false)).join('')}</div></div>
+    <div style="margin-top:6px"><label style="font-size:11.5px">Berkas lain yang diterima (opsional)</label><input id="pj-bk-lain" type="text" maxlength="300" value="${pjEsc(p.berkas_lainnya)}" ${bisaUbah?'':'disabled'}/></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+      ${bisaUbah?`<button class="btn btn-primary btn-sm" type="button" onclick="pjBerkasSimpan('${pjEsc(no)}')">💾 Simpan &amp; Cetak Tanda Terima</button>`:''}
+      ${p.no_tanda_terima?`<button class="btn btn-outline btn-sm" type="button" onclick="cetakTandaTerima('${pjEsc(no)}')">🖨️ Cetak Ulang Tanda Terima</button>`:''}</div>`;
+}
+async function pjBerkasSimpan(no){
+  const diterima=[...document.querySelectorAll('#pj-berkas-box .pj-bk:checked')].map(c=>c.value);
+  const lainnya=(document.getElementById('pj-bk-lain').value||'').trim();
+  if(!diterima.length&&!lainnya){toast('Centang berkas yang diterima.',true);return;}
+  const w=window.open('','_blank','width=900,height=750,scrollbars=yes'); // dibuka saat klik agar tidak diblokir popup
+  if(w)w.document.write('<p style="font-family:sans-serif;padding:20px">Menyimpan berkas…</p>');
+  try{
+    const r=await dbApi('pengajuan_berkas',{no,diterima,lainnya});
+    if(!r.ok){if(w)w.close();if(r.kode==='AUTH'){dbLogout(true);return;}toast(r.pesan||'Gagal menyimpan berkas.',true);return;}
+    const i=pjList.findIndex(x=>x.no_pengajuan===no);if(i>=0)pjList[i]={...pjList[i],...r.data};
+    toast('✓ '+r.pesan);pjRender();pjDetail(no);
+    cetakTandaTerima(no,w);
+  }catch(e){if(w)w.close();toast('Gagal terhubung ke server — pencatatan berkas perlu koneksi internet.',true);}
+}
+function cetakTandaTerima(no,w){
+  const p=pjList.find(x=>x.no_pengajuan===no);if(!p)return;
+  const b=pjBerkasDaftar(PJ_BERKAS,p.kategoriBantuan)||{wajib:[],pendukung:[]};
+  const ada=pjBerkasTerima(p),kurang=b.wajib.filter(x=>!ada.includes(x));
+  const k=(PJ_BERKAS&&PJ_BERKAS.kantor)||{};
+  const baris=b.wajib.map((x,i)=>`<tr><td class="c">${i+1}</td><td>${dE(x)}</td><td class="c">Wajib</td><td class="c"><b class="kotak">${ada.includes(x)?'✓':''}</b></td></tr>`).join('')+
+    b.pendukung.filter(x=>ada.includes(x)).map((x,i)=>`<tr><td class="c">${b.wajib.length+i+1}</td><td>${dE(x)}</td><td class="c">Pendukung</td><td class="c"><b class="kotak">✓</b></td></tr>`).join('')+
+    (p.berkas_lainnya?`<tr><td class="c">+</td><td>${dE(p.berkas_lainnya)}</td><td class="c">Lainnya</td><td class="c"><b class="kotak">✓</b></td></tr>`:'');
+  const lembar=(ket)=>`<div class="tt"><div class="ket-lembar">${ket}</div>${dKop()}
+    <div class="judul" style="margin-top:2px">TANDA TERIMA BERKAS PENGAJUAN BANTUAN</div>
+    <div class="subjudul">Nomor: <b>${dE(p.no_tanda_terima)}</b>${+p.berkas_ke>1?' (penyerahan ke-'+dE(p.berkas_ke)+')':''}</div>
+    ${dDua(`<tr><td class="lbl">No. Pengajuan</td><td class="sep">:</td><td><b>${dE(p.no_pengajuan)}</b></td></tr><tr><td class="lbl">Nama Pemohon</td><td class="sep">:</td><td>${dE(p.nama)}</td></tr><tr><td class="lbl">NIK</td><td class="sep">:</td><td>${dE(p.nik)}</td></tr>`,
+      `<tr><td class="lbl">Jenis Bantuan</td><td class="sep">:</td><td>${dE(p.kategoriBantuan)}</td></tr><tr><td class="lbl">Tanggal Terima</td><td class="sep">:</td><td>${dE(dTgl(p.tgl_berkas))}</td></tr><tr><td class="lbl">No. HP</td><td class="sep">:</td><td>${dE(p.telepon)}</td></tr>`)}
+    <table class="grid" style="margin-top:4px"><thead><tr><th style="width:8mm">No</th><th>Berkas</th><th style="width:22mm">Sifat</th><th style="width:16mm">Diterima</th></tr></thead><tbody>${baris}</tbody></table>
+    <div class="status-bk">Status berkas: <b>${dE(p.berkas_status)}</b>${kurang.length?` — masih kurang: ${kurang.map(dE).join('; ')}. Mohon dilengkapi ke kantor BAZNAS.`:'. Selanjutnya petugas akan menghubungi pemohon untuk jadwal survei/verifikasi lapangan.'}</div>
+    <div class="kecil-tt">Berkas yang diterima menjadi arsip BAZNAS dan tidak dikembalikan. Tanda terima ini <b>bukan</b> bukti persetujuan bantuan. Cek status di ${dE(location.origin)}/pengajuan.html (No. Pengajuan + tanggal lahir). ${k.jam?'Jam layanan: '+dE(k.jam)+'.':''}</div>
+    <div class="tgl-ttd">Lubuklinggau, ${dE(dTgl(p.tgl_berkas))}</div>
+    ${dTtd([{atas:'Yang Menyerahkan,',jabatan:'Pemohon / Kuasa',nama:p.diisi_oleh==='Diwakilkan'?'':p.nama},{atas:'Yang Menerima,',jabatan:'Petugas BAZNAS Kota Lubuklinggau',nama:p.petugas_berkas}])}
+  </div>`;
+  const css=DOK_CSS+`
+    @page{size:A4;margin:7mm 12mm 7mm 14mm}
+    .tt{height:139mm;overflow:hidden;position:relative;font-size:9.5pt}
+    .tt+.potong{border-top:1px dashed #000;margin:2mm 0;text-align:center;font-size:8pt;height:0}
+    .tt .kop img{width:15mm;height:15mm}.tt .k1,.tt .k2{font-size:11.5pt}.tt .k3{font-size:7pt}.tt .kop-garis{margin:3px 0 4px}
+    .tt .judul{font-size:11pt}.tt .subjudul{font-size:9pt;margin-bottom:2px}
+    .tt table.data{font-size:9pt}.tt table.grid{font-size:8.5pt}.tt table.grid td,.tt table.grid th{height:4.2mm;padding:0 3px}
+    .tt table.ttd .ruang{height:12mm}.tt table.ttd td{font-size:9pt}
+    .ket-lembar{position:absolute;top:0;right:0;font-size:7.5pt;border:1px solid #000;padding:0 4px}
+    .status-bk{border:1px solid #000;padding:2px 6px;margin-top:4px;font-size:9pt}
+    .kecil-tt{font-size:7.5pt;margin-top:3px;text-align:justify}
+    @media screen{.hal{min-height:auto}}`;
+  const html=`<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Tanda Terima Berkas ${dE(p.no_pengajuan)}</title><style>${css}</style></head><body>
+    <div class="hal">${lembar('Lembar 1 — untuk Pemohon')}<div class="potong">✂</div>${lembar('Lembar 2 — Arsip BAZNAS')}</div></body></html>`;
+  w=w||window.open('','_blank','width=900,height=750,scrollbars=yes');
+  if(!w){toast('Popup diblokir browser. Izinkan popup untuk halaman ini.',true);return;}
+  w.document.open();w.document.write(html);w.document.close();
+  setTimeout(()=>{try{w.focus();w.print();}catch(e){}},500);
+}
+
+// ── 3. Formulir Survei — dibangun langsung dari formulir "Tambah Mustahik Baru" (isian & pilihan selalu sama persis) ──
+const SV_LEWATI=['card-rek-preview','card-sroi-preview'];
+function svTeksLabel(lbl){
+  if(!lbl)return '';
+  const c=lbl.cloneNode(true);c.querySelectorAll('.hint').forEach(h=>h.remove());
+  return c.textContent.replace(/\s+/g,' ').replace(/\s*\*\s*$/,'').replace(/\s*\*/g,'').trim();
+}
+function svPrefill(p){
+  return {'f-nama':p.nama,'f-nik':p.nik,'f-noKK':p.noKK,'f-jk':p.jenisKelamin,'f-tempatLahir':p.tempatLahir,'f-tglLahir':p.tanggalLahir,
+    'f-statusKel':p.statusKeluarga,'f-tanggungan':p.jumlahTanggungan,'f-alamat':p.alamat,'f-kelurahan':p.kelurahan,'f-kecamatan':p.kecamatan,
+    'f-kota':p.kota||'Lubuklinggau','f-provinsi':'Sumatera Selatan','f-telepon':p.telepon,'f-katBantuan':p.kategoriBantuan,
+    'f-lembagaPend':p.lembagaPendidikan,'f-jenjangPend':p.jenjangPendidikan,'f-prodiKelas':p.prodiKelas,'f-semester':p.semester,
+    'f-pekerjaan':p.pekerjaan,'f-penghasilan':p.penghasilan?rpFormat(p.penghasilan):'','f-jmlAnggota':p.jumlahAnggota,
+    'f-pengeluaran':p.totalPengeluaran?rpFormat(p.totalPengeluaran):'','f-kondisiRumah':p.kondisiRumah,'f-kebutuhan':p.kebutuhanUtama,
+    'f-tglSurvey':p.jadwal_kunjungan};
+}
+function svKontrol(f,isi){
+  const ctl=f.querySelector(':scope>select,:scope>input,:scope>textarea');
+  const grid=f.querySelector(':scope>.penyakit-grid');
+  if(grid){
+    const opsi=[...grid.querySelectorAll('label')].map(l=>l.textContent.trim()).filter(Boolean);
+    return {lebar:true,html:`<div class="sv-op k3">${opsi.map(o=>`<span><b class="kotak"></b> ${dE(o)}</span>`).join('')}</div>`};
+  }
+  if(!ctl)return null;
+  const v=isi[ctl.id];
+  if(ctl.tagName==='SELECT'){
+    const opsi=[...ctl.options].filter(o=>o.value!=='');
+    const pilih=o=>v&&(o.value===v||o.text===v);
+    const lebar=opsi.length>3||opsi.some(o=>o.text.length>22);
+    return {lebar,html:`<div class="sv-op${opsi.length>6?' k3':''}">${opsi.map(o=>`<span><b class="kotak">${pilih(o)?'✓':''}</b> ${dE(o.text)}</span>`).join('')}</div>`+
+      (v&&!opsi.some(pilih)?`<div class="sv-isi">${dE(v)}</div>`:'')};
+  }
+  if(ctl.tagName==='TEXTAREA')return {lebar:true,html:v?`<div class="sv-isi">${dE(v)}</div><div class="sv-garis"></div>`:'<div class="sv-garis"></div><div class="sv-garis"></div>'};
+  if(ctl.type==='date')return {lebar:false,html:v?`<div class="sv-isi">${dE(dTgl(v))}</div>`:'<div class="sv-garis tgl">____ / ____ / ________</div>'};
+  return {lebar:false,html:v!==undefined&&v!==null&&String(v).trim()!==''?`<div class="sv-isi">${dE(v)}</div>`:'<div class="sv-garis"></div>'};
+}
+function svBagian(card,isi,anggotaN){
+  const h=card.querySelector('.card-header h2'),no=card.querySelector('.card-header .sec-num');
+  let out=`<div class="bag">${no?dE(no.textContent.trim())+'. ':''}${dE(h.textContent.trim())}</div>`;
+  if(card.querySelector('#ak-tbody')){
+    const th=[...card.querySelectorAll('thead th')].map(x=>x.textContent.trim()).filter(Boolean);
+    out+=`<table class="grid sv-ak"><thead><tr>${th.map(t=>`<th>${dE(t)}</th>`).join('')}</tr></thead><tbody>${
+      Array.from({length:anggotaN},(_,i)=>`<tr>${th.map((t,j)=>`<td>${j===0?i+1:''}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    return out;
+  }
+  let grup='';
+  out+='<div class="sv-grid">';
+  card.querySelectorAll('.field').forEach(f=>{
+    const lbl=f.querySelector(':scope>label');if(!lbl)return;
+    const k=svKontrol(f,isi);if(!k)return;
+    const g=f.closest('#pend-wrap')?'🎓 Data Pendidikan — diisi bila bantuan pendidikan/beasiswa':f.closest('#rek-wrap')?'Diisi bila metode penyaluran Transfer Bank':'';
+    if(g&&g!==grup){out+=`<div class="sv-sub">${dE(g)}</div>`;}grup=g;
+    out+=`<div class="sv-f${k.lebar?' lebar':''}"><div class="sv-l">${dE(svTeksLabel(lbl))}</div>${k.html}</div>`;
+  });
+  return out+'</div>';
+}
+function cetakFormulirSurvei(no){
+  const p=pjList.find(x=>x.no_pengajuan===no);if(!p)return;
+  const form=document.getElementById('t-form');
+  if(!form){toast('Formulir mustahik tidak ditemukan.',true);return;}
+  const isi=svPrefill(p);
+  const anggotaN=Math.min(12,Math.max(6,(+p.jumlahAnggota||0)+1));
+  const cards=[...form.querySelectorAll('.card')].filter(c=>c.querySelector('.card-header h2')&&!SV_LEWATI.includes(c.id));
+  const kurang=(()=>{const b=pjBerkasDaftar(PJ_BERKAS,p.kategoriBantuan);if(!b)return[];const a=pjBerkasTerima(p);return b.wajib.filter(x=>!a.includes(x));})();
+  const css=DOK_CSS+`
+    .sv-info{border:1px solid #000;padding:3px 6px;font-size:9.5pt;margin-bottom:4px}
+    .sv-info table{width:100%;border-collapse:collapse}.sv-info td{padding:0 3px;vertical-align:top;width:50%}
+    .sv-catat{font-size:8.5pt;font-style:italic;margin:2px 0 4px}
+    .sv-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px}
+    .sv-f{break-inside:avoid;padding:1px 0}.sv-f.lebar{grid-column:1/-1}
+    .sv-l{font-weight:bold;font-size:9.5pt}
+    .sv-isi{font-family:"Times New Roman",serif;font-style:italic;border-bottom:1px dotted #000;min-height:5mm;padding-left:2px}
+    .sv-garis{border-bottom:1px dotted #000;height:6mm}.sv-garis.tgl{border:0;height:auto;padding-top:2px;letter-spacing:1px}
+    .sv-op{display:flex;flex-wrap:wrap;gap:1px 12px;font-size:9.5pt}
+    .sv-op.k3{display:grid;grid-template-columns:repeat(3,1fr)}
+    .sv-sub{grid-column:1/-1;font-size:9pt;font-weight:bold;font-style:italic;margin-top:3px;border-bottom:1px solid #999}
+    table.sv-ak td{height:6.5mm}
+    table.sv-ak td:first-child{width:7mm;text-align:center}
+    .sv-hasil td{padding:1px 4px;vertical-align:top}
+    .bag{break-after:avoid}`;
+  const halaman=`<div class="hal">${dKop()}
+    <div class="judul">FORMULIR SURVEI / VERIFIKASI LAPANGAN CALON MUSTAHIK</div>
+    <div class="subjudul">Isian sama dengan menu <i>Tambah Mustahik Baru</i> — diinput ke aplikasi setelah survei</div>
+    <div class="sv-info"><table><tr>
+      <td><b>No. Pengajuan</b>: ${dE(p.no_pengajuan)}<br><b>Tgl. Pengajuan</b>: ${dE(dTgl(p.waktu))}<br><b>Jenis Bantuan</b>: ${dE(p.kategoriBantuan)}</td>
+      <td><b>Jadwal Kunjungan</b>: ${dE(dTgl(p.jadwal_kunjungan))}<br><b>Berkas</b>: ${dE(p.berkas_status||'—')}${p.no_tanda_terima?' ('+dE(p.no_tanda_terima)+')':''}${kurang.length?'<br><b>Berkas kurang</b>: '+kurang.map(dE).join('; '):''}</td></tr>
+      ${p.catatan_petugas?`<tr><td colspan="2"><b>Catatan petugas</b>: ${dE(p.catatan_petugas)}</td></tr>`:''}
+      ${p.alasan?`<tr><td colspan="2"><b>Alasan pemohon</b>: ${dE(p.alasan)}</td></tr>`:''}
+      ${p.diisi_oleh==='Diwakilkan'?`<tr><td colspan="2"><b>Diisikan oleh</b>: ${dE(p.nama_pengisi)} (${dE(p.hubungan_pengisi)}) · ${dE(p.hp_pengisi)}</td></tr>`:''}</table></div>
+    <div class="sv-catat">Isian bercetak miring berasal dari pengajuan online — periksa di lapangan; coret &amp; tulis yang benar bila tidak sesuai. Kotak ☐ dicentang sesuai kondisi sebenarnya.</div>
+    ${cards.map(c=>svBagian(c,isi,anggotaN)).join('')}
+    <div class="bag">HASIL SURVEI &amp; DOKUMENTASI</div>
+    <table class="sv-hasil" style="width:100%;font-size:9.5pt"><tr>
+      <td style="width:50%"><b>Rekomendasi surveyor</b><div class="sv-op"><span><b class="kotak"></b> Layak dibantu</span><span><b class="kotak"></b> Tidak layak</span><span><b class="kotak"></b> Perlu verifikasi ulang</span></div></td>
+      <td><b>Dokumentasi (foto)</b><div class="sv-op"><span><b class="kotak"></b> Rumah tampak depan</span><span><b class="kotak"></b> Bagian dalam</span><span><b class="kotak"></b> Pemohon &amp; petugas</span><span><b class="kotak"></b> Usaha/lainnya</span></div></td></tr>
+      <tr><td colspan="2"><b>Alasan / temuan penting</b><div class="sv-garis"></div><div class="sv-garis"></div></td></tr></table>
+    <div class="pernyataan">Saya menyatakan data di atas <b>benar</b> sesuai keadaan sebenarnya dan bersedia diverifikasi. Apabila di kemudian hari terbukti tidak benar, saya bersedia menerima konsekuensi sesuai ketentuan yang berlaku.</div>
+    <div class="tgl-ttd">Lubuklinggau, ..............................</div>
+    ${dTtd([{atas:'Pemohon,',jabatan:'Calon Mustahik',nama:p.nama},{atas:'Mengetahui,',jabatan:'Ketua RT / Lurah'},{atas:'Surveyor,',jabatan:'Petugas BAZNAS'}])}
+  </div>`;
+  const html=`<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Formulir Survei ${dE(p.no_pengajuan)} — ${dE(p.nama)}</title><style>${css}</style></head><body>${halaman}</body></html>`;
+  const w=window.open('','_blank','width=900,height=750,scrollbars=yes');
+  if(!w){toast('Popup diblokir browser. Izinkan popup untuk halaman ini.',true);return;}
+  w.document.write(html);w.document.close();
+  w.onload=()=>setTimeout(()=>{w.focus();w.print();},400);
+  toast('✓ Formulir survei dibuka — pilih printer atau "Save as PDF", kertas A4.');
+}
+
+// ── 4. Pendaftaran Muzaki/Donatur online (antrean verifikasi) ──
+function mzolRender(){
+  const n=mzDaftar.filter(x=>x.status==='Menunggu verifikasi').length;
+  const b=document.getElementById('mzol-count');if(b){b.textContent=n;b.style.display=n?'inline-block':'none';}
+  const box=document.getElementById('mzol-body');if(!box)return;
+  if(!mzDaftar.length){box.innerHTML='<div style="text-align:center;color:var(--g500);padding:20px">Belum ada pendaftaran online. Tautan publik: <a href="muzaki.html" target="_blank" rel="noopener"><strong>muzaki.html</strong></a></div>';return;}
+  const urut=[...mzDaftar].sort((a,b)=>(a.status==='Menunggu verifikasi'?0:1)-(b.status==='Menunggu verifikasi'?0:1));
+  box.innerHTML=`<div style="font-size:12px;color:var(--g500);margin-bottom:8px">Tautan publik: <a href="muzaki.html" target="_blank" rel="noopener"><strong>muzaki.html</strong></a> · Periksa data, hubungi via WA, isi NPWZ dari SIMBA, lalu <strong>Terima</strong>.</div>
+  <div class="tbl-scroll"><table class="pj-tbl"><thead><tr><th>No</th><th>Tanggal</th><th>Nama</th><th>Jenis</th><th>Identitas</th><th>HP/WA</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${urut.slice(0,100).map(x=>`<tr>
+    <td class="mono">${xE(x.no_daftar)}</td><td>${xTgl(x.waktu)}</td>
+    <td><strong>${xE(x.nama)}</strong>${x.namaInstansi&&x.namaInstansi!==x.nama?'<br><span style="font-size:11px;color:var(--g500)">'+xE(x.namaInstansi)+'</span>':''}</td>
+    <td>${xE(x.jenisDonatur)}<br><span style="font-size:11px;color:var(--g500)">${xE(x.bentukEntitas)}</span></td>
+    <td class="mono">${xE(x.nomorIdentitas||x.npwp||'—')}</td>
+    <td><a href="https://wa.me/${xE(String(x.hp||'').replace(/^0/,'62').replace(/\D/g,''))}" target="_blank" rel="noopener">${xE(x.hp)}</a></td>
+    <td><span class="badge ${x.status==='Diterima'?'b-teal':x.status==='Ditolak'?'b-red':'b-gold'}">${xE(x.status)}</span>${x.muzakiId?'<br><span class="mono" style="font-size:11px">'+xE(x.muzakiId)+'</span>':''}${x.alasan_tolak?'<br><span style="font-size:11px;color:var(--g500)">'+xE(x.alasan_tolak)+'</span>':''}</td>
+    <td style="white-space:nowrap">${x.status==='Menunggu verifikasi'?`<button class="btn btn-primary btn-sm" type="button" onclick="mzolTerima('${xE(x.no_daftar)}')">Periksa &amp; Terima</button> <button class="btn btn-ghost btn-sm" type="button" onclick="mzolTolak('${xE(x.no_daftar)}')">Tolak</button>`:''}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function mzolBuka(){mzolRender();openModal('modal-mzol');if(!mzMuatSekali)mzMuat(true);}
+function mzolTerima(no){
+  const x=mzDaftar.find(d=>d.no_daftar===no);if(!x)return;
+  const pre={};MZ_ISIAN.forEach(k=>{if(x[k]!==undefined&&x[k]!=='')pre[k]=x[k];});
+  pre.daftar_no=no;pre.id_web=no;pre.npwzSamaDenganNik=false;
+  pre.catatan=((x.catatan?x.catatan+' · ':'')+'Daftar online '+no).slice(0,500);
+  closeModal('modal-mzol');mzForm(null,pre);
+}
+async function mzolTolak(no){
+  const alasan=(window.prompt('Alasan menolak pendaftaran '+no+' (mis. data tidak valid / tidak dapat dihubungi):')||'').trim();
+  if(!alasan)return;
+  try{
+    const r=await dbApi('mzol_tolak',{no,alasan});
+    if(!r.ok){if(r.kode==='AUTH'){dbLogout(true);return;}toast(r.pesan,true);return;}
+    toast('✓ '+r.pesan);await mzMuat(true);
+  }catch(e){toast('Gagal terhubung ke server.',true);}
+}
+
+function v9Init(){RP_KOLOM.forEach(rpPasang);}
+
+// ════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════
 loadStore();
@@ -4787,6 +5076,7 @@ document.getElementById('f-provinsi').value='Sumatera Selatan';
 dbInit();
 document.getElementById('f-tglLahir').addEventListener('change',updateDesilBaznas);
 mzInit();
+v9Init();
 </script>
 </body>
 </html>
