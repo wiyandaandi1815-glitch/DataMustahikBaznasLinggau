@@ -46,7 +46,7 @@ textarea{min-height:80px;resize:vertical}
 .hasil{text-align:center;padding:24px 16px}
 .hasil .no{font-family:ui-monospace,Consolas,monospace;font-size:26px;font-weight:800;color:var(--teal-dark);letter-spacing:1px;background:var(--teal-light);border-radius:8px;padding:12px;margin:12px 0}
 .st{display:inline-block;padding:6px 14px;border-radius:20px;font-weight:800;font-size:14px;margin:8px 0}
-.st.Menunggu{background:#fff4d6;color:#7c5c00}.st.Dijadwalkan{background:#e3efff;color:#1d4e9e}.st.Diterima{background:var(--teal-light);color:var(--teal-dark)}.st.Tidak{background:#fdecea;color:var(--red)}
+.st.Berkas{background:#fdecea;color:var(--red)}.st.Menunggu{background:#fff4d6;color:#7c5c00}.st.Dijadwalkan{background:#e3efff;color:#1d4e9e}.st.Diterima{background:var(--teal-light);color:var(--teal-dark)}.st.Tidak{background:#fdecea;color:var(--red)}
 .riw{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:10px;text-align:left}
 .riw th,.riw td{padding:7px 6px;border-bottom:1px solid var(--g100)}
 .riw th{font-size:12px;color:var(--g500);font-weight:700}
@@ -58,6 +58,22 @@ textarea{min-height:80px;resize:vertical}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px}
 .hidden{display:none}
+.berkas{background:#fffaf0;border:1px solid #f0d78c;border-radius:8px;padding:12px 14px;font-size:13.5px;text-align:left}
+.berkas h4{font-size:14px;color:#7c5c00;margin-bottom:6px}
+.berkas ol{margin:4px 0 6px 20px}.berkas li{margin-bottom:3px}
+.berkas .sub{font-weight:700;font-size:12.5px;color:var(--g500);margin-top:8px}
+.kantor{background:var(--teal-light);border:1px solid #b2ddd6;border-radius:8px;padding:12px 14px;font-size:13.5px;text-align:left;margin-top:12px}
+.kantor b{color:var(--teal-dark)}
+.batas{display:inline-block;background:#fdecea;color:var(--red);font-weight:800;border-radius:6px;padding:2px 8px}
+.cetak-saja{display:none}
+@media print{
+  @page{size:A4;margin:12mm}
+  body{background:#fff;font-size:12pt}
+  header,nav.tabs,footer,#form-wrap,.no-print,#sec-s,#sec-z{display:none!important}
+  main{max-width:none;padding:0}.card{box-shadow:none}
+  .hasil{padding:0}.cetak-saja{display:block}
+  .berkas,.kantor{break-inside:avoid}
+}
 </style>
 </head>
 <body>
@@ -108,8 +124,8 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
 
     <div class="card"><h2>C. KONDISI EKONOMI KELUARGA</h2><div class="body grid">
       <div class="full"><label>Pekerjaan</label><input id="pekerjaan" maxlength="60" placeholder="Buruh, pedagang kecil, tidak bekerja…"></div>
-      <div><label>Penghasilan keluarga per bulan (Rp)</label><input id="penghasilan" type="number" min="0" step="1000" inputmode="numeric" placeholder="0"></div>
-      <div><label>Pengeluaran keluarga per bulan (Rp)</label><input id="totalPengeluaran" type="number" min="0" step="1000" inputmode="numeric" placeholder="0"></div>
+      <div><label>Penghasilan keluarga per bulan (Rp)</label><input id="penghasilan" class="rp" type="text" inputmode="numeric" autocomplete="off" placeholder="Rp 0"></div>
+      <div><label>Pengeluaran keluarga per bulan (Rp)</label><input id="totalPengeluaran" class="rp" type="text" inputmode="numeric" autocomplete="off" placeholder="Rp 0"></div>
       <div><label>Jumlah anggota keluarga serumah</label><input id="jumlahAnggota" type="number" min="1" max="30" inputmode="numeric"></div>
       <div><label>Jumlah tanggungan</label><input id="jumlahTanggungan" type="number" min="0" max="30" inputmode="numeric"></div>
       <div class="full"><label>Kondisi rumah</label><select id="kondisiRumah"><option value="">— Pilih —</option><option>Permanen / Layak Huni</option><option>Semi Permanen</option><option>Tidak Layak Huni</option><option>Rumah Dinas/Kontrak</option><option>Menumpang</option></select></div>
@@ -124,6 +140,7 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
         <option value="Bantuan Modal Usaha">Modal usaha</option>
         <option value="Zakat Produktif">Usaha produktif / pemberdayaan</option>
         <option value="Bantuan Dakwah">Kegiatan dakwah / keagamaan</option></select></div>
+      <div id="berkas-pv" class="full berkas hidden"></div>
       <div id="pend-wrap" class="full hidden" style="background:#eef6ff;border:1px solid #bcd6f5;border-radius:8px;padding:12px">
         <div style="font-weight:800;font-size:13px;color:#1e40af;margin-bottom:8px">🎓 Data Pendidikan</div>
         <div class="grid">
@@ -166,13 +183,23 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
 </div>
 
 <div id="hasil" class="card hidden"><div class="hasil">
-  <div style="font-size:44px">✅</div>
-  <h3 style="font-size:19px;color:var(--teal-dark)">Pengajuan berhasil dikirim</h3>
+  <div class="cetak-saja" style="text-align:center;border-bottom:3px double #000;padding-bottom:6px;margin-bottom:10px">
+    <div style="font-weight:800;font-size:15pt">BAZNAS KOTA LUBUKLINGGAU</div>
+    <div style="font-weight:700">BUKTI PENGAJUAN BANTUAN ONLINE</div></div>
+  <div style="font-size:44px" class="no-print">✅</div>
+  <h3 style="font-size:19px;color:var(--teal-dark)" class="no-print">Pengajuan berhasil dikirim</h3>
   <p style="margin-top:6px">Simpan / foto layar <strong>Nomor Pengajuan</strong> berikut:</p>
   <div class="no" id="no-pj"></div>
-  <p style="font-size:13.5px">Gunakan nomor ini dan tanggal lahir untuk <strong>cek status</strong>. Petugas BAZNAS akan menghubungi nomor HP yang Anda isi untuk jadwal verifikasi.</p>
-  <div style="display:grid;gap:10px;margin-top:16px">
-    <button class="btn" onclick="tab('s');document.querySelector('input[name=jenis-cek][value=pj]').click();document.getElementById('s-no').value=document.getElementById('no-pj').textContent">Cek Status</button>
+  <div id="hasil-info" class="info" style="max-width:420px;margin:0 auto"></div>
+  <div style="background:#fff4d6;border:1px solid #f0d78c;border-radius:8px;padding:12px 14px;margin-top:14px;text-align:left;font-size:14px">
+    <strong>⚠️ Langkah berikutnya — WAJIB:</strong> Pengajuan baru akan diproses setelah Anda <strong>menyerahkan berkas persyaratan</strong> ke kantor BAZNAS paling lambat <span class="batas" id="batas-pj">14 hari</span>.
+    Bila sampai batas waktu berkas belum diserahkan, pengajuan otomatis berstatus <em>Berkas tidak diserahkan</em>.</div>
+  <div id="berkas-hasil" class="berkas" style="margin-top:12px"></div>
+  <div id="kantor-hasil" class="kantor"></div>
+  <p style="font-size:13.5px;margin-top:12px">Petugas akan memeriksa berkas dan memberikan <strong>Tanda Terima Berkas</strong>. Setelah itu petugas menghubungi nomor HP Anda untuk jadwal kunjungan/verifikasi. Gunakan nomor pengajuan dan tanggal lahir untuk <strong>cek status</strong>.</p>
+  <div style="display:grid;gap:10px;margin-top:16px" class="no-print">
+    <button class="btn" onclick="window.print()">🖨️ Cetak / Simpan Bukti Pengajuan (PDF)</button>
+    <button class="btn ghost" onclick="tab('s');document.querySelector('input[name=jenis-cek][value=pj]').click();document.getElementById('s-no').value=document.getElementById('no-pj').textContent">Cek Status</button>
     <button class="btn ghost" onclick="location.reload()">Isi Pengajuan Lain</button>
   </div>
 </div></div>
@@ -208,7 +235,7 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
   <div id="b-hasil" class="card hidden"><div class="hasil" id="b-isi"></div></div>
 </section>
 </main>
-<footer>BAZNAS Kota Lubuklinggau · Data Anda dilindungi dan hanya digunakan untuk penyaluran ZIS.<br><a href="kabar.html" style="color:var(--teal);font-weight:700">Kabar penyaluran &amp; kampanye kebaikan →</a></footer>
+<footer>BAZNAS Kota Lubuklinggau · Data Anda dilindungi dan hanya digunakan untuk penyaluran ZIS.<br><a href="kabar.html" style="color:var(--teal);font-weight:700">Kabar penyaluran &amp; kampanye kebaikan →</a><br><a href="muzaki.html" style="color:var(--teal);font-weight:700">Ingin berzakat/berdonasi? Daftar sebagai Muzaki/Donatur →</a></footer>
 
 <script>
 const DB_URL='https://script.google.com/macros/s/AKfycbwcFWag2lgTgaaV5lKBWU_YDrhSHEAgPgXyrfFR9tq6uRyzrg5t_158fHzSBX6183me/exec';
@@ -223,11 +250,41 @@ async function api(aksi,data){
   if(!r.ok)throw new Error('HTTP '+r.status);
   return r.json();
 }
-function v(id){return (document.getElementById(id).value||'').trim();}
+function v(id){const el=document.getElementById(id);const x=(el.value||'').trim();return el.classList.contains('rp')?x.replace(/\D/g,''):x;}
+// ── Rupiah: tampil 1.500.000 saat diketik, dikirim angka murni ──
+function fmtRp(d){d=String(d||'').replace(/\D/g,'').replace(/^0+(?=\d)/,'').slice(0,13);return d?'Rp '+d.replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'';}
+document.querySelectorAll('input.rp').forEach(el=>el.addEventListener('input',()=>{
+  const sisi=el.value.length-el.selectionStart;el.value=fmtRp(el.value);
+  const p=Math.max(0,el.value.length-sisi);try{el.setSelectionRange(p,p);}catch(e){}
+}));
+// ── Daftar berkas per jenis bantuan (dari server) ──
+let BERKAS=null,KANTOR=null,CAT_BERKAS='',HARI_BATAS=14;
+async function muatBerkas(){
+  if(BERKAS)return BERKAS;
+  try{const r=await api('daftar_berkas');if(r.ok){BERKAS=r.berkas;KANTOR=r.kantor;CAT_BERKAS=r.catatan_berkas;HARI_BATAS=r.hari_batas||14;}}catch(e){}
+  return BERKAS;
+}
+function htmlBerkas(b,judul){
+  if(!b)return '';
+  return '<h4>📎 '+esc(judul)+'</h4><ol>'+b.wajib.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>'+
+    (b.pendukung&&b.pendukung.length?'<div class="sub">Pendukung (bila ada):</div><ul style="margin:4px 0 0 20px">'+b.pendukung.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'')+
+    (CAT_BERKAS?'<p style="font-size:12.5px;margin-top:8px">ℹ️ '+esc(CAT_BERKAS)+'</p>':'');
+}
+function htmlKantor(k){
+  k=k||KANTOR;if(!k)return '';
+  return '<b>📍 Serahkan berkas ke Kantor BAZNAS Kota Lubuklinggau</b><br>'+esc(k.alamat)+'<br><b>🕘 Jam layanan:</b> '+esc(k.jam)+(k.telp?'<br><b>📞</b> '+esc(k.telp):'');
+}
+function tglPanjang(s){const d=new Date(String(s).slice(0,10)+'T00:00:00');return isNaN(d)?esc(s):d.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
-document.getElementById('kategoriBantuan').addEventListener('change',()=>{
-  document.getElementById('pend-wrap').classList.toggle('hidden',!/pendidikan|beasiswa/i.test(v('kategoriBantuan')));
+document.getElementById('kategoriBantuan').addEventListener('change',async()=>{
+  const k=v('kategoriBantuan'),pv=document.getElementById('berkas-pv');
+  document.getElementById('pend-wrap').classList.toggle('hidden',!/pendidikan|beasiswa/i.test(k));
+  if(!k){pv.classList.add('hidden');return;}
+  await muatBerkas();
+  if(!BERKAS||!BERKAS[k]){pv.classList.add('hidden');return;}
+  pv.innerHTML=htmlBerkas(BERKAS[k],'Berkas yang perlu disiapkan (diserahkan ke kantor setelah mengirim formulir)');
+  pv.classList.remove('hidden');
 });
 document.querySelectorAll('input[name=diisi]').forEach(r=>r.addEventListener('change',()=>{
   document.getElementById('wakil').classList.toggle('hidden',document.querySelector('input[name=diisi]:checked').value!=='Diwakilkan');
@@ -290,6 +347,13 @@ document.getElementById('fpj').addEventListener('submit',async ev=>{
     const r=await api('ajukan',d);
     if(!r.ok){tampilErr(esc(r.pesan||'Pengajuan gagal dikirim.'));return;}
     document.getElementById('no-pj').textContent=r.no_pengajuan;
+    if(r.kantor)KANTOR=r.kantor;if(r.catatan_berkas)CAT_BERKAS=r.catatan_berkas;
+    const opt=document.querySelector('#kategoriBantuan option[value="'+CSS.escape(r.kategoriBantuan||d.kategoriBantuan)+'"]');
+    document.getElementById('hasil-info').innerHTML='<div>Nama</div><div>'+esc(r.nama||d.nama)+'</div><div>Jenis bantuan</div><div>'+esc(opt?opt.textContent:d.kategoriBantuan)+'</div>'+
+      '<div>Tanggal</div><div>'+new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'</div>';
+    document.getElementById('batas-pj').textContent=r.batas_berkas?tglPanjang(r.batas_berkas):(HARI_BATAS+' hari');
+    document.getElementById('berkas-hasil').innerHTML=htmlBerkas(r.berkas,'Berkas yang harus diserahkan');
+    document.getElementById('kantor-hasil').innerHTML=htmlKantor(r.kantor);
     document.getElementById('form-wrap').classList.add('hidden');
     document.getElementById('hasil').classList.remove('hidden');
     window.scrollTo({top:0});
@@ -389,11 +453,16 @@ async function cekStatus(){
     const r=await api('status',{no,tanggalLahir:tgl});
     box.classList.remove('hidden');
     if(!r.ok){isi.innerHTML='<p style="color:var(--red)">'+esc(r.pesan)+'</p>';return;}
+    if(r.catatan_berkas)CAT_BERKAS=r.catatan_berkas;
     isi.innerHTML='<div style="font-family:monospace;font-weight:800;font-size:18px">'+esc(r.no_pengajuan)+'</div>'+
       '<div style="font-size:12.5px;color:var(--g500)">Diajukan '+esc(r.tanggal_pengajuan)+'</div>'+
       '<div class="st '+esc(r.status.split(' ')[0])+'">'+esc(r.status)+'</div>'+
       (r.jadwal_kunjungan?'<p><strong>Jadwal kunjungan:</strong> '+esc(r.jadwal_kunjungan)+'</p>':'')+
-      '<p style="margin-top:8px">'+esc(r.keterangan)+'</p>';
+      '<p style="margin-top:8px">'+esc(r.keterangan)+'</p>'+
+      (r.berkas_status?'<div class="info" style="max-width:420px;margin:10px auto 0"><div>Berkas</div><div>'+esc(r.berkas_status)+'</div>'+
+        (r.berkas_status==='Belum diserahkan'&&r.batas_berkas&&r.status==='Menunggu verifikasi'?'<div>Batas serah</div><div>'+tglPanjang(r.batas_berkas)+'</div>':'')+'</div>':'')+
+      (r.berkas_kurang&&r.berkas_kurang.length?'<div class="berkas" style="margin-top:10px">'+htmlBerkas({wajib:r.berkas_kurang,pendukung:[]},r.berkas_status==='Belum lengkap'?'Berkas yang masih kurang':'Berkas yang harus diserahkan')+'</div>'+
+        '<div class="kantor">'+htmlKantor(r.kantor)+'</div>':'');
   }catch(err){box.classList.remove('hidden');isi.innerHTML='<p style="color:var(--red)">Gagal terhubung ke server. Coba lagi.</p>';}
   finally{b.disabled=false;b.textContent='Cek Status';}
 }
