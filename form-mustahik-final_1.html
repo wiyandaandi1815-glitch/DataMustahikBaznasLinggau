@@ -1384,6 +1384,14 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
 <div id="toast"></div>
 
 <script>
+/* v16: aplikasi ini butuh browser 2020+ (Chrome/Edge 80+). Script ES5 ini tetap jalan di browser lama dan memberi tahu. */
+window.addEventListener('load',function(){if(window.__utamaOk)return;var d=document.createElement('div');
+  d.setAttribute('style','position:fixed;left:0;right:0;top:0;z-index:99999;background:#b45309;color:#fff;padding:14px 18px;font:600 15px/1.5 sans-serif;text-align:center');
+  d.innerHTML='\u26a0\ufe0f Browser di komputer ini terlalu lama untuk aplikasi Data Mustahik. Silakan perbarui atau pasang <b>Google Chrome</b> / <b>Microsoft Edge</b> terbaru, lalu buka kembali alamat ini.';
+  document.body.appendChild(d);});
+</script>
+<script>
+window.__utamaOk=true;
 // ════════════════════════════════════════════
 // STORE — localStorage with in-memory fallback
 // ════════════════════════════════════════════
@@ -5954,7 +5962,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='15 · 5 Nov 2026';
+const APP_VERSI='16 · 5 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
