@@ -147,6 +147,14 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
 .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
 .b-green{background:#d1fae5;color:#065f46;}
 .b-gold{background:#fff4d6;color:#7c5c00;}
+#modal-rpd{z-index:520}
+.rpd-panel{border:1.5px solid #f0d78c;background:#fffaf0;border-radius:10px;padding:10px 12px;font-size:12.5px;margin:8px 0}
+.btn-mv{border:1px solid var(--g300,#d1d5db);background:#fff;border-radius:5px;width:24px;height:24px;font-size:10px;line-height:1;cursor:pointer;margin-right:2px;color:var(--g700,#374151);padding:0}
+.btn-mv:hover{background:var(--teal-light,#e6f4f1)}.btn-mv.del{color:#c0392b}
+tr.ak-geser td{background:#fff8e1!important;transition:background .3s}
+.ex-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:2px 10px;max-height:300px;overflow:auto;border:1px solid var(--g200,#e5e7eb);border-radius:8px;padding:6px 8px}
+.ex-grid label{display:flex;gap:5px;align-items:center;font-weight:400;font-size:12px;margin:0}.ex-grid input{width:auto}
+table.rpd-tbl input{padding:4px 6px;font-size:12px}
 .bm-panel{border:1.5px solid #bcd6f5;background:#f5f9ff;border-radius:10px;padding:10px 12px;font-size:12.5px;margin:8px 0}
 table.bm-tbl{width:100%;min-width:0!important;border-collapse:collapse;margin-top:6px;font-size:12px}table.bm-tbl th,table.bm-tbl td{position:static!important;left:auto!important;min-width:0!important;max-width:none!important;width:auto!important;padding:5px 6px!important;border-bottom:1px solid #dbe6f3;border-right:0!important;text-align:left!important;vertical-align:top;white-space:normal!important;font-family:inherit!important;letter-spacing:normal!important;font-size:12px!important;background:#fff!important;color:var(--g700)!important}table.bm-tbl th{background:#e8f0fb!important;font-weight:700}
 .bm-unggah{background:#fff;border:1px dashed #bcd6f5;border-radius:8px;padding:8px 10px;margin-top:8px}
@@ -560,7 +568,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Tambah Mustahik
     </button>
-    <button class="btn btn-gold" onclick="exportExcel()">
+    <button class="btn btn-gold" onclick="exDialog()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Export Excel
     </button>
@@ -577,6 +585,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="12" y1="12" x2="12" y2="18"/></svg>
       Cetak Formulir, Surat &amp; ND
     </button>
+    <button class="btn" style="background:#1e40af;color:#fff;" onclick="lblDialog()">🏷️ Label Map (T&amp;J 121)</button>
     <span id="cetak-info">0 dipilih</span>
     <button class="btn btn-outline" onclick="switchTab('t-import',document.getElementById('tab-import-btn'))">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -743,7 +752,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
     <div class="card-body">
       <div class="ak-note">
         <strong>Petunjuk:</strong> Isi seluruh anggota keluarga yang tinggal serumah dan menjadi tanggungan, termasuk <strong>Kepala Keluarga</strong> sebagai baris pertama.
-        Klik <strong>+ Tambah Baris</strong> untuk menambah anggota. Maksimal <strong>20 anggota</strong>.
+        Klik <strong>+ Tambah Baris</strong> untuk menambah anggota. Maksimal <strong>20 anggota</strong>. Gunakan tombol <strong>▲ ▼</strong> untuk menyusun urutan sesuai Kartu Keluarga.
       </div>
       <div class="ak-table-wrap">
         <table class="ak-table">
@@ -1305,6 +1314,30 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
     <div class="modal-hdr"><h3 id="lb-modal-title">Beasiswa</h3><button class="x-btn" onclick="closeModal('modal-lb')">×</button></div>
     <div class="modal-body" id="lb-modal-body"></div>
     <div class="modal-ftr" id="lb-modal-ftr" style="flex-wrap:wrap"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-ex">
+  <div class="modal" style="max-width:860px">
+    <div class="modal-hdr"><h3>Export Excel</h3><button class="x-btn" onclick="closeModal('modal-ex')">×</button></div>
+    <div class="modal-body" id="ex-body"></div>
+    <div class="modal-ftr"><button class="btn btn-outline" onclick="closeModal('modal-ex')">Batal</button><button class="btn btn-gold" onclick="exJalankan()">⬇ Unduh Excel</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-lbl">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-hdr"><h3>🏷️ Cetak Label Map — Tom &amp; Jerry No. 121 (38 × 75 mm)</h3><button class="x-btn" onclick="closeModal('modal-lbl')">×</button></div>
+    <div class="modal-body" id="lbl-body"></div>
+    <div class="modal-ftr"><button class="btn btn-outline" onclick="closeModal('modal-lbl')">Batal</button><button class="btn btn-primary" onclick="lblCetak(false)">🖨️ Cetak Label</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-rpd">
+  <div class="modal" style="max-width:1100px">
+    <div class="modal-hdr"><h3 id="rpd-title">Rencana Penggunaan Dana</h3><button class="x-btn" onclick="closeModal('modal-rpd')">×</button></div>
+    <div class="modal-body" id="rpd-body"></div>
+    <div class="modal-ftr"><button class="btn btn-outline" onclick="closeModal('modal-rpd')">Batal</button><button class="btn btn-blue" onclick="rpdSimpan(false)">💾 Simpan</button><button class="btn btn-primary" onclick="rpdSimpan(true)">💾 Simpan &amp; Cetak</button></div>
   </div>
 </div>
 
@@ -1983,7 +2016,7 @@ function akRenderRow(idx, data) {
     <td><input type="text" name="ak-pekerjaan" placeholder="Pekerjaan" value="${d.pekerjaan||''}"/></td>
     <td>${akMakeSelect('ak-kes', KES_OPTIONS, d.kes||'')}</td>
     <td><input type="text" name="ak-ket" placeholder="Penyakit / catatan" value="${d.ket||''}"/></td>
-    <td><button class="btn-del-row" onclick="akHapusBaris(${idx})" title="Hapus baris" type="button">
+    <td style="white-space:nowrap"><button class="btn-mv" type="button" title="Geser ke atas" onclick="akGeser(this,-1)">▲</button><button class="btn-mv" type="button" title="Geser ke bawah" onclick="akGeser(this,1)">▼</button><button class="btn-del-row" onclick="akHapusBaris(${idx})" title="Hapus baris" type="button">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
     </button></td>
   </tr>`;
@@ -2448,6 +2481,8 @@ function lihatDetail(id){
    kkPanel('kk-panel-det',d.noKK,{nikSaya:d.nik,paksa:true});}
   {const kb=document.getElementById('modal-detail-body');if(kb&&!document.getElementById('bm-panel-det')){const x=document.createElement('div');x.id='bm-panel-det';x.style.marginTop='10px';kb.appendChild(x);}
    bmPanel('bm-panel-det',d.mustahikId);}
+  {const kb=document.getElementById('modal-detail-body');if(kb&&!document.getElementById('rpd-panel-det')){const x=document.createElement('div');x.id='rpd-panel-det';x.style.marginTop='10px';kb.appendChild(x);}
+   rpdPanel('rpd-panel-det',d.mustahikId);}
 }
 
 // ════════════════════════════════════════════
@@ -2472,6 +2507,7 @@ function applyFilter(){
     }
     if(q&&!(
       (d.nama||'').toLowerCase().includes(q)||
+      (d.mustahikId||'').toLowerCase().includes(q)||
       (d.nik||'').toLowerCase().includes(q)||
       (d.kecamatan||'').toLowerCase().includes(q)||
       (d.asnaf||'').toLowerCase().includes(q)||
@@ -2483,6 +2519,7 @@ function applyFilter(){
     if(aktif&&d.isActive!==aktif)return false;
     return true;
   });
+  filteredData=v14Urut(filteredData);
   currentPage=1;
   renderTable();
 }
@@ -2619,6 +2656,7 @@ function updateHeader(){const el=document.getElementById('hdr-count');if(el)el.t
 // EXPORT EXCEL
 // ════════════════════════════════════════════
 function exportExcel(){
+  const dataList=exSumber();
   if(!dataList.length){toast('Tidak ada data untuk diekspor!',true);return;}
   try{
     // ── Sheet 1: Data Mustahik
@@ -2640,6 +2678,7 @@ function exportExcel(){
       'Lembaga Pendidikan','Jenjang Pendidikan','Prodi/Kelas','Semester',
       'Desil BAZNAS','Kelompok Pendapatan','Jaring BAZNAS','Had Kifayah','Status UMP','Layak Z-Auto','Layak Z-Chicken','Prioritas Konsumtif'
     ];
+    if(window._exHeaderSaja){window._exHeaderSaja(H);return;}
     var rows=dataList.map(function(d,i){
       const rek=getRekomendasiBantuan(d.desil,d.iznSkor);
       const detRek=getDetailRekomendasi(d.desil,d.iznSkor);
@@ -2797,11 +2836,13 @@ function exportExcel(){
       {wch:16},{wch:16},{wch:18},{wch:10},{wch:10},{wch:18}];
 
     // ── Build workbook
+    if(window._exKolom)ws1=exSaringKolom(ws1,window._exKolom);
     var wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws1,'Data Mustahik');
     XLSX.utils.book_append_sheet(wb,ws2,'Anggota Keluarga');
     XLSX.utils.book_append_sheet(wb,ws3,'Panduan IZN');
     XLSX.utils.book_append_sheet(wb,ws4,'Ringkasan SROI');
+    if(window._exHanyaData)wb.SheetNames=['Data Mustahik'];
 
     // ── Download via Blob (bekerja di file:// dan server)
     var tgl=new Date().toISOString().slice(0,10);
@@ -5637,6 +5678,273 @@ function v13Init(){
       if(x&&x.perlu&&!tr.querySelector('.bm-perlu')){const s=document.createElement('div');s.className='bm-perlu';s.innerHTML='<span class="badge b-red">📎 '+x.perlu+' berkas perlu diperbarui</span>';tr.children[1].appendChild(s);}});};lbRender._v13=true;}
   if(getToken())setTimeout(bmMuatRingkas,2500);
 }
+
+// ════════════════════════════════════════════
+// v14 — Urut ID Mustahik, geser anggota KK, Label Map T&J 121, Export Excel kolom terpilih,
+//        Rencana Penggunaan Dana (RPD)
+// ════════════════════════════════════════════
+function v14E(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function v14Ls(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(k)||'null');localStorage.setItem(k,JSON.stringify(v));}catch(e){return null;}}
+function v14Rp(n){return 'Rp '+Math.round(+n||0).toLocaleString('id-ID');}
+
+// ── 1. Daftar Mustahik urut ID Mustahik (yang belum punya ID di akhir, urut waktu input) ──
+function v14Urut(list){
+  return list.slice().sort((a,b)=>{const x=a.mustahikId||'',y=b.mustahikId||'';
+    if(x&&y)return x<y?-1:x>y?1:0;if(x)return -1;if(y)return 1;return (+a.id||0)-(+b.id||0);});
+}
+
+// ── 2. Geser anggota keluarga (urutan KK) ──
+function akGeser(btn,arah){
+  const tr=btn.closest('tr'),tb=tr&&tr.parentElement;if(!tb)return;
+  const t=arah<0?tr.previousElementSibling:tr.nextElementSibling;if(!t)return;
+  if(arah<0)tb.insertBefore(tr,t);else tb.insertBefore(t,tr);
+  akRenumber();
+  tr.classList.add('ak-geser');setTimeout(()=>tr.classList.remove('ak-geser'),600);
+}
+
+// ── 3. Export Excel: pilih data & kolom ──
+let _exData=null;
+function exSumber(){return v14Urut(_exData||dataList);}
+function exSaringKolom(ws,set){
+  const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
+  const H=aoa[0]||[],ix=H.map((h,i)=>set.has(h)?i:-1).filter(i=>i>=0);
+  const baru=XLSX.utils.aoa_to_sheet(aoa.map(r=>ix.map(i=>r[i]===undefined?'':r[i])));
+  if(ws['!cols'])baru['!cols']=ix.map(i=>ws['!cols'][i]||{wch:14});
+  return baru;
+}
+function exHeader(){let h=[];window._exHeaderSaja=x=>{h=x.slice();};try{exportExcel();}finally{delete window._exHeaderSaja;}return h;}
+const EX_RINGKAS=['No','ID Mustahik','Nama','NIK','No KK','Jenis Kelamin','Tanggal Lahir','Alamat','Kelurahan','Kecamatan','Telepon','Asnaf','Kategori Bantuan','Program','Nilai Bantuan (Rp)','Status Verifikasi','Aktif'];
+function exDialog(){
+  if(!dataList.length){toast('Tidak ada data untuk diekspor!',true);return;}
+  const H=exHeader(),simpan=v14Ls('baznas_ex_kolom')||[],pilih=new Set(simpan.length?simpan.filter(h=>H.includes(h)):H);
+  const nf=(typeof filteredData!=='undefined'&&filteredData)?filteredData.length:dataList.length,nt=dataList.filter(d=>d._selected).length;
+  document.getElementById('ex-body').innerHTML=`
+    <div style="font-weight:700;font-size:12.5px;margin-bottom:4px">Data yang diekspor</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;margin-bottom:10px">
+      <label style="display:flex;gap:5px;font-weight:400"><input type="radio" name="ex-baris" value="semua" checked style="width:auto"> Semua (${dataList.length})</label>
+      <label style="display:flex;gap:5px;font-weight:400"><input type="radio" name="ex-baris" value="filter" style="width:auto"> Hasil filter/pencarian (${nf})</label>
+      <label style="display:flex;gap:5px;font-weight:400"><input type="radio" name="ex-baris" value="terpilih" ${nt?'':'disabled'} style="width:auto"> Terpilih ✓ (${nt})</label></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px"><b style="font-size:12.5px">Kolom</b>
+      <button class="btn btn-outline btn-sm" type="button" onclick="exSetKolom('semua')">Semua</button>
+      <button class="btn btn-outline btn-sm" type="button" onclick="exSetKolom('ringkas')">Ringkas</button>
+      <button class="btn btn-outline btn-sm" type="button" onclick="exSetKolom('kosong')">Kosongkan</button>
+      <span id="ex-n" style="font-size:11.5px;color:var(--g500)"></span></div>
+    <div class="ex-grid">${H.map(h=>`<label><input type="checkbox" class="ex-k" value="${v14E(h)}" ${pilih.has(h)?'checked':''} onchange="exHitung()"> ${v14E(h)}</label>`).join('')}</div>
+    <label style="display:flex;gap:6px;font-weight:400;font-size:12.5px;margin-top:8px"><input type="checkbox" id="ex-lain" checked style="width:auto"> Sertakan sheet Anggota Keluarga, Panduan IZN &amp; Ringkasan SROI</label>
+    <div style="font-size:11.5px;color:var(--g500);margin-top:6px">Urutan baris mengikuti ID Mustahik. Kolom "ID Mustahik" &amp; "NIK" disarankan tetap dicentang bila file akan di-Import kembali.</div>`;
+  exHitung();openModal('modal-ex');
+}
+function exSetKolom(m){document.querySelectorAll('.ex-k').forEach(c=>{c.checked=m==='semua'||(m==='ringkas'&&EX_RINGKAS.includes(c.value));});exHitung();}
+function exHitung(){const n=document.querySelectorAll('.ex-k:checked').length,t=document.querySelectorAll('.ex-k').length;document.getElementById('ex-n').textContent=n+' dari '+t+' kolom';}
+function exJalankan(){
+  const kol=[...document.querySelectorAll('.ex-k:checked')].map(c=>c.value);
+  if(!kol.length){toast('Pilih minimal 1 kolom.',true);return;}
+  const b=document.querySelector('input[name=ex-baris]:checked').value;
+  const data=b==='terpilih'?dataList.filter(d=>d._selected):b==='filter'?(filteredData||dataList):dataList;
+  if(!data.length){toast('Tidak ada data pada pilihan ini.',true);return;}
+  v14Ls('baznas_ex_kolom',kol);
+  const semua=kol.length===document.querySelectorAll('.ex-k').length;
+  _exData=data;window._exKolom=semua?null:new Set(kol);window._exHanyaData=!document.getElementById('ex-lain').checked;
+  try{exportExcel();}finally{_exData=null;delete window._exKolom;delete window._exHanyaData;}
+  closeModal('modal-ex');
+}
+
+// ── 4. Label Map Tom & Jerry No. 121 (38 × 75 mm) ──
+const LBL_DEF={kolom:2,baris:5,lebar:75,tinggi:38,atas:5,kiri:5,jarakK:3,jarakB:2,kertasL:163,kertasT:208};
+function lblSetel(){return Object.assign({},LBL_DEF,v14Ls('baznas_label121')||{});}
+function lblTgl(s){s=String(s||'').trim();let m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s);if(m)return m[1]+'-'+m[2]+'-'+m[3];
+  m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s);if(m)return m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2);return '';}
+function lblDialog(){
+  const s=lblSetel(),nt=dataList.filter(d=>d._selected).length,nf=(filteredData||dataList).length,hari=new Date().toISOString().slice(0,10);
+  const f=(k,l,u)=>`<div class="field"><label>${l}</label><input type="number" step="0.5" id="lbl-${k}" value="${s[k]}" style="max-width:110px"/>${u?` <span class="hint">${u}</span>`:''}</div>`;
+  document.getElementById('lbl-body').innerHTML=`
+    <div style="font-weight:700;font-size:12.5px;margin-bottom:4px">Data yang dicetak</div>
+    <div style="display:grid;gap:6px;font-size:12.5px;margin-bottom:10px">
+      <label style="display:flex;gap:6px;font-weight:400"><input type="radio" name="lbl-src" value="terpilih" ${nt?'checked':'disabled'} style="width:auto"> Data terpilih ✓ (${nt})</label>
+      <label style="display:flex;gap:6px;font-weight:400;align-items:center;flex-wrap:wrap"><input type="radio" name="lbl-src" value="tgl" ${nt?'':'checked'} style="width:auto"> Tanggal input dari <input type="date" id="lbl-dari" value="${hari}" style="width:auto"> s.d. <input type="date" id="lbl-sampai" value="${hari}" style="width:auto"></label>
+      <label style="display:flex;gap:6px;font-weight:400"><input type="radio" name="lbl-src" value="filter" style="width:auto"> Hasil filter/pencarian (${nf})</label>
+      <label style="display:flex;gap:6px;font-weight:400"><input type="radio" name="lbl-src" value="semua" style="width:auto"> Keseluruhan (${dataList.length})</label></div>
+    <div class="grid g2"><div class="field"><label>Mulai dari label ke-</label><input type="number" id="lbl-mulai" min="1" value="1" style="max-width:110px"/> <span class="hint">untuk lembar yang sudah terpakai sebagian</span></div>
+      <div class="field"><label>Salinan per mustahik</label><input type="number" id="lbl-salin" min="1" max="10" value="1" style="max-width:110px"/></div></div>
+    <details style="margin-top:8px"><summary style="cursor:pointer;font-weight:700;font-size:12.5px">⚙️ Setelan lembar label (sesuaikan dengan kertas T&amp;J 121)</summary>
+      <div class="grid g2" style="margin-top:6px">${f('kolom','Kolom per lembar')}${f('baris','Baris per lembar')}${f('lebar','Lebar label','mm')}${f('tinggi','Tinggi label','mm')}
+      ${f('atas','Margin atas','mm')}${f('kiri','Margin kiri','mm')}${f('jarakK','Jarak antar kolom','mm')}${f('jarakB','Jarak antar baris','mm')}${f('kertasL','Lebar kertas','mm')}${f('kertasT','Tinggi kertas','mm')}</div>
+      <div style="font-size:11.5px;color:var(--g500)">Cetak <b>Garis Uji</b> di kertas HVS, tumpuk dengan lembar label di depan lampu, lalu geser margin/jarak sampai pas. Setelan tersimpan di perangkat ini. Di dialog printer pilih <b>Skala 100% / Actual size</b>.</div>
+      <div style="display:flex;gap:6px;margin-top:6px"><button class="btn btn-outline btn-sm" type="button" onclick="lblCetak(true)">📐 Cetak Garis Uji</button><button class="btn btn-outline btn-sm" type="button" onclick="lblReset()">↺ Setelan bawaan</button></div></details>`;
+  openModal('modal-lbl');
+}
+function lblBacaSetel(){const s={};Object.keys(LBL_DEF).forEach(k=>{const v=parseFloat(gv('lbl-'+k));s[k]=isNaN(v)?LBL_DEF[k]:v;});s.kolom=Math.max(1,Math.round(s.kolom));s.baris=Math.max(1,Math.round(s.baris));v14Ls('baznas_label121',s);return s;}
+function lblReset(){v14Ls('baznas_label121',{});closeModal('modal-lbl');lblDialog();}
+function lblNoPj(){const m={};(typeof pjList!=='undefined'?pjList:[]).forEach(p=>{const k=p.mustahikId||'';if(k&&(!m[k]||p.no_pengajuan>m[k]))m[k]=p.no_pengajuan;const n='nik:'+p.nik;if(!m[n]||p.no_pengajuan>m[n])m[n]=p.no_pengajuan;});return m;}
+async function lblCetak(uji){
+  const s=lblBacaSetel(),w=window.open('','_blank','width=900,height=750,scrollbars=yes');
+  if(!w){toast('Popup diblokir browser. Izinkan popup untuk halaman ini.',true);return;}
+  w.document.write('<p style="font-family:sans-serif;padding:20px">Menyiapkan label…</p>');
+  let list=[];
+  if(!uji){
+    const src=document.querySelector('input[name=lbl-src]:checked').value;
+    if(src==='terpilih')list=dataList.filter(d=>d._selected);
+    else if(src==='filter')list=filteredData||dataList;
+    else if(src==='semua')list=dataList;
+    else{const a=gv('lbl-dari'),b=gv('lbl-sampai');list=dataList.filter(d=>{const t=lblTgl(d.createdAt);return t&&(!a||t>=a)&&(!b||t<=b);});}
+    list=v14Urut(list);
+    if(!list.length){w.close();toast('Tidak ada mustahik pada pilihan ini.',true);return;}
+    if((typeof pjList==='undefined'||!pjList.length)&&getToken()){try{await pjMuat(true);}catch(e){}}
+  }
+  const qrOk=uji?false:await mzMuatQr(),noPj=lblNoPj(),salin=Math.max(1,Math.min(10,parseInt(gv('lbl-salin'))||1));
+  const perLembar=s.kolom*s.baris,mulai=uji?0:Math.max(0,Math.min(perLembar-1,(parseInt(gv('lbl-mulai'))||1)-1));
+  const isi=uji?Array(perLembar).fill(null):[].concat(...list.map(d=>Array(salin).fill(d)));
+  const slot=Array(mulai).fill(undefined).concat(isi),hal=[];
+  for(let i=0;i<slot.length;i+=perLembar)hal.push(slot.slice(i,i+perLembar));
+  const pos=i=>{const c=i%s.kolom,r=Math.floor(i/s.kolom);return `left:${s.kiri+c*(s.lebar+s.jarakK)}mm;top:${s.atas+r*(s.tinggi+s.jarakB)}mm`;};
+  const satu=d=>{const pj=noPj[d.mustahikId]||noPj['nik:'+d.nik]||'';
+    const alamat=[d.alamat,d.kelurahan?'Kel. '+d.kelurahan:'',d.kecamatan?'Kec. '+d.kecamatan:''].filter(Boolean).join(', ');
+    const qr=qrOk&&d.mustahikId?mzQrSvg(d.mustahikId,2):'';
+    return `<div class="kop">BAZNAS KOTA LUBUKLINGGAU</div><div class="isi"><div class="teks">
+      <div class="id">${v14E(d.mustahikId||'(ID belum terbit)')}</div>
+      <div class="pj">No. Pengajuan: <b>${v14E(pj||'Input langsung')}</b></div>
+      <div class="nama">${v14E(d.nama||'')}</div><div class="alamat">${v14E(alamat)}</div></div>${qr?`<div class="qr">${qr}</div>`:''}</div>`;};
+  const html=hal.map(h=>`<div class="lembar">${h.map((d,i)=>d===undefined?'':`<div class="lbl${uji?' uji':''}" style="${pos(i)}">${uji?`<span>${i+1}</span>`:satu(d)}</div>`).join('')}</div>`).join('');
+  w.document.open();
+  w.document.write(`<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Label Map T&amp;J 121 — BAZNAS Kota Lubuklinggau</title><style>
+    @page{size:${s.kertasL}mm ${s.kertasT}mm;margin:0}*{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .lembar{position:relative;width:${s.kertasL}mm;height:${s.kertasT}mm;overflow:hidden;page-break-after:always;break-after:page}
+    .lembar:last-child{page-break-after:auto;break-after:auto}
+    .lbl{position:absolute;width:${s.lebar}mm;height:${s.tinggi}mm;padding:2mm 2.6mm;overflow:hidden;display:flex;flex-direction:column}
+    .lbl.uji{border:0.3mm solid #000;align-items:center;justify-content:center;font-size:14pt;color:#666}
+    .kop{font-size:6.5pt;font-weight:bold;letter-spacing:.3px;border-bottom:0.3mm solid #000;padding-bottom:.6mm;margin-bottom:1mm}
+    .isi{display:flex;gap:2mm;flex:1;min-height:0}.teks{flex:1;min-width:0;display:flex;flex-direction:column;gap:.5mm}
+    .id{font-family:'Courier New',monospace;font-weight:bold;font-size:12pt;letter-spacing:.3px}
+    .pj{font-size:7pt}.nama{font-size:9.5pt;font-weight:bold;line-height:1.15;max-height:2.3em;overflow:hidden;text-transform:uppercase}
+    .alamat{font-size:7pt;line-height:1.2;max-height:3.6em;overflow:hidden}
+    .qr{flex:none;width:17mm;display:flex;align-items:flex-start;justify-content:flex-end}.qr svg{width:17mm;height:17mm}
+    @media screen{body{background:#888}.lembar{background:#fff;margin:8mm auto;box-shadow:0 2px 10px rgba(0,0,0,.4)}.lbl:not(.uji){outline:1px dashed #bbb}}
+  </style></head><body>${html}</body></html>`);
+  w.document.close();setTimeout(()=>{w.focus();w.print();},500);
+  closeModal('modal-lbl');
+  toast(uji?'✓ Garis uji dibuka — cetak di HVS skala 100%.':'✓ '+list.length+' mustahik → '+hal.length+' lembar label. Pilih ukuran kertas sesuai lembar T&J dan skala 100%.');
+}
+
+// ── 5. Rencana Penggunaan Dana (RPD) ──
+let rpdData=null,_rpdEdit=null,_rpdMid='';
+const RPD_SUMBER=['Zakat','Infak/Sedekah','DSKL','CSR','Lainnya'];
+async function rpdPanel(boxId,mid){
+  const box=document.getElementById(boxId);if(!box)return;_rpdMid=mid;
+  if(!mid){box.innerHTML='<div class="rpd-panel" style="font-size:12px;color:var(--g500)">🧾 Rencana Penggunaan Dana tersedia setelah data mendapat ID Mustahik.</div>';return;}
+  if(!getToken()){box.innerHTML='';return;}
+  box.innerHTML='<div class="rpd-panel">🧾 Memuat rencana penggunaan dana…</div>';
+  try{const r=await dbApi('rpd_daftar',{mustahikId:mid});if(!r.ok){box.innerHTML='<div class="rpd-panel">'+v14E(r.pesan)+'</div>';return;}rpdData=r;rpdRender(boxId);}
+  catch(e){box.innerHTML='<div class="rpd-panel">🧾 Offline — RPD tidak dapat dimuat.</div>';}
+}
+function rpdRender(boxId){
+  const r=rpdData,box=document.getElementById(boxId);if(!box)return;
+  box.innerHTML=`<div class="rpd-panel"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><strong>🧾 Rencana Penggunaan Dana</strong>
+    <button class="btn btn-primary btn-sm" type="button" onclick="rpdBuka('')">+ Buat RPD</button>
+    <button class="btn btn-outline btn-sm" type="button" onclick="rpdCetak(null,true)">🖨️ Blangko kosong</button></div>
+    ${r.rpd.length?`<table class="bm-tbl"><thead><tr><th>No. RPD</th><th>Judul</th><th>Total rencana</th><th>Nilai bantuan</th><th>Status</th><th></th></tr></thead><tbody>${r.rpd.map(p=>`<tr>
+      <td class="mono">${v14E(p.idRpd)}<div style="font-size:10.5px;color:var(--g500)">${v14E(p.tanggal)}</div></td><td>${v14E(p.judul)}<div style="font-size:11px;color:var(--g500)">${p.item.length} rincian · ${v14E(p.sumber_dana||'')}</div></td>
+      <td>${v14Rp(p.total_rencana)}</td><td>${v14Rp(p.nilai_bantuan)}${p.nilai_bantuan&&p.total_rencana>p.nilai_bantuan?'<div style="color:#c0392b;font-size:11px">melebihi '+v14Rp(p.total_rencana-p.nilai_bantuan)+'</div>':''}</td>
+      <td><span class="badge ${p.status==='Final'?'b-teal':'b-gold'}">${v14E(p.status)}</span></td>
+      <td style="white-space:nowrap"><button class="btn btn-outline btn-sm" type="button" onclick="rpdBuka('${v14E(p.idRpd)}')">Ubah</button> <button class="btn btn-primary btn-sm" type="button" onclick="rpdCetak('${v14E(p.idRpd)}')">🖨️ Cetak</button> <button class="btn btn-danger btn-sm" type="button" onclick="rpdHapus('${v14E(p.idRpd)}','${boxId}')">Hapus</button></td></tr>`).join('')}</tbody></table>`
+    :'<div style="font-size:12px;color:var(--g500);margin-top:6px">Belum ada RPD. Klik <b>+ Buat RPD</b> untuk mengisi rincian barang/kebutuhan yang akan dibeli dari dana bantuan.</div>'}</div>`;
+}
+function rpdMustahik(){return dataList.find(x=>x.mustahikId===_rpdMid)||{};}
+function rpdBuka(id){
+  const d=rpdMustahik(),p=id?rpdData.rpd.find(x=>x.idRpd===id):null;
+  _rpdEdit=p?JSON.parse(JSON.stringify(p)):{idRpd:'',judul:'Rencana Penggunaan Dana '+(d.kategoriBantuan||'Bantuan'),jenis_bantuan:d.kategoriBantuan||'',sumber_dana:/infak|sedekah/i.test(d.kategoriBantuan||'')?'Infak/Sedekah':'Zakat',
+    nilai_bantuan:+d.nilaiModal||0,tanggal:new Date().toISOString().slice(0,10),petugas:d.surveyor||ssGet(SS_NAMA)||'',catatan:'',status:'Draf',item:[{uraian:'',spesifikasi:'',volume:1,satuan:'',harga:0,tempat:''}]};
+  document.getElementById('rpd-title').textContent=(p?'Ubah '+p.idRpd:'RPD Baru')+' — '+(d.nama||'');
+  rpdForm();openModal('modal-rpd');
+}
+function rpdForm(){
+  const p=_rpdEdit,o=(v,l)=>`<option${v===l?' selected':''}>${l}</option>`;
+  document.getElementById('rpd-body').innerHTML=`<div class="grid g2">
+    <div class="field" style="grid-column:1/-1"><label>Judul / tujuan penggunaan</label><input id="rpd-judul" maxlength="120" value="${v14E(p.judul)}"/></div>
+    <div class="field"><label>Jenis bantuan</label><input id="rpd-jenis" maxlength="60" value="${v14E(p.jenis_bantuan)}"/></div>
+    <div class="field"><label>Sumber dana</label><select id="rpd-sumber">${RPD_SUMBER.map(s=>o(p.sumber_dana,s)).join('')}</select></div>
+    <div class="field"><label>Nilai bantuan (Rp)</label><input id="rpd-nilai" inputmode="numeric" value="${p.nilai_bantuan?Math.round(p.nilai_bantuan).toLocaleString('id-ID'):''}" oninput="rpdRpInput(this);rpdTotal()"/></div>
+    <div class="field"><label>Tanggal</label><input id="rpd-tgl" type="date" value="${v14E(p.tanggal)}"/></div>
+    <div class="field"><label>Petugas pendamping</label><input id="rpd-petugas" maxlength="80" value="${v14E(p.petugas)}"/></div>
+    <div class="field"><label>Status</label><select id="rpd-status">${o(p.status,'Draf')}${o(p.status,'Final')}</select></div></div>
+    <div class="tbl-scroll" style="margin-top:8px"><table class="bm-tbl rpd-tbl"><thead><tr><th>No</th><th style="min-width:150px">Uraian barang/kebutuhan</th><th style="min-width:120px">Spesifikasi</th><th>Volume</th><th>Satuan</th><th style="min-width:110px">Harga satuan</th><th style="min-width:100px">Jumlah</th><th style="min-width:100px">Rencana tempat beli</th><th></th></tr></thead>
+    <tbody id="rpd-rows">${p.item.map((it,i)=>rpdBaris(it,i)).join('')}</tbody>
+    <tfoot><tr><td colspan="6" style="text-align:right!important"><b>TOTAL RENCANA</b></td><td><b id="rpd-total">—</b></td><td colspan="2" id="rpd-selisih" style="font-size:11.5px"></td></tr></tfoot></table></div>
+    <button class="btn btn-outline btn-sm" type="button" style="margin-top:6px" onclick="rpdTambah()">+ Tambah rincian</button>
+    <div class="field" style="margin-top:8px"><label>Catatan</label><textarea id="rpd-catatan" rows="2" maxlength="600">${v14E(p.catatan)}</textarea></div>`;
+  rpdTotal();
+}
+function rpdBaris(it,i){
+  return `<tr><td>${i+1}</td><td><input class="r-uraian" maxlength="120" value="${v14E(it.uraian)}"/></td><td><input class="r-spek" maxlength="160" value="${v14E(it.spesifikasi||'')}"/></td>
+    <td><input class="r-vol" inputmode="decimal" style="width:60px" value="${v14E(it.volume)}" oninput="rpdTotal()"/></td><td><input class="r-sat" maxlength="20" style="width:70px" value="${v14E(it.satuan||'')}"/></td>
+    <td><input class="r-harga" inputmode="numeric" value="${it.harga?Math.round(it.harga).toLocaleString('id-ID'):''}" oninput="rpdRpInput(this);rpdTotal()"/></td><td class="r-jml" style="white-space:nowrap">—</td>
+    <td><input class="r-tempat" maxlength="80" value="${v14E(it.tempat||'')}"/></td>
+    <td style="white-space:nowrap"><button class="btn-mv" type="button" title="Naik" onclick="rpdGeser(this,-1)">▲</button><button class="btn-mv" type="button" title="Turun" onclick="rpdGeser(this,1)">▼</button><button class="btn-mv del" type="button" title="Hapus" onclick="rpdHapusBaris(this)">✕</button></td></tr>`;
+}
+function rpdRpInput(el){const d=el.value.replace(/\D/g,'');el.value=d?(+d).toLocaleString('id-ID'):'';}
+function rpdAngka(v){return +String(v||'').replace(/\./g,'').replace(',','.')||0;}
+function rpdBacaItem(){return [...document.querySelectorAll('#rpd-rows tr')].map(tr=>({uraian:tr.querySelector('.r-uraian').value.trim(),spesifikasi:tr.querySelector('.r-spek').value.trim(),
+  volume:+String(tr.querySelector('.r-vol').value).replace(',','.')||0,satuan:tr.querySelector('.r-sat').value.trim(),harga:rpdAngka(tr.querySelector('.r-harga').value),tempat:tr.querySelector('.r-tempat').value.trim()}));}
+function rpdTotal(){
+  let t=0;document.querySelectorAll('#rpd-rows tr').forEach((tr,i)=>{tr.cells[0].textContent=i+1;const j=Math.round((+String(tr.querySelector('.r-vol').value).replace(',','.')||0)*rpdAngka(tr.querySelector('.r-harga').value));t+=j;tr.querySelector('.r-jml').textContent=j?v14Rp(j):'—';});
+  document.getElementById('rpd-total').textContent=v14Rp(t);
+  const n=rpdAngka(gv('rpd-nilai')),el=document.getElementById('rpd-selisih');
+  el.innerHTML=!n?'':t>n?`<span style="color:#c0392b">⚠ melebihi nilai bantuan ${v14Rp(t-n)}</span>`:t<n?`<span style="color:#7c5c00">sisa belum direncanakan ${v14Rp(n-t)}</span>`:'<span style="color:var(--teal-dark)">✓ pas dengan nilai bantuan</span>';
+}
+function rpdTambah(){const tb=document.getElementById('rpd-rows');if(tb.rows.length>=40){toast('Maksimal 40 rincian.',true);return;}tb.insertAdjacentHTML('beforeend',rpdBaris({volume:1},tb.rows.length));rpdTotal();tb.lastElementChild.querySelector('.r-uraian').focus();}
+function rpdGeser(b,arah){const tr=b.closest('tr'),t=arah<0?tr.previousElementSibling:tr.nextElementSibling;if(!t)return;if(arah<0)tr.parentElement.insertBefore(tr,t);else tr.parentElement.insertBefore(t,tr);rpdTotal();}
+function rpdHapusBaris(b){const tb=document.getElementById('rpd-rows');if(tb.rows.length<=1){toast('Minimal 1 rincian.',true);return;}b.closest('tr').remove();rpdTotal();}
+async function rpdSimpan(cetak){
+  const item=rpdBacaItem().filter(it=>it.uraian||it.harga);
+  if(!item.length){toast('Isi minimal 1 rincian.',true);return;}
+  const kosong=item.findIndex(it=>!it.uraian||!(it.volume>0));if(kosong>=0){toast('Rincian baris '+(kosong+1)+': uraian dan volume wajib diisi.',true);return;}
+  const d={idRpd:_rpdEdit.idRpd,mustahikId:_rpdMid,judul:gv('rpd-judul').trim(),jenis_bantuan:gv('rpd-jenis').trim(),sumber_dana:gv('rpd-sumber'),nilai_bantuan:rpdAngka(gv('rpd-nilai')),
+    tanggal:gv('rpd-tgl'),petugas:gv('rpd-petugas').trim(),status:gv('rpd-status'),catatan:gv('rpd-catatan').trim(),item};
+  const w=cetak?window.open('','_blank','width=900,height=750,scrollbars=yes'):null;
+  if(w)w.document.write('<p style="font-family:sans-serif;padding:20px">Menyimpan…</p>');
+  try{
+    const r=await dbApi('rpd_simpan',d);
+    if(!r.ok){if(w)w.close();toast(r.pesan||'Gagal menyimpan.',true);return;}
+    toast('✓ '+r.pesan,r.selisih<0);closeModal('modal-rpd');
+    await rpdPanel('rpd-panel-det',_rpdMid);
+    if(w)rpdCetak(r.idRpd,false,w);
+  }catch(e){if(w)w.close();toast('Gagal terhubung ke server — RPD perlu koneksi internet.',true);}
+}
+function rpdHapus(id,boxId){
+  const a=prompt('Alasan menghapus '+id+' (wajib, min. 5 huruf):');if(!a)return;
+  dbApi('rpd_hapus',{idRpd:id,alasan:a}).then(r=>{toast(r.ok?'✓ '+r.pesan:(r.pesan||'Gagal.'),!r.ok);if(r.ok)rpdPanel(boxId,_rpdMid);}).catch(()=>toast('Gagal terhubung ke server.',true));
+}
+function rpdCetak(id,blangko,w0){
+  const d=rpdMustahik(),p=blangko?null:rpdData.rpd.find(x=>x.idRpd===id);
+  const w=w0||window.open('','_blank','width=900,height=750,scrollbars=yes');
+  if(!w){toast('Popup diblokir browser. Izinkan popup untuk halaman ini.',true);return;}
+  const item=p?p.item:Array(10).fill(null),total=p?p.total_rencana:0,nilai=p?p.nilai_bantuan:0;
+  const r=(l,v)=>`<tr><td class="lbl">${l}</td><td class="sep">:</td><td>${v}</td></tr>`,kos='<span class="isi in"></span>';
+  const alamat=[d.alamat,d.kelurahan?'Kel. '+d.kelurahan:'',d.kecamatan?'Kec. '+d.kecamatan:''].filter(Boolean).join(', ');
+  const baris=item.map((it,i)=>it?`<tr><td class="c">${i+1}</td><td>${dE(it.uraian)}</td><td>${dE(it.spesifikasi||'')}</td><td class="c">${dE(String(it.volume).replace('.',','))}</td><td class="c">${dE(it.satuan||'')}</td><td class="n">${Math.round(it.harga).toLocaleString('id-ID')}</td><td class="n">${Math.round(it.jumlah).toLocaleString('id-ID')}</td><td>${dE(it.tempat||'')}</td></tr>`
+    :`<tr><td class="c">${i+1}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`).join('');
+  const sel=nilai-total;
+  const hal=`<div class="hal">${dKop()}
+    <div class="judul">RENCANA PENGGUNAAN DANA BANTUAN</div>
+    <div class="subjudul">${p?'Nomor: '+dE(p.idRpd):'Nomor: ..............................'}</div>
+    <table class="data">${r('ID Mustahik',d.mustahikId?dE(d.mustahikId):kos)}${r('Nama Penerima',d.nama?'<b>'+dE(d.nama)+'</b>':kos)}${r('NIK',d.nik?dE(d.nik):kos)}
+      ${r('Alamat',alamat?dE(alamat):kos)}${r('Jenis Bantuan',p?dE(p.jenis_bantuan||''):d.kategoriBantuan?dE(d.kategoriBantuan):kos)}${r('Sumber Dana',p?dE(p.sumber_dana||''):kos)}${r('Nilai Bantuan',nilai?'<b>'+v14Rp(nilai)+'</b> ('+terbilang(nilai)+')':kos)}
+      ${r('Tujuan Penggunaan',p?dE(p.judul):kos)}</table>
+    <div class="sub">Rincian rencana pembelian / kebutuhan:</div>
+    <table class="grid rpd"><thead><tr><th style="width:7mm">No</th><th>Uraian Barang/Kebutuhan</th><th>Spesifikasi</th><th style="width:13mm">Volume</th><th style="width:15mm">Satuan</th><th style="width:24mm">Harga Satuan (Rp)</th><th style="width:26mm">Jumlah (Rp)</th><th style="width:26mm">Rencana Tempat Beli</th></tr></thead>
+      <tbody>${baris}</tbody><tfoot><tr><th colspan="6" style="text-align:right">TOTAL RENCANA</th><th class="n">${p?Math.round(total).toLocaleString('id-ID'):''}</th><th></th></tr></tfoot></table>
+    ${p?`<div style="font-size:9.5pt;margin-top:3px"><i>Terbilang: ${terbilang(total)}</i>${nilai?` &nbsp;·&nbsp; ${sel>=0?'Sisa/belum direncanakan: '+v14Rp(sel):'<b>Melebihi nilai bantuan: '+v14Rp(-sel)+' (ditanggung penerima/swadaya)</b>'}`:''}</div>`:''}
+    ${p&&p.catatan?`<div style="font-size:9.5pt;margin-top:3px">Catatan: ${dE(p.catatan)}</div>`:''}
+    <div class="pernyataan">Saya yang bertanda tangan di bawah ini menyatakan akan menggunakan dana bantuan dari BAZNAS Kota Lubuklinggau sesuai rencana di atas, menyimpan bukti pembelian (nota/kuitansi/foto barang), dan bersedia dipantau oleh petugas BAZNAS. Perubahan rencana hanya dilakukan setelah mendapat persetujuan petugas.</div>
+    <div class="tgl-ttd">Lubuklinggau, ${p&&p.tanggal?dTgl(p.tanggal):'..............................'}</div>
+    ${dTtd([{atas:'Mengetahui,',jabatan:DOK_PIMPINAN.waka2.jabatan+' BAZNAS Kota Lubuklinggau',nama:DOK_PIMPINAN.waka2.nama},{atas:'&nbsp;',jabatan:'Petugas Pendamping',nama:p?p.petugas:''},{atas:'&nbsp;',jabatan:'Penerima Manfaat',nama:d.nama||''}])}
+  </div>`;
+  w.document.open();
+  w.document.write(`<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Rencana Penggunaan Dana ${p?dE(p.idRpd):'(blangko)'} — BAZNAS Kota Lubuklinggau</title>
+    <style>${DOK_CSS} table.grid.rpd td{height:6.5mm;font-size:9pt} table.grid .n{text-align:right;white-space:nowrap} table.grid.rpd tfoot th{background:#e6f4f1}</style></head><body>${hal}</body></html>`);
+  w.document.close();setTimeout(()=>{w.focus();w.print();},500);
+}
+function v14Init(){}
 
 // ════════════════════════════════════════════
 // INIT
