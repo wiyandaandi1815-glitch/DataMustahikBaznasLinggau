@@ -12,12 +12,20 @@
 <meta property="og:description" content="Lihat penyaluran terbaru dan ikut berdonasi untuk kampanye kebaikan di Lubuklinggau.">
 <meta property="og:image" content="/logo-baznas.jpg">
 <link rel="icon" href="/logo-baznas.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap">
 <link rel="stylesheet" href="kabar.css">
 </head>
 <body class="kb">
-<header class="kb-top">
-  <div class="kb-wrap"><img src="logo-baznas.jpg" alt="Logo BAZNAS" width="40" height="40">
-    <div><b>Kabar Kebaikan</b><span>BAZNAS Kota Lubuklinggau</span></div></div>
+<header class="kb-nav">
+  <div class="kb-wrap kb-nav-isi">
+    <a class="kb-merek" href="#"><img src="logo-baznas.jpg" alt="Logo BAZNAS" width="42" height="42"><span><b>Kabar Kebaikan</b><small>BAZNAS Kota Lubuklinggau</small></span></a>
+    <nav class="kb-menu" aria-label="Menu">
+      <a href="#" data-tab="kampanye">Kampanye</a><a href="#" data-tab="kabar">Kabar</a><a href="#beasiswa" data-tab="beasiswa">Beasiswa</a>
+      <a id="kb-lk" href="https://kotalubuklinggau.baznas.go.id/" rel="noopener">Laporan keuangan</a><a href="pengajuan.html#setoran">Cek setoran</a></nav>
+    <a class="kb-cta kb-cta-nav" href="#zakat">Tunaikan Zakat</a>
+  </div>
 </header>
 <main class="kb-wrap">
   <div id="kabar-app" aria-live="polite"></div>
@@ -28,8 +36,10 @@
     <a href="pengajuan.html#setoran">Cek setoran &amp; verifikasi BSZ</a> · <a id="kb-lk" href="https://kotalubuklinggau.baznas.go.id/" rel="noopener">Laporan keuangan</a> · <a href="pengajuan.html">Ajukan bantuan</a> · <a href="muzaki.html">Daftar muzaki/donatur</a>
   </footer>
 </main>
+<div class="kb-cta-hp"><a class="kb-cta" href="#zakat">Tunaikan Zakat Sekarang</a></div>
 <div id="kb-lembar" class="kb-lembar" role="dialog" aria-modal="true" aria-label="Cara berdonasi"><div class="kb-lembar-isi"></div></div>
-<script>window.KABAR_CONFIG={api:'https://script.google.com/macros/s/AKfycbwcFWag2lgTgaaV5lKBWU_YDrhSHEAgPgXyrfFR9tq6uRyzrg5t_158fHzSBX6183me/exec',foto:'/api/foto',bagikan:'/k/'};</script>
+<script>window.KABAR_CONFIG={api:'https://script.google.com/macros/s/AKfycbwcFWag2lgTgaaV5lKBWU_YDrhSHEAgPgXyrfFR9tq6uRyzrg5t_158fHzSBX6183me/exec',foto:'/api/foto',bagikan:'/k/',muzaki:'muzaki.html',
+  /* Nisab zakat penghasilan — ganti tiap tahun sesuai SK Ketua BAZNAS RI */ nisabBulan:7640144,nisabSumber:'SK Ketua BAZNAS No. 15 Tahun 2026'};</script>
 <script src="kabar.js" defer></script>
 </body>
 </html>
