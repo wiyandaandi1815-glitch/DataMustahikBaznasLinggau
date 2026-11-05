@@ -95,6 +95,16 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
   .hasil{padding:0}.cetak-saja{display:block}
   .berkas,.kantor{break-inside:avoid}
 }
+.tgl3-kotak{display:flex;align-items:center;gap:6px}
+.tgl3-kotak input{width:62px;flex:none;text-align:center;font-size:18px;font-weight:700;letter-spacing:1px;padding:9px 4px}
+.tgl3-kotak input.t3-y{width:92px}
+.tgl3-kotak span{width:12px;flex:none;text-align:center;font-size:20px;color:var(--g500);font-weight:700}
+.tgl3-ket{display:flex;gap:24px;font-size:11px;color:var(--g500);margin-top:2px}
+.tgl3-ket span{width:62px;text-align:center}.tgl3-ket span:nth-child(3){width:92px}
+.tgl3-info{font-size:13px;margin-top:3px}
+.tgl3-info.ok{color:var(--teal-dark);font-weight:700}
+.tgl3-info.salah{color:var(--red);font-weight:700}
+.tgl3.salah input{border-color:var(--red)}
 </style>
 </head>
 <body>
@@ -150,8 +160,8 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
       <div class="full"><label>Pekerjaan</label><input id="pekerjaan" maxlength="60" placeholder="Buruh, pedagang kecil, tidak bekerja…"></div>
       <div><label>Penghasilan keluarga per bulan (Rp)</label><input id="penghasilan" class="rp" type="text" inputmode="numeric" autocomplete="off" placeholder="Rp 0"></div>
       <div><label>Pengeluaran keluarga per bulan (Rp)</label><input id="totalPengeluaran" class="rp" type="text" inputmode="numeric" autocomplete="off" placeholder="Rp 0"></div>
-      <div><label>Jumlah anggota keluarga serumah</label><input id="jumlahAnggota" type="number" min="1" max="30" inputmode="numeric"></div>
-      <div><label>Jumlah tanggungan</label><input id="jumlahTanggungan" type="number" min="0" max="30" inputmode="numeric"></div>
+      <div><label>Jumlah anggota keluarga serumah <span class="hint">orang</span></label><input id="jumlahAnggota" type="number" min="1" max="30" inputmode="numeric" placeholder="mis. 4"></div>
+      <div><label>Jumlah orang yang ditanggung <span class="hint">jiwa — bukan rupiah</span></label><input id="jumlahTanggungan" type="number" min="0" max="30" inputmode="numeric" placeholder="mis. 3"></div>
       <div class="full"><label>Kondisi rumah</label><select id="kondisiRumah"><option value="">— Pilih —</option><option>Permanen / Layak Huni</option><option>Semi Permanen</option><option>Tidak Layak Huni</option><option>Rumah Dinas/Kontrak</option><option>Menumpang</option></select></div>
     </div></div>
 
@@ -308,6 +318,70 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
 
 <script>
 const DB_URL='https://script.google.com/macros/s/AKfycbwcFWag2lgTgaaV5lKBWU_YDrhSHEAgPgXyrfFR9tq6uRyzrg5t_158fHzSBX6183me/exec';
+// ── v15: Tanggal lahir 3 kotak |DD|MM|YYYY| (nilai tetap dikirim yyyy-mm-dd lewat input tersembunyi) ──
+const BLN3=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+function tgl3(id){
+  const el=document.getElementById(id);if(!el||el.dataset.tgl3)return;el.dataset.tgl3='1';
+  const nat=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  el.type='hidden';
+  const w=document.createElement('div');w.className='tgl3';
+  w.innerHTML='<div class="tgl3-kotak"><input class="t3-d" inputmode="numeric" maxlength="2" placeholder="DD" aria-label="Tanggal (2 angka)" autocomplete="off">'+
+    '<span>/</span><input class="t3-m" inputmode="numeric" maxlength="2" placeholder="MM" aria-label="Bulan (2 angka)" autocomplete="off">'+
+    '<span>/</span><input class="t3-y" inputmode="numeric" maxlength="4" placeholder="YYYY" aria-label="Tahun (4 angka)" autocomplete="off"></div>'+
+    '<div class="tgl3-ket"><span>Tgl</span><span>Bln</span><span>Tahun</span></div><div class="tgl3-info" aria-live="polite"></div>';
+  el.insertAdjacentElement('afterend',w);
+  const [d,m,y]=['.t3-d','.t3-m','.t3-y'].map(s=>w.querySelector(s)),info=w.querySelector('.tgl3-info'),kotak=[d,m,y];
+  const set=x=>{if(nat.get.call(el)===x)return;nat.set.call(el,x);el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));};
+  const tampil=(t,ok)=>{info.textContent=t;info.className='tgl3-info'+(t?(ok?' ok':' salah'):'');w.classList.toggle('salah',!!t&&!ok);};
+  function hitung(){
+    const sd=d.value,sm=m.value,sy=y.value;el.dataset.tgl3Isi=(sd||sm||sy)?'1':'';
+    if(!sd&&!sm&&!sy){tampil('');return set('');}
+    if(!sd||!sm||sy.length<4){tampil(sy.length&&sy.length<4?'Tahun ditulis 4 angka, mis. 1986':'');return set('');}
+    const dd=+sd,mm=+sm,yy=+sy,t=new Date(yy,mm-1,dd),kini=new Date();
+    let salah='';
+    if(mm<1||mm>12)salah='Bulan harus 01 sampai 12';
+    else if(t.getFullYear()!==yy||t.getMonth()!==mm-1||t.getDate()!==dd)salah='Tanggal '+dd+' '+BLN3[mm-1]+' tidak ada';
+    else if(t>kini)salah='Tanggal lahir tidak boleh di masa depan';
+    else if(yy<kini.getFullYear()-110)salah='Periksa kembali tahun lahir';
+    if(salah){tampil('⚠ '+salah);return set('');}
+    let u=kini.getFullYear()-yy;if(kini.getMonth()+1<mm||(kini.getMonth()+1===mm&&kini.getDate()<dd))u--;
+    tampil('→ '+dd+' '+BLN3[mm-1]+' '+yy+' ('+u+' tahun) ✓',true);
+    set(yy+'-'+String(mm).padStart(2,'0')+'-'+String(dd).padStart(2,'0'));
+  }
+  function isiDari(x){
+    const a=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(x||''));
+    d.value=a?a[3]:'';m.value=a?a[2]:'';y.value=a?a[1]:'';
+    if(a)hitung();else{tampil('');el.dataset.tgl3Isi='';}
+  }
+  Object.defineProperty(el,'value',{configurable:true,get(){return nat.get.call(el);},set(x){nat.set.call(el,x);isiDari(x);}});
+  function tempel(teks){
+    teks=String(teks||'').trim();let a=/^(\d{1,2})[\/.\- ](\d{1,2})[\/.\- ](\d{4})$/.exec(teks),b=/^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(teks);
+    if(!a&&!b&&/^\d{8}$/.test(teks))a=[0,teks.slice(0,2),teks.slice(2,4),teks.slice(4)];
+    if(!a&&!b)return false;
+    d.value=String(a?a[1]:b[3]).padStart(2,'0');m.value=String(a?a[2]:b[2]).padStart(2,'0');y.value=a?a[3]:b[1];hitung();y.focus();y.setSelectionRange(4,4);return true;
+  }
+  kotak.forEach((k,i)=>{
+    k.addEventListener('input',()=>{
+      if(/\D/.test(k.value)&&tempel(k.value))return;
+      k.value=k.value.replace(/\D/g,'').slice(0,i===2?4:2);
+      // ketik 4–9 di kotak tanggal atau 2–9 di kotak bulan → langsung lompat (mis. "5" = 05)
+      if(i<2&&k.value.length===1&&+k.value>(i===0?3:1))k.value='0'+k.value;
+      if(i<2&&k.value.length===2){kotak[i+1].focus();kotak[i+1].select();}
+      hitung();
+    });
+    k.addEventListener('keydown',e=>{
+      if(e.key==='Backspace'&&!k.value&&i>0){const p=kotak[i-1];p.focus();p.setSelectionRange(p.value.length,p.value.length);e.preventDefault();}
+      if((e.key==='/'||e.key==='.'||e.key==='-')&&i<2){e.preventDefault();if(k.value.length===1)k.value='0'+k.value;kotak[i+1].focus();kotak[i+1].select();hitung();}
+    });
+    k.addEventListener('click',()=>{try{k.select();}catch(e){}});
+    k.addEventListener('blur',()=>{if(i<2&&k.value.length===1&&+k.value>0){k.value='0'+k.value;hitung();}});
+    k.addEventListener('paste',e=>{const t=(e.clipboardData||window.clipboardData).getData('text');if(tempel(t))e.preventDefault();});
+  });
+  isiDari(nat.get.call(el));
+}
+/** true bila kotak tanggal diisi tetapi belum benar (dipakai validasi sebelum kirim). */
+function tgl3Salah(id){const el=document.getElementById(id);return !!(el&&el.dataset.tgl3Isi&&!el.value);}
+['tanggalLahir','s-tgl','lb-tgl'].forEach(tgl3);
 const dok={ktp:null,kk:null,bukti:null,kia:null,rapor:null};
 
 function tab(t){
@@ -436,7 +510,11 @@ document.getElementById('fpj').addEventListener('submit',async ev=>{
   if(!/^\d{16}$/.test(d.nik))s.push('NIK 16 digit');
   if(!/^\d{16}$/.test(d.noKK))s.push('Nomor KK 16 digit');
   if(!d.jenisKelamin)s.push('Jenis kelamin');
-  if(!d.tanggalLahir)s.push('Tanggal lahir');
+  if(!d.tanggalLahir)s.push(tgl3Salah('tanggalLahir')?'Tanggal lahir yang benar (DD/MM/YYYY)':'Tanggal lahir');
+  const ja=d.jumlahAnggota,jt=d.jumlahTanggungan;
+  if(ja&&!(/^\d{1,2}$/.test(ja)&&+ja>=1&&+ja<=30))s.push('Jumlah anggota serumah (1–30 orang)');
+  if(jt&&!(/^\d{1,2}$/.test(jt)&&+jt<=30))s.push('Jumlah orang yang ditanggung (0–30 jiwa, bukan rupiah)');
+  else if(jt&&ja&&+jt>+ja)s.push('Jumlah orang yang ditanggung tidak boleh lebih dari anggota serumah');
   if(!d.alamat||!d.kecamatan||!d.kelurahan)s.push('Alamat, kecamatan, kelurahan');
   if(!/^(\+?62|0)8\d{7,12}$/.test(d.telepon.replace(/[\s-]/g,'')))s.push('Nomor HP/WA yang benar (08…)');
   if(!d.kategoriBantuan)s.push('Jenis bantuan');
