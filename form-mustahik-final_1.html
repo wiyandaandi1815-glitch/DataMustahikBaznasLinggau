@@ -148,6 +148,11 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
 .b-green{background:#d1fae5;color:#065f46;}
 .b-gold{background:#fff4d6;color:#7c5c00;}
 #modal-rpd{z-index:520}
+#app-versi{font-size:10.5px;opacity:.75;font-family:ui-monospace,Consolas,monospace;white-space:nowrap}
+#v15-pita{position:fixed;left:0;right:0;bottom:0;z-index:9999;display:none;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px 16px;color:#fff;font-size:13.5px;box-shadow:0 -2px 12px rgba(0,0,0,.25)}
+#v15-pita button{background:#fff;color:#1e3a8a;border:0;border-radius:6px;padding:7px 14px;font-weight:800;cursor:pointer}
+#v15-pita button.tutup{background:transparent;color:#fff;padding:4px 8px}
+#v15-pita a{color:#fff;font-weight:800}
 .rpd-panel{border:1.5px solid #f0d78c;background:#fffaf0;border-radius:10px;padding:10px 12px;font-size:12.5px;margin:8px 0}
 .btn-mv{border:1px solid var(--g300,#d1d5db);background:#fff;border-radius:5px;width:24px;height:24px;font-size:10px;line-height:1;cursor:pointer;margin-right:2px;color:var(--g700,#374151);padding:0}
 .btn-mv:hover{background:var(--teal-light,#e6f4f1)}.btn-mv.del{color:#c0392b}
@@ -731,7 +736,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
         <div class="field"><label>Tempat Lahir</label><input id="f-tempatLahir" type="text" placeholder="Kota tempat lahir"/></div>
         <div class="field"><label>Tanggal Lahir</label><input id="f-tglLahir" type="date"/></div>
         <div class="field"><label>Status Keluarga</label><select id="f-statusKel"><option value="">— Pilih —</option><option>Kepala Keluarga</option><option>Istri</option><option>Anak</option><option>Orang Tua</option><option>Lainnya</option></select></div>
-        <div class="field"><label>Jumlah Tanggungan</label><input id="f-tanggungan" type="number" min="0" placeholder="0"/></div>
+        <div class="field"><label>Jumlah Tanggungan <span style="font-weight:400;color:var(--g500)">(jiwa)</span></label><input id="f-tanggungan" type="number" min="0" max="30" placeholder="0"/></div>
         <div id="wali-wrap" style="display:none;grid-column:1/-1;background:#eef6ff;border:1.5px solid #bcd6f5;border-radius:10px;padding:10px 12px">
           <div style="font-weight:800;font-size:12px;color:#1e40af;margin-bottom:6px">👨‍👩‍👦 ORANG TUA / WALI (penerima di bawah 18 tahun)</div>
           <div id="wali-note" style="font-size:12px;color:#1e3a8a;margin-bottom:6px">Penerima di bawah 18 tahun. Rekening boleh atas nama orang tua/wali — bila nama pemilik rekening sama dengan nama wali, Hubungan Pemilik Rekening terisi otomatis.</div>
@@ -3734,7 +3739,7 @@ function pjDetail(no){
       ${baris('Jenis kelamin',pjEsc(p.jenisKelamin))}${baris('Tempat, tgl lahir',pjEsc(p.tempatLahir)+', '+pjEsc(p.tanggalLahir))}${baris('Status keluarga',pjEsc(p.statusKeluarga))}
       ${baris('Alamat',pjEsc(p.alamat)+'<br>'+pjEsc(p.kelurahan)+', '+pjEsc(p.kecamatan))}${baris('HP/WA',`<a href="https://wa.me/${pjEsc(p.telepon.replace(/^0/,'62').replace(/\D/g,''))}" target="_blank" rel="noopener">${pjEsc(p.telepon)}</a>`)}
       ${baris('Pekerjaan',pjEsc(p.pekerjaan))}${baris('Penghasilan / bulan',fRpPj(p.penghasilan))}${baris('Pengeluaran / bulan',fRpPj(p.totalPengeluaran))}
-      ${baris('Anggota serumah / tanggungan',pjEsc(p.jumlahAnggota||'—')+' / '+pjEsc(p.jumlahTanggungan||'—'))}${baris('Kondisi rumah',pjEsc(p.kondisiRumah))}
+      ${baris('Anggota serumah / ditanggung',pjEsc(p.jumlahAnggota||'—')+' orang / '+pjEsc(p.jumlahTanggungan||'—')+' jiwa'+((p.jumlahTanggungan&&!(/^\d{1,2}$/.test(String(p.jumlahTanggungan))&&+p.jumlahTanggungan<=30))||(+p.jumlahTanggungan>+p.jumlahAnggota&&+p.jumlahAnggota>0)?' <b style="color:#c0392b">⚠ perlu dicek saat kunjungan</b>':''))}${baris('Kondisi rumah',pjEsc(p.kondisiRumah))}
       ${baris('Bantuan diajukan',pjEsc(p.kategoriBantuan))}${p.lembagaPendidikan||p.jenjangPendidikan?baris('Pendidikan',[p.lembagaPendidikan,p.jenjangPendidikan,p.prodiKelas,p.semester?'Semester '+p.semester:''].filter(Boolean).map(pjEsc).join(' · ')):''}${baris('Kebutuhan mendesak',pjEsc(p.kebutuhanUtama))}${baris('Alasan',pjEsc(p.alasan))}
       ${baris('Diisi oleh',p.diisi_oleh==='Diwakilkan'?pjEsc(p.nama_pengisi)+' ('+pjEsc(p.hubungan_pengisi)+') · '+pjEsc(p.hp_pengisi)+(p.nik_pengisi?'<br><span class="mono">NIK wali '+pjEsc(p.nik_pengisi)+'</span>':''):'Yang bersangkutan')}
       ${(()=>{const u=kkUsia(p.tanggalLahir);return u>=0&&u<18?baris('Usia',u+' tahun — <strong>atas nama anak</strong>, diwakili orang tua/wali'):'';})()}
@@ -5947,6 +5952,44 @@ function rpdCetak(id,blangko,w0){
 function v14Init(){}
 
 // ════════════════════════════════════════════
+// v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
+// ════════════════════════════════════════════
+const APP_VERSI='15 · 5 Nov 2026';
+const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
+let _v15Tampil=false;
+function v15Pita(html,warna){
+  let p=document.getElementById('v15-pita');
+  if(!p){p=document.createElement('div');p.id='v15-pita';document.body.appendChild(p);}
+  p.style.background=warna||'#1e40af';p.innerHTML=html;p.style.display='flex';
+}
+async function v15Cek(){
+  if(_v15Tampil||location.protocol==='file:'||/__APP_VERSI/.test(APP_VERSI))return;
+  try{
+    const r=await fetch('versi.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;
+    const j=await r.json();
+    if(j&&j.v&&j.v!==APP_VERSI){
+      _v15Tampil=true;
+      v15Pita(`<span>🔄 <b>Versi baru aplikasi tersedia</b> (${String(j.v).replace(/[^\w .·\-]/g,'')}). Simpan dulu isian yang sedang dikerjakan, lalu muat ulang.</span>
+        <button type="button" onclick="location.reload()">Muat ulang sekarang</button>
+        <button type="button" class="tutup" onclick="document.getElementById('v15-pita').style.display='none'" title="Nanti saja">✕</button>`);
+    }
+  }catch(e){}
+}
+function v15Init(){
+  const hr=document.querySelector('.hdr-right');
+  if(hr&&!document.getElementById('app-versi')){const s=document.createElement('span');s.id='app-versi';s.title='Versi aplikasi';
+    s.textContent=/__APP_VERSI/.test(APP_VERSI)?'versi uji':'v'+APP_VERSI;hr.insertBefore(s,hr.firstChild);}
+  if(location.protocol==='file:'){
+    v15Pita(`<span>⚠️ <b>Anda membuka salinan file lama yang tersimpan di komputer.</b> Fitur dan data terbaru tidak tampil. Gunakan alamat resmi:</span>
+      <a href="${APP_URL_RESMI}">${APP_URL_RESMI.replace('https://','')}</a>`,'#b45309');
+    return;
+  }
+  setTimeout(v15Cek,20000);
+  setInterval(v15Cek,10*60*1000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)v15Cek();});
+}
+
+// ════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════
 loadStore();
@@ -5963,6 +6006,7 @@ v9Init();
 v10Init();
 v12Init();
 v13Init();
+v15Init();
 </script>
 </body>
 </html>
