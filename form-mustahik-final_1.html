@@ -148,6 +148,8 @@ thead th:last-child::before,tbody td:last-child::before{content:'';position:abso
 .b-green{background:#d1fae5;color:#065f46;}
 .b-gold{background:#fff4d6;color:#7c5c00;}
 #modal-rpd{z-index:520}
+table.pj-tbl tr.pj-grup td{background:#e6f4f1!important;color:var(--teal-dark)!important;font-weight:700;font-size:12.5px;padding:8px 12px!important;border-top:2px solid var(--teal)}
+table.pj-tbl tr.pj-siap td{background:#f7fbfa!important}
 #app-versi{font-size:10.5px;opacity:.75;font-family:ui-monospace,Consolas,monospace;white-space:nowrap}
 #v15-pita{position:fixed;left:0;right:0;bottom:0;z-index:9999;display:none;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px 16px;color:#fff;font-size:13.5px;box-shadow:0 -2px 12px rgba(0,0,0,.25)}
 #v15-pita button{background:#fff;color:#1e3a8a;border:0;border-radius:6px;padding:7px 14px;font-weight:800;cursor:pointer}
@@ -1068,7 +1070,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
   <div class="pg-sub">Pengajuan mandiri dari calon mustahik melalui formulir publik <a href="pengajuan.html" target="_blank" rel="noopener"><strong>pengajuan.html</strong></a>. Alur: pemohon menyerahkan berkas di kantor → <strong>centang berkas &amp; cetak Tanda Terima</strong> → jadwalkan kunjungan &amp; <strong>cetak Formulir Survei</strong> → <strong>Lengkapi &amp; Terima</strong>. Berkas tidak diserahkan dalam 14 hari → otomatis <em>Berkas tidak diserahkan</em>.</div>
   <div class="card"><div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
     <select id="pj-filter" onchange="pjRender()" style="max-width:220px">
-      <option value="aktif">Perlu tindak lanjut</option><option value="Menunggu verifikasi">Menunggu verifikasi</option>
+      <option value="aktif">Perlu tindak lanjut</option><option value="siap">Berkas lengkap (siap diterima)</option><option value="Menunggu verifikasi">Menunggu verifikasi</option>
       <option value="Dijadwalkan kunjungan">Dijadwalkan kunjungan</option><option value="Diterima">Diterima</option>
       <option value="Tidak memenuhi syarat">Tidak memenuhi syarat</option><option value="Berkas tidak diserahkan">Berkas tidak diserahkan</option><option value="">Semua</option></select>
     <input id="pj-cari" type="text" placeholder="Cari no/nama/NIK/kelurahan" oninput="pjRender()" style="max-width:260px"/>
@@ -2445,7 +2447,7 @@ function lihatDetail(id){
     <div class="det-sec"><h4>Identitas</h4><div class="det-grid">
       ${row('Nama Lengkap',d.nama,true)}
       ${row('NIK',d.nik)}${row('No. KK',d.noKK)}
-      ${row('Jenis Kelamin',d.jenisKelamin)}${row('TTL',d.tempatLahir+(d.tanggalLahir?', '+d.tanggalLahir:''))}
+      ${row('Jenis Kelamin',d.jenisKelamin)}${row('TTL',d.tempatLahir+(d.tanggalLahir?', '+tglLahirTampil(d.tanggalLahir):''))}
       ${row('Status Keluarga',d.statusKeluarga)}${row('Jml Tanggungan',d.jumlahTanggungan)}
     </div></div>
     <div class="det-sec"><h4>Alamat & Kontak</h4><div class="det-grid">
@@ -3713,7 +3715,37 @@ async function pjMuat(silent){
     pjRender();
   }catch(err){if(st)st.textContent='Offline — daftar pengajuan tidak dapat dimuat.';}
 }
+function tglLahirTampil(t){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(t||''));if(!m)return t||'';
+  const B=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'],y=+m[1],mo=+m[2],d=+m[3],n=new Date();
+  let u=n.getFullYear()-y;if(n.getMonth()+1<mo||(n.getMonth()+1===mo&&n.getDate()<d))u--;return d+' '+B[mo-1]+' '+y+(u>=0&&u<130?' ('+u+' tahun)':'');}
+function pjSiap(p){return (p.status===PJ_ST.menunggu||p.status===PJ_ST.jadwal)&&p.berkas_status==='Lengkap';}
+function pjPerlu(p){return (p.status===PJ_ST.menunggu||p.status===PJ_ST.jadwal)&&p.berkas_status!=='Lengkap';}
+function pjBaris(p){return `<tr${pjSiap(p)?' class="pj-siap"':''}>
+    <td class="mono" style="font-weight:700;color:var(--teal-dark)">${pjEsc(p.no_pengajuan)}</td>
+    <td>${pjTgl(p.waktu)}</td>
+    <td style="font-weight:700">${pjEsc(p.nama)}</td>
+    <td>${pjEsc(p.kelurahan)}, ${pjEsc(p.kecamatan)}</td>
+    <td>${pjEsc(p.kategoriBantuan)}${typeof v12PjInfo==='function'?v12PjInfo(p):''}</td>
+    <td class="mono">${pjEsc(p.telepon)}</td>
+    <td>${pjBadge(p.status)}${p.jadwal_kunjungan&&p.status===PJ_ST.jadwal?`<div style="font-size:11px;color:var(--g500)">📅 ${pjEsc(p.jadwal_kunjungan)}</div>`:''}${pjBerkasMini(p)}</td>
+    <td><button class="btn btn-primary btn-sm" onclick="pjDetail('${pjEsc(p.no_pengajuan)}')">Buka</button></td></tr>`;}
 function pjRender(){
+  const aktif=pjList.filter(pjPerlu).length,siap=pjList.filter(pjSiap).length;
+  const b=document.getElementById('pj-count');if(b){b.textContent=aktif;b.style.display=aktif?'inline-block':'none';}
+  const tb=document.getElementById('pj-tbody');if(!tb)return;
+  const f=document.getElementById('pj-filter').value,q=(document.getElementById('pj-cari').value||'').toLowerCase();
+  const cocok=p=>!q||[p.no_pengajuan,p.nama,p.nik,p.kelurahan,p.kecamatan].join(' ').toLowerCase().includes(q);
+  let rows,html;
+  if(f==='aktif'){
+    const a=pjList.filter(p=>pjPerlu(p)&&cocok(p)),l=pjList.filter(p=>pjSiap(p)&&cocok(p));rows=a.concat(l);
+    html=a.map(pjBaris).join('')+(l.length?`<tr class="pj-grup"><td colspan="8">✅ Berkas lengkap — tinggal kunjungan lalu <b>Lengkapi &amp; Terima</b> (${l.length}) <span style="font-weight:400">· tidak dihitung "perlu tindak lanjut"</span></td></tr>`+l.map(pjBaris).join(''):'');
+  }else{
+    rows=pjList.filter(p=>(!f||(f==='siap'?pjSiap(p):p.status===f))&&cocok(p));html=rows.map(pjBaris).join('');
+  }
+  document.getElementById('pj-status').textContent=`${rows.length} pengajuan ditampilkan · ${aktif} perlu ditindaklanjuti · ${siap} berkas lengkap`;
+  tb.innerHTML=rows.length?html:'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--g500)">Belum ada pengajuan.</td></tr>';
+}
+function pjRenderLama(){
   const aktif=pjList.filter(p=>p.status===PJ_ST.menunggu||p.status===PJ_ST.jadwal).length;
   const b=document.getElementById('pj-count');if(b){b.textContent=aktif;b.style.display=aktif?'inline-block':'none';}
   const tb=document.getElementById('pj-tbody');if(!tb)return;
@@ -3744,7 +3776,7 @@ function pjDetail(no){
     <div style="margin-bottom:10px">${pjBadge(p.status)} <span style="font-size:12px;color:var(--g500)">Diajukan ${pjTgl(p.waktu)}${p.ditangani_oleh?' · ditangani '+pjEsc(p.ditangani_oleh):''}${p.mustahikId?' · ID Mustahik <strong>'+pjEsc(p.mustahikId)+'</strong>':''}</span></div>
     <div style="font-size:13px">
       ${baris('Nama',pjEsc(p.nama))}${baris('NIK',`<span class="mono">${pjEsc(p.nik)}</span>`)}${baris('No KK',`<span class="mono">${pjEsc(p.noKK)}</span>`)}
-      ${baris('Jenis kelamin',pjEsc(p.jenisKelamin))}${baris('Tempat, tgl lahir',pjEsc(p.tempatLahir)+', '+pjEsc(p.tanggalLahir))}${baris('Status keluarga',pjEsc(p.statusKeluarga))}
+      ${baris('Jenis kelamin',pjEsc(p.jenisKelamin))}${baris('Tempat, tgl lahir',pjEsc(p.tempatLahir)+', '+pjEsc(tglLahirTampil(p.tanggalLahir)))}${baris('Status keluarga',pjEsc(p.statusKeluarga))}
       ${baris('Alamat',pjEsc(p.alamat)+'<br>'+pjEsc(p.kelurahan)+', '+pjEsc(p.kecamatan))}${baris('HP/WA',`<a href="https://wa.me/${pjEsc(p.telepon.replace(/^0/,'62').replace(/\D/g,''))}" target="_blank" rel="noopener">${pjEsc(p.telepon)}</a>`)}
       ${baris('Pekerjaan',pjEsc(p.pekerjaan))}${baris('Penghasilan / bulan',fRpPj(p.penghasilan))}${baris('Pengeluaran / bulan',fRpPj(p.totalPengeluaran))}
       ${baris('Anggota serumah / ditanggung',pjEsc(p.jumlahAnggota||'—')+' orang / '+pjEsc(p.jumlahTanggungan||'—')+' jiwa'+((p.jumlahTanggungan&&!(/^\d{1,2}$/.test(String(p.jumlahTanggungan))&&+p.jumlahTanggungan<=30))||(+p.jumlahTanggungan>+p.jumlahAnggota&&+p.jumlahAnggota>0)?' <b style="color:#c0392b">⚠ perlu dicek saat kunjungan</b>':''))}${baris('Kondisi rumah',pjEsc(p.kondisiRumah))}
@@ -5962,7 +5994,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='16 · 5 Nov 2026';
+const APP_VERSI='17 · 5 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
