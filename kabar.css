@@ -33,6 +33,9 @@ body.kb{margin:0;background:var(--kb-latar);color:var(--kb-teks);font-family:sys
 .kb-tabs{display:flex;gap:6px;background:var(--kb-kartu);border:1px solid var(--kb-garis);border-radius:12px;padding:4px;margin-bottom:14px;position:sticky;top:6px;z-index:5}
 .kb-tabs button{flex:1;min-height:44px;border:0;border-radius:9px;background:none;font:inherit;font-weight:700;color:var(--kb-redup);cursor:pointer}
 .kb-tabs button[aria-selected=true]{background:var(--kb-hijau);color:#fff}
+/* v17: HP kecil (≤380px) — tab tidak melebar keluar layar */
+.kb-tabs button{min-width:0;overflow-wrap:anywhere;line-height:1.2;padding:4px 6px}
+@media(max-width:380px){.kb-tabs{gap:3px}.kb-tabs button{font-size:13px;padding:4px 3px}}
 .kb-judul-bag{font-size:13px;font-weight:700;color:var(--kb-redup);margin:18px 2px 8px;text-transform:uppercase;letter-spacing:.4px}
 /* kartu kampanye */
 .kb-kmp{background:var(--kb-kartu);border:1px solid var(--kb-garis);border-radius:14px;overflow:hidden;margin-bottom:14px}
