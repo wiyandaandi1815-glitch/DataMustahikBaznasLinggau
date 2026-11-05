@@ -79,6 +79,8 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
 .pilih label{font-weight:600;border:1.5px solid var(--g300);border-radius:8px;padding:10px;display:flex;gap:8px;align-items:center;cursor:pointer;margin:0}
 .pilih input{width:auto}
 .pilih label:has(input:checked){border-color:var(--teal);background:var(--teal-light);color:var(--teal-dark)}
+.draf-info{background:#eef6ff;border:1px solid #b9d4f5;color:#1d4e9e;border-radius:8px;padding:10px 14px;font-size:13.5px;margin-bottom:12px}
+.draf-info button{border:1px solid #1d4e9e;background:#fff;color:#1d4e9e;border-radius:6px;padding:3px 10px;font-weight:700;margin-left:4px;cursor:pointer}
 .tgl3-kotak{display:flex;align-items:center;gap:6px}
 .tgl3-kotak input{width:62px;flex:none;text-align:center;font-size:18px;font-weight:700;letter-spacing:1px;padding:9px 4px}
 .tgl3-kotak input.t3-y{width:92px}
@@ -91,7 +93,23 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
 .tgl3.salah input{border-color:var(--red)}
 </style>
 </head>
-<body>
+<body data-hal="muzaki">
+<script>
+/* v16: penjaga browser lama / mode hemat data (ES5 — tetap jalan di browser yang sangat lama) */
+(function(){
+  var U='https://script.google.com/macros/s/AKfycbwcFWag2lgTgaaV5lKBWU_YDrhSHEAgPgXyrfFR9tq6uRyzrg5t_158fHzSBX6183me/exec',ua=navigator.userAgent||'',hemat=/Opera Mini|OPiOS|UCBrowser|UCWEB|UBrowser/i.test(ua);
+  function kirim(j){try{var x=new XMLHttpRequest();x.open('POST',U,true);x.setRequestHeader('Content-Type','text/plain;charset=utf-8');
+    x.send(JSON.stringify({aksi:'klien_log',data:{hal:document.body.getAttribute('data-hal')||'publik',jenis:'browser',ket:j,br:ua.slice(0,160)}}));}catch(e){}}
+  function pita(t){var d=document.createElement('div');d.id='pita-browser';
+    d.setAttribute('style','position:sticky;top:0;z-index:99;background:#fff4d6;color:#7c5c00;border-bottom:2px solid #e0b84a;padding:10px 14px;font:600 14px/1.5 sans-serif;text-align:center');
+    d.innerHTML=t+'<br><span style="font-weight:400">Salin alamat ini lalu buka di <b>Google Chrome</b>:</span> <span style="font-family:monospace;word-break:break-all;-webkit-user-select:all;user-select:all">'+String(location.href).split('#')[0].split('?')[0]+'</span>';
+    document.body.insertBefore(d,document.body.firstChild);}
+  window.addEventListener('load',function(){
+    if(!window.__utamaOk){pita('⚠️ Browser di HP ini terlalu lama sehingga formulir tidak dapat dipakai.');kirim('script utama tidak jalan');}
+    else if(hemat){pita('⚠️ Anda memakai Opera Mini / UC Browser (mode hemat data). Formulir bisa gagal terkirim.');kirim('browser hemat data');}
+  });
+})();
+</script>
 <header>
   <h1>Daftar Muzaki / Donatur</h1>
   <p>Badan Amil Zakat Nasional Kota Lubuklinggau</p>
@@ -183,6 +201,79 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
 
 <script>
 const DB_URL='https://script.google.com/macros/s/AKfycbwcFWag2lgTgaaV5lKBWU_YDrhSHEAgPgXyrfFR9tq6uRyzrg5t_158fHzSBX6183me/exec';
+// ── v16: catat penyebab gagal di HP (tanpa data pribadi), simpan isian sementara, batas waktu kirim ──
+window.__utamaOk=true;
+const HAL=document.body.dataset.hal||'publik';
+function brInfo(){
+  const u=navigator.userAgent||'',m=(r)=>{const x=r.exec(u);return x?x[1]:'';};
+  let b=/OPR\/|Opera/.test(u)?'Opera '+m(/(?:OPR|Version)\/(\d+)/):/SamsungBrowser/.test(u)?'Samsung '+m(/SamsungBrowser\/(\d+)/):
+    /UCBrowser/.test(u)?'UC '+m(/UCBrowser\/(\d+)/):/Edg\//.test(u)?'Edge '+m(/Edg\/(\d+)/):/Firefox\//.test(u)?'Firefox '+m(/Firefox\/(\d+)/):
+    /Chrome\//.test(u)?'Chrome '+m(/Chrome\/(\d+)/):/Safari\//.test(u)?'Safari '+m(/Version\/(\d+)/):'lain';
+  const app=/FBAN|FBAV/.test(u)?' (Facebook)':/Instagram/.test(u)?' (Instagram)':/WhatsApp/.test(u)?' (WhatsApp)':/; wv\)/.test(u)?' (WebView)':'';
+  const os=/Android/.test(u)?'Android '+m(/Android (\d+)/):/iPhone|iPad/.test(u)?'iOS '+m(/OS (\d+)_/):/Windows/.test(u)?'Windows':/Mac OS/.test(u)?'Mac':'lain';
+  return b+app+' · '+os+' · '+innerWidth+'px'+(navigator.onLine===false?' · offline':'');
+}
+let _lapN=0,_galat='';const _lapSdh={};
+function lapor(jenis,ket){
+  try{
+    ket=String(ket||'').replace(/<[^>]+>/g,' ').replace(/\d[\d\s.\-]{5,}\d/g,'#').replace(/\s+/g,' ').trim().slice(0,250);
+    const k=jenis+ket;if(_lapSdh[k]||_lapN>=8)return;_lapSdh[k]=1;_lapN++;
+    const body=JSON.stringify({aksi:'klien_log',data:{hal:HAL,jenis,ket,br:brInfo()}});
+    if(navigator.sendBeacon&&navigator.sendBeacon(DB_URL,new Blob([body],{type:'text/plain;charset=utf-8'})))return;
+    fetch(DB_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body,keepalive:true}).catch(()=>{});
+  }catch(e){}
+}
+window.addEventListener('error',e=>lapor('error',(e.message||'')+' baris '+(e.lineno||'')));
+window.addEventListener('unhandledrejection',e=>lapor('error',String((e.reason&&e.reason.message)||e.reason)));
+/** fetch ke server dengan batas waktu; kegagalan dicatat jenisnya (koneksi / timeout). */
+async function kirimApi(aksi,data,detik){
+  const ac=window.AbortController?new AbortController():null,t=ac?setTimeout(()=>ac.abort(),(detik||45)*1000):0;
+  _galat='';
+  try{
+    const r=await fetch(DB_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({aksi,data}),signal:ac?ac.signal:undefined});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    if(j&&j.ok&&(aksi==='ajukan'||aksi==='daftar_muzaki_online'))drafHapus();
+    return j;
+  }catch(e){
+    _galat=(e&&e.name==='AbortError')?'timeout':'koneksi';
+    lapor(_galat,aksi+': '+(_galat==='timeout'?'tidak ada jawaban '+(detik||45)+' detik':(e&&e.message)||e));
+    throw e;
+  }finally{if(t)clearTimeout(t);}
+}
+/** Bungkus fungsi penampil pesan galat halaman → ikut dicatat (isi angka panjang dibuang). */
+function laporPesan(namaFn){
+  const asli=window[namaFn];if(typeof asli!=='function')return;
+  window[namaFn]=function(){const r=asli.apply(this,arguments);const m=arguments[arguments.length-1];
+    // hanya kegagalan yang tidak sampai ke server (penolakan server sudah dicatat oleh server sendiri)
+    if(m){const t=String(m).replace(/<[^>]+>/g,' ');
+      if(/Mohon lengkapi|Isi ID/i.test(t))lapor('validasi',t);else if(/Gagal terhubung|koneksi/i.test(t))lapor(_galat||'koneksi',t);}
+    return r;};
+}
+// ── Draf isian: tersimpan di tab ini saja (sessionStorage), hilang saat tab ditutup atau setelah berhasil dikirim ──
+let _drafKunci='';
+function drafHapus(){try{if(_drafKunci)sessionStorage.removeItem(_drafKunci);}catch(e){}}
+function drafPasang(formId){
+  const f=document.getElementById(formId);if(!f)return;_drafKunci='draf_'+formId;
+  const medan=()=>[...f.querySelectorAll('input,select,textarea')].filter(el=>!['file','button','submit'].includes(el.type)&&el.id!=='website'&&el.id!=='persetujuan'&&!/^t3-/.test(el.className)&&(el.id||el.name));
+  let tunda=0;
+  const simpan=()=>{clearTimeout(tunda);tunda=setTimeout(()=>{const o={};
+    medan().forEach(el=>{if(el.type==='radio'){if(el.checked)o['r:'+el.name]=el.value;}else if(el.type==='checkbox'){if(el.id)o['c:'+el.id]=el.checked;}else if(el.id&&el.value)o[el.id]=el.value;});
+    try{if(Object.keys(o).length)sessionStorage.setItem(_drafKunci,JSON.stringify(o));}catch(e){}},400);};
+  f.addEventListener('input',simpan);f.addEventListener('change',simpan);
+  let o=null;try{o=JSON.parse(sessionStorage.getItem(_drafKunci)||'null');}catch(e){}
+  if(!o||!Object.keys(o).length)return;
+  const picu=el=>{el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));};
+  Object.keys(o).forEach(k=>{
+    if(k.startsWith('r:')){const el=f.querySelector('input[type=radio][name="'+k.slice(2)+'"][value="'+String(o[k]).replace(/"/g,'')+'"]');if(el&&!el.disabled){el.checked=true;picu(el);}}
+    else if(k.startsWith('c:')){const el=document.getElementById(k.slice(2));if(el){el.checked=!!o[k];picu(el);}}
+    else{const el=document.getElementById(k);if(el&&f.contains(el)){el.value=o[k];picu(el);}}
+  });
+  const n=document.createElement('div');n.className='draf-info';
+  n.innerHTML='📝 <b>Isian Anda sebelumnya dipulihkan.</b> Periksa kembali'+(f.querySelector('input[type=file]')?', lalu pilih ulang foto/berkas':'')+'. <button type="button">Mulai dari kosong</button>';
+  n.querySelector('button').onclick=()=>{drafHapus();location.reload();};
+  f.insertBefore(n,f.firstChild);
+}
 // ── v15: Tanggal lahir 3 kotak |DD|MM|YYYY| (nilai tetap dikirim yyyy-mm-dd lewat input tersembunyi) ──
 const BLN3=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 function tgl3(id){
@@ -247,11 +338,7 @@ function tgl3(id){
 /** true bila kotak tanggal diisi tetapi belum benar (dipakai validasi sebelum kirim). */
 function tgl3Salah(id){const el=document.getElementById(id);return !!(el&&el.dataset.tgl3Isi&&!el.value);}
 tgl3('tanggalLahir');
-async function api(aksi,data){
-  const r=await fetch(DB_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({aksi,data})});
-  if(!r.ok)throw new Error('HTTP '+r.status);
-  return r.json();
-}
+async function api(aksi,data){return kirimApi(aksi,data,45);}
 function v(id){return (document.getElementById(id).value||'').trim();}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function pilihan(n){return document.querySelector('input[name='+n+']:checked').value;}
@@ -314,6 +401,7 @@ document.getElementById('fmz').addEventListener('submit',async ev=>{
     tampilErr('Gagal terhubung ke server. Periksa koneksi internet Anda, lalu tekan <strong>Kirim Pendaftaran</strong> lagi.');
   }finally{btn.disabled=false;btn.textContent='Kirim Pendaftaran';}
 });
+laporPesan('tampilErr');drafPasang('fmz');
 </script>
 </body>
 </html>
