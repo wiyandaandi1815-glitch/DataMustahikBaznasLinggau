@@ -4867,6 +4867,9 @@ async function ktRenderFoto(){
   if(q){if(ktQris)q.innerHTML=`<img src="${ktQris.pratinjau}" style="max-height:90px"/>`;else if(ktEdit.qris_foto_id){q.innerHTML='<img style="max-height:90px"/>';q.querySelector('img').src=await ktFotoUrl(ktEdit.qris_foto_id);}else q.innerHTML='<span class="hint">Belum ada QRIS.</span>';}
 }
 
+// v18 — kode kampanye otomatis KMP-YYYY-KAT-NNNN (urut per tahun & kategori; server tetap menolak duplikat)
+const KT_KAT=[['MED','Medis'],['PDK','Pendidikan'],['EKO','Ekonomi/UMKM'],['KMN','Kemanusiaan/Bencana'],['RIB','Rumah ibadah'],['UMM','Umum']];
+function ktKodeAuto(){const s=document.getElementById('kt-kat'),i=document.getElementById('kt-kode_kampanye');if(!s||!i)return;const p='KMP-'+new Date().getFullYear()+'-'+s.value+'-';let m=0;(ktData.kampanye||[]).forEach(x=>{const k=String(x.kode_kampanye||x.id||'');if(k.indexOf(p)===0){const n=parseInt(k.slice(p.length),10);if(n>m)m=n;}});i.value=p+String(m+1).padStart(4,'0');}
 // ── form konten ──
 function ktForm(jenis,id){
   const o=id?(ktData[jenis]||[]).find(x=>x.id===id):null;
@@ -4886,7 +4889,7 @@ function ktForm(jenis,id){
   let isi;
   if(jenis==='kampanye'){
     isi=`<div class="grid g2">
-      <div class="field"><label>Kode kampanye <span class="req">*</span></label><input id="kt-kode_kampanye" class="mono" value="${v('kode_kampanye')}" ${o?'readonly':''} placeholder="KMP-${new Date().getFullYear()+1}-RAMADAN" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9-]/g,'')"/><span class="hint">Tidak bisa diubah setelah disimpan (dipakai Excel).</span></div>
+      <div class="field"><label>Kode kampanye <span class="req">*</span></label>${o?'':`<select id="kt-kat" onchange="ktKodeAuto()" style="margin-bottom:6px">${KT_KAT.map(k=>`<option value="${k[0]}">${k[1]}</option>`).join('')}</select>`}<input id="kt-kode_kampanye" class="mono" value="${v('kode_kampanye')}" readonly/><span class="hint">${o?'Tidak bisa diubah (dipakai Excel).':'Dibuat otomatis: tahun-kategori-nomor urut.'}</span></div>
       <div class="field"><label>Judul <span class="req">*</span> <span class="hint">maks. 60–80 karakter</span></label><input id="kt-judul" maxlength="80" value="${v('judul')}"/></div>
       <div class="field"><label>Jenis dana <span class="req">*</span></label><select id="kt-jenis_dana">${mzOpsi(KT_DANA,ktEdit.jenis_dana)}</select></div>
       <div class="field"><label>Program penyaluran (tujuan dana) <span class="req">*</span></label><input id="kt-program_penyaluran" value="${v('program_penyaluran')}"/></div>
@@ -4906,7 +4909,7 @@ function ktForm(jenis,id){
   }
   document.getElementById('kt-form-title').textContent=(o?'Ubah ':'Buat ')+(jenis==='kampanye'?'Kampanye':'Laporan Penyaluran')+(o?' — '+o.id:'');
   document.getElementById('kt-form-body').innerHTML=(o&&o.catatan_persetujuan?`<div class="kt-catatan" style="margin-bottom:10px">📝 ${xE(o.catatan_persetujuan)}</div>`:'')+isi;
-  openModal('modal-kt');ktRenderFoto();
+  openModal('modal-kt');ktRenderFoto();if(jenis==='kampanye'&&!o)ktKodeAuto();
   if(jenis==='laporan'&&ktEdit.tanggal_kegiatan)ktHitungLaporan(ktEdit.program);
 }
 async function ktHitungLaporan(pilih){
