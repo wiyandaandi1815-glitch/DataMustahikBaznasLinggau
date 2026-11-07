@@ -4177,9 +4177,10 @@ async function dokCetakLampiran(win,d){
   try{
     const r=await dbApi('bm_daftar',{mustahikId:d.mustahikId});
     if(!r.ok)throw new Error(r.pesan||'Gagal memuat daftar berkas.');
-    const sumber=[...(r.berkas||[]).map(b=>({label:b.jenis+(b.periode?' · '+b.periode:''),aksi:'bm_file',arg:{idBerkas:b.idBerkas}})),
+    const akhir={};(r.berkas||[]).forEach(b=>{if(b.jenis==='Foto rumah')akhir[b.keterangan]=b.idBerkas;}); // foto rumah yang diganti: pakai unggahan terakhir
+    const sumber=[...(r.berkas||[]).filter(b=>b.jenis!=='Foto rumah'||akhir[b.keterangan]===b.idBerkas).sort((a,b)=>(a.jenis==='Foto rumah'?rlhUrut(a.keterangan):-1)-(b.jenis==='Foto rumah'?rlhUrut(b.keterangan):-1)).map(b=>({label:b.jenis+(b.keterangan&&b.jenis==='Foto rumah'?' — '+b.keterangan:'')+(b.periode?' · '+b.periode:''),aksi:'bm_file',arg:{idBerkas:b.idBerkas}})),
       ...(r.dari_pengajuan||[]).map(p=>({label:p.jenis+' (pengajuan '+p.no+')',aksi:'pengajuan_file',arg:{no:p.no,jenis:p.jenis_file}})),
-      ...(r.rapor||[]).map(l=>({label:'Rapor '+l.semester,aksi:'lb_file',arg:{id_laporan:l.id_laporan}}))].slice(0,24);
+      ...(r.rapor||[]).map(l=>({label:'Rapor '+l.semester,aksi:'lb_file',arg:{id_laporan:l.id_laporan}}))].slice(0,40);
     for(const x of sumber){
       try{const f=await dbApi(x.aksi,x.arg);
         if(!f.ok||!f.base64){gagal++;continue;}
@@ -5772,12 +5773,41 @@ function bmRender(boxId){
       </div>
       <button class="btn btn-primary btn-sm" type="button" id="bm-btn" onclick="bmUnggah('${bmE(r.mustahikId)}','${boxId}')">⬆ Unggah ke Drive</button>
     </div></div>`;
+  rlhSisip(box,r,boxId);
 }
 function bmAturMasa(){
   const o=document.getElementById('bm-jenis').selectedOptions[0],m=o?o.dataset.masa:'';
   document.getElementById('bm-per-wrap').style.display=m==='semester'?'':'none';
   document.getElementById('bm-tgl-wrap').style.display=m==='tanggal'?'':'none';
   document.getElementById('bm-ket-hint').textContent=gv('bm-jenis')==='Lainnya'?'(wajib)':'(opsional)';
+}
+// v18 — Dokumentasi foto Rumah Layak Huni: 11 tampak × 3 tahap, disimpan sebagai jenis "Foto rumah" + keterangan "Tahap · Tampak"
+const RLH_TAHAP=['Sebelum','Proses 50%','Sesudah 100%'];
+const RLH_TAMPAK=['Tampak depan','Tampak belakang','Samping kiri','Samping kanan','Ruang tamu','Kamar tidur','Dapur','Kamar mandi/WC','Atap','Lantai','Dinding'];
+let rlhTahap=0;
+function rlhUrut(ket){const p=String(ket||'').split(' · ');const a=RLH_TAHAP.indexOf(p[0]),b=RLH_TAMPAK.indexOf(p[1]);return a<0||b<0?999:a*20+b;}
+function rlhSisip(box,r,boxId){
+  const d=(typeof dataList!=='undefined'?dataList:[]).find(x=>x.mustahikId===r.mustahikId);
+  if(!d||!/rumah/i.test(d.katBantuan||''))return;
+  const ada={};r.berkas.filter(b=>b.jenis==='Foto rumah').forEach(b=>{ada[b.keterangan]=b.idBerkas;});
+  const jml=t=>RLH_TAMPAK.filter(x=>ada[RLH_TAHAP[t]+' · '+x]).length;
+  const el=document.createElement('div');el.className='bm-panel';el.style.marginTop='8px';
+  el.innerHTML=`<strong>🏠 Dokumentasi Rumah Layak Huni</strong> <span style="font-size:11.5px;color:var(--g500)">foto per tampak · bisa langsung dari kamera HP</span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">${RLH_TAHAP.map((t,i)=>`<button type="button" class="btn btn-sm ${i===rlhTahap?'btn-primary':'btn-outline'}" onclick="rlhTahap=${i};bmRender('${boxId}')">${t} (${jml(i)}/${RLH_TAMPAK.length})</button>`).join('')}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px">${RLH_TAMPAK.map(x=>{const ket=RLH_TAHAP[rlhTahap]+' · '+x,id=ada[ket];
+      return `<label style="border:1px solid ${id?'#1D9E75':'var(--g200,#ddd)'};background:${id?'#E1F5EE':'#fff'};border-radius:8px;padding:7px 9px;font-size:12.5px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:6px">
+        <span>${id?'✓ ':''}${x}</span><span style="font-size:11.5px;color:var(--teal-dark,#0F6E56);font-weight:700">${id?'Ganti':'📷 Unggah'}</span>
+        <input type="file" accept="image/*" capture="environment" style="display:none" onchange="rlhUnggah(this,'${r.mustahikId}','${boxId}','${ket}')"></label>`;}).join('')}</div>
+    <div style="font-size:11.5px;color:var(--g500);margin-top:6px">Foto lama tidak terhapus saat diganti (tetap tersimpan untuk audit). Saat cetak Formulir + lampiran, foto diurutkan per tahap & tampak.</div>`;
+  box.querySelector('.bm-panel').after(el);
+}
+async function rlhUnggah(inp,mid,boxId,ket){
+  await bmBacaFile(inp);if(!_bmFile)return;
+  if(_bmFile.mime==='application/pdf'){toast('Dokumentasi rumah harus berupa foto.',true);_bmFile=null;return;}
+  toast('Mengunggah '+ket+'…');
+  try{const r=await dbApi('bm_unggah',{mustahikId:mid,jenis:'Foto rumah',keterangan:ket,periode:'',berlaku_sampai:'',file:_bmFile});
+    _bmFile=null;if(!r.ok){toast(r.pesan||'Gagal mengunggah.',true);return;}toast('✓ '+ket+' tersimpan.');await bmPanel(boxId,mid);bmMuatRingkas();}
+  catch(e){toast('Gagal terhubung ke server — unggah perlu koneksi internet.',true);}
 }
 async function bmBacaFile(inp){
   _bmFile=null;const f=inp.files[0];if(!f)return;
