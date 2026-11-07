@@ -1265,6 +1265,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
       <label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="radio" name="dok-sumber" value="kosong" style="width:auto"> Blangko kosong <span id="dok-jml-wrap">&nbsp;<input id="dok-jml" type="number" min="1" max="50" value="1" style="width:70px"/> lembar</span></label>
       <div style="font-size:12px;color:var(--g500);margin-top:12px">Setiap mustahik dicetak di halaman terpisah. Di jendela cetak pilih kertas <strong>A4</strong>, matikan "Headers and footers", atau pilih <strong>Save as PDF</strong>.</div>
     </div>
+      <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;cursor:pointer;background:#fff8e6;border:1px solid #f0d78a;border-radius:8px;padding:8px"><input type="checkbox" id="dok-lamp" style="width:auto;margin-top:2px"> <span><b>Lampirkan berkas unggahan</b> setelah Formulir Pendaftaran<br><span style="font-size:12px;color:var(--g500)">4 berkas per halaman A4 (KK ½ halaman). Hanya untuk 1 mustahik per cetak; berkas PDF hanya didaftar namanya.</span></span></label>
     <div class="modal-ftr"><button class="btn btn-outline" onclick="closeModal('modal-dok')">Batal</button><button class="btn btn-primary" onclick="cetakDokumen()">Cetak</button></div>
   </div>
 </div>
@@ -4156,13 +4157,57 @@ function cetakDokumen(){
     const tanpa=list.filter(d=>!d.noRekening);
     if(tanpa.length===list.length){toast('Mustahik terpilih belum punya data rekening — isi Data Perbankan dulu, atau cetak blangko kosong.',true);return;}
   }
+  const lamp=jenis==='formulir'&&sumber!=='kosong'&&document.getElementById('dok-lamp').checked;
+  if(lamp&&list.length!==1){toast('Lampiran berkas hanya bisa untuk 1 mustahik per cetak.',true);return;}
+  if(lamp&&!list[0].mustahikId){toast('Mustahik ini belum punya ID Mustahik dari server — berkas belum bisa dilampirkan.',true);return;}
   const win=window.open('','_blank','width=900,height=750,scrollbars=yes');
   if(!win){toast('Popup diblokir browser. Izinkan popup untuk halaman ini.',true);return;}
+  if(lamp){dokCetakLampiran(win,list[0]);closeModal('modal-dok');return;}
   win.document.write(dokDokumenHtml(jenis,list));
   win.document.close();
   win.onload=()=>setTimeout(()=>{win.focus();win.print();},400);
   closeModal('modal-dok');
   toast('✓ Membuka '+DOK_NAMA[jenis]+' ('+list.length+' halaman) — pilih printer atau "Save as PDF", kertas A4.');
+}
+
+// v18 — Formulir + lampiran berkas unggahan (4 per halaman A4, KK ½ halaman)
+async function dokCetakLampiran(win,d){
+  win.document.write('<p style="font-family:sans-serif;padding:20px">⏳ Memuat berkas lampiran…</p>');
+  const item=[],pdf=[];let gagal=0;
+  try{
+    const r=await dbApi('bm_daftar',{mustahikId:d.mustahikId});
+    if(!r.ok)throw new Error(r.pesan||'Gagal memuat daftar berkas.');
+    const sumber=[...(r.berkas||[]).map(b=>({label:b.jenis+(b.periode?' · '+b.periode:''),aksi:'bm_file',arg:{idBerkas:b.idBerkas}})),
+      ...(r.dari_pengajuan||[]).map(p=>({label:p.jenis+' (pengajuan '+p.no+')',aksi:'pengajuan_file',arg:{no:p.no,jenis:p.jenis_file}})),
+      ...(r.rapor||[]).map(l=>({label:'Rapor '+l.semester,aksi:'lb_file',arg:{id_laporan:l.id_laporan}}))].slice(0,24);
+    for(const x of sumber){
+      try{const f=await dbApi(x.aksi,x.arg);
+        if(!f.ok||!f.base64){gagal++;continue;}
+        if(/^image\//.test(f.mime))item.push({label:x.label,src:'data:'+f.mime+';base64,'+f.base64,besar:/kartu keluarga|\bkk\b/i.test(x.label)});
+        else pdf.push(x.label);
+      }catch(e){gagal++;}
+    }
+  }catch(e){win.document.body.innerHTML='<p style="font-family:sans-serif;padding:20px;color:#c0392b">'+dE(e.message||'Offline — berkas tidak dapat dimuat.')+'</p>';return;}
+  item.sort((a,b)=>b.besar-a.besar); // KK dulu agar susunan halaman rapi
+  const hal=[];let isi=[],pakai=0;
+  const tutup=()=>{if(isi.length)hal.push(isi);isi=[];pakai=0;};
+  item.forEach(it=>{const n=it.besar?2:1;if(it.besar&&pakai%2)pakai++; if(pakai+n>4)tutup(); isi.push(it); pakai+=n;});
+  tutup();
+  const judul=`<div class="lp-jdl">LAMPIRAN BERKAS — ${dE(d.nama)} · ID ${dE(d.mustahikId)}</div>`;
+  let no=0;
+  const halHtml=hal.map(h=>`<div class="hal">${judul}<div class="lp-grid">${h.map(it=>`<div class="lp-sel${it.besar?' lp-besar':''}"><div class="lp-cap">Lampiran ${++no} — ${dE(it.label)}</div><div class="lp-img"><img src="${it.src}" alt=""></div></div>`).join('')}</div></div>`).join('');
+  const sisa=hal.length&&hal[hal.length-1].reduce((t,it)=>t+(it.besar?2:1),0)<4; // halaman terakhir masih ada sel kosong
+  const catatan=(pdf.length||gagal||!item.length)?`<div class="${sisa?'lp-catat':'hal'}">${sisa?'':judul}<p>${item.length?'':'Belum ada berkas foto yang diunggah untuk mustahik ini.'}</p>${pdf.length?'<p><b>Berkas PDF (cetak terpisah):</b></p><ol>'+pdf.map(p=>'<li>'+dE(p)+'</li>').join('')+'</ol>':''}${gagal?'<p style="color:#c0392b">'+gagal+' berkas gagal dimuat.</p>':''}</div>`:'';
+  const css=DOK_CSS+`.lp-jdl{font-weight:bold;font-size:10pt;border-bottom:1px solid #000;padding-bottom:3px;margin-bottom:4mm}
+    .lp-grid{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:125mm;gap:4mm}
+    .lp-sel{border:1px dashed #999;padding:2mm;display:flex;flex-direction:column;overflow:hidden}.lp-besar{grid-column:1/-1}
+    .lp-cap{font-size:8.5pt;font-weight:bold;margin-bottom:1.5mm}.lp-img{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+    .lp-img img{max-width:100%;max-height:100%;object-fit:contain}`;
+  win.document.open();
+  win.document.write(`<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Formulir & Lampiran — ${dE(d.nama)}</title><style>${css}</style></head><body>${dokFormulir(d)}${sisa&&catatan?halHtml.replace(/<\/div><\/div>$/,catatan+'</div></div>'):halHtml+catatan}</body></html>`);
+  win.document.close();
+  setTimeout(()=>{win.focus();win.print();},800);
+  toast('✓ Formulir + '+item.length+' lampiran foto'+(pdf.length?' ('+pdf.length+' PDF dicetak terpisah)':'')+'.');
 }
 
 // ════════════════════════════════════════════
