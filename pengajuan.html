@@ -728,6 +728,7 @@ async function verifBsz(){
   const h=decodeURIComponent(location.hash||'');
   if(h==='#setoran'){tab('z');}
   else if(h==='#laporan'){tab('l');}
+  else if(h.startsWith('#cek=')){tab('s');const n=document.getElementById('s-no');if(n)n.value=h.slice(5).toUpperCase();}
   else if(h.startsWith('#bsz=')){tab('z');document.getElementById('b-no').value=h.slice(5);setTimeout(verifBsz,50);}
 })();
 async function cekKeluarga(){
