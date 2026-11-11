@@ -3731,7 +3731,25 @@ function pjBaris(p){return `<tr${pjSiap(p)?' class="pj-siap"':''}>
     <td>${pjEsc(p.kategoriBantuan)}${typeof v12PjInfo==='function'?v12PjInfo(p):''}</td>
     <td class="mono">${pjEsc(p.telepon)}</td>
     <td>${pjBadge(p.status)}${p.jadwal_kunjungan&&p.status===PJ_ST.jadwal?`<div style="font-size:11px;color:var(--g500)">📅 ${pjEsc(p.jadwal_kunjungan)}</div>`:''}${pjBerkasMini(p)}</td>
-    <td><button class="btn btn-primary btn-sm" onclick="pjDetail('${pjEsc(p.no_pengajuan)}')">Buka</button></td></tr>`;}
+    <td style="white-space:nowrap"><button class="btn btn-primary btn-sm" onclick="pjDetail('${pjEsc(p.no_pengajuan)}')">Buka</button> <button class="btn btn-sm" style="background:#25D366;color:#fff" title="Kirim nomor & status pengajuan lewat WhatsApp" onclick="pjWa('${pjEsc(p.no_pengajuan)}')">WA</button></td></tr>`;}
+// v18 — kirim nomor PJ + status ke pemohon lewat WhatsApp (sekali klik, tanpa NIK)
+function pjWaHp(x){let d=String(x||'').replace(/\D/g,'');if(d.startsWith('0'))d='62'+d.slice(1);else if(d.startsWith('8'))d='62'+d;return /^62\d{8,13}$/.test(d)?d:'';}
+function pjWa(no){
+  const p=pjList.find(x=>x.no_pengajuan===no);if(!p)return;
+  const hp=pjWaHp(p.telepon)||pjWaHp(p.hp_pengisi);
+  if(!hp){toast('Nomor HP pemohon tidak valid/kosong.',true);return;}
+  let st;
+  if(p.status===PJ_ST.jadwal)st='Petugas kami akan berkunjung ke rumah Bapak/Ibu pada: *'+(p.jadwal_kunjungan||'-')+'*. Mohon siapkan KTP & KK asli.';
+  else if(p.status===PJ_ST.terima)st='Alhamdulillah, pengajuan Bapak/Ibu *DITERIMA*. Petugas akan menghubungi untuk proses penyaluran bantuan.';
+  else if(p.status===PJ_ST.tolak)st='Mohon maaf, pengajuan Bapak/Ibu *belum dapat kami penuhi* saat ini. Untuk keterangan lebih lanjut silakan hubungi kantor BAZNAS.';
+  else if(p.status===PJ_ST.kedaluwarsa)st='Pengajuan ditutup karena berkas belum diserahkan sampai batas waktu. Bapak/Ibu dapat mengajukan kembali.';
+  else if(p.berkas_status==='Lengkap')st='Berkas Bapak/Ibu sudah *lengkap*. Selanjutnya petugas akan menjadwalkan kunjungan ke rumah.';
+  else if(p.berkas_status==='Belum diserahkan')st='Mohon serahkan berkas (fotokopi KTP, KK, dan dokumen pendukung) ke kantor BAZNAS Kota Lubuklinggau'+(p.batas_berkas?' paling lambat *'+pjTgl(p.batas_berkas)+'*':'')+'.';
+  else st='Pengajuan Bapak/Ibu sedang kami verifikasi.';
+  const link='https://baznaskotallg.vercel.app/pengajuan.html#cek='+p.no_pengajuan;
+  const msg=`Assalamu'alaikum Bapak/Ibu,\n\nPengajuan bantuan Bapak/Ibu di BAZNAS Kota Lubuklinggau tercatat dengan nomor *${p.no_pengajuan}*.\n\n${st}\n\nCek perkembangan kapan saja di:\n${link}\n(masukkan nomor pengajuan & tanggal lahir)\n\nSimpan pesan ini. Wassalamu'alaikum,\nBAZNAS Kota Lubuklinggau`;
+  window.open('https://wa.me/'+hp+'?text='+encodeURIComponent(msg),'_blank','noopener');
+}
 function pjRender(){
   const aktif=pjList.filter(pjPerlu).length,siap=pjList.filter(pjSiap).length;
   const b=document.getElementById('pj-count');if(b){b.textContent=aktif;b.style.display=aktif?'inline-block':'none';}
