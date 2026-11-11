@@ -583,6 +583,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
       Export PDF Terpilih
     </button>
+    <button class="btn" style="background:#0f766e;color:#fff;" onclick="skBuka()" title="Centang mustahik di tabel, lalu cetak SK Ketua + lampiran daftar penerima">📜 Cetak SK Penetapan</button>
     <button class="btn" style="background:#6b21a8;color:#fff;" onclick="printSelectedData()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
       Cetak Data Terpilih (A4)
@@ -4507,6 +4508,153 @@ function ndOpsiBaca(){
   return {tgl:g('dok-nd-tgl'),petugas:g('dok-nd-petugas'),bendahara:g('dok-nd-bendahara'),kodeRkat:g('dok-nd-rkat'),mataAnggaran:g('dok-nd-mata'),sumberDana:g('dok-nd-sumber')};
 }
 
+// ════════════════════════════════════════════
+// v22 — SK KETUA: PENETAPAN PENERIMA BANTUAN per batch + lampiran daftar penerima
+// Hanya cetakan dari halaman admin: tidak ada data yang diubah / dikirim ke server (RPD hanya dibaca).
+// Nomor SK & tanggal dikosongkan untuk ditulis tangan.
+// ════════════════════════════════════════════
+const SK_SUMBER=['Zakat','Infak/Sedekah','Dana Sosial Keagamaan Lainnya'];
+let skBaris=[];
+function skAngka(v){const n=Number(String(v??'').replace(/[^\d]/g,''));return isNaN(n)?0:n;}
+function skRibuan(v){const n=skAngka(v);return n?n.toLocaleString('id-ID'):'';}
+function skModal(){
+  let m=document.getElementById('modal-sk');if(m)return m;
+  m=document.createElement('div');m.className='modal-overlay';m.id='modal-sk';
+  m.innerHTML=`<div class="modal" style="max-width:980px">
+    <div class="modal-hdr"><h3>📜 Cetak SK Penetapan Penerima Bantuan</h3><button class="x-btn" onclick="closeModal('modal-sk')">×</button></div>
+    <div class="modal-body" style="font-size:13.5px">
+      <div style="display:grid;grid-template-columns:2fr 1fr 110px;gap:10px;margin-bottom:10px">
+        <div class="field"><label>Judul bantuan / batch</label><input id="sk-judul" type="text" maxlength="120" placeholder="mis. Bantuan Modal Usaha Tahap I"/></div>
+        <div class="field"><label>Sumber dana</label><select id="sk-sumber">${SK_SUMBER.map(s=>`<option>${s}</option>`).join('')}</select></div>
+        <div class="field"><label>Tahun</label><input id="sk-tahun" type="number" min="2020" max="2100"/></div>
+      </div>
+      <div style="font-size:12px;color:var(--g500);margin-bottom:6px">Nilai diambil dari <b>total RPD Final</b>; bila tidak ada, dari <b>Nilai Bantuan di profil</b>. Nilai boleh diubah di sini — <b>hanya untuk cetakan ini</b>, data mustahik tidak berubah. Nomor SK dan tanggal dikosongkan untuk ditulis tangan.</div>
+      <div id="sk-status" style="font-size:12.5px;margin-bottom:6px"></div>
+      <div style="max-height:46vh;overflow:auto;border:1px solid var(--g200);border-radius:8px">
+        <table class="pj-tbl" style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:var(--g100);position:sticky;top:0">
+          <th style="padding:6px;width:30px"></th><th style="padding:6px;text-align:left">Nama</th><th style="padding:6px;text-align:left">ID Mustahik</th><th style="padding:6px;text-align:left">Kecamatan</th><th style="padding:6px;text-align:left">Asnaf</th><th style="padding:6px;text-align:left">Jenis bantuan</th><th style="padding:6px;text-align:right;width:140px">Nilai bantuan (Rp)</th><th style="padding:6px;text-align:left">Tanda</th></tr></thead>
+          <tbody id="sk-tbody"></tbody></table>
+      </div>
+      <div id="sk-total" style="margin-top:8px;font-weight:700;text-align:right"></div>
+    </div>
+    <div class="modal-ftr"><button class="btn btn-outline" onclick="closeModal('modal-sk')">Batal</button><button class="btn btn-primary" id="sk-btn-cetak" onclick="skCetak()">Cetak SK + Lampiran</button></div></div>`;
+  document.body.appendChild(m);
+  return m;
+}
+function skTanda(b){
+  const t=[];
+  if(!b.d.mustahikId)t.push(['#b91c1c','Belum punya ID Mustahik']);
+  if(b.d.statusVerifikasi!=='terverifikasi')t.push(['#b91c1c','Belum terverifikasi']);
+  if(!skAngka(b.nilai))t.push(['#b91c1c','Nilai kosong / 0']);
+  if(b.rpd!==null&&b.profil&&b.rpd!==b.profil)t.push(['#9a3412','RPD Final '+dRp(b.rpd)+' ≠ profil '+dRp(b.profil)]);
+  if(b.rpd===null&&b.dimuat)t.push(['#6b7280','Tanpa RPD Final (nilai dari profil)']);
+  if(b.gagal)t.push(['#9a3412','RPD gagal dimuat (nilai dari profil)']);
+  return t.map(x=>`<div style="color:${x[0]};font-size:11.5px;white-space:nowrap">⚠ ${dE(x[1])}</div>`).join('')||'<span style="color:#0d7c66">✓</span>';
+}
+function skRender(){
+  document.getElementById('sk-tbody').innerHTML=skBaris.map((b,i)=>`<tr data-sk="${i}" style="border-top:1px solid var(--g200)${b.ikut?'':';opacity:.45'}">
+    <td style="padding:5px;text-align:center"><input type="checkbox" class="sk-ikut" ${b.ikut?'checked':''} onchange="skBaris[${i}].ikut=this.checked;skRender()" title="Ikut dalam SK"/></td>
+    <td style="padding:5px;font-weight:700">${dE(b.d.nama)}</td><td style="padding:5px" class="mono">${dE(b.d.mustahikId||'—')}</td><td style="padding:5px">${dE(b.d.kecamatan||'—')}</td>
+    <td style="padding:5px">${dE(b.d.asnaf||'—')}</td><td style="padding:5px">${dE(b.d.kategoriBantuan||'—')}</td>
+    <td style="padding:5px"><input type="text" inputmode="numeric" class="sk-nilai" value="${skRibuan(b.nilai)}" style="width:130px;text-align:right" oninput="this.value=skRibuan(this.value);skBaris[${i}].nilai=skAngka(this.value);skRingkas(${i})"/></td>
+    <td style="padding:5px" class="sk-tanda">${skTanda(b)}</td></tr>`).join('');
+  skRingkas();
+}
+function skRingkas(i){
+  if(i!==undefined){const tr=document.querySelector('#sk-tbody tr[data-sk="'+i+'"] .sk-tanda');if(tr)tr.innerHTML=skTanda(skBaris[i]);}
+  const ikut=skBaris.filter(b=>b.ikut),tot=ikut.reduce((a,b)=>a+skAngka(b.nilai),0);
+  document.getElementById('sk-total').textContent=ikut.length+' penerima · Total '+(dRp(tot)||'Rp 0');
+}
+async function skBuka(){
+  const sel=dataList.filter(d=>d._selected);
+  if(!sel.length){toast('Centang dulu mustahik yang akan ditetapkan di tabel Daftar Mustahik.',true);return;}
+  if(sel.length>200){toast('Maksimal 200 penerima per SK.',true);return;}
+  skModal();
+  skBaris=sel.map(d=>({d,profil:skAngka(d.nilaiModal),rpd:null,nilai:skAngka(d.nilaiModal),ikut:true,dimuat:false,gagal:false}));
+  const kat=[...new Set(sel.map(d=>d.kategoriBantuan).filter(Boolean))];
+  document.getElementById('sk-judul').value=kat.length===1?(/^bantuan/i.test(kat[0])?kat[0]:'Bantuan '+kat[0]):'Bantuan';
+  document.getElementById('sk-tahun').value=new Date().getFullYear();
+  skRender();openModal('modal-sk');
+  // baca RPD Final (hanya baca) — 4 permintaan sekaligus
+  const st=document.getElementById('sk-status'),btn=document.getElementById('sk-btn-cetak');btn.disabled=true;
+  let selesai=0;const antre=skBaris.filter(b=>b.d.mustahikId),daftar=skBaris;
+  st.textContent=antre.length?'⏳ Membaca RPD Final… 0/'+antre.length:'';
+  const kerja=async()=>{for(;;){const b=antre.shift();if(!b)return;
+    try{const r=await dbApi('rpd_daftar',{mustahikId:b.d.mustahikId});
+      if(r.ok){const f=(r.rpd||[]).filter(x=>x.status==='Final').sort((x,y)=>String(y.tanggal).localeCompare(String(x.tanggal)))[0];
+        if(f){b.rpd=Number(f.total_rencana)||0;if(b.rpd)b.nilai=b.rpd;}b.dimuat=true;}else b.gagal=true;
+    }catch(e){b.gagal=true;}
+    selesai++;if(skBaris===daftar)st.textContent='⏳ Membaca RPD Final… '+selesai+'/'+(selesai+antre.length);}};
+  await Promise.all([kerja(),kerja(),kerja(),kerja()]);
+  if(skBaris!==daftar)return;   // dialog dibuka ulang dengan pilihan lain
+  const g=skBaris.filter(b=>b.gagal).length;
+  st.innerHTML=g?'<span style="color:#9a3412">⚠ RPD '+g+' mustahik gagal dimuat (sinyal?) — nilainya memakai profil. Tutup lalu buka lagi untuk mencoba ulang.</span>':'';
+  btn.disabled=false;skRender();
+}
+function skHtml(list,o){
+  const N=list.length,tot=list.reduce((a,b)=>a+b.nilai,0),J=dE(o.judul),JU=dE(o.judul.toUpperCase()),ttk='.'.repeat(48);
+  const ttd=`<table class="ttd" style="margin-top:3mm"><tr><td></td><td style="width:78mm">
+    <div>Ditetapkan di Lubuklinggau</div><div>pada tanggal ..............................</div>
+    <div class="jab" style="margin-top:2mm">KETUA,</div><div class="ruang" style="height:16mm"></div>
+    <div class="nama">${dE(DOK_PIMPINAN.ketua.nama)}</div></td></tr></table>`;
+  const sk=`<div class="hal sk">${dKop()}
+    <div class="sk-j">KEPUTUSAN KETUA<br/>BADAN AMIL ZAKAT NASIONAL KOTA LUBUKLINGGAU</div>
+    <div class="sk-j" style="font-weight:normal">NOMOR : ${ttk}</div>
+    <div class="sk-j">TENTANG</div>
+    <div class="sk-j">PENETAPAN PENERIMA ${JU}<br/>TAHUN ${dE(o.tahun)}</div>
+    <div class="sk-j" style="margin-top:3mm">KETUA BADAN AMIL ZAKAT NASIONAL KOTA LUBUKLINGGAU,</div>
+    <table class="sk-t"><tr><td class="l">Menimbang</td><td class="s">:</td><td><ol type="a">
+      <li>bahwa dalam rangka pendistribusian dan pendayagunaan zakat, infak, sedekah, dan dana sosial keagamaan lainnya sesuai dengan syariat Islam, perlu disalurkan ${J} kepada mustahik yang berhak;</li>
+      <li>bahwa nama-nama sebagaimana tercantum dalam Lampiran Keputusan ini telah melalui pendataan, pemeriksaan berkas, dan survei lapangan serta dinyatakan memenuhi syarat sebagai penerima bantuan;</li>
+      <li>bahwa berdasarkan pertimbangan sebagaimana dimaksud dalam huruf a dan huruf b, perlu menetapkan Keputusan Ketua Badan Amil Zakat Nasional Kota Lubuklinggau tentang Penetapan Penerima ${J} Tahun ${dE(o.tahun)};</li></ol></td></tr>
+    <tr><td class="l">Mengingat</td><td class="s">:</td><td><ol>
+      <li>Undang-Undang Nomor 23 Tahun 2011 tentang Pengelolaan Zakat;</li>
+      <li>Peraturan Pemerintah Nomor 14 Tahun 2014 tentang Pelaksanaan Undang-Undang Nomor 23 Tahun 2011 tentang Pengelolaan Zakat;</li>
+      <li>Peraturan Daerah Kota Lubuklinggau Nomor 3 Tahun 2016 tentang Pengelolaan Zakat, Infak, dan Sedekah;</li>
+      <li>Rencana Kerja dan Anggaran Tahunan (RKAT) BAZNAS Kota Lubuklinggau Tahun ${dE(o.tahun)};</li></ol></td></tr></table>
+    <div class="sk-j" style="margin:2mm 0">MEMUTUSKAN:</div>
+    <table class="sk-t"><tr><td class="l">Menetapkan</td><td class="s">:</td><td>KEPUTUSAN KETUA BADAN AMIL ZAKAT NASIONAL KOTA LUBUKLINGGAU TENTANG PENETAPAN PENERIMA ${JU} TAHUN ${dE(o.tahun)}.</td></tr>
+    <tr><td class="l">KESATU</td><td class="s">:</td><td>Menetapkan nama-nama sebagaimana tercantum dalam Lampiran yang merupakan bagian tidak terpisahkan dari Keputusan ini sebagai penerima ${J}, sebanyak <b>${N} (${dE(terbilang(N).replace(/ rupiah$/,'').toLowerCase())}) orang</b> dengan jumlah keseluruhan <b>${dRp(tot)||'Rp 0'}</b> (${dE(terbilang(tot).toLowerCase())}).</td></tr>
+    <tr><td class="l">KEDUA</td><td class="s">:</td><td>Bantuan sebagaimana dimaksud dalam Diktum KESATU bersumber dari dana ${dE(o.sumber)} BAZNAS Kota Lubuklinggau Tahun ${dE(o.tahun)} dan disalurkan sesuai dengan ketentuan syariat Islam dan peraturan perundang-undangan.</td></tr>
+    <tr><td class="l">KETIGA</td><td class="s">:</td><td>Penerima bantuan wajib menggunakan bantuan sesuai dengan peruntukannya dan bersedia dimonitor oleh BAZNAS Kota Lubuklinggau.</td></tr>
+    </table>
+    <div style="break-inside:avoid;page-break-inside:avoid"><table class="sk-t"><tr><td class="l">KEEMPAT</td><td class="s">:</td><td>Keputusan ini mulai berlaku pada tanggal ditetapkan, dengan ketentuan apabila di kemudian hari terdapat kekeliruan akan diadakan perbaikan sebagaimana mestinya.</td></tr></table>
+    ${ttd}</div></div>`;
+  const lamp=`<div class="hal sk">
+    <table class="sk-lk"><tr><td>LAMPIRAN</td><td></td></tr><tr><td colspan="2">KEPUTUSAN KETUA BADAN AMIL ZAKAT NASIONAL KOTA LUBUKLINGGAU</td></tr>
+      <tr><td style="width:22mm">NOMOR</td><td>: ${ttk}</td></tr><tr><td>TANGGAL</td><td>: ${ttk}</td></tr>
+      <tr><td>TENTANG</td><td>: PENETAPAN PENERIMA ${JU} TAHUN ${dE(o.tahun)}</td></tr></table>
+    <div class="sk-j" style="margin:4mm 0 2mm">DAFTAR PENERIMA ${JU}</div>
+    <table class="tbl sk-d"><thead><tr><th style="width:8mm">No</th><th>Nama</th><th>ID Mustahik</th><th>Kecamatan</th><th>Asnaf</th><th>Jenis Bantuan</th><th style="width:30mm">Nilai Bantuan</th></tr></thead>
+    <tbody>${list.map((b,i)=>`<tr><td class="c">${i+1}</td><td>${dE(b.d.nama)}</td><td>${dE(b.d.mustahikId||'')}</td><td>${dE(b.d.kecamatan||'')}</td><td>${dE(b.d.asnaf||'')}</td><td>${dE(b.d.kategoriBantuan||'')}</td><td class="ka">${dRp(b.nilai)||'Rp 0'}</td></tr>`).join('')}
+    <tr class="tot"><td colspan="6" class="ka"><b>TOTAL (${N} penerima)</b></td><td class="ka"><b>${dRp(tot)||'Rp 0'}</b></td></tr>
+    <tr class="tot"><td colspan="7"><i>Terbilang: ${dE(terbilang(tot))}</i></td></tr></tbody></table>
+    <div style="break-inside:avoid;page-break-inside:avoid">${ttd.replace('<div>Ditetapkan di Lubuklinggau</div><div>pada tanggal ..............................</div>','')}</div></div>`;
+  return `<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>SK Penetapan Penerima — BAZNAS Kota Lubuklinggau</title><style>${DOK_CSS}
+    .sk{font-size:10.5pt;line-height:1.22}.sk-j{text-align:center;font-weight:bold;margin:1mm 0}
+    .sk-t{width:100%;border-collapse:collapse}.sk-t td{vertical-align:top;padding:.4mm 0;text-align:justify}.sk-t td.l{width:25mm;text-align:left}.sk-t td.s{width:4mm}
+    .sk-t ol{margin:0;padding-left:5.5mm}.sk-t li{margin-bottom:.3mm}
+    .sk-lk{border-collapse:collapse;font-size:10.5pt;margin-left:auto;width:100mm}.sk-lk td{padding:0 1mm;vertical-align:top}
+    .sk-d{font-size:9.5pt}.sk-d thead{display:table-header-group}.sk-d tr{break-inside:avoid;page-break-inside:avoid}.sk-d .ka{text-align:right;white-space:nowrap}
+    .sk .ttd td{text-align:left}.sk .ttd .nama{font-weight:bold;text-decoration:underline}</style></head><body>${sk}${lamp}</body></html>`;
+}
+function skCetak(){
+  const judul=document.getElementById('sk-judul').value.replace(/\s+/g,' ').trim(),tahun=String(parseInt(document.getElementById('sk-tahun').value)||new Date().getFullYear());
+  if(judul.length<5){toast('Isi judul bantuan / batch (mis. "Bantuan Modal Usaha Tahap I").',true);return;}
+  const list=skBaris.filter(b=>b.ikut).map(b=>({d:b.d,nilai:skAngka(b.nilai)}));
+  if(!list.length){toast('Tidak ada penerima yang dicentang di dialog.',true);return;}
+  const kosong=list.filter(b=>!b.nilai);
+  if(kosong.length){toast('Nilai bantuan '+kosong.length+' penerima masih kosong/0 ('+kosong.slice(0,3).map(b=>b.d.nama).join(', ')+(kosong.length>3?', …':'')+') — isi nilainya atau hilangkan centangnya.',true);return;}
+  const tanpaId=list.filter(b=>!b.d.mustahikId||b.d.statusVerifikasi!=='terverifikasi');
+  list.sort((a,b)=>String(a.d.kecamatan||'').localeCompare(String(b.d.kecamatan||''))||String(a.d.nama||'').localeCompare(String(b.d.nama||'')));
+  const w=window.open('','_blank','width=1000,height=750,scrollbars=yes');
+  if(!w){toast('Popup diblokir browser. Izinkan popup untuk halaman ini.',true);return;}
+  w.document.write(skHtml(list,{judul,tahun,sumber:document.getElementById('sk-sumber').value}));w.document.close();
+  w.onload=()=>setTimeout(()=>{w.focus();w.print();},400);
+  closeModal('modal-sk');
+  toast(tanpaId.length?('⚠ SK dicetak, tetapi '+tanpaId.length+' penerima belum terverifikasi / belum punya ID Mustahik.'):('✓ Membuka SK Penetapan ('+list.length+' penerima) — pilih printer atau "Save as PDF", kertas A4.'),!!tanpaId.length);
+}
+
 document.querySelectorAll('input[name=dok-jenis]').forEach(r=>r.addEventListener('change',ndOpsiToggle));
 
 // ── Data pendidikan (beasiswa) ──
@@ -6222,7 +6370,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='21 · 11 Nov 2026';
+const APP_VERSI='22 · 11 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
@@ -6286,11 +6434,11 @@ v15Init();
   const jaga=(nama,syarat,siapa)=>{const asli=window[nama];if(typeof asli!=='function')return;window[nama]=function(){if(!syarat()){tolak(siapa);return;}return asli.apply(this,arguments);};};
   const admin=()=>jab()===ADMIN, bukanPetugas=()=>jab()!=='PETUGAS';
   ['hapusBaris','konfHapusSemua','konfRollback','handleFileImport','bmHapus','rpdHapus','mzHapus'].forEach(n=>jaga(n,admin,'Wakil Ketua III (admin)'));
-  ['exDialog','exportPdfSelectedData'].forEach(n=>jaga(n,bukanPetugas,'Pimpinan (Ketua/Wakil Ketua)'));
+  ['exDialog','exportPdfSelectedData','skBuka','skCetak'].forEach(n=>jaga(n,bukanPetugas,'Pimpinan (Ketua/Wakil Ketua)'));
   const asliSet=window.ssSet;if(typeof asliSet==='function')window.ssSet=function(k,v){const h=asliSet.apply(this,arguments);if(k==='baznas_jabatan')terapkanPeran();return h;};
   const css=document.createElement('style');
   css.textContent=`body:not(.peran-admin) #tab-import-btn,body:not(.peran-admin) [onclick*="t-import"],body:not(.peran-admin) [onclick^="konfHapusSemua"],body:not(.peran-admin) [onclick^="hapusBaris"],body:not(.peran-admin) [onclick^="bmHapus"],body:not(.peran-admin) [onclick^="rpdHapus("],body:not(.peran-admin) [onclick^="mzHapus"]{display:none!important}
-  body.peran-petugas [onclick^="exDialog"],body.peran-petugas [onclick^="exportPdfSelectedData"]{display:none!important}`;
+  body.peran-petugas [onclick^="exDialog"],body.peran-petugas [onclick^="exportPdfSelectedData"],body.peran-petugas [onclick^="skBuka"]{display:none!important}`;
   document.head.appendChild(css);
   terapkanPeran();
 })();
