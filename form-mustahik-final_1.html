@@ -6176,5 +6176,24 @@ v12Init();
 v13Init();
 v15Init();
 </script>
+<script>
+// v18 — Hak akses per peran. Admin = Wakil Ketua III. WK/Ketua: lihat, setujui, ekspor, cetak. Petugas: input/ubah, unggah, cetak.
+(function(){
+  const ADMIN='WK3';
+  const jab=()=>ssGet('baznas_jabatan')||'PETUGAS';
+  window.terapkanPeran=function(){const j=jab();document.body.classList.toggle('peran-admin',j===ADMIN);document.body.classList.toggle('peran-petugas',j==='PETUGAS');};
+  const tolak=(siapa)=>toast('Fitur ini hanya untuk '+siapa+'.',true);
+  const jaga=(nama,syarat,siapa)=>{const asli=window[nama];if(typeof asli!=='function')return;window[nama]=function(){if(!syarat()){tolak(siapa);return;}return asli.apply(this,arguments);};};
+  const admin=()=>jab()===ADMIN, bukanPetugas=()=>jab()!=='PETUGAS';
+  ['hapusBaris','konfHapusSemua','konfRollback','handleFileImport','bmHapus','rpdHapus','mzHapus'].forEach(n=>jaga(n,admin,'Wakil Ketua III (admin)'));
+  ['exDialog','exportPdfSelectedData'].forEach(n=>jaga(n,bukanPetugas,'Pimpinan (Ketua/Wakil Ketua)'));
+  const asliSet=window.ssSet;if(typeof asliSet==='function')window.ssSet=function(k,v){const h=asliSet.apply(this,arguments);if(k==='baznas_jabatan')terapkanPeran();return h;};
+  const css=document.createElement('style');
+  css.textContent=`body:not(.peran-admin) #tab-import-btn,body:not(.peran-admin) [onclick*="t-import"],body:not(.peran-admin) [onclick^="konfHapusSemua"],body:not(.peran-admin) [onclick^="hapusBaris"],body:not(.peran-admin) [onclick^="bmHapus"],body:not(.peran-admin) [onclick^="rpdHapus("],body:not(.peran-admin) [onclick^="mzHapus"]{display:none!important}
+  body.peran-petugas [onclick^="exDialog"],body.peran-petugas [onclick^="exportPdfSelectedData"]{display:none!important}`;
+  document.head.appendChild(css);
+  terapkanPeran();
+})();
+</script>
 </body>
 </html>
