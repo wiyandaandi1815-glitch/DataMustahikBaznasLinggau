@@ -1238,6 +1238,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
       <label style="display:flex;gap:8px;align-items:center;margin-bottom:6px;cursor:pointer"><input type="radio" name="dok-jenis" value="transfer" style="width:auto"> Surat Permohonan Transfer</label>
       <label style="display:flex;gap:8px;align-items:center;margin-bottom:10px;cursor:pointer"><input type="radio" name="dok-jenis" value="pernyataan" style="width:auto"> Surat Pernyataan Hubungan Pemilik Rekening</label>
       <label style="display:flex;gap:8px;align-items:center;margin-bottom:6px;cursor:pointer"><input type="radio" name="dok-jenis" value="sanggup" style="width:auto"> Surat Pernyataan Mustahik <span style="color:var(--g500);font-size:12px">(kebenaran data &amp; kesanggupan)</span></label>
+      <label style="display:flex;gap:8px;align-items:center;margin-bottom:6px;cursor:pointer"><input type="radio" name="dok-jenis" value="serah" style="width:auto"> Berita Acara Serah Terima Bantuan <span style="color:var(--g500);font-size:12px">(+ tanda terima, rincian RPD)</span></label>
       <label style="display:flex;gap:8px;align-items:center;margin-bottom:10px;cursor:pointer"><input type="radio" name="dok-jenis" value="publikasi" style="width:auto"> Surat Persetujuan Publikasi Foto &amp; Cerita</label>
       <div style="font-weight:700;margin:4px 0 6px;color:var(--teal-dark)">Nota Dinas penyaluran <span style="font-weight:400;font-size:12px;color:var(--g500)">(kolektif + lampiran + lembar disposisi)</span></div>
       <label style="display:flex;gap:8px;align-items:center;margin-bottom:6px;cursor:pointer"><input type="radio" name="dok-jenis" value="nd1" style="width:auto"> ND-1 · Petugas Survei → Wakil Ketua II <span style="color:var(--g500);font-size:12px">(laporan survei &amp; usulan)</span></label>
@@ -3908,7 +3909,7 @@ const DOK_PIMPINAN={
 };
 const DOK_ASNAF=['Fakir','Miskin','Amil','Muallaf','Riqab','Gharim','Fisabilillah','Ibnu Sabil'];
 const DOK_BANTUAN=['Zakat Konsumtif','Zakat Produktif','Infak/Sedekah','Bantuan Pendidikan','Bantuan Kesehatan','Bantuan Rumah Layak Huni','Bantuan Modal Usaha','Bantuan Dakwah'];
-const DOK_NAMA={formulir:'Formulir Pendaftaran Mustahik',transfer:'Surat Permohonan Transfer',pernyataan:'Surat Pernyataan Hubungan Pemilik Rekening',sanggup:'Surat Pernyataan Mustahik',publikasi:'Surat Persetujuan Publikasi Foto & Cerita'};
+const DOK_NAMA={formulir:'Formulir Pendaftaran Mustahik',transfer:'Surat Permohonan Transfer',pernyataan:'Surat Pernyataan Hubungan Pemilik Rekening',sanggup:'Surat Pernyataan Mustahik',serah:'Berita Acara Serah Terima Bantuan',publikasi:'Surat Persetujuan Publikasi Foto & Cerita'};
 let _dokTarget=null; // id mustahik bila dibuka dari Detail
 
 function dE(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -4080,7 +4081,56 @@ function dokPublikasi(d){
   </div>`;
 }
 
-const DOK_CSS=`
+// ── 6. Berita Acara Serah Terima Bantuan + Tanda Terima (v18) ──
+function dokSerah(d,rpd){
+  const b=!d; d=d||{};
+  const ks=t=>`<span style="display:inline-block;margin-right:12px"><b class="kotak"></b> ${t}</span>`;
+  const nilai=rpd&&rpd.nilai_bantuan?rpd.nilai_bantuan:(+d.nilaiModal||0);
+  const r=(l,v)=>`<tr><td class="lbl">${l}</td><td class="sep">:</td><td>${v}</td></tr>`;
+  const item=(rpd&&rpd.item)||[];
+  const tabelRpd=item.length?`<div class="sub">Rincian bantuan sesuai Rencana Penggunaan Dana (${dE(rpd.idRpd||'')})</div>
+    <table class="tbl"><tr><th>No</th><th>Uraian</th><th>Volume</th><th>Harga Satuan</th><th>Jumlah</th></tr>${item.map((x,i)=>`<tr><td class="c">${i+1}</td><td>${dE(x.uraian)}${x.spesifikasi?' — '+dE(x.spesifikasi):''}</td><td class="c">${dE(x.volume)} ${dE(x.satuan)}</td><td style="text-align:right">${dRp(x.harga)}</td><td style="text-align:right">${dRp(x.jumlah)}</td></tr>`).join('')}
+    <tr><td colspan="4" style="text-align:right"><b>Total</b></td><td style="text-align:right"><b>${dRp(rpd.total_rencana)}</b></td></tr></table>`:'';
+  const nomor='Nomor: <span class="nk"></span>/BAST/BAZNAS-LL/'+ND_ROMAWI[new Date().getMonth()]+'/'+new Date().getFullYear();
+  return `<div class="hal bast">${dKop()}
+    <div class="judul" style="margin-bottom:0">BERITA ACARA SERAH TERIMA BANTUAN</div><div style="text-align:center;margin-bottom:3mm">${nomor}</div>
+    <p class="isi-surat">Pada hari ini <span class="nk" style="width:25mm"></span> tanggal <span class="nk" style="width:40mm"></span> bertempat di <span class="nk" style="width:45mm"></span>, yang bertanda tangan di bawah ini:</p>
+    <table class="data ind">${r('I. Nama','<span class="nk" style="width:70mm"></span>')}${r('Jabatan','Petugas / Amil BAZNAS Kota Lubuklinggau')}</table>
+    <p class="isi-surat" style="margin:1mm 0">selanjutnya disebut <b>PIHAK PERTAMA</b> (yang menyerahkan), dan</p>
+    ${dokIdentitas(d,b)}
+    <p class="isi-surat" style="margin:1mm 0">selanjutnya disebut <b>PIHAK KEDUA</b> (penerima bantuan / mustahik). PIHAK PERTAMA telah menyerahkan dan PIHAK KEDUA telah menerima bantuan dengan rincian:</p>
+    <table class="data ind">${r('Jenis Bantuan',dV(d.katBantuan))}${r('Asnaf',dV(d.asnaf))}${r('Program',dV(d.program))}
+      ${r('Nilai Bantuan',nilai?`<b>${dRp(nilai)}</b> <i>(${terbilang(nilai)})</i>`:'<span class="nk" style="width:70mm"></span>')}
+      ${r('Sumber Dana',ks('Zakat')+ks('Infak/Sedekah')+ks('DSKL'))}${r('Bentuk Penyerahan',ks('Tunai')+ks('Transfer')+ks('Barang'))}</table>
+    ${tabelRpd}
+    <p class="isi-surat" style="margin-top:2mm">PIHAK KEDUA menyatakan bantuan telah diterima <b>dalam keadaan baik dan lengkap</b>, akan digunakan sesuai peruntukannya${item.length?' dan Rencana Penggunaan Dana di atas':''}, serta bersedia dipantau oleh BAZNAS Kota Lubuklinggau.</p>
+    ${dTtd([{atas:'PIHAK PERTAMA',jabatan:'Yang Menyerahkan'},{atas:'PIHAK KEDUA',jabatan:'Yang Menerima',nama:b?'':d.nama}])}
+    ${dTtd([{atas:'Saksi,',jabatan:'Ketua RT / Pendamping'},{atas:'Mengetahui,',jabatan:DOK_PIMPINAN.waka2.jabatan+' BAZNAS Kota Lubuklinggau',nama:DOK_PIMPINAN.waka2.nama}])}
+    <div style="border-top:1.5px dashed #000;margin:4mm 0 2mm;position:relative"><span style="position:absolute;left:0;top:-3.2mm;background:#fff;font-size:9pt">✂ gunting di sini — arsip BAZNAS (Buku Bukti Kas)</span></div>
+    <div style="border:1px solid #000;padding:2.5mm 4mm">
+      <div style="font-weight:bold;text-align:center;font-size:11pt">TANDA TERIMA</div>
+      <table class="data">${r('Telah terima dari','BAZNAS Kota Lubuklinggau')}${r('Uang / barang senilai',nilai?`<b>${dRp(nilai)}</b> <i>(${terbilang(nilai)})</i>`:'<span class="nk" style="width:80mm"></span>')}${r('Untuk',dV(d.katBantuan)+(d.program?' — '+dE(d.program):''))}${r('ID Mustahik',dV(d.mustahikId))}</table>
+      ${dTtd([{spacer:true},{atas:'Lubuklinggau, ..............................',jabatan:'Penerima',nama:b?'':d.nama}])}
+    </div>
+  </div>`;
+}
+async function dokCetakSerah(win,list){
+  win.document.write('<p style="font-family:sans-serif;padding:20px">⏳ Memuat data RPD…</p>');
+  const hal=[];
+  for(const d of list.slice(0,30)){
+    let rpd=null;
+    if(d.mustahikId){try{const r=await dbApi('rpd_daftar',{mustahikId:d.mustahikId});if(r.ok&&r.rpd&&r.rpd.length)rpd=r.rpd.find(x=>x.status==='Final')||r.rpd[0];}catch(e){}}
+    hal.push(dokSerah(d,rpd));
+  }
+  win.document.open();
+  win.document.write(`<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Berita Acara Serah Terima — BAZNAS Kota Lubuklinggau</title><style>${DOK_CSS}</style></head><body>${hal.join('')}</body></html>`);
+  win.document.close();
+  setTimeout(()=>{win.focus();win.print();},700);
+  toast('✓ Berita Acara Serah Terima ('+hal.length+' halaman).');
+}
+
+const DOK_CSS=`.nk{display:inline-block;width:22mm;border-bottom:1px solid #000}.tbl{width:100%;border-collapse:collapse;font-size:9.5pt;margin:1mm 0}.tbl th,.tbl td{border:1px solid #000;padding:1mm 1.5mm}.tbl th{background:#eee}.bast .ttd .ruang{height:11mm}.bast .isi-surat{margin:2px 0;line-height:1.3}.bast .ttd{margin-top:1px}.bast .data td{padding:0 2px}
+
     @page{size:A4;margin:9mm 14mm 9mm 18mm}
     *{box-sizing:border-box}
     body{font-family:"Times New Roman",Times,serif;font-size:10.5pt;color:#000;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -4131,7 +4181,7 @@ const DOK_CSS=`
 `;
 
 function dokDokumenHtml(jenis,list){
-  const gen={formulir:dokFormulir,transfer:dokTransfer,pernyataan:dokPernyataan,sanggup:dokSanggup,publikasi:dokPublikasi}[jenis];
+  const gen={formulir:dokFormulir,transfer:dokTransfer,pernyataan:dokPernyataan,sanggup:dokSanggup,serah:dokSerah,publikasi:dokPublikasi}[jenis];
   const halaman=list.map(d=>gen(d)).join('');
   return `<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>${DOK_NAMA[jenis]} — BAZNAS Kota Lubuklinggau</title>
   <style>${DOK_CSS}</style></head><body>${halaman}</body></html>`;
@@ -4181,6 +4231,7 @@ function cetakDokumen(){
   const win=window.open('','_blank','width=900,height=750,scrollbars=yes');
   if(!win){toast('Popup diblokir browser. Izinkan popup untuk halaman ini.',true);return;}
   if(lamp){dokCetakLampiran(win,list[0]);closeModal('modal-dok');return;}
+  if(jenis==='serah'&&sumber!=='kosong'){dokCetakSerah(win,list);closeModal('modal-dok');return;}
   win.document.write(dokDokumenHtml(jenis,list));
   win.document.close();
   win.onload=()=>setTimeout(()=>{win.focus();win.print();},400);
