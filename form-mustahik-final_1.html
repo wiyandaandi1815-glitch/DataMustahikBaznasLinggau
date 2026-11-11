@@ -640,6 +640,11 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
       <option value="true">Aktif</option>
       <option value="false">Nonaktif</option>
     </select>
+    <select id="q-lengkap" onchange="applyFilter()">
+      <option value="">Semua Kelengkapan</option>
+      <option value="kurang">⚠ Data belum lengkap</option>
+      <option value="lengkap">✓ Data lengkap</option>
+    </select>
     <button class="btn btn-ghost btn-sm" onclick="resetFilter()">↺ Reset</button>
   </div>
 
@@ -2516,6 +2521,7 @@ function applyFilter(){
   const desil=getVal('q-desil');
   const aktif=getVal('q-aktif');
   const dbz=getVal('q-dbz');
+  const lengkap=getVal('q-lengkap');
   filteredData=dataList.filter(d=>{
     if(dbz){
       if(dbz==='zauto'){if(d.layakZAuto!=='Ya')return false;}
@@ -2536,6 +2542,7 @@ function applyFilter(){
     if(verif&&d.statusVerifikasi!==verif)return false;
     if(desil&&String(d.desil)!==desil)return false;
     if(aktif&&d.isActive!==aktif)return false;
+    if(lengkap&&(mhKurang(d).length>0)!==(lengkap==='kurang'))return false;
     return true;
   });
   filteredData=v14Urut(filteredData);
@@ -2544,7 +2551,7 @@ function applyFilter(){
 }
 
 function resetFilter(){
-  ['q-search','q-asnaf','q-verif','q-desil','q-dbz','q-aktif'].forEach(id=>{
+  ['q-search','q-asnaf','q-verif','q-desil','q-dbz','q-aktif','q-lengkap'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
   applyFilter();
