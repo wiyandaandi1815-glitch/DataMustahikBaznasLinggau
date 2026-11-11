@@ -32,7 +32,11 @@ textarea{min-height:70px}
 .pil label:has(input:checked){border-color:var(--teal);background:#e6f4f1;color:var(--teal-d)}
 .grup{font-weight:700;color:var(--teal-d);background:#e6f4f1;border-left:4px solid var(--teal);padding:7px 10px;border-radius:6px;margin:14px 0 8px;font-size:13.5px}
 .lencana{display:inline-block;font-size:11.5px;font-weight:700;border-radius:10px;padding:1px 9px}
-.l-siap{background:#fef3c7;color:#92400e}.l-tugas{background:#dbeafe;color:#1e40af}.l-selesai{background:#d1fae5;color:#065f46}.l-antre{background:#ffedd5;color:#9a3412}
+.l-siap{background:#fef3c7;color:#92400e}.l-tugas{background:#dbeafe;color:#1e40af}.l-selesai{background:#d1fae5;color:#065f46}.l-antre{background:#ffedd5;color:#9a3412}.l-belum{background:var(--g100);color:var(--g500)}
+.tabs{display:flex;gap:6px;margin:0 0 10px}
+.tabs button{flex:1;font:inherit;font-weight:700;padding:10px;min-height:44px;border:1.5px solid var(--teal);border-radius:9px;background:#fff;color:var(--teal-d);cursor:pointer}
+.tabs button.on{background:var(--teal);color:#fff}
+.nota-brs{border:1px solid var(--g200);border-radius:9px;padding:9px;margin:8px 0;background:#fafafa}
 .baris{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .kecil{font-size:12.5px;color:var(--g500)}
 h2{font-size:15px;margin:16px 0 4px;color:var(--teal-d);border-bottom:2px solid #e6f4f1;padding-bottom:4px}
@@ -62,6 +66,8 @@ canvas.ttd{width:100%;height:170px;border:1.5px dashed #94a3b8;border-radius:9px
 #cetak td,#cetak th{border:1px solid #444;padding:1px 6px;font-size:9pt;line-height:1.3;text-align:left;vertical-align:top}
 #cetak th{background:#eee;width:52%}
 #cetak .id td{border:0;padding:1px 4px}
+#cetak .nota th{width:auto}
+#cetak .ka{text-align:right;white-space:nowrap}
 #cetak .bag{font-weight:700;margin:5px 0 1px;font-size:10pt}
 #cetak .akhir{break-inside:avoid}
 #cetak .ttd2{display:flex;gap:20px;margin-top:8px}
@@ -73,7 +79,7 @@ canvas.ttd{width:100%;height:170px;border:1.5px dashed #94a3b8;border-radius:9px
 </style>
 </head>
 <body data-hal="survei">
-<header><h1>Kunjungan Survei<small id="hd-sub">BAZNAS Kota Lubuklinggau</small></h1><button class="btn kecil sek" id="btn-keluar" style="display:none" onclick="keluar()">Keluar</button></header>
+<header><h1><span id="hd-judul">Kunjungan Survei</span><small id="hd-sub">BAZNAS Kota Lubuklinggau</small></h1><button class="btn kecil sek" id="btn-keluar" style="display:none" onclick="keluar()">Keluar</button></header>
 <div id="pita"></div>
 <main>
   <section id="v-masuk" class="kartu" style="display:none">
@@ -86,11 +92,11 @@ canvas.ttd{width:100%;height:170px;border:1.5px dashed #94a3b8;border-radius:9px
   </section>
 
   <section id="v-daftar" style="display:none">
+    <div class="tabs"><button id="tab-survei" class="on" onclick="gantiMode('survei')">Survei</button><button id="tab-monitoring" onclick="gantiMode('monitoring')">Monitoring</button></div>
     <div class="kartu">
       <div class="baris">
-        <select id="f-status" onchange="tampilDaftar()" style="flex:1;min-width:150px">
-          <option value="aktif">Belum disurvei</option><option value="">Semua</option><option value="Selesai disurvei">Selesai disurvei</option>
-        </select>
+        <select id="f-status" onchange="tampilDaftar()" style="flex:1;min-width:150px"></select>
+        <select id="f-jenis" onchange="tampilDaftar()" style="flex:1;min-width:150px"><option value="">Semua jenis bantuan</option></select>
         <input id="f-cari" type="text" placeholder="Cari nama / kelurahan" oninput="tampilDaftar()" style="flex:2;min-width:160px">
         <button class="btn kecil sek" onclick="muat()">Muat ulang</button>
       </div>
@@ -103,9 +109,14 @@ canvas.ttd{width:100%;height:170px;border:1.5px dashed #94a3b8;border-radius:9px
     <div class="kartu" id="form-kepala"></div>
     <div id="form-galat" class="galat" style="display:none"></div>
     <div class="kartu" id="form-isi"></div>
+    <div class="kartu" id="kartu-nota" style="display:none">
+      <h2 style="margin-top:0">Kecocokan nota dengan RPD</h2>
+      <div class="kecil">Cocokkan nota/kuitansi belanja dengan tiap baris Rencana Penggunaan Dana.</div>
+      <div id="nota-isi"></div>
+    </div>
     <div class="kartu">
       <h2 style="margin-top:0">Foto (minimal <span id="min-foto">3</span>)</h2>
-      <div class="kecil">Contoh: tampak depan, ruang dalam, dapur/WC. Foto diperkecil otomatis.</div>
+      <div class="kecil" id="foto-petunjuk">Contoh: tampak depan, ruang dalam, dapur/WC. Foto diperkecil otomatis.</div>
       <div class="foto-grid" id="foto-grid" style="margin:8px 0"></div>
       <input id="in-foto" type="file" accept="image/*" capture="environment" multiple style="display:none" onchange="tambahFoto(this)">
       <button class="btn sek" id="btn-foto" onclick="document.getElementById('in-foto').click()">+ Ambil foto</button>
@@ -117,9 +128,9 @@ canvas.ttd{width:100%;height:170px;border:1.5px dashed #94a3b8;border-radius:9px
       <div id="gps-alasan-wrap" style="display:none"><label for="in-alasan-gps">Alasan lokasi tidak terbaca <span class="w">*</span></label><input id="in-alasan-gps" type="text" maxlength="160" oninput="simpanDraf()"></div>
     </div>
     <div class="kartu">
-      <h2 style="margin-top:0">Rekomendasi surveyor</h2>
+      <h2 style="margin-top:0" id="lbl-kes">Rekomendasi surveyor</h2>
       <div class="pil" id="pil-rek"></div>
-      <label for="in-catatan">Catatan surveyor</label>
+      <label for="in-catatan" id="lbl-catatan">Catatan surveyor</label>
       <textarea id="in-catatan" maxlength="600" oninput="simpanDraf()"></textarea>
     </div>
     <div class="kartu">
@@ -129,7 +140,7 @@ canvas.ttd{width:100%;height:170px;border:1.5px dashed #94a3b8;border-radius:9px
       <label>Tanda tangan calon mustahik <span class="w">*</span></label>
       <canvas class="ttd" id="ttd-mustahik" width="700" height="260"></canvas>
       <button class="btn kecil bahaya" style="margin-top:6px" onclick="ttdHapus('mustahik')">Hapus tanda tangan</button>
-      <label>Tanda tangan surveyor <span class="w">*</span></label>
+      <label id="lbl-ttd2">Tanda tangan surveyor <span class="w">*</span></label>
       <canvas class="ttd" id="ttd-surveyor" width="700" height="260"></canvas>
       <button class="btn kecil bahaya" style="margin-top:6px" onclick="ttdHapus('surveyor')">Hapus tanda tangan</button>
     </div>
@@ -141,11 +152,20 @@ canvas.ttd{width:100%;height:170px;border:1.5px dashed #94a3b8;border-radius:9px
 <script>
 'use strict';
 const DB_URL='https://script.google.com/macros/s/AKfycbwcFWag2lgTgaaV5lKBWU_YDrhSHEAgPgXyrfFR9tq6uRyzrg5t_158fHzSBX6183me/exec';
-const ST={siap:'Siap survei',tugas:'Ditugaskan',selesai:'Selesai disurvei'};
+// Dua mode dalam satu halaman: survei calon mustahik (v19) dan monitoring pascabantuan (v20).
+const MODE={
+  survei:{pre:'',judul:'Kunjungan Survei',selesai:'Selesai disurvei',siap:'Siap survei',isi:'Isi form survei',kirim:'Kirim hasil survei',hasil:'Hasil survei',
+    lblKes:'Rekomendasi surveyor',lblTtd:'Tanda tangan surveyor',kosong:'Belum ada kunjungan yang ditugaskan kepada Anda.',pihak2:'Surveyor'},
+  monitoring:{pre:'mon-',judul:'Monitoring Pascabantuan',selesai:'Selesai',siap:'Jatuh tempo',isi:'Isi lembar monitoring',kirim:'Kirim lembar monitoring',hasil:'Lembar monitoring',
+    lblKes:'Kesimpulan petugas',lblTtd:'Tanda tangan petugas',kosong:'Belum ada monitoring yang ditugaskan kepada Anda.',pihak2:'Petugas'}
+};
 const KET_FOTO=['Tampak depan','Ruang dalam','Dapur','Kamar mandi/WC','Atap','Tampak samping','Lainnya'];
-let token='',nama='',jabatan='',resp=null,offline=false,aktif=null,draf=null,antre={},galatDraf={};
+let token='',nama='',jabatan='',mode='survei',offline=false,aktif=null,draf=null;
+const R={survei:null,monitoring:null},antre={survei:{},monitoring:{}},galatDraf={survei:{},monitoring:{}};
+const M=()=>MODE[mode],rs=()=>R[mode];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rp=v=>'Rp '+Number(v||0).toLocaleString('id-ID');
 function toast(m,err){const t=$('toast');t.textContent=m;t.className=err?'err':'';t.style.display='block';clearTimeout(toast._t);toast._t=setTimeout(()=>t.style.display='none',err?6000:3200);}
 const ss={get:k=>{try{return sessionStorage.getItem(k);}catch(e){return null;}},set:(k,v)=>{try{sessionStorage.setItem(k,v);}catch(e){}},del:k=>{try{sessionStorage.removeItem(k);}catch(e){}}};
 
@@ -156,14 +176,15 @@ function idb(){
   _db=new Promise(res=>{try{const r=indexedDB.open('baznas_survei',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>res(null);}catch(e){res(null);}});
   return _db;
 }
-async function kvOp(mode,fn){const d=await idb();if(!d)return fn(null);return new Promise((res,rej)=>{const tx=d.transaction('kv',mode),st=tx.objectStore('kv');const q=fn(st);tx.oncomplete=()=>res(q&&q.result);tx.onerror=()=>rej(tx.error);});}
+async function kvOp(md,fn){const d=await idb();if(!d)return fn(null);return new Promise((res,rej)=>{const tx=d.transaction('kv',md),st=tx.objectStore('kv');const q=fn(st);tx.oncomplete=()=>res(q&&q.result);tx.onerror=()=>rej(tx.error);});}
 const kv={
   get:k=>kvOp('readonly',st=>st?st.get(k):{result:mem[k]}),
   set:(k,v)=>kvOp('readwrite',st=>st?st.put(v,k):(mem[k]=v,null)),
   del:k=>kvOp('readwrite',st=>st?st.delete(k):(delete mem[k],null)),
   keys:()=>kvOp('readonly',st=>st?st.getAllKeys():{result:Object.keys(mem)})
 };
-const K={daftar:()=>'daftar:'+nama,draf:no=>'draf:'+nama+':'+no,antre:no=>'antre:'+nama+':'+no};
+// Kunci simpanan survei sama dengan v19 (tanpa awalan) supaya antrean lama tetap terbaca; monitoring berawalan "mon-".
+const kunci=(md,jenis,id)=>MODE[md].pre+jenis+':'+nama+(id===undefined?'':':'+id);
 
 async function api(aksi,data,detik){
   const ac=new AbortController(),t=setTimeout(()=>ac.abort(),(detik||30)*1000);
@@ -174,9 +195,10 @@ async function api(aksi,data,detik){
   }finally{clearTimeout(t);}
 }
 function tampil(v){['v-masuk','v-daftar','v-form'].forEach(x=>$(x).style.display=x===v?'block':'none');window.scrollTo(0,0);}
+const jmlAntre=()=>Object.keys(antre.survei).length+Object.keys(antre.monitoring).length;
 function pita(){
-  const n=Object.keys(antre).length,p=$('pita');
-  if(n){p.className='antre';p.textContent='⏳ '+n+' hasil survei menunggu terkirim — akan dikirim otomatis saat ada sinyal.';}
+  const n=jmlAntre(),p=$('pita');
+  if(n){p.className='antre';p.textContent='⏳ '+n+' hasil kunjungan menunggu terkirim — akan dikirim otomatis saat ada sinyal.';}
   else if(offline){p.className='off';p.textContent='📴 Tidak tersambung — menampilkan data terakhir. Form tetap bisa diisi.';}
   else p.className='';
 }
@@ -196,91 +218,121 @@ async function masuk(){
   finally{$('btn-masuk').disabled=false;}
 }
 async function keluar(){
-  const n=Object.keys(antre).length;
-  if(!confirm(n?'Masih ada '+n+' hasil survei yang belum terkirim. Data itu tetap disimpan di HP ini dan terkirim saat Anda masuk lagi. Keluar?':'Keluar dari aplikasi survei?'))return;
-  try{await kv.del(K.daftar());}catch(e){}
+  const n=jmlAntre();
+  if(!confirm(n?'Masih ada '+n+' hasil kunjungan yang belum terkirim. Data itu tetap disimpan di HP ini dan terkirim saat Anda masuk lagi. Keluar?':'Keluar dari aplikasi?'))return;
+  for(const md of ['survei','monitoring']){try{await kv.del(kunci(md,'daftar'));}catch(e){}R[md]=null;antre[md]={};}
   ['baznas_token','baznas_surveyor','baznas_jabatan'].forEach(ss.del);
-  token=nama=jabatan='';resp=null;antre={};$('btn-keluar').style.display='none';$('hd-sub').textContent='BAZNAS Kota Lubuklinggau';pita();tampil('v-masuk');
+  token=nama=jabatan='';$('btn-keluar').style.display='none';$('hd-sub').textContent='BAZNAS Kota Lubuklinggau';pita();tampil('v-masuk');
 }
 async function mulai(){
   $('hd-sub').textContent=nama+' · '+({PETUGAS:'Petugas',WK1:'Wakil Ketua I',WK2:'Wakil Ketua II',WK3:'Wakil Ketua III',WK4:'Wakil Ketua IV',KETUA:'Ketua'}[jabatan]||jabatan);
   $('btn-keluar').style.display='';
   tampil('v-daftar');
   await bacaAntre();
+  if(/monitoring/.test(location.hash))mode='monitoring';
+  pasangMode();
   await muat();
+  muat(mode==='survei'?'monitoring':'survei',true);   // mode lain dimuat di latar agar tersedia saat tanpa sinyal
   kirimAntre();
+}
+function gantiMode(md){if(mode===md||draf)return;mode=md;pasangMode();if(rs())tampilDaftar();muat();}
+function pasangMode(){
+  $('hd-judul').textContent=M().judul;document.title=M().judul+' — BAZNAS Kota Lubuklinggau';
+  $('tab-survei').classList.toggle('on',mode==='survei');$('tab-monitoring').classList.toggle('on',mode==='monitoring');
+  $('f-status').innerHTML=mode==='survei'
+    ?'<option value="aktif">Belum disurvei</option><option value="">Semua</option><option value="Selesai disurvei">Selesai disurvei</option>'
+    :'<option value="aktif">Perlu dikunjungi</option><option value="Belum jatuh tempo">Belum jatuh tempo</option><option value="Selesai">Selesai</option><option value="">Semua</option>';
+  $('f-jenis').innerHTML='<option value="">Semua jenis bantuan</option>';
 }
 
 // ── Daftar kunjungan ──
 async function bacaAntre(){
-  antre={};
-  try{for(const k of await kv.keys()){if(String(k).indexOf('antre:'+nama+':')===0){const v=await kv.get(k);if(v)antre[v.no]=v;}}}catch(e){}
+  antre.survei={};antre.monitoring={};
+  try{for(const k of await kv.keys()){
+    const md=String(k).indexOf('antre:'+nama+':')===0?'survei':String(k).indexOf('mon-antre:'+nama+':')===0?'monitoring':'';
+    if(!md)continue;const v=await kv.get(k);if(v){v.id=v.id||v.no;antre[md][v.id]=v;}
+  }}catch(e){}
   pita();
 }
-async function muat(){
-  $('daftar-info').textContent='Memuat…';
+function rapikan(md,r){   // samakan nama medan kedua mode supaya satu tampilan daftar
+  if(md==='survei')r.data.forEach(x=>{x.id=x.no_pengajuan;x.status=x.status_survei;x.petugas=x.surveyor;x.jenis_bantuan=x.kategoriBantuan;});
+  return r;
+}
+async function muat(md,diam){
+  md=md||mode;
+  if(!diam)$('daftar-info').textContent='Memuat…';
   try{
-    const r=await api('survei_daftar');
+    const r=await api(md+'_daftar');
     if(!r.ok){if(r.kode==='AUTH'){toast(r.pesan,true);return keluarPaksa();}throw new Error(r.pesan);}
-    resp=r;resp._waktu=Date.now();offline=false;
-    try{await kv.set(K.daftar(),resp);}catch(e){}
+    R[md]=rapikan(md,r);R[md]._waktu=Date.now();if(!diam)offline=false;
+    try{await kv.set(kunci(md,'daftar'),R[md]);}catch(e){}
   }catch(e){
-    offline=true;
-    if(!resp){try{resp=await kv.get(K.daftar());}catch(e2){}}
+    if(!diam)offline=true;
+    if(!R[md]){try{R[md]=await kv.get(kunci(md,'daftar'));}catch(e2){}}
   }
-  pita();tampilDaftar();
+  if(md===mode&&!draf){pita();tampilDaftar();}
 }
 function keluarPaksa(){['baznas_token','baznas_surveyor','baznas_jabatan'].forEach(ss.del);token='';tampil('v-masuk');}
-function jadwalTeks(j){if(!j)return '';const d=new Date(j.length===10?j+'T00:00':j);if(isNaN(d))return esc(j);
+function tglTeks(j){if(!j)return '';const d=new Date(j.length===10?j+'T00:00':j);if(isNaN(d))return esc(j);
   return d.toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short',year:'numeric'})+(j.length>10?' '+j.slice(11,16):'');}
 function lencana(x){
-  if(antre[x.no_pengajuan])return '<span class="lencana l-antre">Menunggu terkirim</span>';
-  const c={[ST.siap]:'l-siap',[ST.tugas]:'l-tugas',[ST.selesai]:'l-selesai'}[x.status_survei]||'l-siap';
-  return '<span class="lencana '+c+'">'+esc(x.status_survei)+'</span>';
+  if(antre[mode][x.id])return '<span class="lencana l-antre">Menunggu terkirim</span>';
+  const c=x.status===M().selesai?'l-selesai':x.status==='Ditugaskan'?'l-tugas':x.status==='Belum jatuh tempo'?'l-belum':'l-siap';
+  return '<span class="lencana '+c+'">'+esc(x.status)+'</span>';
 }
 function tampilDaftar(){
-  const el=$('daftar');
-  if(!resp){el.innerHTML='<div class="kartu">Belum ada data. Sambungkan internet lalu tekan <b>Muat ulang</b>.</div>';$('daftar-info').textContent='';return;}
-  const f=$('f-status').value,q=$('f-cari').value.trim().toLowerCase();
-  const rows=resp.data.filter(x=>(f===''||(f==='aktif'?x.status_survei!==ST.selesai:x.status_survei===f))&&(!q||[x.nama,x.kelurahan,x.kecamatan,x.no_pengajuan].join(' ').toLowerCase().includes(q)));
-  const hit=s=>resp.data.filter(x=>x.status_survei===s).length;
-  $('daftar-info').textContent=(resp.boleh_tugaskan?hit(ST.siap)+' siap survei · ':'')+hit(ST.tugas)+' ditugaskan · '+hit(ST.selesai)+' selesai'+(offline&&resp._waktu?' · data '+new Date(resp._waktu).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'');
-  if(!rows.length){el.innerHTML='<div class="kartu">'+(resp.boleh_tugaskan?'Tidak ada pengajuan pada saringan ini.':'Belum ada kunjungan yang ditugaskan kepada Anda.')+'</div>';return;}
+  const el=$('daftar'),r=rs();
+  if(!r){el.innerHTML='<div class="kartu">Belum ada data. Sambungkan internet lalu tekan <b>Muat ulang</b>.</div>';$('daftar-info').textContent='';return;}
+  const fj=$('f-jenis'),jenis=[...new Set(r.data.map(x=>x.jenis_bantuan).filter(Boolean))].sort(),pilihJ=fj.value;
+  fj.innerHTML='<option value="">Semua jenis bantuan</option>'+jenis.map(j=>'<option'+(j===pilihJ?' selected':'')+'>'+esc(j)+'</option>').join('');
+  const f=$('f-status').value,q=$('f-cari').value.trim().toLowerCase(),sel=M().selesai;
+  const lolos=x=>f===''||(f==='aktif'?(mode==='survei'?x.status!==sel:(x.status==='Jatuh tempo'||x.status==='Ditugaskan')):x.status===f);
+  const rows=r.data.filter(x=>lolos(x)&&(!pilihJ||x.jenis_bantuan===pilihJ)&&(!q||[x.nama,x.kelurahan,x.kecamatan,x.id,x.mustahikId].join(' ').toLowerCase().includes(q)));
+  const hit=s=>r.data.filter(x=>x.status===s).length;
+  $('daftar-info').textContent=(r.boleh_tugaskan?hit(M().siap)+' '+M().siap.toLowerCase()+' · ':'')+hit('Ditugaskan')+' ditugaskan · '+hit(sel)+' selesai'+(offline&&r._waktu?' · data '+new Date(r._waktu).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'');
+  if(!rows.length){el.innerHTML='<div class="kartu">'+(r.boleh_tugaskan?'Tidak ada data pada saringan ini.':M().kosong)+'</div>';return;}
   let kec=null,h='';
   rows.forEach(x=>{
     if(x.kecamatan!==kec){kec=x.kecamatan;h+='<div class="grup">Kec. '+esc(kec||'(tanpa kecamatan)')+' · '+rows.filter(y=>y.kecamatan===kec).length+' kunjungan</div>';}
-    const no=esc(x.no_pengajuan),milik=x.surveyor===nama,selesai=x.status_survei===ST.selesai,diAntre=!!antre[x.no_pengajuan];
-    h+='<div class="kartu" data-no="'+no+'"><div class="baris" style="justify-content:space-between"><b>'+esc(x.nama)+'</b>'+lencana(x)+'</div>'+
-      '<div class="kecil">'+no+' · '+esc(x.kategoriBantuan)+' · NIK ••••'+esc(x.nik_akhir)+'</div>'+
+    const id=esc(x.id),milik=x.petugas===nama,selesai=x.status===sel,diAntre=!!antre[mode][x.id];
+    h+='<div class="kartu" data-no="'+id+'"><div class="baris" style="justify-content:space-between"><b>'+esc(x.nama)+'</b>'+lencana(x)+'</div>'+
+      (mode==='survei'?'<div class="kecil">'+id+' · '+esc(x.jenis_bantuan)+' · NIK ••••'+esc(x.nik_akhir)+'</div>'
+        :'<div class="kecil"><b>Bulan ke-'+esc(x.tahap)+'</b> · '+esc(x.jenis_bantuan)+' · ID '+esc(x.mustahikId)+' · NIK ••••'+esc(x.nik_akhir)+'</div>'+
+         '<div class="kecil">Disalurkan '+tglTeks(x.tgl_salur)+' · jatuh tempo <b>'+tglTeks(x.jatuh_tempo)+'</b>'+(x.rpd||x.idRpd?' · ada RPD':' · tanpa RPD')+'</div>')+
       '<div>'+esc(x.alamat)+', '+esc(x.kelurahan)+'</div>'+
-      (x.jadwal?'<div>📅 '+jadwalTeks(x.jadwal)+(x.surveyor?' · '+esc(x.surveyor):'')+'</div>':'')+
-      (galatDraf[x.no_pengajuan]?'<div class="galat">Kiriman ditolak server: '+esc(galatDraf[x.no_pengajuan])+'</div>':'')+
+      (x.jadwal?'<div>📅 '+tglTeks(x.jadwal)+(x.petugas?' · '+esc(x.petugas):'')+'</div>':'')+
+      (galatDraf[mode][x.id]?'<div class="galat">Kiriman ditolak server: '+esc(galatDraf[mode][x.id])+'</div>':'')+
       '<div class="baris" style="margin-top:8px">'+
       '<a class="btn kecil maps" href="'+esc(x.maps)+'" target="_blank" rel="noopener noreferrer" style="text-decoration:none">📍 Google Maps</a>'+
       (x.telepon?'<a class="btn kecil sek" href="tel:'+esc(String(x.telepon).replace(/[^\d+]/g,''))+'" style="text-decoration:none">📞 Telepon</a>':'')+
-      (milik&&!selesai&&!diAntre?'<button class="btn kecil" onclick="bukaForm(\''+no+'\')">Isi form survei</button>':'')+
-      (selesai?'<button class="btn kecil sek" onclick="cetakForm(\''+no+'\')">🖨 Cetak formulir</button>':'')+
+      (milik&&!selesai&&!diAntre?'<button class="btn kecil" onclick="bukaForm(\''+id+'\')">'+M().isi+'</button>':'')+
+      (selesai?'<button class="btn kecil sek" onclick="cetakForm(\''+id+'\')">🖨 Cetak '+(mode==='survei'?'formulir':'lembar')+'</button>':'')+
       '</div>'+
-      (resp.boleh_tugaskan&&!selesai&&!diAntre?'<div class="baris" style="margin-top:8px;border-top:1px dashed var(--g200);padding-top:8px">'+
-        '<select id="tg-s-'+no+'" style="flex:1;min-width:140px"><option value="">— pilih surveyor —</option>'+resp.petugas.map(p=>'<option'+(p===x.surveyor?' selected':'')+'>'+esc(p)+'</option>').join('')+'</select>'+
-        '<input id="tg-j-'+no+'" type="datetime-local" value="'+esc(x.jadwal&&x.jadwal.length===10?x.jadwal+'T09:00':x.jadwal||'')+'" style="flex:1;min-width:170px">'+
-        '<button class="btn kecil" onclick="tugaskan(\''+no+'\',this)">'+(x.surveyor?'Ubah tugas':'Tugaskan')+'</button></div>':'')+
+      (r.boleh_tugaskan&&!selesai&&!diAntre?'<div class="baris" style="margin-top:8px;border-top:1px dashed var(--g200);padding-top:8px">'+
+        '<select id="tg-s-'+id+'" style="flex:1;min-width:140px"><option value="">— pilih petugas —</option>'+r.petugas.map(p=>'<option'+(p===x.petugas?' selected':'')+'>'+esc(p)+'</option>').join('')+'</select>'+
+        '<input id="tg-j-'+id+'" type="datetime-local" value="'+esc(x.jadwal&&x.jadwal.length===10?x.jadwal+'T09:00':x.jadwal||'')+'" style="flex:1;min-width:170px">'+
+        '<button class="btn kecil" onclick="tugaskan(\''+id+'\',this)">'+(x.petugas?'Ubah tugas':'Tugaskan')+'</button></div>':'')+
       '</div>';
   });
   el.innerHTML=h;
 }
-async function tugaskan(no,btn){
-  const s=$('tg-s-'+no).value,j=$('tg-j-'+no).value;
-  if(!s||!j){toast('Pilih surveyor dan isi jadwal kunjungan.',true);return;}
+async function tugaskan(id,btn){
+  const s=$('tg-s-'+id).value,j=$('tg-j-'+id).value;
+  if(!s||!j){toast('Pilih petugas dan isi jadwal kunjungan.',true);return;}
   btn.disabled=true;
-  try{const r=await api('survei_tugaskan',{no,surveyor:s,jadwal:j});
+  try{const r=await api(mode+'_tugaskan',mode==='survei'?{no:id,surveyor:s,jadwal:j}:{id,petugas:s,jadwal:j});
     if(!r.ok){toast(r.pesan,true);return;}
     toast(r.pesan);await muat();
   }catch(e){toast('Gagal terhubung. Penugasan perlu sinyal internet.',true);}
   finally{btn.disabled=false;}
 }
 
-// ── Form survei ──
+// ── Form (survei / monitoring) ──
+const cfgTipe=x=>mode==='survei'?null:(rs().tipe[x.tipe]||rs().tipe.lain);
+const formDef=x=>mode==='survei'?rs().form:cfgTipe(x).form;
+const minFoto=x=>mode==='survei'?rs().min_foto:cfgTipe(x).min_foto;
+const ketFoto=x=>mode==='survei'?KET_FOTO:cfgTipe(x).ket_foto;
+const opsiKes=x=>mode==='survei'?rs().rekomendasi:cfgTipe(x).kesimpulan;
 function medan(f){
   const id='q-'+f.k,w=f.w?' <span class="w">*</span>':'';
   if(f.t==='pilih')return '<label>'+esc(f.l)+w+'</label><div class="pil">'+f.o.map(o=>'<label><input type="radio" name="'+id+'" value="'+esc(o)+'"><span>'+esc(o)+'</span></label>').join('')+'</div>';
@@ -288,45 +340,63 @@ function medan(f){
   if(f.t==='angka')return '<label for="'+id+'">'+esc(f.l)+w+'</label><input id="'+id+'" type="text" inputmode="numeric" data-angka="1" autocomplete="off">';
   return '<label for="'+id+'">'+esc(f.l)+w+'</label><input id="'+id+'" type="text" maxlength="200" autocomplete="off">';
 }
-async function bukaForm(no){
-  const x=resp.data.find(y=>y.no_pengajuan===no);if(!x)return;
+const centang=(nm,v)=>{const r=document.querySelector('input[name="'+nm+'"][value="'+CSS.escape(String(v))+'"]');if(r)r.checked=true;};
+async function bukaForm(id){
+  const x=rs().data.find(y=>y.id===id);if(!x)return;
   aktif=x;
-  let d=null;try{d=await kv.get(K.draf(no));}catch(e){}
-  draf=d||{no,kunci:(crypto.randomUUID?crypto.randomUUID():'k'+Date.now()+'-'+Math.random().toString(36).slice(2,12)),isian:{},foto:[],ttd:{},gps:null,rekomendasi:'',catatan:'',nama_ttd:x.nama,alasan_gps:''};
-  $('form-kepala').innerHTML='<b>'+esc(x.nama)+'</b><div class="kecil">'+esc(no)+' · '+esc(x.kategoriBantuan)+'</div><div>'+esc(x.alamat)+', '+esc(x.kelurahan)+', Kec. '+esc(x.kecamatan)+'</div>'+(d?'<div class="kecil" style="color:#92400e">📝 Isian sebelumnya dipulihkan.</div>':'');
-  $('form-isi').innerHTML=resp.form.map(b=>'<h2>'+esc(b.bagian)+'</h2>'+b.isi.map(medan).join('')).join('');
-  $('min-foto').textContent=resp.min_foto;
-  $('pil-rek').innerHTML=resp.rekomendasi.map(o=>'<label><input type="radio" name="q-rek" value="'+esc(o)+'"><span>'+esc(o)+'</span></label>').join('');
+  let d=null;try{d=await kv.get(kunci(mode,'draf',id));}catch(e){}
+  draf=d||{id,kunci:(crypto.randomUUID?crypto.randomUUID():'k'+Date.now()+'-'+Math.random().toString(36).slice(2,12)),isian:{},nota:[],foto:[],ttd:{},gps:null,rekomendasi:'',catatan:'',nama_ttd:x.nama,alasan_gps:''};
+  draf.id=draf.id||draf.no;draf.nota=draf.nota||[];
+  $('form-kepala').innerHTML='<b>'+esc(x.nama)+'</b><div class="kecil">'+(mode==='survei'?esc(id):'Monitoring bulan ke-'+esc(x.tahap)+' · ID '+esc(x.mustahikId))+' · '+esc(x.jenis_bantuan)+'</div><div>'+esc(x.alamat)+', '+esc(x.kelurahan)+', Kec. '+esc(x.kecamatan)+'</div>'+(d?'<div class="kecil" style="color:#92400e">📝 Isian sebelumnya dipulihkan.</div>':'');
+  const def=formDef(x);
+  $('form-isi').innerHTML=def.map(b=>'<h2>'+esc(b.bagian)+'</h2>'+b.isi.map(medan).join('')).join('');
+  // kecocokan nota dengan RPD (monitoring, bila ada RPD Final)
+  const rpd=mode==='monitoring'&&x.rpd&&x.rpd.item.length?x.rpd:null;
+  $('kartu-nota').style.display=rpd?'block':'none';
+  $('nota-isi').innerHTML=rpd?rpd.item.map((it,i)=>'<div class="nota-brs"><b>'+(i+1)+'. '+esc(it.uraian)+'</b><div class="kecil">Rencana RPD: '+esc(it.volume)+' '+esc(it.satuan||'')+' · <b>'+rp(it.jumlah)+'</b></div>'+
+    '<div class="pil" style="margin-top:6px">'+rs().hasil_nota.map(o=>'<label><input type="radio" name="n-hasil-'+i+'" value="'+esc(o)+'"><span>'+esc(o)+'</span></label>').join('')+'</div>'+
+    '<label for="n-nilai-'+i+'">Nilai di nota (Rp)</label><input id="n-nilai-'+i+'" type="text" inputmode="numeric" data-angka="1" autocomplete="off">'+
+    '<label for="n-ket-'+i+'">Keterangan</label><input id="n-ket-'+i+'" type="text" maxlength="120" autocomplete="off"></div>').join('')+
+    '<div class="kecil" style="margin-top:8px">Total rencana RPD ('+esc(rpd.idRpd)+'): <b>'+rp(rpd.total)+'</b></div>':'';
+  $('min-foto').textContent=minFoto(x);
+  $('lbl-kes').textContent=M().lblKes;$('lbl-ttd2').firstChild.textContent=M().lblTtd+' ';$('lbl-catatan').textContent='Catatan '+M().pihak2.toLowerCase();$('btn-kirim').textContent=M().kirim;
+  $('foto-petunjuk').textContent='Contoh: '+ketFoto(x).slice(0,3).join(', ').toLowerCase()+'. Foto diperkecil otomatis.';
+  $('pil-rek').innerHTML=opsiKes(x).map(o=>'<label><input type="radio" name="q-rek" value="'+esc(o)+'"><span>'+esc(o)+'</span></label>').join('');
   // isi dari draf
-  resp.form.forEach(b=>b.isi.forEach(f=>{const v=draf.isian[f.k];if(v===undefined||v==='')return;
-    if(f.t==='pilih'||f.t==='ya'){const r=document.querySelector('input[name="q-'+f.k+'"][value="'+CSS.escape(String(v))+'"]');if(r)r.checked=true;}
-    else $('q-'+f.k).value=f.t==='angka'?ribuan(v):v;}));
-  if(draf.rekomendasi){const r=document.querySelector('input[name="q-rek"][value="'+CSS.escape(draf.rekomendasi)+'"]');if(r)r.checked=true;}
+  def.forEach(b=>b.isi.forEach(f=>{const v=draf.isian[f.k];if(v===undefined||v==='')return;
+    if(f.t==='pilih'||f.t==='ya')centang('q-'+f.k,v);else $('q-'+f.k).value=f.t==='angka'?ribuan(v):v;}));
+  if(rpd)draf.nota.forEach((n,i)=>{if(!n||!$('n-nilai-'+i))return;if(n.hasil)centang('n-hasil-'+i,n.hasil);$('n-nilai-'+i).value=ribuan(n.nilai||'');$('n-ket-'+i).value=n.ket||'';});
+  if(draf.rekomendasi)centang('q-rek',draf.rekomendasi);
   $('in-catatan').value=draf.catatan||'';$('in-nama-ttd').value=draf.nama_ttd||'';$('in-alasan-gps').value=draf.alasan_gps||'';
-  const g=$('form-galat');if(galatDraf[no]){g.textContent='Kiriman sebelumnya ditolak: '+galatDraf[no];g.style.display='block';}else g.style.display='none';
+  const g=$('form-galat');if(galatDraf[mode][id]){g.textContent='Kiriman sebelumnya ditolak: '+galatDraf[mode][id];g.style.display='block';}else g.style.display='none';
   tampil('v-form');
   tampilFoto();ttdPasang('mustahik');ttdPasang('surveyor');
   if(draf.gps)tampilGps();else ambilGps(false);
 }
 function ribuan(v){const d=String(v).replace(/\D/g,'');return d?Number(d).toLocaleString('id-ID'):'';}
-$('form-isi').addEventListener('input',e=>{if(e.target.dataset.angka)e.target.value=ribuan(e.target.value);simpanDraf();});
-$('form-isi').addEventListener('change',simpanDraf);
+['form-isi','nota-isi'].forEach(n=>{$(n).addEventListener('input',e=>{if(e.target.dataset.angka)e.target.value=ribuan(e.target.value);simpanDraf();});$(n).addEventListener('change',simpanDraf);});
 $('pil-rek').addEventListener('change',simpanDraf);
 function bacaIsian(){
   const o={};
-  resp.form.forEach(b=>b.isi.forEach(f=>{
+  formDef(aktif).forEach(b=>b.isi.forEach(f=>{
     if(f.t==='pilih'||f.t==='ya'){const r=document.querySelector('input[name="q-'+f.k+'"]:checked');if(r)o[f.k]=r.value;}
     else{const v=$('q-'+f.k).value.trim();if(v)o[f.k]=f.t==='angka'?v.replace(/\D/g,''):v;}
   }));
   return o;
 }
+function bacaNota(){
+  if(mode!=='monitoring'||!aktif.rpd)return [];
+  return aktif.rpd.item.map((it,i)=>{const r=document.querySelector('input[name="n-hasil-'+i+'"]:checked');
+    return {hasil:r?r.value:'',nilai:$('n-nilai-'+i).value.replace(/\D/g,''),ket:$('n-ket-'+i).value.trim()};});
+}
 let _tDraf=0;
 function simpanDraf(segera){
   if(!draf)return;
   clearTimeout(_tDraf);
-  const kerja=async()=>{if(!draf)return;draf.isian=bacaIsian();const r=document.querySelector('input[name="q-rek"]:checked');draf.rekomendasi=r?r.value:'';
+  const md=mode;
+  const kerja=async()=>{if(!draf||!aktif)return;draf.isian=bacaIsian();draf.nota=bacaNota();const r=document.querySelector('input[name="q-rek"]:checked');draf.rekomendasi=r?r.value:'';
     draf.catatan=$('in-catatan').value;draf.nama_ttd=$('in-nama-ttd').value;draf.alasan_gps=$('in-alasan-gps').value;
-    try{await kv.set(K.draf(draf.no),draf);}catch(e){}};
+    try{await kv.set(kunci(md,'draf',draf.id),draf);}catch(e){}};
   if(segera===true)return kerja();
   _tDraf=setTimeout(kerja,350);
 }
@@ -340,16 +410,18 @@ function kecilkan(file){
     im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('Foto tidak terbaca'));};im.src=u;});
 }
 async function tambahFoto(inp){
+  const ket=ketFoto(aktif);
   for(const f of [...inp.files]){
-    if(draf.foto.length>=resp.maks_foto){toast('Maksimal '+resp.maks_foto+' foto.',true);break;}
-    try{draf.foto.push({url:await kecilkan(f),ket:KET_FOTO[Math.min(draf.foto.length,KET_FOTO.length-1)]});}catch(e){toast('Satu foto tidak terbaca, ulangi.',true);}
+    if(draf.foto.length>=rs().maks_foto){toast('Maksimal '+rs().maks_foto+' foto.',true);break;}
+    try{draf.foto.push({url:await kecilkan(f),ket:ket[Math.min(draf.foto.length,ket.length-1)]});}catch(e){toast('Satu foto tidak terbaca, ulangi.',true);}
   }
   inp.value='';tampilFoto();simpanDraf();
 }
 function tampilFoto(){
+  const ket=ketFoto(aktif);
   $('foto-grid').innerHTML=draf.foto.map((f,i)=>'<div class="foto-item"><img src="'+f.url+'" alt="Foto '+(i+1)+'"><select onchange="draf.foto['+i+'].ket=this.value;simpanDraf()">'+
-    KET_FOTO.map(k=>'<option'+(k===f.ket?' selected':'')+'>'+k+'</option>').join('')+'</select><button class="btn kecil bahaya" style="width:100%;margin-top:4px" onclick="draf.foto.splice('+i+',1);tampilFoto();simpanDraf()">Hapus</button></div>').join('');
-  $('btn-foto').textContent='+ Ambil foto ('+draf.foto.length+'/'+resp.min_foto+' minimal)';
+    [...new Set(ket.concat(f.ket?[f.ket]:[]))].map(k=>'<option'+(k===f.ket?' selected':'')+'>'+esc(k)+'</option>').join('')+'</select><button class="btn kecil bahaya" style="width:100%;margin-top:4px" onclick="draf.foto.splice('+i+',1);tampilFoto();simpanDraf()">Hapus</button></div>').join('');
+  $('btn-foto').textContent='+ Ambil foto ('+draf.foto.length+'/'+minFoto(aktif)+' minimal)';
 }
 
 // GPS otomatis
@@ -362,12 +434,12 @@ function ambilGps(manual){
   const el=$('gps-info');
   if(!navigator.geolocation){el.textContent='HP ini tidak mendukung GPS. Tulis alasannya di bawah.';$('gps-alasan-wrap').style.display='block';return;}
   el.textContent='Mencari lokasi… (GPS tetap bekerja tanpa internet)';
-  const no=draf.no;
+  const id=draf.id;
   navigator.geolocation.getCurrentPosition(p=>{
-    if(!draf||draf.no!==no)return;
+    if(!draf||draf.id!==id)return;
     draf.gps={lat:p.coords.latitude,lng:p.coords.longitude,akurasi:p.coords.accuracy||0};tampilGps();simpanDraf();
   },e=>{
-    if(!draf||draf.no!==no)return;
+    if(!draf||draf.id!==id)return;
     if(draf.gps){tampilGps();return;}
     el.textContent=(e.code===1?'Izin lokasi ditolak. Izinkan lokasi di pengaturan browser, lalu tekan "Ambil ulang lokasi"':'Lokasi belum terbaca. Coba di luar rumah lalu tekan "Ambil ulang lokasi"')+' — atau tulis alasannya.';
     $('gps-alasan-wrap').style.display='block';
@@ -394,23 +466,27 @@ function ttdHapus(siapa){const c=$('ttd-'+siapa),x=c.getContext('2d');x.fillStyl
 const gbr=u=>({mime:u.slice(5,u.indexOf(';')),base64:u.slice(u.indexOf(',')+1)});
 async function kirimSurvei(){
   await simpanDraf(true);
-  const e=[],d=draf;
-  resp.form.forEach(b=>b.isi.forEach(f=>{if(f.w&&(d.isian[f.k]===undefined||d.isian[f.k]===''))e.push(f.l);}));
-  if(d.foto.length<resp.min_foto)e.push('minimal '+resp.min_foto+' foto');
+  const e=[],d=draf,x=aktif,md=mode;
+  formDef(x).forEach(b=>b.isi.forEach(f=>{if(f.w&&(d.isian[f.k]===undefined||d.isian[f.k]===''))e.push(f.l);}));
+  if(md==='monitoring'&&x.rpd)x.rpd.item.forEach((it,i)=>{const n=d.nota[i]||{};
+    if(!n.hasil)e.push('kecocokan nota baris '+(i+1));else if(n.hasil!=='Tidak ada nota'&&!n.nilai)e.push('nilai nota baris '+(i+1));});
+  if(d.foto.length<minFoto(x))e.push('minimal '+minFoto(x)+' foto');
   if(!d.gps&&String(d.alasan_gps||'').trim().length<5)e.push('lokasi GPS (atau alasan tidak terbaca)');
-  if(!d.rekomendasi)e.push('rekomendasi surveyor');
+  if(!d.rekomendasi)e.push(M().lblKes.toLowerCase());
   if(String(d.nama_ttd||'').trim().length<3)e.push('nama penanda tangan');
-  if(!d.ttd.mustahik)e.push('tanda tangan calon mustahik');
-  if(!d.ttd.surveyor)e.push('tanda tangan surveyor');
+  if(!d.ttd.mustahik)e.push('tanda tangan '+(md==='survei'?'calon mustahik':'mustahik'));
+  if(!d.ttd.surveyor)e.push(M().lblTtd.toLowerCase());
   const g=$('form-galat');
   if(e.length){g.innerHTML='<b>Mohon lengkapi:</b> '+e.map(esc).join('; ')+'.';g.style.display='block';window.scrollTo(0,0);return;}
   g.style.display='none';
-  const item={no:d.no,data:{no:d.no,kunci:d.kunci,isian:d.isian,rekomendasi:d.rekomendasi,catatan:d.catatan,nama_ttd_mustahik:d.nama_ttd.trim(),
-    lat:d.gps?d.gps.lat:'',lng:d.gps?d.gps.lng:'',akurasi_m:d.gps?d.gps.akurasi:'',alasan_tanpa_gps:d.gps?'':d.alasan_gps,waktu_survei:new Date().toISOString(),
-    foto:d.foto.map(f=>Object.assign(gbr(f.url),{ket:f.ket})),ttd_mustahik:gbr(d.ttd.mustahik),ttd_surveyor:gbr(d.ttd.surveyor)}};
+  const umum={kunci:d.kunci,isian:d.isian,catatan:d.catatan,nama_ttd_mustahik:d.nama_ttd.trim(),lat:d.gps?d.gps.lat:'',lng:d.gps?d.gps.lng:'',akurasi_m:d.gps?d.gps.akurasi:'',
+    alasan_tanpa_gps:d.gps?'':d.alasan_gps,foto:d.foto.map(f=>Object.assign(gbr(f.url),{ket:f.ket})),ttd_mustahik:gbr(d.ttd.mustahik)},kini=new Date().toISOString();
+  const item={mode:md,id:d.id,data:md==='survei'
+    ?Object.assign(umum,{no:d.id,rekomendasi:d.rekomendasi,waktu_survei:kini,ttd_surveyor:gbr(d.ttd.surveyor)})
+    :Object.assign(umum,{id:d.id,kesimpulan:d.rekomendasi,waktu_kunjungan:kini,nota:d.nota,ttd_petugas:gbr(d.ttd.surveyor)})};
   $('btn-kirim').disabled=true;
-  try{await kv.set(K.antre(d.no),item);}catch(err){$('btn-kirim').disabled=false;toast('Penyimpanan HP penuh. Hapus beberapa foto lalu coba lagi.',true);return;}
-  antre[d.no]=item;delete galatDraf[d.no];
+  try{await kv.set(kunci(md,'antre',d.id),item);}catch(err){$('btn-kirim').disabled=false;toast('Penyimpanan HP penuh. Hapus beberapa foto lalu coba lagi.',true);return;}
+  antre[md][d.id]=item;delete galatDraf[md][d.id];
   draf=null;aktif=null;$('btn-kirim').disabled=false;
   tampil('v-daftar');pita();tampilDaftar();
   toast('Tersimpan di HP. Mengirim…');
@@ -419,46 +495,64 @@ async function kirimSurvei(){
 let _kirim=false;
 async function kirimAntre(){
   if(_kirim||!token)return;_kirim=true;
-  let ada=false;
+  const berubah={};let putus=false;
   try{
-    for(const no of Object.keys(antre)){
-      const it=antre[no];let r;
-      try{r=await api('survei_kirim',it.data,120);}catch(e){offline=true;break;}   // sinyal putus → coba lagi nanti
-      offline=false;
-      if(r.ok){await kv.del(K.antre(no));await kv.del(K.draf(no));delete antre[no];ada=true;toast('Hasil survei '+no+' terkirim.');}
-      else if(r.kode==='SIBUK')break;
-      else if(r.kode==='AUTH'){toast(r.pesan,true);keluarPaksa();break;}
-      else{await kv.del(K.antre(no));delete antre[no];galatDraf[no]=r.pesan||'ditolak';toast(no+': '+galatDraf[no],true);ada=true;}  // draf tetap ada untuk diperbaiki
+    for(const md of ['survei','monitoring']){
+      for(const id of Object.keys(antre[md])){
+        const it=antre[md][id];let r;
+        try{r=await api(md+'_kirim',it.data,120);}catch(e){offline=true;putus=true;break;}   // sinyal putus → coba lagi nanti
+        offline=false;
+        if(r.ok){await kv.del(kunci(md,'antre',id));await kv.del(kunci(md,'draf',id));delete antre[md][id];berubah[md]=1;toast(MODE[md].hasil+' '+id+' terkirim.');}
+        else if(r.kode==='SIBUK'){putus=true;break;}
+        else if(r.kode==='AUTH'){toast(r.pesan,true);keluarPaksa();putus=true;break;}
+        else{await kv.del(kunci(md,'antre',id));delete antre[md][id];galatDraf[md][id]=r.pesan||'ditolak';toast(id+': '+galatDraf[md][id],true);berubah[md]=1;}  // draf tetap ada untuk diperbaiki
+      }
+      if(putus)break;
     }
   }finally{_kirim=false;}
   pita();
-  if(ada)await muat();else tampilDaftar();
+  for(const md of Object.keys(berubah))await muat(md,md!==mode);
+  if(!berubah[mode]&&!draf&&rs())tampilDaftar();
 }
 window.addEventListener('online',()=>{if(token){kirimAntre();}});
-setInterval(()=>{if(token&&Object.keys(antre).length)kirimAntre();},30000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&token&&Object.keys(antre).length)kirimAntre();});
+setInterval(()=>{if(token&&jmlAntre())kirimAntre();},30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&token&&jmlAntre())kirimAntre();});
 
-// ── Cetak formulir (dengan tanda tangan & foto) ──
-async function cetakForm(no){
-  const x=resp.data.find(y=>y.no_pengajuan===no);if(!x||!x.isian)return;
+// ── Cetak (dengan tanda tangan & foto) ──
+async function cetakForm(id){
+  const x=rs().data.find(y=>y.id===id);if(!x||!x.isian)return;
+  const sv=mode==='survei';
   toast('Menyiapkan cetakan…');
   let t1,t2,foto=[];
   try{
-    const ambil=async d=>{const r=await api('survei_file',Object.assign({no},d),60);if(!r.ok)throw new Error(r.pesan);return r;};
-    t1=await ambil({jenis:'ttd_mustahik'});t2=await ambil({jenis:'ttd_surveyor'});
+    const ambil=async d=>{const r=await api(mode+'_file',Object.assign(sv?{no:id}:{id},d),60);if(!r.ok)throw new Error(r.pesan);return r;};
+    t1=await ambil({jenis:'ttd_mustahik'});t2=await ambil({jenis:sv?'ttd_surveyor':'ttd_petugas'});
     for(let i=0;i<(x.jumlah_foto||0);i++)foto.push(await ambil({i}));
   }catch(e){toast('Gagal mengambil tanda tangan/foto. Cetak perlu sinyal internet.',true);return;}
   const src=r=>'data:'+r.mime+';base64,'+r.base64;
-  const nilai=(f,v)=>v===undefined||v===''?'—':f.t==='angka'?(/\(Rp\)/.test(f.l)?'Rp '+Number(v).toLocaleString('id-ID'):Number(v).toLocaleString('id-ID')):esc(v);
-  const w=new Date(x.waktu_survei),tgl=isNaN(w)?esc(x.waktu_survei):w.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' pukul '+w.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})+' WIB';
-  $('cetak').innerHTML='<div class="kop"><h3>BADAN AMIL ZAKAT NASIONAL KOTA LUBUKLINGGAU</h3><h3>FORMULIR HASIL SURVEI CALON MUSTAHIK</h3></div>'+
-    '<table class="id"><tr><td style="width:30%">No. Pengajuan</td><td>: '+esc(no)+'</td></tr><tr><td>Nama</td><td>: '+esc(x.nama)+'</td></tr><tr><td>NIK</td><td>: ************'+esc(x.nik_akhir)+'</td></tr>'+
-    '<tr><td>Alamat</td><td>: '+esc(x.alamat)+', Kel. '+esc(x.kelurahan)+', Kec. '+esc(x.kecamatan)+'</td></tr><tr><td>Jenis bantuan</td><td>: '+esc(x.kategoriBantuan)+'</td></tr>'+
-    '<tr><td>Waktu survei</td><td>: '+tgl+'</td></tr><tr><td>Lokasi (GPS)</td><td>: '+(x.lat?esc(x.lat)+', '+esc(x.lng)+(x.akurasi_m?' (±'+esc(x.akurasi_m)+' m)':''):'tidak terbaca — '+esc(x.alasan_tanpa_gps))+'</td></tr></table>'+
-    resp.form.map(b=>'<div class="bag">'+esc(b.bagian)+'</div><table>'+b.isi.map(f=>'<tr><th>'+esc(f.l)+'</th><td>'+nilai(f,x.isian[f.k])+'</td></tr>').join('')+'</table>').join('')+
-    '<div class="akhir"><div class="bag">Rekomendasi surveyor</div><table><tr><th>Rekomendasi</th><td><b>'+esc(x.rekomendasi)+'</b></td></tr><tr><th>Catatan</th><td>'+(esc(x.catatan)||'—')+'</td></tr></table>'+
-    '<div class="ttd2"><div>Calon mustahik / keluarga,<img src="'+src(t1)+'" alt="Tanda tangan calon mustahik"><b><u>'+esc(x.nama_ttd_mustahik)+'</u></b></div>'+
-    '<div>Surveyor,<img src="'+src(t2)+'" alt="Tanda tangan surveyor"><b><u>'+esc(x.surveyor)+'</u></b></div></div></div>'+
+  const nilai=(f,v)=>v===undefined||v===''?'—':f.t==='angka'?(/\(Rp\)/.test(f.l)?rp(v):Number(v).toLocaleString('id-ID')):esc(v);
+  const wk=sv?x.waktu_survei:x.waktu_kunjungan,w=new Date(wk),tgl=isNaN(w)?esc(wk):w.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' pukul '+w.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})+' WIB';
+  const brs=(a,b)=>'<tr><td style="width:30%">'+a+'</td><td>: '+b+'</td></tr>';
+  let banding='';
+  if(!sv&&x.tahap==='6'&&x.omzet_b3!==undefined&&x.isian.omzet!==undefined){
+    const a=Number(x.omzet_b3),b=Number(x.isian.omzet),p=a?Math.round((b-a)/a*100):null;
+    banding='<table><tr><th>Perbandingan omzet per bulan</th><td>Bulan ke-3: '+rp(a)+' → bulan ke-6: <b>'+rp(b)+'</b>'+(p===null?'':' ('+(p>0?'naik '+p+'%':p<0?'turun '+(-p)+'%':'tetap')+')')+'</td></tr></table>';
+  }
+  let nota='';
+  if(!sv&&x.nota&&x.nota.length){
+    nota='<div class="bag">Kecocokan nota dengan RPD ('+esc(x.idRpd)+')</div><table class="nota"><tr><th>No</th><th>Uraian</th><th>Rencana RPD</th><th>Nota</th><th>Selisih</th><th>Hasil</th><th>Keterangan</th></tr>'+
+      x.nota.map((n,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(n.uraian)+'</td><td class="ka">'+rp(n.rencana)+'</td><td class="ka">'+(n.hasil==='Tidak ada nota'?'—':rp(n.nota))+'</td><td class="ka">'+(n.hasil==='Tidak ada nota'?'—':(n.selisih>0?'+':n.selisih<0?'−':'')+rp(Math.abs(n.selisih)))+'</td><td>'+esc(n.hasil)+'</td><td>'+esc(n.ket||'')+'</td></tr>').join('')+
+      '<tr><td colspan="2"><b>Jumlah</b></td><td class="ka"><b>'+rp(x.total_rpd)+'</b></td><td class="ka"><b>'+rp(x.total_nota)+'</b></td><td class="ka"><b>'+((x.total_nota-x.total_rpd)>0?'+':(x.total_nota-x.total_rpd)<0?'−':'')+rp(Math.abs(x.total_nota-x.total_rpd))+'</b></td><td colspan="2"></td></tr></table>';
+  }else if(!sv)nota='<div class="bag">Kecocokan nota dengan RPD</div><table><tr><td>Tidak ada RPD Final — bagian ini dikosongkan.</td></tr></table>';
+  $('cetak').innerHTML='<div class="kop"><h3>BADAN AMIL ZAKAT NASIONAL KOTA LUBUKLINGGAU</h3><h3>'+(sv?'FORMULIR HASIL SURVEI CALON MUSTAHIK':'LEMBAR MONITORING PASCABANTUAN — BULAN KE-'+esc(x.tahap))+'</h3></div>'+
+    '<table class="id">'+(sv?brs('No. Pengajuan',esc(id)):brs('ID Mustahik',esc(x.mustahikId)))+brs('Nama',esc(x.nama))+brs('NIK','************'+esc(x.nik_akhir))+
+    brs('Alamat',esc(x.alamat)+', Kel. '+esc(x.kelurahan)+', Kec. '+esc(x.kecamatan))+brs('Jenis bantuan',esc(x.jenis_bantuan))+
+    (sv?'':brs('Tanggal penyaluran',tglTeks(x.tgl_salur)+' (jatuh tempo monitoring '+tglTeks(x.jatuh_tempo)+')'))+
+    brs(sv?'Waktu survei':'Waktu kunjungan',tgl)+brs('Lokasi (GPS)',x.lat?esc(x.lat)+', '+esc(x.lng)+(x.akurasi_m?' (±'+esc(x.akurasi_m)+' m)':''):'tidak terbaca — '+esc(x.alasan_tanpa_gps))+'</table>'+
+    formDef(x).map(b=>'<div class="bag">'+esc(b.bagian)+'</div><table>'+b.isi.map(f=>'<tr><th>'+esc(f.l)+'</th><td>'+nilai(f,x.isian[f.k])+'</td></tr>').join('')+'</table>').join('')+banding+nota+
+    '<div class="akhir"><div class="bag">'+M().lblKes+'</div><table><tr><th>'+(sv?'Rekomendasi':'Kesimpulan')+'</th><td><b>'+esc(sv?x.rekomendasi:x.kesimpulan)+'</b></td></tr><tr><th>Catatan</th><td>'+(esc(x.catatan)||'—')+'</td></tr></table>'+
+    '<div class="ttd2"><div>'+(sv?'Calon mustahik':'Mustahik')+' / keluarga,<img src="'+src(t1)+'" alt="Tanda tangan mustahik"><b><u>'+esc(x.nama_ttd_mustahik)+'</u></b></div>'+
+    '<div>'+M().pihak2+',<img src="'+src(t2)+'" alt="Tanda tangan petugas"><b><u>'+esc(x.petugas)+'</u></b></div></div></div>'+
     '<div class="fotos">'+foto.map((f,i)=>'<figure><img src="'+src(f)+'" alt="Foto '+(i+1)+'"><figcaption>Foto '+(i+1)+(f.ket?' — '+esc(f.ket):'')+'</figcaption></figure>').join('')+'</div>';
   const im=[...$('cetak').querySelectorAll('img')];
   await Promise.all(im.map(g=>g.complete?0:new Promise(r=>{g.onload=g.onerror=r;})));
