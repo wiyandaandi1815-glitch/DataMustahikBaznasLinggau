@@ -2565,6 +2565,21 @@ function iznColor(s){
 
 function setText(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
 
+// v18 — penanda data mustahik belum lengkap + minta kelengkapan lewat WA/email
+const WAJIB_MH=[['nik','NIK'],['noKK','No. KK'],['telepon','No. HP/WA'],['alamat','Alamat'],['kelurahan','Kelurahan'],['kecamatan','Kecamatan'],['pekerjaan','Pekerjaan'],['penghasilan','Penghasilan'],['jumlahTanggungan','Jumlah tanggungan'],['asnaf','Asnaf'],['kategoriBantuan','Jenis bantuan']];
+function mhKurang(d){return WAJIB_MH.filter(([k])=>!String(d[k]??'').trim()).map(x=>x[1]);}
+function mhKurangHtml(d){const k=mhKurang(d);if(!k.length)return '';const t=k.join(', ').replace(/"/g,'');
+  return `<div onclick="event.stopPropagation();mhMintaLengkap('${d.id}')" title="Belum diisi: ${t} — klik untuk minta kelengkapan" style="margin-top:2px;display:inline-block;font-size:10.5px;font-weight:600;color:#9a3412;background:#fff7ed;border:1px solid #fdba74;border-radius:10px;padding:0 7px;cursor:pointer;white-space:nowrap">⚠ ${k.length} data belum lengkap</div>`;}
+function mhMintaLengkap(id){
+  const d=dataList.find(x=>String(x.id)===String(id));if(!d)return;
+  const k=mhKurang(d).filter(x=>!['No. HP/WA','Asnaf','Jenis bantuan'].includes(x)); // asnaf & jenis bantuan ditetapkan petugas
+  if(!k.length){toast('Yang belum diisi hanya data penilaian petugas: '+mhKurang(d).join(', ')+'.',true);return;}
+  const msg=`Assalamu'alaikum Bapak/Ibu,\n\nUntuk melengkapi data penerima bantuan di BAZNAS Kota Lubuklinggau${d.mustahikId?' (ID '+d.mustahikId+')':''}, mohon kirimkan data berikut:\n${k.map((x,i)=>(i+1)+'. '+x).join('\n')}\n\nBalas pesan ini atau datang ke kantor BAZNAS Kota Lubuklinggau. Terima kasih.\n\nWassalamu'alaikum,\nBAZNAS Kota Lubuklinggau`;
+  const hp=typeof pjWaHp==='function'?pjWaHp(d.telepon):'';
+  if(hp){window.open('https://wa.me/'+hp+'?text='+encodeURIComponent(msg),'_blank','noopener');return;}
+  if(d.email&&/@/.test(d.email)){location.href='mailto:'+encodeURIComponent(d.email)+'?cc=baznaskota.lubuklinggau%40baznas.go.id&subject='+encodeURIComponent('Kelengkapan data penerima bantuan BAZNAS Kota Lubuklinggau')+'&body='+encodeURIComponent(msg);return;}
+  toast('Belum diisi: '+mhKurang(d).join(', ')+'. Nomor HP & email kosong — hubungi langsung atau lengkapi saat kunjungan.',true);
+}
 function renderTable(){
   const psEl=document.getElementById('page-size');
   const ps=psEl?parseInt(psEl.value)||25:25;
@@ -2596,7 +2611,7 @@ function renderTable(){
       <td class="chk-col"><input type="checkbox" class="row-chk" data-id="${d.id}" ${d._selected?'checked':''} onchange="onRowCheck(this,${d.id})"/></td>
       <td>${start+i+1}</td>
       <td class="mono" style="font-size:11.5px;color:var(--teal-dark);font-weight:700;letter-spacing:.5px">${d.mustahikId||(d._pending?'⏳ menunggu':'—')}</td>
-      <td style="font-weight:700;max-width:180px;overflow:hidden;text-overflow:ellipsis">${d.nama}</td>
+      <td style="font-weight:700;max-width:180px;overflow:hidden;text-overflow:ellipsis">${d.nama}${mhKurangHtml(d)}</td>
       <td style="text-align:center">${d.anggotaKeluarga&&d.anggotaKeluarga.length?`<span class="badge b-teal">${d.anggotaKeluarga.length} org</span>`:'—'}</td>
       <td class="mono" style="font-size:11.5px">${d.nik||'—'}</td>
       <td>${d.asnaf?`<span class="badge b-teal">${d.asnaf}</span>`:'—'}</td>
@@ -4099,7 +4114,7 @@ function dokSerah(d,rpd){
     <p class="isi-surat" style="margin:1mm 0">selanjutnya disebut <b>PIHAK PERTAMA</b> (yang menyerahkan), dan</p>
     ${dokIdentitas(d,b)}
     <p class="isi-surat" style="margin:1mm 0">selanjutnya disebut <b>PIHAK KEDUA</b> (penerima bantuan / mustahik). PIHAK PERTAMA telah menyerahkan dan PIHAK KEDUA telah menerima bantuan dengan rincian:</p>
-    <table class="data ind">${r('Jenis Bantuan',dV(d.katBantuan))}${r('Asnaf',dV(d.asnaf))}${r('Program',dV(d.program))}
+    <table class="data ind">${r('Jenis Bantuan',dV(d.kategoriBantuan))}${r('Asnaf',dV(d.asnaf))}${r('Program',dV(d.program))}
       ${r('Nilai Bantuan',nilai?`<b>${dRp(nilai)}</b> <i>(${terbilang(nilai)})</i>`:'<span class="nk" style="width:70mm"></span>')}
       ${r('Sumber Dana',ks('Zakat')+ks('Infak/Sedekah')+ks('DSKL'))}${r('Bentuk Penyerahan',ks('Tunai')+ks('Transfer')+ks('Barang'))}</table>
     ${tabelRpd}
@@ -4109,7 +4124,7 @@ function dokSerah(d,rpd){
     <div style="border-top:1.5px dashed #000;margin:4mm 0 2mm;position:relative"><span style="position:absolute;left:0;top:-3.2mm;background:#fff;font-size:9pt">✂ gunting di sini — arsip BAZNAS (Buku Bukti Kas)</span></div>
     <div style="border:1px solid #000;padding:2.5mm 4mm">
       <div style="font-weight:bold;text-align:center;font-size:11pt">TANDA TERIMA</div>
-      <table class="data">${r('Telah terima dari','BAZNAS Kota Lubuklinggau')}${r('Uang / barang senilai',nilai?`<b>${dRp(nilai)}</b> <i>(${terbilang(nilai)})</i>`:'<span class="nk" style="width:80mm"></span>')}${r('Untuk',dV(d.katBantuan)+(d.program?' — '+dE(d.program):''))}${r('ID Mustahik',dV(d.mustahikId))}</table>
+      <table class="data">${r('Telah terima dari','BAZNAS Kota Lubuklinggau')}${r('Uang / barang senilai',nilai?`<b>${dRp(nilai)}</b> <i>(${terbilang(nilai)})</i>`:'<span class="nk" style="width:80mm"></span>')}${r('Untuk',dV(d.kategoriBantuan)+(d.program?' — '+dE(d.program):''))}${r('ID Mustahik',dV(d.mustahikId))}</table>
       ${dTtd([{spacer:true},{atas:'Lubuklinggau, ..............................',jabatan:'Penerima',nama:b?'':d.nama}])}
     </div>
   </div>`;
@@ -5857,7 +5872,7 @@ let rlhTahap=0;
 function rlhUrut(ket){const p=String(ket||'').split(' · ');const a=RLH_TAHAP.indexOf(p[0]),b=RLH_TAMPAK.indexOf(p[1]);return a<0||b<0?999:a*20+b;}
 function rlhSisip(box,r,boxId){
   const d=(typeof dataList!=='undefined'?dataList:[]).find(x=>x.mustahikId===r.mustahikId);
-  if(!d||!/rumah/i.test(d.katBantuan||''))return;
+  if(!d||!/rumah/i.test(d.kategoriBantuan||''))return;
   const ada={};r.berkas.filter(b=>b.jenis==='Foto rumah').forEach(b=>{ada[b.keterangan]=b.idBerkas;});
   const jml=t=>RLH_TAMPAK.filter(x=>ada[RLH_TAHAP[t]+' · '+x]).length;
   const el=document.createElement('div');el.className='bm-panel';el.style.marginTop='8px';
