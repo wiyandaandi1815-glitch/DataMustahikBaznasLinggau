@@ -36,9 +36,16 @@ textarea{min-height:70px}
 .tabs{display:flex;gap:6px;margin:0 0 10px}
 .tabs button{flex:1;font:inherit;font-weight:700;padding:10px;min-height:44px;border:1.5px solid var(--teal);border-radius:9px;background:#fff;color:var(--teal-d);cursor:pointer}
 .tabs button.on{background:var(--teal);color:#fff}
+.chips{display:flex;gap:6px;margin:0 0 8px}
+.chips div{flex:1;text-align:center;border-radius:9px;padding:6px 4px;font-size:12px;font-weight:600}
+.c-siap{background:#fef3c7;color:#92400e}.c-tugas{background:#dbeafe;color:#1e40af}.c-selesai{background:#d1fae5;color:#065f46}
+.chips b{display:block;font-size:20px;line-height:1.15}
+.bagian{font-weight:800;font-size:14px;margin:16px 0 4px;padding:6px 2px;border-bottom:2px solid var(--teal);color:var(--g800)}
+.info-peran{background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:9px;padding:8px 10px;font-size:13px;margin:0 0 8px}
 .nota-brs{border:1px solid var(--g200);border-radius:9px;padding:9px;margin:8px 0;background:#fafafa}
 .baris{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .kecil{font-size:12.5px;color:var(--g500)}
+.btn.kecil{color:#fff;font-size:13px}.btn.sek.kecil{color:var(--teal-d)}.btn.bahaya.kecil{color:var(--red)}
 h2{font-size:15px;margin:16px 0 4px;color:var(--teal-d);border-bottom:2px solid #e6f4f1;padding-bottom:4px}
 #pita{display:none;padding:8px 12px;font-size:13px;font-weight:600;text-align:center}
 #pita.off{display:block;background:#fff7ed;color:#9a3412;border-bottom:1px solid #fdba74}
@@ -93,6 +100,8 @@ canvas.ttd{width:100%;height:170px;border:1.5px dashed #94a3b8;border-radius:9px
 
   <section id="v-daftar" style="display:none">
     <div class="tabs"><button id="tab-survei" class="on" onclick="gantiMode('survei')">Survei</button><button id="tab-monitoring" onclick="gantiMode('monitoring')">Monitoring</button></div>
+    <div id="ringkas" class="chips"></div>
+    <div id="peran-info"></div>
     <div class="kartu">
       <div class="baris">
         <select id="f-status" onchange="tampilDaftar()" style="flex:1;min-width:150px"></select>
@@ -101,6 +110,7 @@ canvas.ttd{width:100%;height:170px;border:1.5px dashed #94a3b8;border-radius:9px
         <button class="btn kecil sek" onclick="muat()">Muat ulang</button>
       </div>
       <div id="daftar-info" class="kecil" style="margin-top:6px"></div>
+      <div id="luar-info" class="kecil" style="margin-top:4px"></div>
     </div>
     <div id="daftar"></div>
   </section>
@@ -161,7 +171,7 @@ const MODE={
 };
 const KET_FOTO=['Tampak depan','Ruang dalam','Dapur','Kamar mandi/WC','Atap','Tampak samping','Lainnya'];
 let token='',nama='',jabatan='',mode='survei',offline=false,aktif=null,draf=null;
-const R={survei:null,monitoring:null},antre={survei:{},monitoring:{}},galatDraf={survei:{},monitoring:{}};
+const R={survei:null,monitoring:null},antre={survei:{},monitoring:{}},galatDraf={survei:{},monitoring:{}},galatServer={survei:'',monitoring:''};
 const M=()=>MODE[mode],rs=()=>R[mode];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -263,7 +273,12 @@ async function muat(md,diam){
   if(!diam)$('daftar-info').textContent='Memuat…';
   try{
     const r=await api(md+'_daftar');
-    if(!r.ok){if(r.kode==='AUTH'){toast(r.pesan,true);return keluarPaksa();}throw new Error(r.pesan);}
+    if(!r.ok){if(r.kode==='AUTH'){toast(r.pesan,true);return keluarPaksa();}
+      galatServer[md]=r.pesan||'Server menolak permintaan.';if(!diam)offline=false;   // galat server ≠ tidak tersambung
+      if(!R[md]){try{R[md]=await kv.get(kunci(md,'daftar'));}catch(e2){}}
+      if(md===mode&&!draf){pita();tampilDaftar();}
+      return;}
+    galatServer[md]='';
     R[md]=rapikan(md,r);R[md]._waktu=Date.now();if(!diam)offline=false;
     try{await kv.set(kunci(md,'daftar'),R[md]);}catch(e){}
   }catch(e){
@@ -281,8 +296,18 @@ function lencana(x){
   return '<span class="lencana '+c+'">'+esc(x.status)+'</span>';
 }
 function tampilDaftar(){
-  const el=$('daftar'),r=rs();
-  if(!r){el.innerHTML='<div class="kartu">Belum ada data. Sambungkan internet lalu tekan <b>Muat ulang</b>.</div>';$('daftar-info').textContent='';return;}
+  const el=$('daftar'),r=rs(),gs=galatServer[mode]?'<div class="galat"><b>Server menjawab galat:</b> '+esc(galatServer[mode])+'<br>Daftar di bawah (bila ada) adalah data terakhir yang tersimpan di perangkat ini.</div>':'';
+  if(!r){el.innerHTML=gs||'<div class="kartu">Belum ada data. Sambungkan internet lalu tekan <b>Muat ulang</b>.</div>';$('daftar-info').textContent='';$('ringkas').innerHTML='';$('peran-info').innerHTML='';$('luar-info').textContent='';return;}
+  // angka per status (survei: dihitung server; monitoring: dari daftar)
+  const jml=st=>r.data.filter(x=>x.status===st).length;
+  const rk=mode==='survei'&&r.ringkas?[['Siap survei',r.ringkas.siap,'c-siap'],['Ditugaskan',r.ringkas.ditugaskan,'c-tugas'],['Selesai',r.ringkas.selesai,'c-selesai']]
+    :mode==='survei'?[['Siap survei',jml('Siap survei'),'c-siap'],['Ditugaskan',jml('Ditugaskan'),'c-tugas'],['Selesai',jml(M().selesai),'c-selesai']]
+    :[['Jatuh tempo',jml('Jatuh tempo'),'c-siap'],['Ditugaskan',jml('Ditugaskan'),'c-tugas'],['Selesai',jml('Selesai'),'c-selesai']];
+  $('ringkas').innerHTML=rk.map(k=>'<div class="'+k[2]+'" data-ringkas="'+esc(k[0])+'"><b>'+k[1]+'</b>'+esc(k[0])+'</div>').join('');
+  const jab={PETUGAS:'Petugas',WK1:'Wakil Ketua I',WK2:'Wakil Ketua II',WK3:'Wakil Ketua III',WK4:'Wakil Ketua IV',KETUA:'Ketua'}[r.jabatan||jabatan]||jabatan;
+  $('peran-info').innerHTML=r.boleh_tugaskan?'':'<div class="info-peran">Anda masuk sebagai <b>'+esc(jab)+'</b> — hanya kunjungan yang <b>ditugaskan kepada Anda</b> yang tampil. Penugasan dilakukan oleh Wakil Ketua II, Wakil Ketua III, atau Ketua.</div>';
+  const lu=mode==='survei'&&r.lengkap_tidak_masuk;
+  $('luar-info').textContent=lu&&(lu.diterima+lu.ditolak+lu.lainnya)?'Berkas Lengkap yang tidak masuk daftar: '+[lu.diterima?lu.diterima+' sudah Diterima (masuk Daftar Mustahik)':'',lu.ditolak?lu.ditolak+' ditolak':'',lu.lainnya?lu.lainnya+' status lain':''].filter(Boolean).join(' · ')+'.':'';
   const fj=$('f-jenis'),jenis=[...new Set(r.data.map(x=>x.jenis_bantuan).filter(Boolean))].sort(),pilihJ=fj.value;
   fj.innerHTML='<option value="">Semua jenis bantuan</option>'+jenis.map(j=>'<option'+(j===pilihJ?' selected':'')+'>'+esc(j)+'</option>').join('');
   const f=$('f-status').value,q=$('f-cari').value.trim().toLowerCase(),sel=M().selesai;
@@ -290,10 +315,15 @@ function tampilDaftar(){
   const rows=r.data.filter(x=>lolos(x)&&(!pilihJ||x.jenis_bantuan===pilihJ)&&(!q||[x.nama,x.kelurahan,x.kecamatan,x.id,x.mustahikId].join(' ').toLowerCase().includes(q)));
   const hit=s=>r.data.filter(x=>x.status===s).length;
   $('daftar-info').textContent=(r.boleh_tugaskan?hit(M().siap)+' '+M().siap.toLowerCase()+' · ':'')+hit('Ditugaskan')+' ditugaskan · '+hit(sel)+' selesai'+(offline&&r._waktu?' · data '+new Date(r._waktu).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'');
-  if(!rows.length){el.innerHTML='<div class="kartu">'+(r.boleh_tugaskan?'Tidak ada data pada saringan ini.':M().kosong)+'</div>';return;}
-  let kec=null,h='';
-  rows.forEach(x=>{
-    if(x.kecamatan!==kec){kec=x.kecamatan;h+='<div class="grup">Kec. '+esc(kec||'(tanpa kecamatan)')+' · '+rows.filter(y=>y.kecamatan===kec).length+' kunjungan</div>';}
+  if(!rows.length){el.innerHTML=gs+'<div class="kartu">'+(r.boleh_tugaskan?'Tidak ada data pada saringan ini.':M().kosong)+'</div>';return;}
+  // penugas: bagian "Belum ditugaskan" di atas, lalu yang sudah ditugaskan/selesai; masing-masing urut kecamatan
+  const belum=x=>!x.petugas&&x.status!==sel,bagi=r.boleh_tugaskan&&rows.some(belum);
+  const urut=bagi?rows.filter(belum).concat(rows.filter(x=>!belum(x))):rows;
+  let kec=null,h=gs,bag=null;
+  urut.forEach(x=>{
+    const b=bagi?(belum(x)?'A':'B'):'';
+    if(b!==bag){bag=b;kec=null;if(b){const n=urut.filter(y=>belum(y)===(b==='A')).length;h+='<div class="bagian" data-bagian="'+b+'">'+(b==='A'?'Belum ditugaskan':'Sudah ditugaskan')+' · '+n+'</div>';}}
+    if(x.kecamatan!==kec){kec=x.kecamatan;h+='<div class="grup">Kec. '+esc(kec||'(tanpa kecamatan)')+' · '+urut.filter(y=>y.kecamatan===kec&&(!bagi||belum(y)===(b==='A'))).length+' kunjungan</div>';}
     const id=esc(x.id),milik=x.petugas===nama,selesai=x.status===sel,diAntre=!!antre[mode][x.id];
     h+='<div class="kartu" data-no="'+id+'"><div class="baris" style="justify-content:space-between"><b>'+esc(x.nama)+'</b>'+lencana(x)+'</div>'+
       (mode==='survei'?'<div class="kecil">'+id+' · '+esc(x.jenis_bantuan)+' · NIK ••••'+esc(x.nik_akhir)+'</div>'
