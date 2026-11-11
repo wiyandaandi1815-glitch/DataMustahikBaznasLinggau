@@ -172,6 +172,7 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
         <option>Lubuklinggau Timur I</option><option>Lubuklinggau Timur II</option><option>Lubuklinggau Utara I</option><option>Lubuklinggau Utara II</option></select></div>
       <div><label>Kelurahan <span class="req">*</span></label><input id="kelurahan" maxlength="60"></div>
       <div class="full"><label>Nomor HP / WhatsApp <span class="req">*</span></label><input id="telepon" type="tel" inputmode="tel" placeholder="08xxxxxxxxxx" maxlength="16"></div>
+      <div class="full"><label>Email <span style="font-weight:400;color:#6b7280">(opsional — nomor pengajuan juga dikirim ke email ini)</span></label><input id="email" type="email" inputmode="email" autocomplete="email" placeholder="nama@gmail.com" maxlength="100"></div>
     </div></div>
 
     <div class="card"><h2>C. KONDISI EKONOMI KELUARGA</h2><div class="body grid">
@@ -584,7 +585,7 @@ document.getElementById('fpj').addEventListener('submit',async ev=>{
   ev.preventDefault();tampilErr('');
   const diisi=document.querySelector('input[name=diisi]:checked').value;
   const d={website:v('website'),diisi_oleh:diisi,persetujuan:document.getElementById('persetujuan').checked};
-  ['nama','nik','noKK','jenisKelamin','statusKeluarga','tempatLahir','tanggalLahir','alamat','kecamatan','kelurahan','telepon',
+  ['nama','nik','noKK','jenisKelamin','statusKeluarga','tempatLahir','tanggalLahir','alamat','kecamatan','kelurahan','telepon','email',
    'pekerjaan','penghasilan','totalPengeluaran','jumlahAnggota','jumlahTanggungan','kondisiRumah','kategoriBantuan','kebutuhanUtama','alasan',
    'nama_pengisi','hubungan_pengisi','hp_pengisi','nik_pengisi','lembagaPendidikan','jenjangPendidikan','prodiKelas','semester','statusKuliah','kelas'].forEach(k=>d[k]=v(k));
   if(!/pendidikan|beasiswa/i.test(d.kategoriBantuan)){d.lembagaPendidikan='';d.jenjangPendidikan='';d.prodiKelas='';d.semester='';d.kelas='';}
@@ -604,6 +605,7 @@ document.getElementById('fpj').addEventListener('submit',async ev=>{
   else if(jt&&ja&&+jt>+ja)s.push('Jumlah orang yang ditanggung tidak boleh lebih dari anggota serumah');
   if(!d.alamat||!d.kecamatan||!d.kelurahan)s.push('Alamat, kecamatan, kelurahan');
   if(!/^(\+?62|0)8\d{7,12}$/.test(d.telepon.replace(/[\s-]/g,'')))s.push('Nomor HP/WA yang benar (08…)');
+  if(d.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.email))s.push('Format email yang benar (contoh nama@gmail.com)');
   if(!d.kategoriBantuan)s.push('Jenis bantuan');
   if(d.alasan.length<10)s.push('Alasan pengajuan (min. 10 huruf)');
   if(KELAS_JENJANG[d.jenjangPendidikan]&&!d.kelas)s.push('Kelas');
