@@ -541,7 +541,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
     Input / Edit
   </button>
-  <button class="tab-btn" id="tab-pj-btn" onclick="switchTab('t-pengajuan',this);pjMuat(true)">
+  <button class="tab-btn" id="tab-pj-btn" onclick="switchTab('t-pengajuan',this);pjMuat(true);mnHitung()">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
     Pengajuan Masuk <span id="pj-count" class="badge b-red" style="display:none;margin-left:4px">0</span>
   </button>
@@ -1073,7 +1073,8 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
 <div class="main">
   <div class="pg-title">Pengajuan Masuk</div>
   <div class="pg-sub">Pengajuan mandiri dari calon mustahik melalui formulir publik <a href="pengajuan.html" target="_blank" rel="noopener"><strong>pengajuan.html</strong></a>. Alur: pemohon menyerahkan berkas di kantor → <strong>centang berkas &amp; cetak Tanda Terima</strong> → jadwalkan kunjungan &amp; <strong>cetak Formulir Survei</strong> → <strong>Lengkapi &amp; Terima</strong>. Berkas tidak diserahkan dalam 14 hari → otomatis <em>Berkas tidak diserahkan</em>.</div>
-  <div style="margin:0 0 10px"><a class="btn btn-primary btn-sm" href="survei.html" target="_blank" rel="noopener" style="text-decoration:none">📋 Kunjungan Survei — penugasan surveyor, form survei di HP &amp; cetak hasil</a></div>
+  <div style="margin:0 0 10px"><a class="btn btn-primary btn-sm" href="survei.html" target="_blank" rel="noopener" style="text-decoration:none">📋 Kunjungan Survei — penugasan surveyor, form survei di HP &amp; cetak hasil</a>
+  <a class="btn btn-primary btn-sm" href="survei.html#monitoring" target="_blank" rel="noopener" style="text-decoration:none;margin-left:6px">📈 Monitoring Pascabantuan (bulan ke-3 &amp; ke-6) <span id="mn-count" class="badge b-red" style="display:none;margin-left:4px">0</span></a></div>
   <div class="card"><div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
     <select id="pj-filter" onchange="pjRender()" style="max-width:220px">
       <option value="aktif">Perlu tindak lanjut</option><option value="siap">Berkas lengkap (siap diterima)</option><option value="Menunggu verifikasi">Menunggu verifikasi</option>
@@ -3747,6 +3748,12 @@ async function pjMuat(silent){
 function tglLahirTampil(t){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(t||''));if(!m)return t||'';
   const B=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'],y=+m[1],mo=+m[2],d=+m[3],n=new Date();
   let u=n.getFullYear()-y;if(n.getMonth()+1<mo||(n.getMonth()+1===mo&&n.getDate()<d))u--;return d+' '+B[mo-1]+' '+y+(u>=0&&u<130?' ('+u+' tahun)':'');}
+async function mnHitung(){
+  const b=document.getElementById('mn-count');if(!b||!getToken())return;
+  try{const r=await dbApi('monitoring_daftar');if(!r.ok)return;
+    const n=r.data.filter(x=>x.status==='Jatuh tempo'||(x.status==='Ditugaskan'&&x.petugas===ssGet(SS_NAMA))).length;
+    b.textContent=n;b.style.display=n?'inline-block':'none';b.title=n+' monitoring perlu dikunjungi';}catch(e){}
+}
 function pjSiap(p){return (p.status===PJ_ST.menunggu||p.status===PJ_ST.jadwal)&&p.berkas_status==='Lengkap';}
 function pjPerlu(p){return (p.status===PJ_ST.menunggu||p.status===PJ_ST.jadwal)&&p.berkas_status!=='Lengkap';}
 function pjBaris(p){return `<tr${pjSiap(p)?' class="pj-siap"':''}>
@@ -6215,7 +6222,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='19 · 11 Nov 2026';
+const APP_VERSI='20 · 11 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
