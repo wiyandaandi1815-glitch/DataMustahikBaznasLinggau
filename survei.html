@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Kunjungan Survei — BAZNAS Kota Lubuklinggau</title>
+<style>
+:root{--teal:#0f766e;--teal-d:#115e59;--gold:#b7791f;--g100:#f3f4f6;--g200:#e5e7eb;--g500:#6b7280;--g800:#1f2937;--red:#b91c1c}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--g800);background:#f6f8f8}
+header{background:var(--teal-d);color:#fff;padding:10px 14px;position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px}
+header h1{font-size:16px;margin:0;flex:1}
+header small{display:block;font-weight:400;opacity:.85;font-size:11.5px}
+main{max-width:860px;margin:0 auto;padding:12px}
+.kartu{background:#fff;border:1px solid var(--g200);border-radius:12px;padding:12px;margin:0 0 10px}
+.btn{font:inherit;font-weight:600;border:0;border-radius:9px;padding:10px 14px;min-height:42px;background:var(--teal);color:#fff;cursor:pointer}
+.btn[disabled]{opacity:.5}
+.btn.sek{background:#fff;color:var(--teal-d);border:1.5px solid var(--teal)}
+.btn.kecil{padding:6px 10px;min-height:34px;font-size:13px}
+.btn.maps{background:#1a73e8}
+.btn.bahaya{background:#fff;color:var(--red);border:1.5px solid #fca5a5}
+label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}
+label .w{color:var(--red)}
+input[type=text],input[type=password],input[type=tel],input[type=datetime-local],select,textarea{width:100%;font:inherit;padding:10px;border:1.5px solid #cbd5e1;border-radius:9px;background:#fff;min-height:44px}
+textarea{min-height:70px}
+.pil{display:flex;flex-wrap:wrap;gap:6px}
+.pil label{margin:0;font-weight:500;border:1.5px solid #cbd5e1;border-radius:9px;padding:8px 11px;background:#fff;cursor:pointer}
+.pil input{position:absolute;opacity:0;pointer-events:none}
+.pil input:checked+span{font-weight:700}
+.pil label:has(input:checked){border-color:var(--teal);background:#e6f4f1;color:var(--teal-d)}
+.grup{font-weight:700;color:var(--teal-d);background:#e6f4f1;border-left:4px solid var(--teal);padding:7px 10px;border-radius:6px;margin:14px 0 8px;font-size:13.5px}
+.lencana{display:inline-block;font-size:11.5px;font-weight:700;border-radius:10px;padding:1px 9px}
+.l-siap{background:#fef3c7;color:#92400e}.l-tugas{background:#dbeafe;color:#1e40af}.l-selesai{background:#d1fae5;color:#065f46}.l-antre{background:#ffedd5;color:#9a3412}
+.baris{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.kecil{font-size:12.5px;color:var(--g500)}
+h2{font-size:15px;margin:16px 0 4px;color:var(--teal-d);border-bottom:2px solid #e6f4f1;padding-bottom:4px}
+#pita{display:none;padding:8px 12px;font-size:13px;font-weight:600;text-align:center}
+#pita.off{display:block;background:#fff7ed;color:#9a3412;border-bottom:1px solid #fdba74}
+#pita.antre{display:block;background:#eff6ff;color:#1e40af;border-bottom:1px solid #bfdbfe}
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;max-width:92vw;display:none;z-index:20}
+#toast.err{background:var(--red)}
+.foto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.foto-item{border:1px solid var(--g200);border-radius:9px;padding:5px;background:#fafafa}
+.foto-item img{width:100%;height:96px;object-fit:cover;border-radius:6px;display:block}
+.foto-item select{min-height:34px;padding:4px;font-size:12.5px;margin-top:4px}
+canvas.ttd{width:100%;height:170px;border:1.5px dashed #94a3b8;border-radius:9px;background:#fff;touch-action:none;display:block}
+.galat{background:#fef2f2;border:1.5px solid #fca5a5;color:#7f1d1d;border-radius:9px;padding:9px 11px;font-size:13.5px;margin:8px 0}
+.lekat{position:sticky;bottom:0;background:#f6f8f8;padding:10px 0;display:flex;gap:8px}
+.lekat .btn{flex:1}
+#cetak{display:none}
+@media print{
+  header,#pita,main,#toast{display:none!important}
+  body{background:#fff;font-size:11pt}
+  #cetak{display:block;padding:0}
+  @page{size:A4;margin:14mm}
+}
+#cetak h3{text-align:center;margin:1px 0;font-size:12pt}
+#cetak .kop{text-align:center;border-bottom:3px double #000;padding-bottom:4px;margin-bottom:6px}
+#cetak table{width:100%;border-collapse:collapse;margin:2px 0 4px}
+#cetak td,#cetak th{border:1px solid #444;padding:1px 6px;font-size:9pt;line-height:1.3;text-align:left;vertical-align:top}
+#cetak th{background:#eee;width:52%}
+#cetak .id td{border:0;padding:1px 4px}
+#cetak .bag{font-weight:700;margin:5px 0 1px;font-size:10pt}
+#cetak .akhir{break-inside:avoid}
+#cetak .ttd2{display:flex;gap:20px;margin-top:8px}
+#cetak .ttd2>div{flex:1;text-align:center;font-size:10pt}
+#cetak .ttd2 img{height:54px;max-width:100%;display:block;margin:2px auto}
+#cetak .fotos{display:grid;grid-template-columns:1fr 1fr;gap:8px;break-before:page}
+#cetak .fotos figure{margin:0;break-inside:avoid;text-align:center;font-size:9.5pt}
+#cetak .fotos img{width:100%;max-height:88mm;object-fit:contain;border:1px solid #999}
+</style>
+</head>
+<body data-hal="survei">
+<header><h1>Kunjungan Survei<small id="hd-sub">BAZNAS Kota Lubuklinggau</small></h1><button class="btn kecil sek" id="btn-keluar" style="display:none" onclick="keluar()">Keluar</button></header>
+<div id="pita"></div>
+<main>
+  <section id="v-masuk" class="kartu" style="display:none">
+    <b>Masuk dengan kode akses</b>
+    <div class="kecil">Kode akses sama dengan aplikasi Data Mustahik. Kode tidak disimpan di HP.</div>
+    <label for="in-kode">Kode akses</label>
+    <input id="in-kode" type="password" autocomplete="off" autocapitalize="characters">
+    <div id="masuk-galat" class="galat" style="display:none"></div>
+    <div style="margin-top:12px"><button class="btn" id="btn-masuk" onclick="masuk()">Masuk</button></div>
+  </section>
+
+  <section id="v-daftar" style="display:none">
+    <div class="kartu">
+      <div class="baris">
+        <select id="f-status" onchange="tampilDaftar()" style="flex:1;min-width:150px">
+          <option value="aktif">Belum disurvei</option><option value="">Semua</option><option value="Selesai disurvei">Selesai disurvei</option>
+        </select>
+        <input id="f-cari" type="text" placeholder="Cari nama / kelurahan" oninput="tampilDaftar()" style="flex:2;min-width:160px">
+        <button class="btn kecil sek" onclick="muat()">Muat ulang</button>
+      </div>
+      <div id="daftar-info" class="kecil" style="margin-top:6px"></div>
+    </div>
+    <div id="daftar"></div>
+  </section>
+
+  <section id="v-form" style="display:none">
+    <div class="kartu" id="form-kepala"></div>
+    <div id="form-galat" class="galat" style="display:none"></div>
+    <div class="kartu" id="form-isi"></div>
+    <div class="kartu">
+      <h2 style="margin-top:0">Foto (minimal <span id="min-foto">3</span>)</h2>
+      <div class="kecil">Contoh: tampak depan, ruang dalam, dapur/WC. Foto diperkecil otomatis.</div>
+      <div class="foto-grid" id="foto-grid" style="margin:8px 0"></div>
+      <input id="in-foto" type="file" accept="image/*" capture="environment" multiple style="display:none" onchange="tambahFoto(this)">
+      <button class="btn sek" id="btn-foto" onclick="document.getElementById('in-foto').click()">+ Ambil foto</button>
+    </div>
+    <div class="kartu">
+      <h2 style="margin-top:0">Lokasi GPS</h2>
+      <div id="gps-info" class="kecil">Mencari lokasi…</div>
+      <div class="baris" style="margin-top:6px"><button class="btn kecil sek" onclick="ambilGps(true)">Ambil ulang lokasi</button></div>
+      <div id="gps-alasan-wrap" style="display:none"><label for="in-alasan-gps">Alasan lokasi tidak terbaca <span class="w">*</span></label><input id="in-alasan-gps" type="text" maxlength="160" oninput="simpanDraf()"></div>
+    </div>
+    <div class="kartu">
+      <h2 style="margin-top:0">Rekomendasi surveyor</h2>
+      <div class="pil" id="pil-rek"></div>
+      <label for="in-catatan">Catatan surveyor</label>
+      <textarea id="in-catatan" maxlength="600" oninput="simpanDraf()"></textarea>
+    </div>
+    <div class="kartu">
+      <h2 style="margin-top:0">Tanda tangan</h2>
+      <label for="in-nama-ttd">Nama calon mustahik / keluarga yang menandatangani <span class="w">*</span></label>
+      <input id="in-nama-ttd" type="text" maxlength="80" oninput="simpanDraf()">
+      <label>Tanda tangan calon mustahik <span class="w">*</span></label>
+      <canvas class="ttd" id="ttd-mustahik" width="700" height="260"></canvas>
+      <button class="btn kecil bahaya" style="margin-top:6px" onclick="ttdHapus('mustahik')">Hapus tanda tangan</button>
+      <label>Tanda tangan surveyor <span class="w">*</span></label>
+      <canvas class="ttd" id="ttd-surveyor" width="700" height="260"></canvas>
+      <button class="btn kecil bahaya" style="margin-top:6px" onclick="ttdHapus('surveyor')">Hapus tanda tangan</button>
+    </div>
+    <div class="lekat"><button class="btn sek" onclick="tutupForm()">Kembali</button><button class="btn" id="btn-kirim" onclick="kirimSurvei()">Kirim hasil survei</button></div>
+  </section>
+</main>
+<div id="cetak"></div>
+<div id="toast"></div>
+<script>
+'use strict';
+const DB_URL='https://script.google.com/macros/s/AKfycbwcFWag2lgTgaaV5lKBWU_YDrhSHEAgPgXyrfFR9tq6uRyzrg5t_158fHzSBX6183me/exec';
+const ST={siap:'Siap survei',tugas:'Ditugaskan',selesai:'Selesai disurvei'};
+const KET_FOTO=['Tampak depan','Ruang dalam','Dapur','Kamar mandi/WC','Atap','Tampak samping','Lainnya'];
+let token='',nama='',jabatan='',resp=null,offline=false,aktif=null,draf=null,antre={},galatDraf={};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(m,err){const t=$('toast');t.textContent=m;t.className=err?'err':'';t.style.display='block';clearTimeout(toast._t);toast._t=setTimeout(()=>t.style.display='none',err?6000:3200);}
+const ss={get:k=>{try{return sessionStorage.getItem(k);}catch(e){return null;}},set:(k,v)=>{try{sessionStorage.setItem(k,v);}catch(e){}},del:k=>{try{sessionStorage.removeItem(k);}catch(e){}}};
+
+// ── Simpanan di HP (IndexedDB): daftar terakhir, draf isian, antrean kirim. Dihapus saat Keluar (kecuali yang belum terkirim). ──
+const mem={};let _db=null;
+function idb(){
+  if(_db)return _db;
+  _db=new Promise(res=>{try{const r=indexedDB.open('baznas_survei',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>res(null);}catch(e){res(null);}});
+  return _db;
+}
+async function kvOp(mode,fn){const d=await idb();if(!d)return fn(null);return new Promise((res,rej)=>{const tx=d.transaction('kv',mode),st=tx.objectStore('kv');const q=fn(st);tx.oncomplete=()=>res(q&&q.result);tx.onerror=()=>rej(tx.error);});}
+const kv={
+  get:k=>kvOp('readonly',st=>st?st.get(k):{result:mem[k]}),
+  set:(k,v)=>kvOp('readwrite',st=>st?st.put(v,k):(mem[k]=v,null)),
+  del:k=>kvOp('readwrite',st=>st?st.delete(k):(delete mem[k],null)),
+  keys:()=>kvOp('readonly',st=>st?st.getAllKeys():{result:Object.keys(mem)})
+};
+const K={daftar:()=>'daftar:'+nama,draf:no=>'draf:'+nama+':'+no,antre:no=>'antre:'+nama+':'+no};
+
+async function api(aksi,data,detik){
+  const ac=new AbortController(),t=setTimeout(()=>ac.abort(),(detik||30)*1000);
+  try{
+    const r=await fetch(DB_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({aksi,token,data:data===undefined?null:data}),redirect:'follow',signal:ac.signal});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return await r.json();
+  }finally{clearTimeout(t);}
+}
+function tampil(v){['v-masuk','v-daftar','v-form'].forEach(x=>$(x).style.display=x===v?'block':'none');window.scrollTo(0,0);}
+function pita(){
+  const n=Object.keys(antre).length,p=$('pita');
+  if(n){p.className='antre';p.textContent='⏳ '+n+' hasil survei menunggu terkirim — akan dikirim otomatis saat ada sinyal.';}
+  else if(offline){p.className='off';p.textContent='📴 Tidak tersambung — menampilkan data terakhir. Form tetap bisa diisi.';}
+  else p.className='';
+}
+
+// ── Masuk / keluar ──
+async function masuk(){
+  const kode=$('in-kode').value.trim(),g=$('masuk-galat');g.style.display='none';
+  if(!kode)return;
+  $('btn-masuk').disabled=true;
+  try{
+    token=kode;const r=await api('cek');
+    if(!r.ok){token='';g.textContent=r.pesan||'Kode akses tidak valid.';g.style.display='block';return;}
+    nama=r.nama;jabatan=r.jabatan||'PETUGAS';
+    ss.set('baznas_token',token);ss.set('baznas_surveyor',nama);ss.set('baznas_jabatan',jabatan);
+    $('in-kode').value='';await mulai();
+  }catch(e){token='';g.textContent='Gagal terhubung. Masuk pertama kali perlu sinyal internet.';g.style.display='block';}
+  finally{$('btn-masuk').disabled=false;}
+}
+async function keluar(){
+  const n=Object.keys(antre).length;
+  if(!confirm(n?'Masih ada '+n+' hasil survei yang belum terkirim. Data itu tetap disimpan di HP ini dan terkirim saat Anda masuk lagi. Keluar?':'Keluar dari aplikasi survei?'))return;
+  try{await kv.del(K.daftar());}catch(e){}
+  ['baznas_token','baznas_surveyor','baznas_jabatan'].forEach(ss.del);
+  token=nama=jabatan='';resp=null;antre={};$('btn-keluar').style.display='none';$('hd-sub').textContent='BAZNAS Kota Lubuklinggau';pita();tampil('v-masuk');
+}
+async function mulai(){
+  $('hd-sub').textContent=nama+' · '+({PETUGAS:'Petugas',WK1:'Wakil Ketua I',WK2:'Wakil Ketua II',WK3:'Wakil Ketua III',WK4:'Wakil Ketua IV',KETUA:'Ketua'}[jabatan]||jabatan);
+  $('btn-keluar').style.display='';
+  tampil('v-daftar');
+  await bacaAntre();
+  await muat();
+  kirimAntre();
+}
+
+// ── Daftar kunjungan ──
+async function bacaAntre(){
+  antre={};
+  try{for(const k of await kv.keys()){if(String(k).indexOf('antre:'+nama+':')===0){const v=await kv.get(k);if(v)antre[v.no]=v;}}}catch(e){}
+  pita();
+}
+async function muat(){
+  $('daftar-info').textContent='Memuat…';
+  try{
+    const r=await api('survei_daftar');
+    if(!r.ok){if(r.kode==='AUTH'){toast(r.pesan,true);return keluarPaksa();}throw new Error(r.pesan);}
+    resp=r;resp._waktu=Date.now();offline=false;
+    try{await kv.set(K.daftar(),resp);}catch(e){}
+  }catch(e){
+    offline=true;
+    if(!resp){try{resp=await kv.get(K.daftar());}catch(e2){}}
+  }
+  pita();tampilDaftar();
+}
+function keluarPaksa(){['baznas_token','baznas_surveyor','baznas_jabatan'].forEach(ss.del);token='';tampil('v-masuk');}
+function jadwalTeks(j){if(!j)return '';const d=new Date(j.length===10?j+'T00:00':j);if(isNaN(d))return esc(j);
+  return d.toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short',year:'numeric'})+(j.length>10?' '+j.slice(11,16):'');}
+function lencana(x){
+  if(antre[x.no_pengajuan])return '<span class="lencana l-antre">Menunggu terkirim</span>';
+  const c={[ST.siap]:'l-siap',[ST.tugas]:'l-tugas',[ST.selesai]:'l-selesai'}[x.status_survei]||'l-siap';
+  return '<span class="lencana '+c+'">'+esc(x.status_survei)+'</span>';
+}
+function tampilDaftar(){
+  const el=$('daftar');
+  if(!resp){el.innerHTML='<div class="kartu">Belum ada data. Sambungkan internet lalu tekan <b>Muat ulang</b>.</div>';$('daftar-info').textContent='';return;}
+  const f=$('f-status').value,q=$('f-cari').value.trim().toLowerCase();
+  const rows=resp.data.filter(x=>(f===''||(f==='aktif'?x.status_survei!==ST.selesai:x.status_survei===f))&&(!q||[x.nama,x.kelurahan,x.kecamatan,x.no_pengajuan].join(' ').toLowerCase().includes(q)));
+  const hit=s=>resp.data.filter(x=>x.status_survei===s).length;
+  $('daftar-info').textContent=(resp.boleh_tugaskan?hit(ST.siap)+' siap survei · ':'')+hit(ST.tugas)+' ditugaskan · '+hit(ST.selesai)+' selesai'+(offline&&resp._waktu?' · data '+new Date(resp._waktu).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'');
+  if(!rows.length){el.innerHTML='<div class="kartu">'+(resp.boleh_tugaskan?'Tidak ada pengajuan pada saringan ini.':'Belum ada kunjungan yang ditugaskan kepada Anda.')+'</div>';return;}
+  let kec=null,h='';
+  rows.forEach(x=>{
+    if(x.kecamatan!==kec){kec=x.kecamatan;h+='<div class="grup">Kec. '+esc(kec||'(tanpa kecamatan)')+' · '+rows.filter(y=>y.kecamatan===kec).length+' kunjungan</div>';}
+    const no=esc(x.no_pengajuan),milik=x.surveyor===nama,selesai=x.status_survei===ST.selesai,diAntre=!!antre[x.no_pengajuan];
+    h+='<div class="kartu" data-no="'+no+'"><div class="baris" style="justify-content:space-between"><b>'+esc(x.nama)+'</b>'+lencana(x)+'</div>'+
+      '<div class="kecil">'+no+' · '+esc(x.kategoriBantuan)+' · NIK ••••'+esc(x.nik_akhir)+'</div>'+
+      '<div>'+esc(x.alamat)+', '+esc(x.kelurahan)+'</div>'+
+      (x.jadwal?'<div>📅 '+jadwalTeks(x.jadwal)+(x.surveyor?' · '+esc(x.surveyor):'')+'</div>':'')+
+      (galatDraf[x.no_pengajuan]?'<div class="galat">Kiriman ditolak server: '+esc(galatDraf[x.no_pengajuan])+'</div>':'')+
+      '<div class="baris" style="margin-top:8px">'+
+      '<a class="btn kecil maps" href="'+esc(x.maps)+'" target="_blank" rel="noopener noreferrer" style="text-decoration:none">📍 Google Maps</a>'+
+      (x.telepon?'<a class="btn kecil sek" href="tel:'+esc(String(x.telepon).replace(/[^\d+]/g,''))+'" style="text-decoration:none">📞 Telepon</a>':'')+
+      (milik&&!selesai&&!diAntre?'<button class="btn kecil" onclick="bukaForm(\''+no+'\')">Isi form survei</button>':'')+
+      (selesai?'<button class="btn kecil sek" onclick="cetakForm(\''+no+'\')">🖨 Cetak formulir</button>':'')+
+      '</div>'+
+      (resp.boleh_tugaskan&&!selesai&&!diAntre?'<div class="baris" style="margin-top:8px;border-top:1px dashed var(--g200);padding-top:8px">'+
+        '<select id="tg-s-'+no+'" style="flex:1;min-width:140px"><option value="">— pilih surveyor —</option>'+resp.petugas.map(p=>'<option'+(p===x.surveyor?' selected':'')+'>'+esc(p)+'</option>').join('')+'</select>'+
+        '<input id="tg-j-'+no+'" type="datetime-local" value="'+esc(x.jadwal&&x.jadwal.length===10?x.jadwal+'T09:00':x.jadwal||'')+'" style="flex:1;min-width:170px">'+
+        '<button class="btn kecil" onclick="tugaskan(\''+no+'\',this)">'+(x.surveyor?'Ubah tugas':'Tugaskan')+'</button></div>':'')+
+      '</div>';
+  });
+  el.innerHTML=h;
+}
+async function tugaskan(no,btn){
+  const s=$('tg-s-'+no).value,j=$('tg-j-'+no).value;
+  if(!s||!j){toast('Pilih surveyor dan isi jadwal kunjungan.',true);return;}
+  btn.disabled=true;
+  try{const r=await api('survei_tugaskan',{no,surveyor:s,jadwal:j});
+    if(!r.ok){toast(r.pesan,true);return;}
+    toast(r.pesan);await muat();
+  }catch(e){toast('Gagal terhubung. Penugasan perlu sinyal internet.',true);}
+  finally{btn.disabled=false;}
+}
+
+// ── Form survei ──
+function medan(f){
+  const id='q-'+f.k,w=f.w?' <span class="w">*</span>':'';
+  if(f.t==='pilih')return '<label>'+esc(f.l)+w+'</label><div class="pil">'+f.o.map(o=>'<label><input type="radio" name="'+id+'" value="'+esc(o)+'"><span>'+esc(o)+'</span></label>').join('')+'</div>';
+  if(f.t==='ya')return '<label>'+esc(f.l)+'</label><div class="pil">'+['Tidak','Ya'].map(o=>'<label><input type="radio" name="'+id+'" value="'+o+'"><span>'+o+'</span></label>').join('')+'</div>';
+  if(f.t==='angka')return '<label for="'+id+'">'+esc(f.l)+w+'</label><input id="'+id+'" type="text" inputmode="numeric" data-angka="1" autocomplete="off">';
+  return '<label for="'+id+'">'+esc(f.l)+w+'</label><input id="'+id+'" type="text" maxlength="200" autocomplete="off">';
+}
+async function bukaForm(no){
+  const x=resp.data.find(y=>y.no_pengajuan===no);if(!x)return;
+  aktif=x;
+  let d=null;try{d=await kv.get(K.draf(no));}catch(e){}
+  draf=d||{no,kunci:(crypto.randomUUID?crypto.randomUUID():'k'+Date.now()+'-'+Math.random().toString(36).slice(2,12)),isian:{},foto:[],ttd:{},gps:null,rekomendasi:'',catatan:'',nama_ttd:x.nama,alasan_gps:''};
+  $('form-kepala').innerHTML='<b>'+esc(x.nama)+'</b><div class="kecil">'+esc(no)+' · '+esc(x.kategoriBantuan)+'</div><div>'+esc(x.alamat)+', '+esc(x.kelurahan)+', Kec. '+esc(x.kecamatan)+'</div>'+(d?'<div class="kecil" style="color:#92400e">📝 Isian sebelumnya dipulihkan.</div>':'');
+  $('form-isi').innerHTML=resp.form.map(b=>'<h2>'+esc(b.bagian)+'</h2>'+b.isi.map(medan).join('')).join('');
+  $('min-foto').textContent=resp.min_foto;
+  $('pil-rek').innerHTML=resp.rekomendasi.map(o=>'<label><input type="radio" name="q-rek" value="'+esc(o)+'"><span>'+esc(o)+'</span></label>').join('');
+  // isi dari draf
+  resp.form.forEach(b=>b.isi.forEach(f=>{const v=draf.isian[f.k];if(v===undefined||v==='')return;
+    if(f.t==='pilih'||f.t==='ya'){const r=document.querySelector('input[name="q-'+f.k+'"][value="'+CSS.escape(String(v))+'"]');if(r)r.checked=true;}
+    else $('q-'+f.k).value=f.t==='angka'?ribuan(v):v;}));
+  if(draf.rekomendasi){const r=document.querySelector('input[name="q-rek"][value="'+CSS.escape(draf.rekomendasi)+'"]');if(r)r.checked=true;}
+  $('in-catatan').value=draf.catatan||'';$('in-nama-ttd').value=draf.nama_ttd||'';$('in-alasan-gps').value=draf.alasan_gps||'';
+  const g=$('form-galat');if(galatDraf[no]){g.textContent='Kiriman sebelumnya ditolak: '+galatDraf[no];g.style.display='block';}else g.style.display='none';
+  tampil('v-form');
+  tampilFoto();ttdPasang('mustahik');ttdPasang('surveyor');
+  if(draf.gps)tampilGps();else ambilGps(false);
+}
+function ribuan(v){const d=String(v).replace(/\D/g,'');return d?Number(d).toLocaleString('id-ID'):'';}
+$('form-isi').addEventListener('input',e=>{if(e.target.dataset.angka)e.target.value=ribuan(e.target.value);simpanDraf();});
+$('form-isi').addEventListener('change',simpanDraf);
+$('pil-rek').addEventListener('change',simpanDraf);
+function bacaIsian(){
+  const o={};
+  resp.form.forEach(b=>b.isi.forEach(f=>{
+    if(f.t==='pilih'||f.t==='ya'){const r=document.querySelector('input[name="q-'+f.k+'"]:checked');if(r)o[f.k]=r.value;}
+    else{const v=$('q-'+f.k).value.trim();if(v)o[f.k]=f.t==='angka'?v.replace(/\D/g,''):v;}
+  }));
+  return o;
+}
+let _tDraf=0;
+function simpanDraf(segera){
+  if(!draf)return;
+  clearTimeout(_tDraf);
+  const kerja=async()=>{if(!draf)return;draf.isian=bacaIsian();const r=document.querySelector('input[name="q-rek"]:checked');draf.rekomendasi=r?r.value:'';
+    draf.catatan=$('in-catatan').value;draf.nama_ttd=$('in-nama-ttd').value;draf.alasan_gps=$('in-alasan-gps').value;
+    try{await kv.set(K.draf(draf.no),draf);}catch(e){}};
+  if(segera===true)return kerja();
+  _tDraf=setTimeout(kerja,350);
+}
+async function tutupForm(){await simpanDraf(true);draf=null;aktif=null;tampil('v-daftar');tampilDaftar();}
+
+// Foto: diperkecil ke sisi terpanjang 1280 px, JPEG ±70%
+function kecilkan(file){
+  return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();
+    im.onload=()=>{const s=Math.min(1,1280/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',0.7));};
+    im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('Foto tidak terbaca'));};im.src=u;});
+}
+async function tambahFoto(inp){
+  for(const f of [...inp.files]){
+    if(draf.foto.length>=resp.maks_foto){toast('Maksimal '+resp.maks_foto+' foto.',true);break;}
+    try{draf.foto.push({url:await kecilkan(f),ket:KET_FOTO[Math.min(draf.foto.length,KET_FOTO.length-1)]});}catch(e){toast('Satu foto tidak terbaca, ulangi.',true);}
+  }
+  inp.value='';tampilFoto();simpanDraf();
+}
+function tampilFoto(){
+  $('foto-grid').innerHTML=draf.foto.map((f,i)=>'<div class="foto-item"><img src="'+f.url+'" alt="Foto '+(i+1)+'"><select onchange="draf.foto['+i+'].ket=this.value;simpanDraf()">'+
+    KET_FOTO.map(k=>'<option'+(k===f.ket?' selected':'')+'>'+k+'</option>').join('')+'</select><button class="btn kecil bahaya" style="width:100%;margin-top:4px" onclick="draf.foto.splice('+i+',1);tampilFoto();simpanDraf()">Hapus</button></div>').join('');
+  $('btn-foto').textContent='+ Ambil foto ('+draf.foto.length+'/'+resp.min_foto+' minimal)';
+}
+
+// GPS otomatis
+function tampilGps(){
+  const g=draf&&draf.gps,el=$('gps-info');
+  if(g){el.innerHTML='✅ Lokasi terbaca: <b>'+g.lat.toFixed(6)+', '+g.lng.toFixed(6)+'</b> (akurasi ±'+Math.round(g.akurasi)+' m)';$('gps-alasan-wrap').style.display='none';}
+}
+function ambilGps(manual){
+  if(!draf)return;
+  const el=$('gps-info');
+  if(!navigator.geolocation){el.textContent='HP ini tidak mendukung GPS. Tulis alasannya di bawah.';$('gps-alasan-wrap').style.display='block';return;}
+  el.textContent='Mencari lokasi… (GPS tetap bekerja tanpa internet)';
+  const no=draf.no;
+  navigator.geolocation.getCurrentPosition(p=>{
+    if(!draf||draf.no!==no)return;
+    draf.gps={lat:p.coords.latitude,lng:p.coords.longitude,akurasi:p.coords.accuracy||0};tampilGps();simpanDraf();
+  },e=>{
+    if(!draf||draf.no!==no)return;
+    if(draf.gps){tampilGps();return;}
+    el.textContent=(e.code===1?'Izin lokasi ditolak. Izinkan lokasi di pengaturan browser, lalu tekan "Ambil ulang lokasi"':'Lokasi belum terbaca. Coba di luar rumah lalu tekan "Ambil ulang lokasi"')+' — atau tulis alasannya.';
+    $('gps-alasan-wrap').style.display='block';
+  },{enableHighAccuracy:true,timeout:25000,maximumAge:manual?0:60000});
+}
+
+// Tanda tangan di layar
+const _ttd={};
+function ttdPasang(siapa){
+  const c=$('ttd-'+siapa),x=c.getContext('2d');
+  x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.lineWidth=3.2;x.lineCap='round';x.lineJoin='round';x.strokeStyle='#111';
+  if(draf.ttd[siapa]){const im=new Image();im.onload=()=>x.drawImage(im,0,0,c.width,c.height);im.src=draf.ttd[siapa];}
+  if(_ttd[siapa])return;_ttd[siapa]=1;
+  let gambar=false;
+  const pos=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height];};
+  c.addEventListener('pointerdown',e=>{e.preventDefault();gambar=true;try{c.setPointerCapture(e.pointerId);}catch(_){ }const[a,b]=pos(e);x.beginPath();x.moveTo(a,b);x.lineTo(a+.1,b+.1);x.stroke();});
+  c.addEventListener('pointermove',e=>{if(!gambar)return;e.preventDefault();const[a,b]=pos(e);x.lineTo(a,b);x.stroke();});
+  const selesai=()=>{if(!gambar)return;gambar=false;if(draf){draf.ttd[siapa]=c.toDataURL('image/png');simpanDraf();}};
+  c.addEventListener('pointerup',selesai);c.addEventListener('pointercancel',selesai);c.addEventListener('pointerleave',selesai);
+}
+function ttdHapus(siapa){const c=$('ttd-'+siapa),x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);delete draf.ttd[siapa];simpanDraf();}
+
+// ── Kirim: masuk antrean dulu, lalu dikirim; gagal sinyal → tetap di antrean dan dicoba lagi otomatis ──
+const gbr=u=>({mime:u.slice(5,u.indexOf(';')),base64:u.slice(u.indexOf(',')+1)});
+async function kirimSurvei(){
+  await simpanDraf(true);
+  const e=[],d=draf;
+  resp.form.forEach(b=>b.isi.forEach(f=>{if(f.w&&(d.isian[f.k]===undefined||d.isian[f.k]===''))e.push(f.l);}));
+  if(d.foto.length<resp.min_foto)e.push('minimal '+resp.min_foto+' foto');
+  if(!d.gps&&String(d.alasan_gps||'').trim().length<5)e.push('lokasi GPS (atau alasan tidak terbaca)');
+  if(!d.rekomendasi)e.push('rekomendasi surveyor');
+  if(String(d.nama_ttd||'').trim().length<3)e.push('nama penanda tangan');
+  if(!d.ttd.mustahik)e.push('tanda tangan calon mustahik');
+  if(!d.ttd.surveyor)e.push('tanda tangan surveyor');
+  const g=$('form-galat');
+  if(e.length){g.innerHTML='<b>Mohon lengkapi:</b> '+e.map(esc).join('; ')+'.';g.style.display='block';window.scrollTo(0,0);return;}
+  g.style.display='none';
+  const item={no:d.no,data:{no:d.no,kunci:d.kunci,isian:d.isian,rekomendasi:d.rekomendasi,catatan:d.catatan,nama_ttd_mustahik:d.nama_ttd.trim(),
+    lat:d.gps?d.gps.lat:'',lng:d.gps?d.gps.lng:'',akurasi_m:d.gps?d.gps.akurasi:'',alasan_tanpa_gps:d.gps?'':d.alasan_gps,waktu_survei:new Date().toISOString(),
+    foto:d.foto.map(f=>Object.assign(gbr(f.url),{ket:f.ket})),ttd_mustahik:gbr(d.ttd.mustahik),ttd_surveyor:gbr(d.ttd.surveyor)}};
+  $('btn-kirim').disabled=true;
+  try{await kv.set(K.antre(d.no),item);}catch(err){$('btn-kirim').disabled=false;toast('Penyimpanan HP penuh. Hapus beberapa foto lalu coba lagi.',true);return;}
+  antre[d.no]=item;delete galatDraf[d.no];
+  draf=null;aktif=null;$('btn-kirim').disabled=false;
+  tampil('v-daftar');pita();tampilDaftar();
+  toast('Tersimpan di HP. Mengirim…');
+  kirimAntre();
+}
+let _kirim=false;
+async function kirimAntre(){
+  if(_kirim||!token)return;_kirim=true;
+  let ada=false;
+  try{
+    for(const no of Object.keys(antre)){
+      const it=antre[no];let r;
+      try{r=await api('survei_kirim',it.data,120);}catch(e){offline=true;break;}   // sinyal putus → coba lagi nanti
+      offline=false;
+      if(r.ok){await kv.del(K.antre(no));await kv.del(K.draf(no));delete antre[no];ada=true;toast('Hasil survei '+no+' terkirim.');}
+      else if(r.kode==='SIBUK')break;
+      else if(r.kode==='AUTH'){toast(r.pesan,true);keluarPaksa();break;}
+      else{await kv.del(K.antre(no));delete antre[no];galatDraf[no]=r.pesan||'ditolak';toast(no+': '+galatDraf[no],true);ada=true;}  // draf tetap ada untuk diperbaiki
+    }
+  }finally{_kirim=false;}
+  pita();
+  if(ada)await muat();else tampilDaftar();
+}
+window.addEventListener('online',()=>{if(token){kirimAntre();}});
+setInterval(()=>{if(token&&Object.keys(antre).length)kirimAntre();},30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&token&&Object.keys(antre).length)kirimAntre();});
+
+// ── Cetak formulir (dengan tanda tangan & foto) ──
+async function cetakForm(no){
+  const x=resp.data.find(y=>y.no_pengajuan===no);if(!x||!x.isian)return;
+  toast('Menyiapkan cetakan…');
+  let t1,t2,foto=[];
+  try{
+    const ambil=async d=>{const r=await api('survei_file',Object.assign({no},d),60);if(!r.ok)throw new Error(r.pesan);return r;};
+    t1=await ambil({jenis:'ttd_mustahik'});t2=await ambil({jenis:'ttd_surveyor'});
+    for(let i=0;i<(x.jumlah_foto||0);i++)foto.push(await ambil({i}));
+  }catch(e){toast('Gagal mengambil tanda tangan/foto. Cetak perlu sinyal internet.',true);return;}
+  const src=r=>'data:'+r.mime+';base64,'+r.base64;
+  const nilai=(f,v)=>v===undefined||v===''?'—':f.t==='angka'?(/\(Rp\)/.test(f.l)?'Rp '+Number(v).toLocaleString('id-ID'):Number(v).toLocaleString('id-ID')):esc(v);
+  const w=new Date(x.waktu_survei),tgl=isNaN(w)?esc(x.waktu_survei):w.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' pukul '+w.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})+' WIB';
+  $('cetak').innerHTML='<div class="kop"><h3>BADAN AMIL ZAKAT NASIONAL KOTA LUBUKLINGGAU</h3><h3>FORMULIR HASIL SURVEI CALON MUSTAHIK</h3></div>'+
+    '<table class="id"><tr><td style="width:30%">No. Pengajuan</td><td>: '+esc(no)+'</td></tr><tr><td>Nama</td><td>: '+esc(x.nama)+'</td></tr><tr><td>NIK</td><td>: ************'+esc(x.nik_akhir)+'</td></tr>'+
+    '<tr><td>Alamat</td><td>: '+esc(x.alamat)+', Kel. '+esc(x.kelurahan)+', Kec. '+esc(x.kecamatan)+'</td></tr><tr><td>Jenis bantuan</td><td>: '+esc(x.kategoriBantuan)+'</td></tr>'+
+    '<tr><td>Waktu survei</td><td>: '+tgl+'</td></tr><tr><td>Lokasi (GPS)</td><td>: '+(x.lat?esc(x.lat)+', '+esc(x.lng)+(x.akurasi_m?' (±'+esc(x.akurasi_m)+' m)':''):'tidak terbaca — '+esc(x.alasan_tanpa_gps))+'</td></tr></table>'+
+    resp.form.map(b=>'<div class="bag">'+esc(b.bagian)+'</div><table>'+b.isi.map(f=>'<tr><th>'+esc(f.l)+'</th><td>'+nilai(f,x.isian[f.k])+'</td></tr>').join('')+'</table>').join('')+
+    '<div class="akhir"><div class="bag">Rekomendasi surveyor</div><table><tr><th>Rekomendasi</th><td><b>'+esc(x.rekomendasi)+'</b></td></tr><tr><th>Catatan</th><td>'+(esc(x.catatan)||'—')+'</td></tr></table>'+
+    '<div class="ttd2"><div>Calon mustahik / keluarga,<img src="'+src(t1)+'" alt="Tanda tangan calon mustahik"><b><u>'+esc(x.nama_ttd_mustahik)+'</u></b></div>'+
+    '<div>Surveyor,<img src="'+src(t2)+'" alt="Tanda tangan surveyor"><b><u>'+esc(x.surveyor)+'</u></b></div></div></div>'+
+    '<div class="fotos">'+foto.map((f,i)=>'<figure><img src="'+src(f)+'" alt="Foto '+(i+1)+'"><figcaption>Foto '+(i+1)+(f.ket?' — '+esc(f.ket):'')+'</figcaption></figure>').join('')+'</div>';
+  const im=[...$('cetak').querySelectorAll('img')];
+  await Promise.all(im.map(g=>g.complete?0:new Promise(r=>{g.onload=g.onerror=r;})));
+  window.print();
+}
+
+// ── Mulai ──
+(async function(){
+  if('serviceWorker' in navigator){try{navigator.serviceWorker.register('sw-survei.js');}catch(e){}}
+  token=ss.get('baznas_token')||'';nama=ss.get('baznas_surveyor')||'';jabatan=ss.get('baznas_jabatan')||'PETUGAS';
+  if(token&&nama)await mulai();else{token='';tampil('v-masuk');}
+})();
+</script>
+</body>
+</html>
