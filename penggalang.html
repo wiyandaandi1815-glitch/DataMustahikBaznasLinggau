@@ -295,7 +295,7 @@ function tgl3Salah(id){const el=document.getElementById(id);return !!(el&&el.dat
 const UPZF=(function(){
   const KATEGORI=['UPZ OPD','UPZ Kantor Kecamatan','UPZ Kantor Kelurahan','UPZ Masjid','UPZ Sekolah/Madrasah','UPZ Perguruan Tinggi','UPZ Rumah Sakit','UPZ Instansi Vertikal','UPZ BUMN/BUMD','UPZ Dunia Usaha','UPZ Komunitas Profesi','UPZ Pelaku Usaha','UPZ Lainnya'];
   const KECAMATAN=['Lubuk Linggau Barat I','Lubuk Linggau Barat II','Lubuk Linggau Selatan I','Lubuk Linggau Selatan II','Lubuk Linggau Timur I','Lubuk Linggau Timur II','Lubuk Linggau Utara I','Lubuk Linggau Utara II','Luar Kota Lubuklinggau'];
-  const BANK=['BSI','Bank Sumsel Babel Syariah','Bank Sumsel Babel','BRI','BNI','Bank Mandiri','BCA','BTN','Bank Muamalat','BTPN Syariah','Bank Mega Syariah','Lainnya'];
+  const BANK=['Bank Syariah Indonesia (BSI)','Bank Sumsel Babel Syariah','Bank Sumsel Babel','BRI','BNI','Bank Mandiri','BCA','BTN','Bank Muamalat','BTPN Syariah','Bank Mega Syariah','Lainnya'];
   const STATUS=['Aktif','Nonaktif','Menunggu SK','SK Berakhir','Perlu Evaluasi'];
   const e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const $=k=>document.getElementById('uf-'+k);
@@ -319,7 +319,8 @@ const UPZF=(function(){
    * @param opsi  {jenis:'UPZ'|'Perorangan', mode:'daftar'|'admin', status:[], amilDefault:5}
    */
   function html(d,opsi){
-    d=d||{};const upz=opsi.jenis!=='Perorangan',daftar=opsi.mode==='daftar',bankAda=!d.rek_bank||BANK.includes(d.rek_bank);
+    d=Object.assign({},d||{});if(d.rek_bank==='BSI')d.rek_bank='Bank Syariah Indonesia (BSI)';   // v26: data lama "BSI" = pilihan baku
+    const upz=opsi.jenis!=='Perorangan',daftar=opsi.mode==='daftar',bankAda=!d.rek_bank||BANK.includes(d.rek_bank);
     let h='<div class="uf-grid">';
     if(upz){
       h+=sub('Data lembaga / UPZ')+sel('kategori','Kategori UPZ',KATEGORI,d.kategori,{wajib:1,full:1})+inp('nama','Nama lembaga / UPZ',d,{wajib:1,full:1,attr:'placeholder="mis. Masjid Al-Ikhlas Kel. Air Kuti"'});
