@@ -327,7 +327,7 @@ function tampilDaftar(){
     if(x.kecamatan!==kec){kec=x.kecamatan;h+='<div class="grup">Kec. '+esc(kec||'(tanpa kecamatan)')+' · '+urut.filter(y=>y.kecamatan===kec&&(!bagi||belum(y)===(b==='A'))).length+' kunjungan</div>';}
     const id=esc(x.id),milik=x.petugas===nama,selesai=x.status===sel,diAntre=!!antre[mode][x.id];
     h+='<div class="kartu" data-no="'+id+'"><div class="baris" style="justify-content:space-between"><b>'+esc(x.nama)+'</b>'+lencana(x)+'</div>'+
-      (mode==='survei'?'<div class="kecil">'+id+' · '+esc(x.jenis_bantuan)+' · NIK ••••'+esc(x.nik_akhir)+'</div>'
+      (mode==='survei'?'<div class="kecil">'+(x.jenis==='ulang'?'<b style="color:#7c3aed">🔁 Survei ulang</b> · ID '+esc(x.mustahikId)+' · ':id+' · ')+esc(x.jenis_bantuan)+' · NIK ••••'+esc(x.nik_akhir)+'</div>'
         :'<div class="kecil"><b>Bulan ke-'+esc(x.tahap)+'</b> · '+esc(x.jenis_bantuan)+' · ID '+esc(x.mustahikId)+' · NIK ••••'+esc(x.nik_akhir)+'</div>'+
          '<div class="kecil">Disalurkan '+tglTeks(x.tgl_salur)+' · jatuh tempo <b>'+tglTeks(x.jatuh_tempo)+'</b>'+(x.rpd||x.idRpd?' · ada RPD':' · tanpa RPD')+'</div>')+
       '<div>'+esc(x.alamat)+', '+esc(x.kelurahan)+'</div>'+
@@ -394,7 +394,7 @@ async function bukaForm(id){
   draf=d||{id,kunci:(crypto.randomUUID?crypto.randomUUID():'k'+Date.now()+'-'+Math.random().toString(36).slice(2,12)),isian:{},nota:[],foto:[],ttd:{},gps:null,rekomendasi:'',catatan:'',nama_ttd:x.nama,alasan_gps:''};
   draf.id=draf.id||draf.no;draf.nota=draf.nota||[];
   if(!d&&mode==='survei'&&x.awal)draf.isian=Object.assign({},x.awal);   // v26: prefill dari pengajuan (tanpa NIK/KK)
-  $('form-kepala').innerHTML='<b>'+esc(x.nama)+'</b><div class="kecil">'+(mode==='survei'?esc(id):'Monitoring bulan ke-'+esc(x.tahap)+' · ID '+esc(x.mustahikId))+' · '+esc(x.jenis_bantuan)+'</div><div>'+esc(x.alamat)+', '+esc(x.kelurahan)+', Kec. '+esc(x.kecamatan)+'</div>'+(d?'<div class="kecil" style="color:#92400e">📝 Isian sebelumnya dipulihkan.</div>':'');
+  $('form-kepala').innerHTML='<b>'+esc(x.nama)+'</b><div class="kecil">'+(mode==='survei'?(x.jenis==='ulang'?'🔁 Survei ulang mustahik terdaftar · ID '+esc(x.mustahikId):esc(id)):'Monitoring bulan ke-'+esc(x.tahap)+' · ID '+esc(x.mustahikId))+' · '+esc(x.jenis_bantuan)+'</div><div>'+esc(x.alamat)+', '+esc(x.kelurahan)+', Kec. '+esc(x.kecamatan)+'</div>'+(d?'<div class="kecil" style="color:#92400e">📝 Isian sebelumnya dipulihkan.</div>':'');
   const def=formDef(x);
   $('form-isi').innerHTML=(mode==='survei'?'<h2>Cek NIK &amp; No. KK</h2><div class="kecil">Cocokkan dengan KTP &amp; KK asli. NIK/KK lengkap tidak disimpan di HP ini.</div>'+
     '<div style="margin:6px 0">NIK <b>••••••••••••'+esc(x.nik_akhir)+'</b> · No. KK <b>••••••••••••'+esc(x.kk_akhir||'')+'</b></div>'+
@@ -594,7 +594,7 @@ async function cetakForm(id){
   const nilai=(f,v)=>{if(v===undefined||v==='')return '—';if(f.t==='angka')return /\(Rp\)/.test(f.l)?rp(v):Number(v).toLocaleString('id-ID');
     if(f.t==='pilih'){const o=f.o.find(z=>Array.isArray(z)&&z[0]===v);if(o)return esc(o[1]);}return esc(v);};
   const tambahSv=sv?'<div class="bag">Ringkasan (otomatis)</div><table><tr><th>Penghasilan keluarga per bulan</th><td><b>'+rp(x.isian.penghasilan)+'</b></td></tr><tr><th>Kondisi rumah</th><td><b>'+esc(x.isian.kondisiRumah||'—')+'</b></td></tr>'+
-    '<tr><th>NIK &amp; KK dengan dokumen asli</th><td>'+(x.nik_cocok==='Ya'?'Cocok':x.nik_cocok==='Tidak'?'<b>Tidak cocok — dikoreksi surveyor</b>':'—')+'</td></tr>'+(x.jumlah_beda?'<tr><th>Isian berbeda dari pengajuan</th><td><b>'+x.jumlah_beda+' isian</b> — diputuskan WK2/WK3 saat menerima</td></tr>':'')+'</table>':'';
+    '<tr><th>NIK &amp; KK dengan dokumen asli</th><td>'+(x.nik_cocok==='Ya'?'Cocok':x.nik_cocok==='Tidak'?'<b>Tidak cocok — dikoreksi surveyor</b>':'—')+'</td></tr>'+(x.jumlah_beda?'<tr><th>Isian berbeda dari '+(x.jenis==='ulang'?'data mustahik':'pengajuan')+'</th><td><b>'+x.jumlah_beda+' isian</b> — diputuskan WK2/WK3'+(x.jenis==='ulang'?'':' saat menerima')+'</td></tr>':'')+'</table>':'';
   const wk=sv?x.waktu_survei:x.waktu_kunjungan,w=new Date(wk),tgl=isNaN(w)?esc(wk):w.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' pukul '+w.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})+' WIB';
   const brs=(a,b)=>'<tr><td style="width:30%">'+a+'</td><td>: '+b+'</td></tr>';
   let banding='';
