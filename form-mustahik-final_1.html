@@ -4933,7 +4933,11 @@ async function pgUpzSimpan(kode){
 const LS_PETA={telepon:'f-telepon',alamat:'f-alamat',kelurahan:'f-kelurahan',kecamatan:'f-kecamatan',kategoriBantuan:'f-katBantuan',asnaf:'f-asnaf',
   pekerjaan:'f-pekerjaan',penghasilan:'f-penghasilan',totalPengeluaran:'f-pengeluaran',jumlahAnggota:'f-jmlAnggota',jumlahTanggungan:'f-tanggungan',
   kondisiRumah:'f-kondisiRumah',kebutuhanUtama:'f-kebutuhan',statusJkn:'f-jkn',aksesFaskes:'f-faskes',kondisiKesehatan:'f-kondisiKes',anggotaSakit:'f-anggotaSakit',
-  tanggalSurvey:'f-tglSurvey',surveyor:'f-surveyor',nik:'f-nik',noKK:'f-noKK'};
+  tanggalSurvey:'f-tglSurvey',surveyor:'f-surveyor',nik:'f-nik',noKK:'f-noKK',
+  frekuensiSakit:'f-frekSakit',pengeluaranKesehatan:'f-pengeluaranKes',penyakitLainnya:'f-penyakitLain'};   // v31
+// v31: penyakit (centang) — diisi dari survei bila belum ada yang dicentang
+function lsPenyakit(isi){if(!isi.penyakitDiderita||typeof getCheckedPenyakit!=='function'||getCheckedPenyakit().length)return 0;
+  setCheckedPenyakit(String(isi.penyakitDiderita).split(';').map(x=>x.trim()).filter(Boolean));if(typeof updateIZN==='function')updateIZN();return 1;}
 let lsBeda=[];
 const lsE=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function lsIsi(id,v){const el=document.getElementById(id);if(!el)return false;el.value=v??'';el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));return el.value===String(v??'');}
@@ -4959,6 +4963,7 @@ async function lsTerapkanSurvei(no){
     const el=document.getElementById(LS_PETA[k]);if(!el)return;
     if(String(el.value||'').trim()===''||k==='tanggalSurvey'||k==='surveyor'){if(lsIsi(LS_PETA[k],isi[k]))terisi++;}   // tanggal & surveyor selalu dari survei
   });
+  terisi+=lsPenyakit(isi);
   if(r.catatanSurvey){const c=document.getElementById('f-catatanSurvey');if(c&&!c.value.includes(r.catatanSurvey))c.value=(c.value?c.value+'\n':'')+'Hasil survei ('+(isi.surveyor||'')+'): '+r.catatanSurvey;}
   // isian berbeda dari pengajuan → nilai survei dipasang + ditandai
   lsBeda=(r.beda||[]).filter(b=>LS_PETA[b.k]);
@@ -5084,6 +5089,7 @@ async function suTinjau(id){
     const el=document.getElementById(LS_PETA[k]);if(!el)return;
     if(String(el.value||'').trim()===''||k==='tanggalSurvey'||k==='surveyor'){if(lsIsi(LS_PETA[k],isi[k]))terisi++;}
   });
+  terisi+=lsPenyakit(isi);   // v31
   if(r.catatanSurvey){const c=document.getElementById('f-catatanSurvey');if(c&&!c.value.includes(r.catatanSurvey))c.value=(c.value?c.value+'\n':'')+'Survei ulang ('+(isi.surveyor||'')+'): '+r.catatanSurvey;}
   suBedaL=(r.beda||[]).filter(b=>LS_PETA[b.k]);
   suBedaL.forEach((b,i)=>lsTandai(LS_PETA[b.k],suTeks(b,i)));   // nilai lama dibiarkan — tidak menimpa
@@ -6855,7 +6861,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='30 · 12 Nov 2026';
+const APP_VERSI='31 · 12 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
