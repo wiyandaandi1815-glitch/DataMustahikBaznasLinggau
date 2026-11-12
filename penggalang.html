@@ -109,38 +109,10 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
       <label><input type="radio" name="jenis" value="Perorangan"><b>Perorangan</b><span style="font-size:13px">Pribadi — hanya untuk infak</span></label></div>
   </div></div>
   <div id="isi" class="hidden">
-  <div class="card u-only"><h2>2. Data lembaga / UPZ</h2><div class="body"><div class="grid">
-    <div class="full"><label>Kategori UPZ <span class="req">*</span></label><select id="kategori"><option value="">— pilih —</option></select></div>
-    <div class="full"><label>Nama lembaga / UPZ <span class="req">*</span></label><input id="nama" maxlength="120" placeholder="mis. Masjid Al-Ikhlas Kel. Air Kuti"></div>
-    <div class="sub-h">Pengurus</div>
-    <div><label>Ketua <span class="req">*</span></label><input id="ketua" maxlength="120"></div>
-    <div><label>Sekretaris</label><input id="sekretaris" maxlength="120"></div>
-    <div><label>Bendahara <span class="req">*</span></label><input id="bendahara" maxlength="120"></div>
-    <div><label>Anggota <span class="hint">(pisahkan dengan koma)</span></label><input id="anggota" maxlength="600"></div>
-  </div></div></div>
-  <div class="card"><h2 id="h-pic">3. Penanggung jawab (PIC)</h2><div class="body"><div class="grid">
-    <div class="full"><label id="l-nama-pic">Nama lengkap PIC <span class="req">*</span></label><input id="nama_pic" maxlength="120"></div>
-    <div class="u-only"><label>Jabatan PIC di lembaga <span class="req">*</span></label><input id="jabatan_pic" maxlength="120" placeholder="mis. Sekretaris DKM"></div>
-    <div><label>NIK (16 digit) <span class="req">*</span></label><input id="nik_pic" inputmode="numeric" maxlength="16"></div>
-    <div><label>Tanggal lahir <span class="req">*</span> <span class="hint">(untuk cek status)</span></label><input id="tgl_lahir_pic" type="date"></div>
-    <div><label>No. HP/WA <span class="req">*</span></label><input id="telepon" inputmode="tel" maxlength="20" placeholder="08…"></div>
-    <div class="full"><label>Email <span class="req">*</span></label><input id="email" type="email" maxlength="120"></div>
-    <div class="sub-h">Alamat <span class="u-only" style="font-weight:400">(alamat lembaga)</span></div>
-    <div class="full"><label>Alamat lengkap <span class="req">*</span></label><input id="alamat" maxlength="120" placeholder="Jalan, RT/RW, nomor"></div>
-    <div><label>Kelurahan <span class="req">*</span></label><input id="kelurahan" maxlength="120"></div>
-    <div><label>Kecamatan <span class="req">*</span></label><select id="kecamatan"><option value="">— pilih —</option></select></div>
-    <div><label>Kota</label><input id="kota" maxlength="120" value="Kota Lubuklinggau"></div>
-    <div><label>Provinsi</label><input id="provinsi" maxlength="120" value="Sumatera Selatan"></div>
-    <div><label>Kode pos</label><input id="kode_pos" inputmode="numeric" maxlength="5"></div>
-  </div></div></div>
-  <div class="card p-only"><h2>4. Rencana penggalangan</h2><div class="body">
+  <div class="card"><h2 id="h-data">2. Data penggalang</h2><div class="body"><div id="uf-wadah"></div></div></div>
+  <div class="card p-only"><h2>3. Rencana penggalangan</h2><div class="body">
     <label>Untuk apa infak akan digalang? <span class="req">*</span> <span class="hint">(minimal 20 karakter)</span></label><textarea id="rencana" maxlength="800" placeholder="mis. Menggalang infak untuk biaya berobat tetangga di Kel. … yang menderita …"></textarea>
   </div></div>
-  <div class="card"><h2>Rekening <span style="font-weight:400">(opsional)</span></h2><div class="body"><div class="grid">
-    <div class="full" style="font-size:13px;color:var(--g500)">Rekening tujuan pencairan program (bila nanti disetujui). Donasi tetap masuk rekening resmi BAZNAS.</div>
-    <div><label>Bank</label><input id="rek_bank" maxlength="120"></div><div><label>Nomor rekening</label><input id="rek_nomor" inputmode="numeric" maxlength="30"></div>
-    <div class="full"><label>Nama pemilik rekening</label><input id="rek_pemilik" maxlength="120"></div>
-  </div></div></div>
   <div class="card"><h2>Dokumen</h2><div class="body"><div class="grid">
     <div><label id="l-f1"></label><input type="file" id="f-file_1" accept="image/*,application/pdf"><div class="pv" id="pv-file_1"></div></div>
     <div><label id="l-f2"></label><input type="file" id="f-file_2" accept="image/*,application/pdf"><div class="pv" id="pv-file_2"></div></div>
@@ -317,26 +289,122 @@ function tgl3(id){
 }
 /** true bila kotak tanggal diisi tetapi belum benar (dipakai validasi sebelum kirim). */
 function tgl3Salah(id){const el=document.getElementById(id);return !!(el&&el.dataset.tgl3Isi&&!el.value);}
-const KATEGORI=['UPZ OPD','UPZ Kantor Kecamatan','UPZ Kantor Kelurahan','UPZ Masjid','UPZ Sekolah/Madrasah','UPZ Perguruan Tinggi','UPZ Rumah Sakit','UPZ Instansi Vertikal','UPZ BUMN/BUMD','UPZ Dunia Usaha','UPZ Komunitas Profesi','UPZ Pelaku Usaha','UPZ Lainnya'];
-const KECAMATAN=['Lubuk Linggau Barat I','Lubuk Linggau Barat II','Lubuk Linggau Selatan I','Lubuk Linggau Selatan II','Lubuk Linggau Timur I','Lubuk Linggau Timur II','Lubuk Linggau Utara I','Lubuk Linggau Utara II','Luar Kota Lubuklinggau'];
+// ── v25: KOMPONEN FORM UPZ BERSAMA — dipakai penggalang.html (pendaftaran) & halaman admin (ubah master UPZ) ──
+// Satu sumber isian & tampilan supaya kedua halaman tidak berbeda. Nama kunci = kunci pendaftaran;
+// UPZF.dariUpz()/UPZF.keUpz() memetakan kontak_* ⇄ nama_pic/telepon/email untuk sheet UPZ.
+const UPZF=(function(){
+  const KATEGORI=['UPZ OPD','UPZ Kantor Kecamatan','UPZ Kantor Kelurahan','UPZ Masjid','UPZ Sekolah/Madrasah','UPZ Perguruan Tinggi','UPZ Rumah Sakit','UPZ Instansi Vertikal','UPZ BUMN/BUMD','UPZ Dunia Usaha','UPZ Komunitas Profesi','UPZ Pelaku Usaha','UPZ Lainnya'];
+  const KECAMATAN=['Lubuk Linggau Barat I','Lubuk Linggau Barat II','Lubuk Linggau Selatan I','Lubuk Linggau Selatan II','Lubuk Linggau Timur I','Lubuk Linggau Timur II','Lubuk Linggau Utara I','Lubuk Linggau Utara II','Luar Kota Lubuklinggau'];
+  const BANK=['BSI','Bank Sumsel Babel Syariah','Bank Sumsel Babel','BRI','BNI','Bank Mandiri','BCA','BTN','Bank Muamalat','BTPN Syariah','Bank Mega Syariah','Lainnya'];
+  const STATUS=['Aktif','Nonaktif','Menunggu SK','SK Berakhir','Perlu Evaluasi'];
+  const e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const $=k=>document.getElementById('uf-'+k);
+  const w='<span class="uf-w" style="color:#c0392b">*</span>';
+  const inp=(k,l,d,x)=>`<div class="uf-f${x&&x.full?' uf-full':''}"><label for="uf-${k}">${l}${x&&x.wajib?' '+w:''}${x&&x.hint?' <span class="uf-hint">'+x.hint+'</span>':''}</label><input id="uf-${k}" ${x&&x.attr||''} maxlength="${x&&x.max||120}" value="${e(d[k])}"></div>`;
+  const sel=(k,l,list,val,x)=>{const ada=!val||list.includes(val);return `<div class="uf-f${x&&x.full?' uf-full':''}"><label for="uf-${k}">${l}${x&&x.wajib?' '+w:''}</label><select id="uf-${k}"><option value="">— pilih —</option>${(ada?list:list.concat([val])).map(o=>`<option${o===val?' selected':''}>${e(o)}</option>`).join('')}</select></div>`;};
+  const sub=t=>`<div class="uf-sub uf-full">${t}</div>`;
+  /** Anggota: JSON [{nama,jabatan,hp}] atau teks koma lama → daftar baris. */
+  function anggotaParse(v){
+    if(Array.isArray(v))return v;
+    let a=null;try{a=JSON.parse(v);}catch(x){}
+    if(Array.isArray(a))return a;
+    return String(v||'').split(/[,;\n]/).map(s=>s.trim()).filter(Boolean).map(nama=>({nama,jabatan:'',hp:''}));
+  }
+  function barisAnggota(g){
+    return `<div class="uf-ag"><input class="uf-ag-nama" maxlength="80" placeholder="Nama" value="${e(g.nama)}" aria-label="Nama anggota"><input class="uf-ag-jab" maxlength="60" placeholder="Jabatan / bidang" value="${e(g.jabatan)}" aria-label="Jabatan atau bidang"><input class="uf-ag-hp" inputmode="tel" maxlength="20" placeholder="No. HP (opsional)" value="${e(g.hp)}" aria-label="Nomor HP anggota"><button type="button" class="uf-ag-hapus" title="Hapus baris" aria-label="Hapus anggota" onclick="this.parentNode.remove()">✕</button></div>`;
+  }
+  function tambahAnggota(g){$('ag-baris').insertAdjacentHTML('beforeend',barisAnggota(g||{}));const r=$('ag-baris').lastElementChild;if(!g)r.querySelector('input').focus();}
+  /**
+   * @param d     data awal (kunci pendaftaran)
+   * @param opsi  {jenis:'UPZ'|'Perorangan', mode:'daftar'|'admin', status:[], amilDefault:5}
+   */
+  function html(d,opsi){
+    d=d||{};const upz=opsi.jenis!=='Perorangan',daftar=opsi.mode==='daftar',bankAda=!d.rek_bank||BANK.includes(d.rek_bank);
+    let h='<div class="uf-grid">';
+    if(upz){
+      h+=sub('Data lembaga / UPZ')+sel('kategori','Kategori UPZ',KATEGORI,d.kategori,{wajib:1,full:1})+inp('nama','Nama lembaga / UPZ',d,{wajib:1,full:1,attr:'placeholder="mis. Masjid Al-Ikhlas Kel. Air Kuti"'});
+      h+=sub('Pengurus')+inp('ketua','Ketua',d,{wajib:1})+inp('sekretaris','Sekretaris',d)+inp('bendahara','Bendahara',d,{wajib:1});
+      h+=`<div class="uf-f uf-full"><label>Anggota</label><div id="uf-ag-baris">${anggotaParse(d.anggota).map(barisAnggota).join('')}</div>
+        <button type="button" class="uf-tambah" onclick="UPZF.tambahAnggota()">+ Tambah anggota</button></div>`;
+    }
+    h+=sub(upz?'Penanggung jawab (PIC) / kontak':'Data diri')+inp('nama_pic',upz?'Nama PIC / kontak':'Nama lengkap sesuai KTP',d,{wajib:1,full:!daftar||!upz});
+    if(daftar&&upz)h+=inp('jabatan_pic','Jabatan PIC di lembaga',d,{wajib:1,attr:'placeholder="mis. Sekretaris DKM"'});
+    if(daftar)h+=inp('nik_pic','NIK (16 digit)',d,{wajib:1,max:16,attr:'inputmode="numeric"'})+`<div class="uf-f"><label for="uf-tgl_lahir_pic">Tanggal lahir ${w} <span class="uf-hint">(untuk cek status)</span></label><input id="uf-tgl_lahir_pic" type="date" value="${e(d.tgl_lahir_pic)}"></div>`;
+    h+=inp('telepon','No. HP/WA',d,{wajib:1,max:20,attr:'inputmode="tel" placeholder="08…"'})+inp('email','Email',d,{wajib:1,attr:'type="email"'});
+    h+=sub('Alamat'+(upz?' lembaga':''))+inp('alamat','Alamat lengkap',d,{wajib:1,full:1,attr:'placeholder="Jalan, RT/RW, nomor"'})+inp('kelurahan','Kelurahan',d,{wajib:1})
+      +sel('kecamatan','Kecamatan',KECAMATAN,d.kecamatan,{wajib:1})+inp('kota','Kota',{kota:d.kota||'Kota Lubuklinggau'})+inp('provinsi','Provinsi',{provinsi:d.provinsi||'Sumatera Selatan'})
+      +inp('kode_pos','Kode pos',d,{max:5,attr:'inputmode="numeric"'});
+    h+=sub('Rekening <span style="font-weight:400">(opsional)</span>')+`<div class="uf-f"><label for="uf-rek_bank_pil">Bank</label><select id="uf-rek_bank_pil" onchange="UPZF.bankUbah()"><option value="">— pilih —</option>${BANK.map(b=>`<option${(bankAda?b===d.rek_bank:b==='Lainnya')?' selected':''}>${e(b)}</option>`).join('')}</select>
+      <input id="uf-rek_bank_lain" maxlength="120" placeholder="Tulis nama bank" value="${bankAda?'':e(d.rek_bank)}" style="margin-top:6px${bankAda?';display:none':''}" aria-label="Nama bank lainnya"></div>`
+      +inp('rek_nomor','Nomor rekening',d,{max:30,attr:'inputmode="numeric"'})+inp('rek_pemilik','Nama pemilik rekening',d,{full:1});
+    if(opsi.mode==='admin'){
+      h+=sub('Status &amp; SK')+sel('status','Status',opsi.status||STATUS,d.status||'',{wajib:1})+'<div class="uf-f"></div>'
+        +inp('sk_nomor','Nomor SK',d,{max:80,attr:'placeholder="kosongkan bila SK belum terbit"'})+`<div class="uf-f"><label for="uf-sk_tanggal">Tanggal SK</label><input id="uf-sk_tanggal" type="date" value="${e(d.sk_tanggal)}"></div>`
+        +`<div class="uf-f"><label for="uf-sk_berlaku_sampai">Berlaku sampai</label><input id="uf-sk_berlaku_sampai" type="date" value="${e(d.sk_berlaku_sampai)}"></div><div class="uf-f"></div>`;
+      h+=sub('Hak amil (%)')+inp('amil_zakat_baznas','Zakat — bagian BAZNAS',d,{wajib:1,max:6,attr:'inputmode="decimal"'})+inp('amil_zakat_upz','Zakat — bagian UPZ',{amil_zakat_upz:d.amil_zakat_upz!==undefined&&d.amil_zakat_upz!==''?d.amil_zakat_upz:opsi.amilDefault},{wajib:1,max:6,attr:'inputmode="decimal"'})
+        +inp('amil_infak_baznas','Infak — bagian BAZNAS',d,{max:6,attr:'inputmode="decimal"'})+inp('amil_infak_upz','Infak — bagian UPZ',d,{max:6,attr:'inputmode="decimal"'});
+      h+=inp('catatan','Catatan',d,{full:1,max:400});
+    }
+    return h+'</div>';
+  }
+  /** Pasang perilaku isian (angka saja, dll.) setelah html() dimasukkan ke halaman. */
+  function pasang(){
+    [['nik_pic',16],['kode_pos',5],['rek_nomor',30]].forEach(([k,n])=>{const el=$(k);if(el)el.addEventListener('input',()=>{el.value=el.value.replace(/\D/g,'').slice(0,n);});});
+  }
+  function bankUbah(){const l=$('rek_bank_pil').value==='Lainnya';$('rek_bank_lain').style.display=l?'':'none';if(l)$('rek_bank_lain').focus();}
+  const v=k=>{const el=$(k);return el?String(el.value||'').trim():undefined;};
+  /** Baca semua isian (kunci pendaftaran). Kunci yang tidak dirender tidak ikut. */
+  function baca(){
+    const o={};
+    ['kategori','nama','ketua','sekretaris','bendahara','nama_pic','jabatan_pic','nik_pic','tgl_lahir_pic','telepon','email','alamat','kelurahan','kecamatan','kota','provinsi','kode_pos','rek_nomor','rek_pemilik',
+      'status','sk_nomor','sk_tanggal','sk_berlaku_sampai','amil_zakat_baznas','amil_zakat_upz','amil_infak_baznas','amil_infak_upz','catatan'].forEach(k=>{const x=v(k);if(x!==undefined)o[k]=x;});
+    const pil=v('rek_bank_pil');o.rek_bank=pil==='Lainnya'?v('rek_bank_lain'):pil||'';
+    if($('ag-baris'))o.anggota=[...$('ag-baris').children].map(r=>({nama:r.querySelector('.uf-ag-nama').value.trim(),jabatan:r.querySelector('.uf-ag-jab').value.trim(),hp:r.querySelector('.uf-ag-hp').value.trim()})).filter(g=>g.nama);
+    if(o.rek_nomor!==undefined)o.rek_nomor=o.rek_nomor.replace(/\D/g,'');
+    return o;
+  }
+  /** Daftar kekurangan (aturan sama dengan server). */
+  function periksa(o,opsi){
+    const upz=opsi.jenis!=='Perorangan',k=[];
+    if(upz){if(!o.kategori)k.push('kategori UPZ');if((o.nama||'').length<3)k.push('nama lembaga');if(!o.ketua)k.push('ketua');if(!o.bendahara)k.push('bendahara');
+      if(opsi.mode==='daftar'&&!o.jabatan_pic)k.push('jabatan PIC');}
+    if((o.nama_pic||'').length<3)k.push(upz?'nama PIC/kontak':'nama lengkap');
+    if(opsi.mode==='daftar'){if(!/^\d{16}$/.test(o.nik_pic||''))k.push('NIK 16 digit');if(!o.tgl_lahir_pic)k.push('tanggal lahir');}
+    if(!/^(\+?62|0)8\d{7,12}$/.test((o.telepon||'').replace(/[\s-]/g,'')))k.push('nomor HP/WA');
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(o.email||''))k.push('email');
+    if(!o.alamat||!o.kelurahan||!o.kecamatan)k.push('alamat, kelurahan, kecamatan');
+    if(o.kode_pos&&!/^\d{5}$/.test(o.kode_pos))k.push('kode pos 5 digit');
+    if((o.rek_nomor||o.rek_bank||o.rek_pemilik)&&!(o.rek_nomor&&o.rek_bank&&o.rek_pemilik))k.push('lengkapi bank, nomor, dan pemilik rekening');
+    (o.anggota||[]).forEach(g=>{if(g.hp&&!/^(\+?62|0)8\d{7,12}$/.test(g.hp.replace(/[\s-]/g,'')))k.push('No. HP anggota '+g.nama);});
+    if(opsi.mode==='admin'&&!o.status)k.push('status');
+    return k;
+  }
+  const dariUpz=u=>Object.assign({},u,{nama_pic:u.kontak_nama,telepon:u.kontak_telepon,email:u.kontak_email});
+  const keUpz=o=>{const x=Object.assign({},o,{kontak_nama:o.nama_pic,kontak_telepon:o.telepon,kontak_email:o.email,lengkap:true});delete x.nama_pic;delete x.telepon;delete x.email;return x;};
+  const CSS=`.uf-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}.uf-full{grid-column:1/-1}.uf-f label{display:block;font-size:13px;font-weight:700;margin-bottom:4px}
+    .uf-hint{font-weight:400;color:#6b7780;font-size:12px}.uf-f input,.uf-f select{width:100%}.uf-sub{font-weight:800;color:#0a6654;font-size:13.5px;margin:6px 0 -2px;border-bottom:1px solid #e5e9ec;padding-bottom:3px}
+    .uf-ag{display:grid;grid-template-columns:1.4fr 1.2fr 1fr auto;gap:6px;margin-bottom:6px}.uf-ag-hapus{border:1px solid #f5c6c0;background:#fff;color:#c0392b;border-radius:8px;padding:0 12px;cursor:pointer;font-size:15px}
+    .uf-tambah{border:1.5px dashed #0d7c66;background:#fff;color:#0a6654;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer;width:100%}
+    @media(max-width:560px){.uf-grid{grid-template-columns:1fr}.uf-ag{grid-template-columns:1fr auto;background:#f6fbfa;border:1px solid #d3e8e3;border-radius:10px;padding:8px;margin-bottom:10px}.uf-ag .uf-ag-nama{grid-column:1/2}.uf-ag .uf-ag-hapus{grid-row:1/4;grid-column:2}}`;
+  (function(){const st=document.createElement('style');st.textContent=CSS;document.head.appendChild(st);})();
+  return {html,pasang,baca,periksa,tambahAnggota,bankUbah,anggotaParse,dariUpz,keUpz,KATEGORI,BANK,KECAMATAN};
+})();
 const BERKAS={UPZ:['SK pembentukan / akta lembaga','SK penunjukan PIC'],Perorangan:['Foto KTP','Foto diri memegang KTP']};
 const dok={file_1:null,file_2:null};let token='';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-$('kategori').innerHTML+=KATEGORI.map(k=>'<option>'+esc(k)+'</option>').join('');
-$('kecamatan').innerHTML+=KECAMATAN.map(k=>'<option>'+esc(k)+'</option>').join('');
-['tgl_lahir_pic','s-tgl'].forEach(tgl3);
+tgl3('s-tgl');
 function tab(t){['f','s','m'].forEach(x=>{$('sec-'+x).classList.toggle('hidden',t!==x);$('tab-'+x).classList.toggle('on',t===x);});window.scrollTo({top:0});}
 const jenis=()=>{const r=document.querySelector('input[name=jenis]:checked');return r?r.value:'';};
 document.querySelectorAll('input[name=jenis]').forEach(r=>r.addEventListener('change',()=>{
-  const j=jenis(),u=j==='UPZ';$('isi').classList.remove('hidden');
-  document.querySelectorAll('.u-only').forEach(e=>e.classList.toggle('hidden',!u));document.querySelectorAll('.p-only').forEach(e=>e.classList.toggle('hidden',u));
-  $('h-pic').textContent=u?'3. Penanggung jawab (PIC)':'2. Data diri';$('l-nama-pic').innerHTML=(u?'Nama lengkap PIC':'Nama lengkap sesuai KTP')+' <span class="req">*</span>';
+  const j=jenis(),u=j==='UPZ',lama=$('uf-wadah').children.length?UPZF.baca():{};$('isi').classList.remove('hidden');
+  $('uf-wadah').innerHTML=UPZF.html(lama,{jenis:j,mode:'daftar'});UPZF.pasang();tgl3('uf-tgl_lahir_pic');
+  document.querySelectorAll('.p-only').forEach(e=>e.classList.toggle('hidden',u));
+  $('h-data').textContent=u?'2. Data lembaga, pengurus & PIC':'2. Data diri';
   $('l-f1').innerHTML=esc(BERKAS[j][0])+' <span class="req">*</span>';$('l-f2').innerHTML=esc(BERKAS[j][1])+' <span class="req">*</span>';$('p-infak').classList.toggle('hidden',u);
   ['file_1','file_2'].forEach(k=>{dok[k]=null;$('f-'+k).value='';$('pv-'+k).innerHTML='';});
   $('f-file_2').setAttribute('capture',u?'':'user');if(u)$('f-file_2').removeAttribute('capture');
 }));
-['nik_pic','kode_pos','rek_nomor'].forEach(id=>$(id).addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,id==='nik_pic'?16:id==='kode_pos'?5:30);}));
 function bacaFile(file){return new Promise((ok,no)=>{const fr=new FileReader();fr.onload=()=>ok(fr.result);fr.onerror=no;fr.readAsDataURL(file);});}
 async function kompres(file){
   if(file.type==='application/pdf'){if(file.size>3*1024*1024)throw new Error('File PDF maksimal 3 MB.');const u=await bacaFile(file);return{mime:'application/pdf',base64:u.split(',')[1],preview:null};}
@@ -353,17 +421,13 @@ async function kompres(file){
 const v=id=>($(id).value||'').trim();
 function galat(m){const e=$('err');e.innerHTML=m;e.style.display='block';e.scrollIntoView({behavior:'smooth',block:'center'});}
 async function kirim(){
-  $('err').style.display='none';const j=jenis(),u=j==='UPZ',e=[];
+  $('err').style.display='none';const j=jenis(),u=j==='UPZ';
   if(!j)return galat('Pilih jenis penggalang dulu.');
-  if(u&&!v('kategori'))e.push('kategori UPZ');if(u&&v('nama').length<3)e.push('nama lembaga');if(u&&!v('ketua'))e.push('ketua');if(u&&!v('bendahara'))e.push('bendahara');if(u&&!v('jabatan_pic'))e.push('jabatan PIC');
-  if(v('nama_pic').length<3)e.push(u?'nama PIC':'nama lengkap');if(!/^\d{16}$/.test(v('nik_pic')))e.push('NIK 16 digit');if(!v('tgl_lahir_pic'))e.push('tanggal lahir');
-  if(!/^(\+?62|0)8\d{7,12}$/.test(v('telepon').replace(/[\s-]/g,'')))e.push('nomor HP/WA');if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v('email')))e.push('email');
-  if(!v('alamat')||!v('kelurahan')||!v('kecamatan'))e.push('alamat, kelurahan, kecamatan');if(!u&&v('rencana').length<20)e.push('rencana penggalangan (min. 20 karakter)');
+  const o=UPZF.baca(),e=UPZF.periksa(o,{jenis:j,mode:'daftar'});
+  if(!u&&v('rencana').length<20)e.push('rencana penggalangan (min. 20 karakter)');
   if(!dok.file_1)e.push(BERKAS[j][0]);if(!dok.file_2)e.push(BERKAS[j][1]);if(!$('persetujuan').checked)e.push('centang persetujuan');
   if(e.length)return galat('<b>Mohon lengkapi:</b> '+e.map(esc).join(', ')+'.');
-  const data={jenis:j,website:v('website'),persetujuan:true,file_1:{mime:dok.file_1.mime,base64:dok.file_1.base64},file_2:{mime:dok.file_2.mime,base64:dok.file_2.base64}};
-  ['kategori','nama','ketua','sekretaris','bendahara','anggota','nama_pic','jabatan_pic','nik_pic','tgl_lahir_pic','telepon','email','alamat','kelurahan','kecamatan','kota','provinsi','kode_pos','rencana','rek_bank','rek_nomor','rek_pemilik'].forEach(k=>data[k]=v(k));
-  if(!u){['kategori','nama','ketua','sekretaris','bendahara','anggota','jabatan_pic'].forEach(k=>data[k]='');}else data.rencana='';
+  const data=Object.assign(o,{jenis:j,website:v('website'),persetujuan:true,rencana:u?'':v('rencana'),file_1:{mime:dok.file_1.mime,base64:dok.file_1.base64},file_2:{mime:dok.file_2.mime,base64:dok.file_2.base64}});
   const b=$('btn-kirim');b.disabled=true;b.textContent='Mengirim…';
   try{const r=await kirimApi('penggalang_daftar',data,120);
     if(!r.ok)return galat(esc(r.pesan||'Pendaftaran ditolak.'));
