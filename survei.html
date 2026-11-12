@@ -382,6 +382,7 @@ const opsiKes=x=>mode==='survei'?rs().rekomendasi:cfgTipe(x).kesimpulan;
 function medan(f){
   const id='q-'+f.k,w=f.w?' <span class="w">*</span>':'';
   if(f.t==='pilih')return '<label>'+esc(f.l)+w+'</label><div class="pil">'+f.o.map(o=>{const[nv,lb]=Array.isArray(o)?o:[o,o];return '<label><input type="radio" name="'+id+'" value="'+esc(nv)+'"><span>'+esc(lb)+'</span></label>';}).join('')+'</div>';
+  if(f.t==='banyak')return '<label>'+esc(f.l)+w+'</label><div class="pil banyak">'+f.o.map(o=>'<label><input type="checkbox" name="'+id+'" value="'+esc(o)+'"><span>'+esc(o)+'</span></label>').join('')+'</div>';   // v31
   if(f.t==='ya')return '<label>'+esc(f.l)+'</label><div class="pil">'+['Tidak','Ya'].map(o=>'<label><input type="radio" name="'+id+'" value="'+o+'"><span>'+o+'</span></label>').join('')+'</div>';
   if(f.t==='angka')return '<label for="'+id+'">'+esc(f.l)+w+'</label><input id="'+id+'" type="text" inputmode="numeric" data-angka="1" autocomplete="off">';
   return '<label for="'+id+'">'+esc(f.l)+w+'</label><input id="'+id+'" type="text" maxlength="'+(f.max||200)+'" autocomplete="off"'+(f.k==='telepon'?' inputmode="tel"':'')+'>';
@@ -435,7 +436,8 @@ async function bukaForm(id){
   $('pil-rek').innerHTML=opsiKes(x).map(o=>'<label><input type="radio" name="q-rek" value="'+esc(o)+'"><span>'+esc(o)+'</span></label>').join('');
   // isi dari draf
   def.forEach(b=>b.isi.forEach(f=>{const v=draf.isian[f.k];if(v===undefined||v==='')return;
-    if(f.t==='pilih'||f.t==='ya')centang('q-'+f.k,v);else $('q-'+f.k).value=f.t==='angka'?ribuan(v):v;}));
+    if(f.t==='banyak'){const a=String(v).split(';').map(x=>x.trim());document.querySelectorAll('input[name="q-'+f.k+'"]').forEach(c=>{c.checked=a.includes(c.value);});}
+    else if(f.t==='pilih'||f.t==='ya')centang('q-'+f.k,v);else $('q-'+f.k).value=f.t==='angka'?ribuan(v):v;}));
   if(rpd)draf.nota.forEach((n,i)=>{if(!n||!$('n-nilai-'+i))return;if(n.hasil)centang('n-hasil-'+i,n.hasil);$('n-nilai-'+i).value=ribuan(n.nilai||'');$('n-ket-'+i).value=n.ket||'';});
   if(draf.rekomendasi)centang('q-rek',draf.rekomendasi);
   turunan();
@@ -451,7 +453,8 @@ $('pil-rek').addEventListener('change',simpanDraf);
 function bacaIsian(){
   const o={};
   formDef(aktif).forEach(b=>b.isi.forEach(f=>{
-    if(f.t==='pilih'||f.t==='ya'){const r=document.querySelector('input[name="q-'+f.k+'"]:checked');if(r)o[f.k]=r.value;}
+    if(f.t==='banyak'){const a=[...document.querySelectorAll('input[name="q-'+f.k+'"]:checked')].map(c=>c.value);if(a.length)o[f.k]=a.join('; ');}
+    else if(f.t==='pilih'||f.t==='ya'){const r=document.querySelector('input[name="q-'+f.k+'"]:checked');if(r)o[f.k]=r.value;}
     else{const v=$('q-'+f.k).value.trim();if(v)o[f.k]=f.t==='angka'?v.replace(/\D/g,''):v;}
   }));
   return o;
