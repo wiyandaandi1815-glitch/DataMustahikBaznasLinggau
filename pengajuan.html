@@ -279,7 +279,7 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
       <label style="align-items:flex-start"><input type="radio" name="jenis-cek" value="mh" style="margin-top:4px"><span>Saya sudah terdaftar sebagai mustahik (punya <strong>ID Mustahik</strong> 1674-…)</span></label>
       <label style="align-items:flex-start"><input type="radio" name="jenis-cek" value="kel" style="margin-top:4px"><span><strong>Keluarga saya</strong> — bantuan seluruh anggota dalam satu Kartu Keluarga (pakai ID Mustahik + tanggal lahir salah satu anggota)</span></label>
     </div>
-    <div id="cek-pj"><label>Nomor pengajuan</label><input id="s-no" placeholder="PJ-2611-0001" style="text-transform:uppercase" maxlength="14"></div>
+    <div id="cek-pj"><label>Nomor pengajuan</label><input id="s-no" placeholder="PJ-2611-0001" style="text-transform:uppercase" maxlength="18"></div>
     <div id="cek-mh" class="hidden"><label>ID Mustahik <span class="hint">tertera di formulir/kartu mustahik</span></label><input id="s-mid" placeholder="1674-2610-00007" inputmode="numeric" maxlength="15"></div>
     <div><label>Tanggal lahir</label><input id="s-tgl" type="date"></div>
     <div class="full"><button class="btn" id="btn-cek" onclick="cekStatus()">Cek Status</button></div>
@@ -766,7 +766,7 @@ async function cekStatus(){
   if(jc==='mh')return cekMustahik();
   const no=v('s-no').toUpperCase(),tgl=v('s-tgl');
   const box=document.getElementById('s-hasil'),isi=document.getElementById('s-isi');
-  if(!/^PJ-\d{4}-\d{4}$/.test(no)||!tgl){box.classList.remove('hidden');isi.innerHTML='<p style="color:var(--red)">Isi nomor pengajuan (contoh PJ-2611-0001) dan tanggal lahir.</p>';return;}
+  if(!/^PJ-(UJI-)?\d{4}-\d{4}$/.test(no)||!tgl){box.classList.remove('hidden');isi.innerHTML='<p style="color:var(--red)">Isi nomor pengajuan (contoh PJ-2611-0001) dan tanggal lahir.</p>';return;}
   const b=document.getElementById('btn-cek');b.disabled=true;b.textContent='Memeriksa…';
   try{
     const r=await api('status',{no,tanggalLahir:tgl});
