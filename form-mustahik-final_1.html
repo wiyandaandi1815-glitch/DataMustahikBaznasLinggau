@@ -4005,7 +4005,48 @@ function dTempatTgl(d){return 'Lubuklinggau, '+(d&&d.tanggalSurvey?dE(dTgl(d.tan
 function dSurveyor(d){const t=d&&d.mustahikId&&_dokTtd[d.mustahikId];return (t&&t.surveyor&&t.nama_surveyor)||(d&&d.surveyor)||'';}
 
 // ── 1. Formulir Pendaftaran Mustahik ──
+// ════════════════════════════════════════════
+// v32 — Blangko darurat Formulir Pendaftaran: dibangun dari DAFTAR ISIAN INDUK (sama dengan form kantor, survei, pengajuan)
+// ════════════════════════════════════════════
+const KAMUS_ISIAN={"versi":1,"keterangan":"Daftar isian induk BAZNAS Kota Lubuklinggau. tampil: K=form Tambah Mustahik, S=form survei HP, P=pengajuan.html, B=blangko darurat. k = nama kolom sheet Data (kolom:false = hanya di isian survei).","bagian":[{"id":"identitas","judul":"A. Identitas Calon Mustahik","isian":[{"k":"nama","l":"Nama Lengkap","t":"teks","tampil":"KPB","w":1,"id":"f-nama"},{"k":"nik","l":"NIK","t":"nik","tampil":"KPB","w":1,"id":"f-nik"},{"k":"noKK","l":"No. KK","t":"nik","tampil":"KPB","id":"f-noKK"},{"k":"jenisKelamin","l":"Jenis Kelamin","t":"pilih","tampil":"KPB","o":[["Laki-laki","Laki-laki"],["Perempuan","Perempuan"]],"id":"f-jk"},{"k":"tempatLahir","l":"Tempat Lahir","t":"teks","tampil":"KPB","id":"f-tempatLahir"},{"k":"tanggalLahir","l":"Tanggal Lahir","t":"tanggal","tampil":"KPB","id":"f-tglLahir"},{"k":"statusKeluarga","l":"Status Keluarga","t":"pilih","tampil":"KPB","o":[["Kepala Keluarga","Kepala Keluarga"],["Istri","Istri"],["Anak","Anak"],["Orang Tua","Orang Tua"],["Lainnya","Lainnya"]],"id":"f-statusKel"},{"k":"telepon","l":"Telepon / HP","t":"teks","tampil":"KSPB","w":1,"id":"f-telepon"},{"k":"email","l":"Email","t":"teks","tampil":"KPB","id":"f-email"},{"k":"alamat","l":"Alamat Lengkap","t":"teks","tampil":"KSPB","w":1,"id":"f-alamat"},{"k":"kelurahan","l":"Kelurahan","t":"teks","tampil":"KSPB","w":1,"id":"f-kelurahan"},{"k":"kecamatan","l":"Kecamatan","t":"teks","tampil":"KSPB","w":1,"id":"f-kecamatan"},{"k":"kota","l":"Kota","t":"teks","tampil":"KB","id":"f-kota"},{"k":"kodePos","l":"Kode Pos","t":"teks","tampil":"KB","id":"f-kodePos"}]},{"id":"anggota","judul":"B. Susunan Anggota Keluarga","isian":[{"k":"anggotaKeluarga","l":"Anggota keluarga (sesuai KK)","t":"tabel","tampil":"KB","kolom":"Anggota","catatan":"Kolom: Nama, Hubungan, L/P, Tgl Lahir, NIK, Pendidikan, Pekerjaan, Kesehatan, Ket."}]},{"id":"wali","judul":"C. Data Wali & Pendidikan","isian":[{"k":"namaWali","l":"Nama Wali (penerima < 18 th)","t":"teks","tampil":"KB","id":"f-namaWali"},{"k":"nikWali","l":"NIK Wali","t":"nik","tampil":"KB","id":"f-nikWali"},{"k":"hubunganWali","l":"Hubungan Wali","t":"pilih","tampil":"KB","o":[["Ayah","Ayah"],["Ibu","Ibu"],["Wali lain","Wali lain"]],"id":"f-hubunganWali"},{"k":"lembagaPendidikan","l":"Lembaga Pendidikan","t":"teks","tampil":"KPB","id":"f-lembagaPend"},{"k":"jenjangPendidikan","l":"Jenjang","t":"pilih","tampil":"KPB","o":[["SD/MI","SD/MI"],["SMP/MTs","SMP/MTs"],["SMA/MA/SMK","SMA/MA/SMK"],["D3","D3"],["S1","S1"],["S2","S2"],["Pesantren","Pesantren"],["Lainnya","Lainnya"]],"id":"f-jenjangPend"},{"k":"kelas","l":"Kelas","t":"pilih","tampil":"KPB","o":[["I","I"],["II","II"],["III","III"],["IV","IV"],["V","V"],["VI","VI"],["VII","VII"],["VIII","VIII"],["IX","IX"],["X","X"],["XI","XI"],["XII","XII"]],"id":"f-kelas"},{"k":"prodiKelas","l":"Prodi / Jurusan","t":"teks","tampil":"KPB","id":"f-prodiKelas"},{"k":"semester","l":"Semester","t":"teks","tampil":"KPB","id":"f-semester"},{"k":"statusKuliah","l":"Status Kuliah","t":"pilih","tampil":"KPB","o":[["Mahasiswa aktif","Mahasiswa aktif"],["Calon mahasiswa","Calon mahasiswa"]],"id":"f-statusKuliah"}]},{"id":"rumah","judul":"D. Kondisi Rumah","isian":[{"k":"status_rumah","l":"Status tempat tinggal","t":"pilih","tampil":"SB","o":[["Milik sendiri","Milik sendiri"],["Menumpang","Menumpang"],["Sewa/kontrak","Sewa/kontrak"],["Lainnya","Lainnya"]],"w":1,"kolom":false},{"k":"dinding","l":"Dinding","t":"pilih","tampil":"SB","o":[["Tembok plester","Tembok plester"],["Tembok tanpa plester","Tembok tanpa plester"],["Papan/kayu","Papan/kayu"],["Bambu/seng/lainnya","Bambu/seng/lainnya"]],"w":1,"kolom":false},{"k":"lantai","l":"Lantai","t":"pilih","tampil":"SB","o":[["Keramik","Keramik"],["Semen","Semen"],["Papan","Papan"],["Tanah","Tanah"]],"w":1,"kolom":false},{"k":"atap","l":"Atap","t":"pilih","tampil":"SB","o":[["Genteng/metal baik","Genteng/metal baik"],["Seng","Seng"],["Bocor/rusak","Bocor/rusak"],["Rumbia/lainnya","Rumbia/lainnya"]],"w":1,"kolom":false},{"k":"luas_m2","l":"Perkiraan luas rumah (m²)","t":"angka","tampil":"SB","kolom":false},{"k":"listrik","l":"Listrik","t":"pilih","tampil":"SB","o":[["450 VA","450 VA"],["900 VA","900 VA"],["1300 VA ke atas","1300 VA ke atas"],["Menumpang","Menumpang"],["Tidak ada","Tidak ada"]],"w":1,"kolom":false},{"k":"air","l":"Sumber air","t":"pilih","tampil":"SB","o":[["PDAM","PDAM"],["Sumur","Sumur"],["Sungai/hujan","Sungai/hujan"],["Membeli","Membeli"]],"w":1,"kolom":false},{"k":"mck","l":"Kamar mandi/WC","t":"pilih","tampil":"SB","o":[["Sendiri","Sendiri"],["Bersama","Bersama"],["Tidak ada","Tidak ada"]],"w":1,"kolom":false},{"k":"kondisiRumah","l":"Kondisi Rumah","t":"pilih","tampil":"KPB","o":[["Permanen / Layak Huni","Permanen / Layak Huni"],["Semi Permanen","Semi Permanen"],["Tidak Layak Huni","Tidak Layak Huni"],["Rumah Dinas/Kontrak","Rumah Dinas/Kontrak"],["Menumpang","Menumpang"]],"id":"f-kondisiRumah","catatan":"Di survei dihitung otomatis dari rincian rumah"}]},{"id":"ekonomi","judul":"E. Ekonomi & Tanggungan","isian":[{"k":"pekerjaan","l":"Pekerjaan","t":"teks","tampil":"KSPB","w":1,"id":"f-pekerjaan"},{"k":"penghasilan_kk","l":"Penghasilan kepala keluarga per bulan (Rp)","t":"angka","tampil":"SB","w":1,"kolom":false},{"k":"penghasilan_lain","l":"Penghasilan anggota lain per bulan (Rp)","t":"angka","tampil":"SB","kolom":false},{"k":"penghasilan","l":"Penghasilan Bulanan (Rp)","t":"angka","tampil":"KPB","id":"f-penghasilan","catatan":"Di survei = penghasilan KK + anggota lain"},{"k":"totalPengeluaran","l":"Total Pengeluaran Bulanan (Rp)","t":"angka","tampil":"KSPB","w":1,"id":"f-pengeluaran"},{"k":"kebutuhanUtama","l":"Kebutuhan Utama","t":"pilih","tampil":"KSPB","o":[["Pangan","Pangan"],["Sandang","Sandang"],["Papan","Papan"],["Kesehatan","Kesehatan"],["Pendidikan","Pendidikan"],["Modal Usaha","Modal Usaha"],["Lainnya","Lainnya"]],"w":1,"id":"f-kebutuhan"},{"k":"bansos","l":"Menerima bantuan lain (PKH/BPNT/KIS/lainnya)","t":"teks","tampil":"SB","kolom":false},{"k":"utang","l":"Punya utang/cicilan","t":"ya","tampil":"SB","kolom":false},{"k":"jumlahAnggota","l":"Jumlah Anggota Keluarga","t":"angka","tampil":"KSPB","w":1,"id":"f-jmlAnggota"},{"k":"jumlahTanggungan","l":"Jumlah Tanggungan","t":"angka","tampil":"KSPB","w":1,"id":"f-tanggungan"},{"k":"anak_sekolah","l":"Anak yang masih sekolah (orang)","t":"angka","tampil":"SB","kolom":false},{"k":"lansia_sakit","l":"Ada lansia/sakit menahun/disabilitas","t":"ya","tampil":"SB","kolom":false}]},{"id":"kesehatan","judul":"F. Kesehatan","isian":[{"k":"statusJkn","l":"Status JKN/BPJS Kesehatan","t":"pilih","tampil":"KSB","o":[["Memiliki BPJS PBI","BPJS PBI (dibayar pemerintah)"],["Memiliki BPJS Mandiri","BPJS Mandiri"],["Memiliki Asuransi Swasta","Asuransi Swasta"],["Tidak Memiliki","Tidak Memiliki Jaminan"]],"w":1,"id":"f-jkn"},{"k":"aksesFaskes","l":"Akses Fasilitas Kesehatan","t":"pilih","tampil":"KSB","o":[["Mudah (<1 km)","Mudah (≤1 km)"],["Sedang (1-5 km)","Sedang (1–5 km)"],["Sulit (>5 km)","Sulit (>5 km)"]],"w":1,"id":"f-faskes"},{"k":"kondisiKesehatan","l":"Kondisi Kesehatan Umum","t":"pilih","tampil":"KSB","o":[["Sehat","Sehat (tidak ada keluhan)"],["Sakit Ringan","Sakit Ringan (bisa beraktivitas)"],["Sakit Sedang","Sakit Sedang (terbatas)"],["Sakit Berat / Kronis","Sakit Berat / Kronis"],["Difabel","Penyandang Disabilitas"]],"w":1,"id":"f-kondisiKes"},{"k":"anggotaSakit","l":"Anggota Keluarga Sakit Kronis","t":"pilih","tampil":"KSB","o":[["Tidak","Tidak ada"],["Ya, 1 orang","Ya, 1 orang"],["Ya, 2+ orang","Ya, 2 orang atau lebih"]],"w":1,"id":"f-anggotaSakit"},{"k":"frekuensiSakit","l":"Frekuensi Sakit (3 bln terakhir)","t":"pilih","tampil":"KSB","o":[["Tidak pernah","Tidak pernah"],["1-2 kali","1–2 kali"],["3-5 kali","3–5 kali"],[">5 kali","Lebih dari 5 kali"]],"w":1,"id":"f-frekSakit"},{"k":"pengeluaranKesehatan","l":"Pengeluaran Kesehatan Bulanan (Rp)","t":"angka","tampil":"KSB","id":"f-pengeluaranKes"},{"k":"penyakitDiderita","l":"Jenis Penyakit / Kondisi Medis","t":"banyak","tampil":"KSB","o":[["Hipertensi","Hipertensi"],["Diabetes Melitus","Diabetes Melitus"],["Penyakit Jantung / Koroner","Penyakit Jantung / Koroner"],["Stroke","Stroke"],["Gagal Ginjal Kronis","Gagal Ginjal Kronis"],["Tuberkulosis (TBC)","Tuberkulosis (TBC)"],["Kanker / Tumor Ganas","Kanker / Tumor Ganas"],["Penyakit Paru Kronis (PPOK/Asma)","Penyakit Paru Kronis (PPOK/Asma)"],["Hepatitis B/C","Hepatitis B/C"],["HIV/AIDS","HIV/AIDS"],["Gangguan Jiwa / Psikiatri","Gangguan Jiwa / Psikiatri"],["Epilepsi","Epilepsi"],["Katarak / Ggn. Penglihatan","Katarak / Ggn. Penglihatan"],["Tuli / Ggn. Pendengaran","Tuli / Ggn. Pendengaran"],["Disabilitas Fisik","Disabilitas Fisik"],["Disabilitas Intelektual","Disabilitas Intelektual"],["Malnutrisi / Gizi Buruk","Malnutrisi / Gizi Buruk"],["Stunting (anak)","Stunting (anak)"],["Anemia Kronis","Anemia Kronis"],["Penyakit Kulit Kronis","Penyakit Kulit Kronis"]],"catatan":"bisa pilih lebih dari satu"},{"k":"penyakitLainnya","l":"Penyakit / Kondisi Lain","t":"teks","tampil":"KSB","id":"f-penyakitLain"},{"k":"riwayatMedis","l":"Riwayat Medis / Catatan Kesehatan","t":"teks","tampil":"KB","id":"f-riwayatMedis"}]},{"id":"aset","judul":"G. Aset","isian":[{"k":"motor","l":"Sepeda motor (unit)","t":"angka","tampil":"SB","kolom":false},{"k":"mobil","l":"Mobil","t":"ya","tampil":"SB","kolom":false},{"k":"tanah_lain","l":"Tanah/kebun/sawah selain rumah","t":"ya","tampil":"SB","kolom":false},{"k":"ternak","l":"Ternak","t":"teks","tampil":"SB","kolom":false},{"k":"emas_tabungan","l":"Emas/tabungan bernilai di atas Rp 5 juta","t":"ya","tampil":"SB","kolom":false},{"k":"elektronik","l":"Barang elektronik (TV, kulkas, mesin cuci, dll.)","t":"teks","tampil":"SB","kolom":false}]},{"id":"bantuan","judul":"H. Bantuan & Penyaluran","isian":[{"k":"asnaf","l":"Kategori Asnaf","t":"pilih","tampil":"KSB","o":[["Fakir","Fakir"],["Miskin","Miskin"],["Amil","Amil"],["Muallaf","Muallaf"],["Riqab","Riqab"],["Gharim","Gharim"],["Fisabilillah","Fisabilillah"],["Ibnu Sabil","Ibnu Sabil"]],"w":1,"id":"f-asnaf"},{"k":"kategoriBantuan","l":"Kategori Bantuan","t":"pilih","tampil":"KSPB","o":[["Zakat Konsumtif","Zakat Konsumtif"],["Zakat Produktif","Zakat Produktif"],["Infak/Sedekah","Infak/Sedekah"],["Bantuan Pendidikan","Bantuan Pendidikan"],["Bantuan Kesehatan","Bantuan Kesehatan"],["Bantuan Rumah Layak Huni","Bantuan Rumah Layak Huni"],["Bantuan Modal Usaha","Bantuan Modal Usaha"],["Bantuan Dakwah","Bantuan Dakwah"]],"w":1,"id":"f-katBantuan"},{"k":"program","l":"Program BAZNAS","t":"teks","tampil":"KB","id":"f-program"},{"k":"nilaiModal","l":"Nilai Bantuan (Rp)","t":"angka","tampil":"KB","id":"f-nilaiModal"},{"k":"metodeSalur","l":"Metode Penyaluran Bantuan","t":"pilih","tampil":"KB","o":[["Transfer Bank","Transfer Bank"],["Tunai","Tunai"]],"id":"f-metodeSalur"},{"k":"namaBank","l":"Nama Bank","t":"pilih","tampil":"KB","o":[["Bank Syariah Indonesia (BSI)","Bank Syariah Indonesia (BSI)"],["Bank Sumsel Babel Syariah","Bank Sumsel Babel Syariah"],["Bank Sumsel Babel","Bank Sumsel Babel"],["BRI","BRI"],["BNI","BNI"],["Bank Mandiri","Bank Mandiri"],["BCA","BCA"],["BTN","BTN"],["Bank Muamalat","Bank Muamalat"],["BTPN Syariah","BTPN Syariah"],["Bank Mega Syariah","Bank Mega Syariah"],["Lainnya","Lainnya"]],"id":"f-bank"},{"k":"noRekening","l":"No. Rekening","t":"teks","tampil":"KB","id":"f-noRek"},{"k":"namaPemilikRek","l":"Nama Pemilik Rekening","t":"teks","tampil":"KB","id":"f-namaRek"},{"k":"cabangBank","l":"Cabang / KCP","t":"teks","tampil":"KB","id":"f-cabangBank"},{"k":"hubunganRek","l":"Hubungan Pemilik Rekening dgn Mustahik","t":"pilih","tampil":"KB","o":[["Diri Sendiri","Diri Sendiri"],["Suami/Istri","Suami/Istri"],["Anak","Anak"],["Orang Tua","Orang Tua"],["Wali","Wali"],["Lembaga/Sekolah","Lembaga/Sekolah"],["Lainnya","Lainnya"]],"id":"f-hubRek"},{"k":"pjLembagaRek","l":"Nama Penanggung Jawab Lembaga","t":"teks","tampil":"KB","id":"f-pjLembagaRek","catatan":"hanya bila Lembaga/Sekolah"},{"k":"nikPemilikRek","l":"NIK Pemilik Rekening / Penanggung Jawab","t":"nik","tampil":"KB","id":"f-nikPemilikRek","catatan":"bila bukan Diri Sendiri"},{"k":"alamatPemilikRek","l":"Alamat Pemilik Rekening / Lembaga","t":"teks","tampil":"KB","id":"f-alamatPemilikRek"},{"k":"telpPemilikRek","l":"No. HP/WA Pemilik Rekening / Penanggung Jawab","t":"teks","tampil":"KB","id":"f-telpPemilikRek"}]},{"id":"survei","judul":"I. Hasil Survei","isian":[{"k":"nik_cocok","l":"NIK & KK cocok dengan KTP/KK asli","t":"ya","tampil":"SB","kolom":false},{"k":"rekomendasi","l":"Rekomendasi surveyor","t":"pilih","tampil":"SB","o":[["Layak dibantu","Layak dibantu"],["Dipertimbangkan","Dipertimbangkan"],["Tidak layak","Tidak layak"]],"w":1,"kolom":false},{"k":"tanggalSurvey","l":"Tanggal Survey","t":"tanggal","tampil":"KB","id":"f-tglSurvey"},{"k":"surveyor","l":"Nama Surveyor","t":"teks","tampil":"KB","id":"f-surveyor"},{"k":"catatanSurvey","l":"Catatan Survey / Observasi Lapangan","t":"teks","tampil":"KSB","id":"f-catatanSurvey"}]}]};
+function dbIsi(f){
+  const o=(f.o||[]).map(x=>Array.isArray(x)?x[1]:x),gr=(n)=>'<span class="bl-gr" style="width:'+n+'mm"></span>';
+  if(f.t==='pilih')return {lebar:o.length>4||o.join('').length>42,html:o.map(t=>'<span class="bl-op"><b class="kotak"></b> '+dE(t)+'</span>').join('')};
+  if(f.t==='banyak')return {lebar:true,html:'<div class="bl-op3">'+o.map(t=>'<span class="bl-op"><b class="kotak"></b> '+dE(t)+'</span>').join('')+'</div>'};
+  if(f.t==='ya')return {lebar:false,html:'<span class="bl-op"><b class="kotak"></b> Ya</span><span class="bl-op"><b class="kotak"></b> Tidak</span>'};
+  if(f.t==='nik')return {lebar:false,html:'<span class="bl-nik">'+'<b></b>'.repeat(16)+'</span>'};
+  if(f.t==='tanggal')return {lebar:false,html:gr(9)+' / '+gr(9)+' / '+gr(16)};
+  if(f.t==='angka')return {lebar:false,html:(/\(Rp\)/.test(f.l)?'Rp ':'')+gr(/\(Rp\)/.test(f.l)?48:22)};
+  return {lebar:/alamat|catatan|riwayat|elektronik|bansos/i.test(f.k+f.l),html:gr(/alamat|catatan|riwayat/i.test(f.k)?150:60)};
+}
+function dokBlangkoLengkap(){
+  const lbl=f=>dE(f.l)+(f.w?' <b>*</b>':'')+(f.catatan?'<div class="bl-cat">'+dE(f.catatan)+'</div>':'');
+  const bag=b=>{
+    if(b.isian.length===1&&b.isian[0].t==='tabel'){
+      return '<div class="sub">'+dE(b.judul)+'</div><table class="tbl bl-ang"><tr><th style="width:6mm">No</th><th>Nama</th><th>Hubungan</th><th style="width:9mm">L/P</th><th>Tgl Lahir</th><th style="width:36mm">NIK</th><th>Pendidikan</th><th>Pekerjaan</th><th>Kesehatan</th></tr>'+
+        Array.from({length:8},(_,i)=>'<tr><td class="c">'+(i+1)+'</td>'+'<td></td>'.repeat(8)+'</tr>').join('')+'</table>';
+    }
+    let h='<div class="sub">'+dE(b.judul)+'</div><table class="bl">',antre=null;
+    const tutup=()=>{if(antre){h+='<tr><td class="bl-l">'+lbl(antre.f)+'</td><td colspan="3">'+antre.i.html+'</td></tr>';antre=null;}};
+    b.isian.forEach(f=>{const i=dbIsi(f);
+      if(i.lebar){tutup();h+='<tr><td class="bl-l">'+lbl(f)+'</td><td colspan="3">'+i.html+'</td></tr>';return;}
+      if(antre){h+='<tr><td class="bl-l">'+lbl(antre.f)+'</td><td>'+antre.i.html+'</td><td class="bl-l">'+lbl(f)+'</td><td>'+i.html+'</td></tr>';antre=null;}else antre={f,i};});
+    tutup();return h+'</table>';
+  };
+  return `<div class="hal blangko">${dKop()}
+    <div class="judul" style="margin-bottom:0">FORMULIR PENDAFTARAN MUSTAHIK</div>
+    <div style="text-align:center;font-size:9pt;margin-bottom:2mm">Blangko isian manual — dipakai bila aplikasi tidak dapat digunakan (gangguan sistem / listrik padam) · daftar isian versi ${KAMUS_ISIAN.versi}</div>
+    <table class="data" style="margin-bottom:1mm"><tr><td class="lbl">No. Pengajuan / ID Mustahik</td><td class="sep">:</td><td><span class="bl-gr" style="width:60mm"></span></td><td class="lbl">Tanggal diisi</td><td class="sep">:</td><td><span class="bl-gr" style="width:40mm"></span></td></tr></table>
+    <div class="bl-pet">Petunjuk: tulis dengan HURUF CETAK; beri tanda ✓ pada kotak yang sesuai; isian bertanda <b>*</b> wajib. Bila aplikasi kembali normal, petugas mengetik ulang isian ini ke aplikasi dengan urutan bagian yang sama (A–I).</div>
+    ${KAMUS_ISIAN.bagian.map(bag).join('')}
+    <div class="bl-ttd">
+    ${dTtd([{atas:'&nbsp;',jabatan:'Pemohon / Calon Mustahik'},{atas:'&nbsp;',jabatan:'Petugas Survei'},{atas:'Mengetahui,',jabatan:'Ketua RT / Lurah'}])}
+    ${dTtd([{atas:'Diterima &amp; diputuskan oleh,',jabatan:'Wakil Ketua II / Wakil Ketua III BAZNAS Kota Lubuklinggau'},{atas:'Diinput ke aplikasi oleh,',jabatan:'Petugas BAZNAS (tanggal: .................)'}])}
+    </div>
+  </div>`;
+}
 function dokFormulir(d){
+  if(!d)return dokBlangkoLengkap();   // v32: blangko darurat lengkap dari daftar isian induk
   const b=!d; d=d||{};
   const r=(l,v,blank)=>`<tr><td class="lbl">${l}</td><td class="sep">:</td><td>${dV(v,blank)}</td></tr>`;
   const ak=(d.anggotaKeluarga||[]).slice(0,10);
@@ -4219,6 +4260,18 @@ const DOK_CSS=`.nk{display:inline-block;width:22mm;border-bottom:1px solid #000}
     table.grid th{background:#e6f4f1}
     .c{text-align:center}
     .cek{display:grid;gap:1px 8px;font-size:10pt}
+    .blangko .sub{background:#eee;padding:.6mm 2mm;margin:2.2mm 0 .8mm;font-size:10pt;break-after:avoid}
+    table.bl{width:100%;border-collapse:collapse;font-size:9pt}
+    table.bl td{border-bottom:1px dotted #999;padding:.75mm 1.2mm;vertical-align:top;break-inside:avoid}
+    table.bl td.bl-l{width:40mm;font-weight:600}
+    .bl-cat{font-weight:400;font-size:7.6pt;font-style:italic;color:#333}
+    .bl-op{display:inline-block;margin:0 4mm .5mm 0;white-space:nowrap}
+    .bl-op3{display:grid;grid-template-columns:repeat(3,1fr)}
+    .bl-gr{display:inline-block;border-bottom:1px solid #000;height:4mm;vertical-align:bottom}
+    .bl-nik b{display:inline-block;width:3.6mm;height:4.6mm;border:1px solid #000;border-right:0}.bl-nik b:last-child{border-right:1px solid #000}
+    .bl-pet{font-size:8.6pt;border:1px solid #000;padding:1.2mm 2mm;margin-bottom:1mm}
+    table.bl-ang td{height:5.6mm}
+    .bl-ttd{break-inside:avoid}
     .kotak{display:inline-block;width:3.6mm;height:3.6mm;border:1px solid #000;text-align:center;line-height:3.4mm;font-size:9pt;vertical-align:middle}
     .pernyataan{border:1px solid #000;padding:3px 8px;margin-top:6px;font-size:9.5pt;text-align:justify}
     .isi-surat{margin:6px 0;text-align:justify;line-height:1.45}
@@ -4951,25 +5004,34 @@ function lsPakaiPengajuan(i){const b=lsBeda[i];if(!b)return;lsIsi(LS_PETA[b.k],b
 function lsPakaiSurvei(i){const b=lsBeda[i];if(!b)return;lsIsi(LS_PETA[b.k],b.survei);const el=document.getElementById(LS_PETA[b.k]);
   const c=el&&(el.closest('.field')||el.parentNode).querySelector('.ls-cat');if(c)c.innerHTML=lsTeks(b,i);}
 const lsTeks=(b,i)=>'⚠ Berbeda dari pengajuan: <b>'+lsE(b.pengajuan)+'</b> → survei: <b>'+lsE(b.survei)+'</b> (dipasang). <a href="#" onclick="lsPakaiPengajuan('+i+');return false">Pakai data pengajuan</a>';
+const lsBoss=()=>['WK2','WK3'].includes(ssGet('baznas_jabatan')||'PETUGAS');
+let lsDraf=null;
 async function lsTerapkanSurvei(no){
-  lsBersihkan();
-  let r;try{r=await dbApi('survei_hasil',{no});}catch(e){return;}
+  lsBersihkan();lsDraf=null;
+  // v32: draf petugas (bila ada) dimuat dulu — hasil survei tidak menimpanya, hanya ditandai
+  try{const dr=await dbApi('terima_draf_ambil',{no});if(dr&&dr.ok&&dr.ada&&pjAktif===no){lsDraf=dr;fillForm(dr.data);}}catch(e){}
+  let r;try{r=await dbApi('survei_hasil',{no});}catch(e){r=null;}
+  if(lsDraf&&pjAktif===no)lsBannerDraf();
   if(!r||!r.ok||!r.ada||pjAktif!==no)return;
   const isi=r.isian||{},jab=ssGet('baznas_jabatan')||'PETUGAS',bolehPutus=(r.pimpinan||['WK2','WK3']).includes(jab);
   let terisi=0;
   // isian kosong → diisi dari survei; isian yang sudah ada & sama → dibiarkan
   Object.keys(LS_PETA).forEach(k=>{
+    if(lsDraf)return;   // v32: ada draf → isian tidak diisi ulang
     if(['nik','noKK'].includes(k)||isi[k]===undefined||isi[k]==='')return;
     const el=document.getElementById(LS_PETA[k]);if(!el)return;
     if(String(el.value||'').trim()===''||k==='tanggalSurvey'||k==='surveyor'){if(lsIsi(LS_PETA[k],isi[k]))terisi++;}   // tanggal & surveyor selalu dari survei
   });
-  terisi+=lsPenyakit(isi);
+  if(!lsDraf)terisi+=lsPenyakit(isi);
   if(r.catatanSurvey){const c=document.getElementById('f-catatanSurvey');if(c&&!c.value.includes(r.catatanSurvey))c.value=(c.value?c.value+'\n':'')+'Hasil survei ('+(isi.surveyor||'')+'): '+r.catatanSurvey;}
   // isian berbeda dari pengajuan → nilai survei dipasang + ditandai
   lsBeda=(r.beda||[]).filter(b=>LS_PETA[b.k]);
-  lsBeda.forEach((b,i)=>{lsIsi(LS_PETA[b.k],b.survei);lsTandai(LS_PETA[b.k],lsTeks(b,i));});
+  if(lsDraf){   // v32: draf → tandai saja bila nilai draf berbeda dari survei
+    lsBeda=lsBeda.filter(b=>{const el=document.getElementById(LS_PETA[b.k]);return el&&String(el.value).replace(/\D/g,'')!==String(b.survei).replace(/\D/g,'')&&String(el.value).trim().toLowerCase()!==String(b.survei).trim().toLowerCase();});
+    lsBeda.forEach((b,i)=>lsTandai(LS_PETA[b.k],'⚠ Hasil survei: <b>'+lsE(b.survei)+'</b> (draf: <b>'+lsE(document.getElementById(LS_PETA[b.k]).value)+'</b>). '+(lsBoss()?'<a href="#" onclick="lsPakaiSurvei('+i+');return false">Pakai hasil survei</a>':'Keputusan WK2/WK3.')));
+  }else lsBeda.forEach((b,i)=>{lsIsi(LS_PETA[b.k],b.survei);lsTandai(LS_PETA[b.k],lsTeks(b,i));});
   const bn=document.getElementById('pj-banner');
-  if(bn){const d=document.createElement('div');d.id='ls-ringkas';d.style.cssText='margin-top:8px;padding:8px 10px;border-radius:8px;'+(lsBeda.length?'background:#fff7ed;border:1px solid #fdba74;color:#9a3412':'background:#e6f4f1;border:1px solid #b2ddd6;color:#0a6654');
+  if(bn&&!document.getElementById('ls-ringkas')){const d=document.createElement('div');d.id='ls-ringkas';d.style.cssText='margin-top:8px;padding:8px 10px;border-radius:8px;'+(lsBeda.length?'background:#fff7ed;border:1px solid #fdba74;color:#9a3412':'background:#e6f4f1;border:1px solid #b2ddd6;color:#0a6654');
     d.innerHTML='📋 Hasil survei '+lsE(isi.tanggalSurvey||'')+' oleh <b>'+lsE(isi.surveyor||'')+'</b> — rekomendasi <b>'+lsE(r.rekomendasi||'—')+'</b>; '+terisi+' isian kosong diisi otomatis.'+
       (r.nik_cocok==='Tidak'?' <b>NIK/KK dikoreksi surveyor.</b>':'')+
       (lsBeda.length?'<br><b>'+lsBeda.length+' isian berbeda dari pengajuan</b> (ditandai oranye) — '+(bolehPutus?'periksa lalu <b>Simpan Data</b>.':'<b>keputusan & penerimaan oleh Wakil Ketua II/III</b>; Anda tetap bisa menyimpan isian lain setelah diputuskan.'):'');
@@ -4979,6 +5041,27 @@ async function lsTerapkanSurvei(no){
   const asli=window.pjLengkapi;if(typeof asli!=='function')return;
   window.pjLengkapi=function(no){const h=asli.apply(this,arguments);if(pjAktif===no)lsTerapkanSurvei(no);return h;};
   const st=document.createElement('style');st.textContent='.ls-beda{border-color:#f97316!important;background:#fff7ed!important}.ls-cat{font-size:11.5px;color:#9a3412;margin-top:3px}.ls-cat a{color:#1d4ed8}';document.head.appendChild(st);
+})();
+
+// ════════════════════════════════════════════
+// v32 — Lengkapi & Terima: tombol Terima SELALU hanya WK2/WK3; petugas menyimpan DRAF (dibuka lagi oleh WK2/WK3)
+// ════════════════════════════════════════════
+function lsBannerDraf(){const bn=document.getElementById('pj-banner');if(!bn||!lsDraf)return;let d=document.getElementById('ls-draf');if(!d){d=document.createElement('div');d.id='ls-draf';bn.appendChild(d);}
+  d.style.cssText='margin-top:8px;padding:8px 10px;border-radius:8px;background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3';
+  d.innerHTML='📝 Draf oleh <b>'+lsE(lsDraf.disimpan_oleh)+'</b> ('+lsE(String(lsDraf.disimpan_pada).replace('T',' ').slice(0,16))+') dimuat.'+(lsBoss()?' Periksa lalu <b>Terima &amp; Simpan</b>.':' Penerimaan oleh Wakil Ketua II/III.');}
+(function(){
+  const lengkapi=window.pjLengkapi;
+  if(typeof lengkapi==='function')window.pjLengkapi=function(no){const h=lengkapi.apply(this,arguments);
+    if(pjAktif===no){const b=document.getElementById('btn-save-lbl');if(b)b.textContent=lsBoss()?'Terima & Simpan':'Simpan Draf (diterima oleh WK2/WK3)';
+      const bn=document.getElementById('pj-banner');if(bn)bn.innerHTML=bn.innerHTML.replace('lalu <strong>Simpan Data</strong>. Pengajuan otomatis berstatus <em>Diterima</em>.',
+        lsBoss()?'lalu <strong>Terima &amp; Simpan</strong>. Pengajuan berstatus <em>Diterima</em> dan masuk Daftar Mustahik.':'lalu <strong>Simpan Draf</strong>. Penerimaan (masuk Daftar Mustahik) hanya oleh <strong>Wakil Ketua II/III</strong>.');}
+    return h;};
+  const simpan=window.simpanData;
+  window.simpanData=function(){
+    if(!pjAktif||lsBoss())return simpan.apply(this,arguments);
+    const d=readForm(),no=pjAktif;if(!d.nama){toast('Nama mustahik wajib diisi!',true);return;}
+    dbApi('terima_draf_simpan',{no,data:d}).then(r=>{toast(r&&r.ok?'📝 '+r.pesan:((r&&r.pesan)||'Draf gagal disimpan.'),!(r&&r.ok));}).catch(()=>toast('Draf belum tersimpan — perlu sinyal internet.',true));
+  };
 })();
 
 // ════════════════════════════════════════════
@@ -6861,7 +6944,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='31 · 12 Nov 2026';
+const APP_VERSI='32 · 12 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
