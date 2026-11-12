@@ -5082,6 +5082,43 @@ async function suTinjau(id){
   const simpan=window.simpanData;window.simpanData=function(){const ada=!!suAktif,h=simpan.apply(this,arguments);if(ada&&!suAktif)setTimeout(suMuat,4000);return h;};
 })();
 
+// ════════════════════════════════════════════
+// v28 — Pengajuan Masuk: yang SUDAH DISURVEI dipisah ke grup sendiri + tombol "Lengkapi & Terima".
+// Grup "Berkas lengkap — tinggal kunjungan" hanya untuk yang belum dikunjungi. Hasil survei tidak otomatis masuk Daftar Mustahik.
+// ════════════════════════════════════════════
+function pjSudahSurvei(p){return (p.status===PJ_ST.menunggu||p.status===PJ_ST.jadwal)&&p.status_survei==='Selesai disurvei';}
+function pjTinggalKunjungan(p){return pjSiap(p)&&!pjSudahSurvei(p);}
+(function(){
+  const baris=window.pjBaris;
+  window.pjBaris=function(p){let h=baris.apply(this,arguments);
+    if(pjSudahSurvei(p)){const no=pjEsc(p.no_pengajuan),i=h.lastIndexOf('</td></tr>');
+      h=h.replace('<tr class="pj-siap">','<tr class="pj-siap pj-survei">');
+      h=h.slice(0,i)+` <button class="btn btn-sm" style="background:#0d7c66;color:#fff" title="Isi form mustahik dari hasil survei; isian yang berbeda diputuskan WK2/WK3" onclick="pjLengkapi('${no}')">Lengkapi &amp; Terima</button>`+h.slice(i);
+      h=h.replace(/(<td>[^]*?)(<\/td>\s*<td style="white-space:nowrap">)/,(m,a,b)=>a+`<div style="font-size:11px;color:#0d7c66;font-weight:600">📋 Disurvei${p.surveyor_survei?' · '+pjEsc(p.surveyor_survei):''}${p.rekomendasi_survei?' · '+pjEsc(p.rekomendasi_survei):''}</div>`+b);}
+    return h;};
+  window.pjRender=function(){
+    const aktif=pjList.filter(pjPerlu).length,siap=pjList.filter(pjTinggalKunjungan).length,sudah=pjList.filter(pjSudahSurvei).length;
+    const b=document.getElementById('pj-count');if(b){b.textContent=aktif;b.style.display=aktif?'inline-block':'none';}
+    const tb=document.getElementById('pj-tbody');if(!tb)return;
+    const f=document.getElementById('pj-filter').value,q=(document.getElementById('pj-cari').value||'').toLowerCase();
+    const cocok=p=>!q||[p.no_pengajuan,p.nama,p.nik,p.kelurahan,p.kecamatan].join(' ').toLowerCase().includes(q);
+    const grup=(judul,l)=>l.length?`<tr class="pj-grup"><td colspan="8">${judul} (${l.length})</td></tr>`+l.map(pjBaris).join(''):'';
+    let rows,html;
+    if(f==='aktif'){
+      const a=pjList.filter(p=>pjPerlu(p)&&cocok(p)),s=pjList.filter(p=>pjSudahSurvei(p)&&cocok(p)),l=pjList.filter(p=>pjTinggalKunjungan(p)&&cocok(p));rows=a.concat(s,l);
+      html=a.map(pjBaris).join('')+grup('✅ Sudah disurvei — tinggal <b>Lengkapi &amp; Terima</b> <span style="font-weight:400">· isian yang berbeda dari pengajuan diputuskan WK2/WK3</span>',s)+
+        grup('📎 Berkas lengkap — tinggal kunjungan <span style="font-weight:400">· belum disurvei; tidak dihitung "perlu tindak lanjut"</span>',l);
+    }else{
+      rows=pjList.filter(p=>(!f||(f==='siap'?pjTinggalKunjungan(p):f==='disurvei'?pjSudahSurvei(p):p.status===f))&&cocok(p));html=rows.map(pjBaris).join('');
+    }
+    document.getElementById('pj-status').textContent=`${rows.length} pengajuan ditampilkan · ${aktif} perlu ditindaklanjuti · ${sudah} sudah disurvei · ${siap} tinggal kunjungan`;
+    tb.innerHTML=rows.length?html:'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--g500)">Belum ada pengajuan.</td></tr>';
+  };
+  const sel=document.getElementById('pj-filter'),o=sel&&sel.querySelector('option[value="siap"]');
+  if(o){o.textContent='Berkas lengkap (belum dikunjungi)';const n=document.createElement('option');n.value='disurvei';n.textContent='Sudah disurvei (tinggal Lengkapi & Terima)';o.before(n);}
+  const st=document.createElement('style');st.textContent='table.pj-tbl tr.pj-survei td{background:#eefaf6!important}';document.head.appendChild(st);
+})();
+
 document.querySelectorAll('input[name=dok-jenis]').forEach(r=>r.addEventListener('change',ndOpsiToggle));
 
 // ── Data pendidikan (beasiswa) ──
@@ -6797,7 +6834,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='27 · 12 Nov 2026';
+const APP_VERSI='28 · 12 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
