@@ -557,6 +557,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg>
     Beasiswa Binaan <span id="lb-count" class="badge b-red" style="display:none;margin-left:4px">0</span>
   </button>
+  <button class="tab-btn" id="tab-pg-btn" onclick="switchTab('t-penggalang',this);pgMuat()">🤝 Penggalang <span id="pg-count" class="badge b-red" style="display:none;margin-left:4px">0</span></button>
   <button class="tab-btn" id="tab-import-btn" onclick="switchTab('t-import',this)">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
     Import / Rollback
@@ -1150,6 +1151,18 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
 </div>
 </div>
 
+<div id="t-penggalang" class="tab-pane">
+<div class="main">
+  <div class="pg-title">Penggalang (UPZ &amp; Perorangan)</div>
+  <div class="pg-sub">Pendaftaran online dari <a href="penggalang.html" target="_blank" rel="noopener"><strong>penggalang.html</strong></a>. Periksa berkas, lalu <strong>Setujui</strong> (kode akses penggalang dibuat dan ditampilkan sekali) atau <strong>Tolak</strong> dengan alasan. Akun penggalang hanya untuk pengajuan kampanye — tidak bisa melihat data mustahik.</div>
+  <div class="card" style="margin-bottom:14px"><div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <select id="pg-filter" onchange="pgRender()" style="max-width:220px"><option value="Menunggu verifikasi">Menunggu verifikasi</option><option value="">Semua</option><option value="Disetujui">Disetujui</option><option value="Ditolak">Ditolak</option></select>
+    <button class="btn btn-outline btn-sm" onclick="pgMuat()">Muat ulang</button><span id="pg-status" style="font-size:12px;color:var(--g500);margin-left:auto"></span></div></div>
+  <div class="card" style="margin-bottom:14px"><div style="overflow-x:auto"><table class="pj-tbl" style="width:100%"><thead><tr><th>No. Daftar</th><th>Tanggal</th><th>Jenis</th><th>Nama</th><th>Kecamatan</th><th>Status</th><th></th></tr></thead><tbody id="pg-tbody"></tbody></table></div></div>
+  <div class="pg-title" style="font-size:16px">Data UPZ</div>
+  <div class="card"><div style="overflow-x:auto"><table class="pj-tbl" style="width:100%"><thead><tr><th>Kode</th><th>Nama / Kategori</th><th>Status</th><th>SK</th><th>Hak Amil</th><th>Kontak</th><th></th></tr></thead><tbody id="pg-upz"></tbody></table></div></div>
+</div>
+</div>
 <div id="t-import" class="tab-pane">
 <div class="main">
   <div class="pg-title">Import / Rollback Data</div>
@@ -3691,7 +3704,7 @@ async function dbLogin(ev){
   btn.disabled=true;msg.style.color='';msg.textContent='Memeriksa kode akses…';
   try{
     const r=await dbApi('cek',null,kode);
-    if(!r.ok||r.peran!=='surveyor'){msg.style.color='var(--red,#c0392b)';msg.textContent=r.peran==='excel'?'Token EXCEL tidak bisa dipakai untuk masuk aplikasi.':(r.pesan||'Kode akses ditolak.');return false;}
+    if(!r.ok||r.peran!=='surveyor'){msg.style.color='var(--red,#c0392b)';msg.textContent=r.peran==='excel'?'Token EXCEL tidak bisa dipakai untuk masuk aplikasi.':r.peran==='penggalang'?'Ini kode akses penggalang — masuk lewat halaman penggalang.html.':(r.pesan||'Kode akses ditolak.');return false;}
     ssSet(SS_TOKEN,kode);ssSet(SS_NAMA,r.nama);ssSet('baznas_jabatan',r.jabatan||'PETUGAS');
     inp.value='';msg.textContent='';
     tampilLogin(false);tampilUser();
@@ -4653,6 +4666,141 @@ function skCetak(){
   w.onload=()=>setTimeout(()=>{w.focus();w.print();},400);
   closeModal('modal-sk');
   toast(tanpaId.length?('⚠ SK dicetak, tetapi '+tanpaId.length+' penerima belum terverifikasi / belum punya ID Mustahik.'):('✓ Membuka SK Penetapan ('+list.length+' penerima) — pilih printer atau "Save as PDF", kertas A4.'),!!tanpaId.length);
+}
+
+// ════════════════════════════════════════════
+// v24 — PENGGALANG: verifikasi pendaftaran UPZ/badan & perorangan + Data UPZ (khusus Wakil Ketua III)
+// ════════════════════════════════════════════
+let pgData=null;
+const PG_ST={menunggu:'Menunggu verifikasi',setuju:'Disetujui',tolak:'Ditolak'};
+const pgE=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pgTgl=s=>{if(!s)return '—';const d=new Date(String(s).length===10?s+'T00:00:00':s);return isNaN(d)?pgE(s):d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});};
+function pgBadge(st){const c={[PG_ST.menunggu]:'b-gold',[PG_ST.setuju]:'b-teal',[PG_ST.tolak]:'b-red','Aktif':'b-teal','Menunggu SK':'b-gold','Nonaktif':'b-red','SK Berakhir':'b-red','Perlu Evaluasi':'b-blue'}[st]||'b-blue';return `<span class="badge ${c}">${pgE(st)}</span>`;}
+async function pgMuat(){
+  const st=document.getElementById('pg-status');if(!st)return;
+  if((ssGet('baznas_jabatan')||'')!=='WK3'){st.textContent='Menu ini khusus Wakil Ketua III (admin).';return;}
+  st.textContent='Memuat…';
+  try{
+    const r=await dbApi('penggalang_antrean');
+    if(!r.ok){st.innerHTML='<span style="color:var(--red)">Server menjawab galat: '+pgE(r.pesan)+'</span>';return;}
+    pgData=r;pgRender();
+  }catch(e){st.innerHTML='<span style="color:var(--red)">Gagal terhubung ke server.</span>';}
+}
+function pgRender(){
+  if(!pgData)return;
+  const f=document.getElementById('pg-filter').value,d=pgData.data,n=s=>d.filter(x=>x.status===s).length;
+  const b=document.getElementById('pg-count');if(b){const m=n(PG_ST.menunggu);b.textContent=m;b.style.display=m?'inline-block':'none';}
+  document.getElementById('pg-status').textContent=`${n(PG_ST.menunggu)} menunggu verifikasi · ${n(PG_ST.setuju)} disetujui · ${n(PG_ST.tolak)} ditolak · ${pgData.upz.length} UPZ terdaftar`;
+  const rows=d.filter(x=>!f||x.status===f);
+  document.getElementById('pg-tbody').innerHTML=rows.length?rows.map(x=>`<tr>
+    <td class="mono" style="font-weight:700;color:var(--teal-dark)">${pgE(x.no_daftar)}</td><td>${pgTgl(x.waktu)}</td>
+    <td>${x.jenis==='UPZ'?'UPZ / badan':'Perorangan'}${x.kategori?`<div style="font-size:11px;color:var(--g500)">${pgE(x.kategori)}</div>`:''}</td>
+    <td style="font-weight:700">${pgE(x.nama)}${x.jenis==='UPZ'?`<div style="font-size:11px;color:var(--g500);font-weight:400">PIC: ${pgE(x.nama_pic)}</div>`:''}</td>
+    <td>${pgE(x.kecamatan)}</td><td>${pgBadge(x.status)}${x.kode_upz?` <span class="mono" style="font-size:11px">${pgE(x.kode_upz)}</span>`:''}</td>
+    <td><button class="btn btn-primary btn-sm" onclick="pgDetail('${pgE(x.no_daftar)}')">Buka</button></td></tr>`).join('')
+    :'<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--g500)">Belum ada pendaftaran.</td></tr>';
+  document.getElementById('pg-upz').innerHTML=pgData.upz.length?pgData.upz.map(u=>`<tr>
+    <td class="mono" style="font-weight:700">${pgE(u.kode)}</td><td style="font-weight:700">${pgE(u.nama)}<div style="font-size:11px;color:var(--g500);font-weight:400">${pgE(u.kategori)}</div></td>
+    <td>${pgBadge(u.status)}</td><td>${u.sk_nomor?pgE(u.sk_nomor)+'<div style="font-size:11px;color:var(--g500)">'+pgTgl(u.sk_tanggal)+(u.sk_berlaku_sampai?' s.d. '+pgTgl(u.sk_berlaku_sampai):'')+'</div>':'—'}</td>
+    <td style="font-size:12px">Zakat: BAZNAS ${pgE(u.amil_zakat_baznas)}% · UPZ ${pgE(u.amil_zakat_upz)}%${u.amil_infak_baznas||u.amil_infak_upz?`<br>Infak: BAZNAS ${pgE(u.amil_infak_baznas||'—')}% · UPZ ${pgE(u.amil_infak_upz||'—')}%`:''}</td>
+    <td>${pgE(u.kontak_nama)}<div style="font-size:11px;color:var(--g500)">${pgE(u.kontak_telepon)}</div></td>
+    <td><button class="btn btn-outline btn-sm" onclick="pgUpz('${pgE(u.kode)}')">Ubah</button></td></tr>`).join('')
+    :'<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--g500)">Data UPZ masih kosong — terisi dari pendaftaran online yang disetujui.</td></tr>';
+}
+function pgModal(judul,isi,tombol){
+  let m=document.getElementById('modal-pg');
+  if(!m){m=document.createElement('div');m.className='modal-overlay';m.id='modal-pg';m.innerHTML='<div class="modal" style="max-width:820px"><div class="modal-hdr"><h3 id="pg-m-judul"></h3><button class="x-btn" onclick="closeModal(\'modal-pg\')">×</button></div><div class="modal-body" id="pg-m-isi" style="font-size:13.5px"></div><div class="modal-ftr" id="pg-m-ftr" style="flex-wrap:wrap"></div></div>';document.body.appendChild(m);}
+  document.getElementById('pg-m-judul').textContent=judul;document.getElementById('pg-m-isi').innerHTML=isi;document.getElementById('pg-m-ftr').innerHTML=tombol;openModal('modal-pg');
+}
+const pgBrs=(a,b)=>b?`<tr><td style="width:34%;color:var(--g500);padding:3px 6px;vertical-align:top">${a}</td><td style="padding:3px 6px">${b}</td></tr>`:'';
+function pgAmilForm(u){
+  const v=k=>u&&u[k]!==undefined?pgE(u[k]):'';
+  return `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px">
+    <div class="field"><label>Zakat — BAZNAS (%) <span style="color:var(--red)">*</span></label><input id="pg-azb" type="text" inputmode="decimal" value="${v('amil_zakat_baznas')}"/></div>
+    <div class="field"><label>Zakat — UPZ (%) <span style="color:var(--red)">*</span></label><input id="pg-azu" type="text" inputmode="decimal" value="${u?v('amil_zakat_upz'):pgData.amil_default}"/></div>
+    <div class="field"><label>Infak — BAZNAS (%)</label><input id="pg-aib" type="text" inputmode="decimal" value="${v('amil_infak_baznas')}"/></div>
+    <div class="field"><label>Infak — UPZ (%)</label><input id="pg-aiu" type="text" inputmode="decimal" value="${v('amil_infak_upz')}"/></div></div>`;
+}
+function pgSkForm(u){
+  const v=k=>u&&u[k]?pgE(u[k]):'';
+  return `<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px">
+    <div class="field"><label>Nomor SK</label><input id="pg-sk" type="text" maxlength="80" value="${v('sk_nomor')}" placeholder="kosongkan bila SK belum terbit"/></div>
+    <div class="field"><label>Tanggal SK</label><input id="pg-skt" type="date" value="${v('sk_tanggal')}"/></div>
+    <div class="field"><label>Berlaku sampai</label><input id="pg-sks" type="date" value="${v('sk_berlaku_sampai')}"/></div></div>`;
+}
+function pgDetail(no){
+  const x=pgData.data.find(y=>y.no_daftar===no);if(!x)return;
+  const upz=x.jenis==='UPZ',bk=pgData.berkas[x.jenis];
+  let isi=`<table style="width:100%;border-collapse:collapse">${pgBrs('Status',pgBadge(x.status)+(x.alasan_tolak?' — '+pgE(x.alasan_tolak):''))}
+    ${pgBrs('Jenis',upz?'UPZ / badan — '+pgE(x.kategori):'Perorangan (hanya infak)')}${pgBrs(upz?'Nama lembaga':'Nama',pgE(x.nama))}
+    ${upz?pgBrs('PIC',pgE(x.nama_pic)+' — '+pgE(x.jabatan_pic)):''}${pgBrs('NIK '+(upz?'PIC':''),'<span class="mono">'+pgE(x.nik_pic)+'</span>')}${pgBrs('Tanggal lahir',pgTgl(x.tgl_lahir_pic))}
+    ${pgBrs('HP / email',pgE(x.telepon)+' · '+pgE(x.email))}${pgBrs('Alamat',[x.alamat,'Kel. '+x.kelurahan,'Kec. '+x.kecamatan,x.kota,x.provinsi,x.kode_pos].filter(Boolean).map(pgE).join(', '))}
+    ${upz?pgBrs('Pengurus','Ketua: '+pgE(x.ketua)+' · Sekretaris: '+pgE(x.sekretaris||'—')+' · Bendahara: '+pgE(x.bendahara)+(x.anggota?'<br>Anggota: '+pgE(x.anggota):'')):''}
+    ${pgBrs('Rencana penggalangan',pgE(x.rencana))}${pgBrs('Rekening',x.rek_nomor?pgE(x.rek_bank)+' '+pgE(x.rek_nomor)+' a.n. '+pgE(x.rek_pemilik):'')}
+    ${pgBrs('Diverifikasi',x.diverifikasi_oleh?pgE(x.diverifikasi_oleh)+', '+pgTgl(x.diverifikasi_pada):'')}</table>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">${bk.map(b=>`<div style="border:1px solid var(--g200);border-radius:8px;padding:8px"><b style="font-size:12.5px">${pgE(b[1])}</b><div id="pg-dok-${b[0]}" style="margin-top:6px"><button class="btn btn-outline btn-sm" onclick="pgDok('${pgE(no)}','${b[0]}')">Lihat</button></div></div>`).join('')}</div>`;
+  let tombol=`<button class="btn btn-outline" onclick="closeModal('modal-pg')">Tutup</button>`;
+  if(x.status===PG_ST.menunggu){
+    isi+=`<div id="pg-setuju" style="margin-top:12px;border-top:1px dashed var(--g300);padding-top:10px">${upz?`<b>Data UPZ saat disetujui</b>
+      <div class="field" style="margin:6px 0"><label>Kategori</label><select id="pg-kat">${pgData.kategori.map(k=>`<option${k===x.kategori?' selected':''}>${pgE(k)}</option>`).join('')}</select></div>
+      ${pgSkForm(null)}<div style="font-size:12px;color:var(--g500);margin-top:4px">Tanpa nomor SK → status <b>Menunggu SK</b>; dengan SK → <b>Aktif</b>.</div>
+      <b style="display:block;margin-top:8px">Hak amil</b>${pgAmilForm(null)}
+      <div class="field" style="margin-top:6px"><label>Catatan</label><input id="pg-cat" type="text" maxlength="400"/></div>`
+      :'<div style="font-size:12.5px;color:var(--g500)">Penggalang perorangan hanya boleh menggalang infak. Setelah disetujui, kode akses dibuat untuk diserahkan.</div>'}
+      <div class="field" style="margin-top:8px"><label>Alasan penolakan (bila ditolak)</label><input id="pg-alasan" type="text" maxlength="300"/></div></div>`;
+    tombol+=`<button class="btn" style="background:#dc2626;color:#fff" onclick="pgTolak('${pgE(no)}')">Tolak</button><button class="btn btn-primary" id="pg-btn-setuju" onclick="pgSetujui('${pgE(no)}')">Setujui &amp; buat kode akses</button>`;
+  }else if(x.status===PG_ST.setuju)tombol+=`<button class="btn btn-gold" onclick="pgKodeBaru('${pgE(no)}')">Buat ulang kode akses</button>`;
+  pgModal('Pendaftaran '+no,isi,tombol);
+}
+async function pgDok(no,jenis){
+  const box=document.getElementById('pg-dok-'+jenis);box.textContent='Memuat…';
+  try{
+    const r=await dbApi('penggalang_file',{no,jenis});
+    if(!r.ok){box.textContent=r.pesan||'Gagal memuat.';return;}
+    const bin=atob(r.base64),u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+    const url=URL.createObjectURL(new Blob([u8],{type:r.mime}));
+    box.innerHTML=r.mime==='application/pdf'?`<a class="btn btn-outline btn-sm" href="${url}" target="_blank" rel="noopener">Buka PDF</a>`
+      :`<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="${pgE(jenis)}" style="max-width:100%;max-height:220px;border-radius:6px"/></a>`;
+  }catch(e){box.textContent='Gagal terhubung — dokumen tidak dapat dimuat.';}
+}
+function pgTampilKode(r){
+  pgModal('Kode akses penggalang',`<p>${pgE(r.pesan)}</p>
+    <div style="margin:10px 0;padding:12px;border:2px dashed var(--teal);border-radius:10px;text-align:center"><div style="font-size:12px;color:var(--g500)">Kode akses untuk <b>${pgE(r.ref)}</b></div>
+    <div id="pg-kode" class="mono" style="font-size:24px;font-weight:700;letter-spacing:2px;user-select:all">${pgE(r.kode_akses)}</div></div>
+    <p style="font-size:12.5px;color:var(--g500)">Kode ini <b>hanya ditampilkan sekali</b> dan tidak disimpan di sheet. Serahkan langsung kepada penggalang (bukan lewat grup). Penggalang masuk di halaman <b>penggalang.html</b> → tab "Masuk". Kode ini tidak bisa membuka data mustahik.</p>`,
+    `<button class="btn btn-outline" onclick="navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('pg-kode').textContent).then(()=>toast('Kode disalin.'))">Salin kode</button><button class="btn btn-primary" onclick="closeModal('modal-pg')">Selesai</button>`);
+}
+async function pgSetujui(no){
+  const x=pgData.data.find(y=>y.no_daftar===no),g=id=>{const e=document.getElementById(id);return e?e.value.trim():undefined;};
+  const data={no};
+  if(x.jenis==='UPZ')Object.assign(data,{kategori:g('pg-kat'),sk_nomor:g('pg-sk'),sk_tanggal:g('pg-skt'),sk_berlaku_sampai:g('pg-sks'),amil_zakat_baznas:g('pg-azb'),amil_zakat_upz:g('pg-azu'),amil_infak_baznas:g('pg-aib'),amil_infak_upz:g('pg-aiu'),catatan:g('pg-cat')});
+  const btn=document.getElementById('pg-btn-setuju');btn.disabled=true;
+  try{const r=await dbApi('penggalang_setujui',data);if(!r.ok){toast(r.pesan,true);return;}pgTampilKode(r);pgMuat();}
+  catch(e){toast('Gagal terhubung ke server.',true);}finally{btn.disabled=false;}
+}
+async function pgTolak(no){
+  const alasan=(document.getElementById('pg-alasan').value||'').trim();
+  if(alasan.length<5){toast('Isi alasan penolakan (minimal 5 karakter).',true);return;}
+  try{const r=await dbApi('penggalang_tolak',{no,alasan});toast(r.pesan,!r.ok);if(r.ok){closeModal('modal-pg');pgMuat();}}catch(e){toast('Gagal terhubung ke server.',true);}
+}
+async function pgKodeBaru(no){
+  try{const r=await dbApi('penggalang_kode_baru',{no});if(!r.ok){toast(r.pesan,true);return;}pgTampilKode(r);}catch(e){toast('Gagal terhubung ke server.',true);}
+}
+function pgUpz(kode){
+  const u=pgData.upz.find(y=>y.kode===kode);if(!u)return;
+  pgModal('Ubah '+kode+' — '+u.nama,`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div class="field"><label>Status</label><select id="pg-ust">${pgData.status_upz.map(s=>`<option${s===u.status?' selected':''}>${pgE(s)}</option>`).join('')}</select></div>
+    <div class="field"><label>Kategori</label><select id="pg-kat">${pgData.kategori.map(k=>`<option${k===u.kategori?' selected':''}>${pgE(k)}</option>`).join('')}</select></div></div>
+    <div style="margin-top:8px">${pgSkForm(u)}</div><b style="display:block;margin-top:8px">Hak amil</b>${pgAmilForm(u)}
+    <div class="field" style="margin-top:6px"><label>Catatan</label><input id="pg-cat" type="text" maxlength="400" value="${pgE(u.catatan)}"/></div>
+    <div style="font-size:12px;color:var(--g500);margin-top:6px">Status <b>Nonaktif</b> otomatis mencabut kode akses penggalang UPZ ini.</div>`,
+    `<button class="btn btn-outline" onclick="closeModal('modal-pg')">Batal</button><button class="btn btn-primary" onclick="pgUpzSimpan('${pgE(kode)}')">Simpan</button>`);
+}
+async function pgUpzSimpan(kode){
+  const g=id=>document.getElementById(id).value.trim();
+  try{const r=await dbApi('upz_ubah',{kode,status:g('pg-ust'),kategori:g('pg-kat'),sk_nomor:g('pg-sk'),sk_tanggal:g('pg-skt'),sk_berlaku_sampai:g('pg-sks'),
+    amil_zakat_baznas:g('pg-azb'),amil_zakat_upz:g('pg-azu'),amil_infak_baznas:g('pg-aib'),amil_infak_upz:g('pg-aiu'),catatan:g('pg-cat')});
+    toast(r.pesan,!r.ok);if(r.ok){closeModal('modal-pg');pgMuat();}}catch(e){toast('Gagal terhubung ke server.',true);}
 }
 
 document.querySelectorAll('input[name=dok-jenis]').forEach(r=>r.addEventListener('change',ndOpsiToggle));
@@ -6370,7 +6518,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='23 · 12 Nov 2026';
+const APP_VERSI='24 · 12 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
@@ -6434,11 +6582,13 @@ v15Init();
   const jaga=(nama,syarat,siapa)=>{const asli=window[nama];if(typeof asli!=='function')return;window[nama]=function(){if(!syarat()){tolak(siapa);return;}return asli.apply(this,arguments);};};
   const admin=()=>jab()===ADMIN, bukanPetugas=()=>jab()!=='PETUGAS';
   ['hapusBaris','konfHapusSemua','konfRollback','handleFileImport','bmHapus','rpdHapus','mzHapus'].forEach(n=>jaga(n,admin,'Wakil Ketua III (admin)'));
+  ['pgMuat','pgSetujui','pgTolak','pgKodeBaru','pgUpzSimpan'].forEach(n=>jaga(n,admin,'Wakil Ketua III (admin)'));
   ['exDialog','exportPdfSelectedData','skBuka','skCetak'].forEach(n=>jaga(n,bukanPetugas,'Pimpinan (Ketua/Wakil Ketua)'));
   const asliSet=window.ssSet;if(typeof asliSet==='function')window.ssSet=function(k,v){const h=asliSet.apply(this,arguments);if(k==='baznas_jabatan')terapkanPeran();return h;};
   const css=document.createElement('style');
   css.textContent=`body:not(.peran-admin) #tab-import-btn,body:not(.peran-admin) [onclick*="t-import"],body:not(.peran-admin) [onclick^="konfHapusSemua"],body:not(.peran-admin) [onclick^="hapusBaris"],body:not(.peran-admin) [onclick^="bmHapus"],body:not(.peran-admin) [onclick^="rpdHapus("],body:not(.peran-admin) [onclick^="mzHapus"]{display:none!important}
-  body.peran-petugas [onclick^="exDialog"],body.peran-petugas [onclick^="exportPdfSelectedData"],body.peran-petugas [onclick^="skBuka"]{display:none!important}`;
+  body.peran-petugas [onclick^="exDialog"],body.peran-petugas [onclick^="exportPdfSelectedData"],body.peran-petugas [onclick^="skBuka"]{display:none!important}
+  body:not(.peran-admin) #tab-pg-btn{display:none!important}`;
   document.head.appendChild(css);
   terapkanPeran();
 })();
