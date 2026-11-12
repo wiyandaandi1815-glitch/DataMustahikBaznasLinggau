@@ -4056,14 +4056,14 @@ function dokTransfer(d){
 function dokPernyataan(d){
   const b=!d; d=d||{};
   const r=(l,v,blank)=>`<tr><td class="lbl">${l}</td><td class="sep">:</td><td>${dV(v,blank)}</td></tr>`;
-  const kosong='';
+  const L=d.hubunganRek==='Lembaga/Sekolah';   // v27: identitas pemilik rekening dari Data Perbankan (kosong → titik-titik)
   return `<div class="hal">${dKop()}
     <div class="judul">SURAT PERNYATAAN HUBUNGAN PEMILIK REKENING</div>
     <p class="isi-surat">Yang bertanda tangan di bawah ini:</p>
     <div class="sub">I. Mustahik (Penerima Bantuan)</div>
     <table class="data ind">${r('Nama',d.nama)}${r('NIK',d.nik)}${r('ID Mustahik',d.mustahikId)}${r('Alamat',b?'':[d.alamat,d.kelurahan,d.kecamatan].filter(Boolean).join(', '))}${r('No. HP / WA',d.telepon)}</table>
     <div class="sub">II. Pemilik Rekening</div>
-    <table class="data ind">${r('Nama',d.namaPemilikRek)}${r('NIK',kosong)}${r('Alamat',kosong)}${r('Hubungan dengan Mustahik',d.hubunganRek)}${r('No. HP / WA',kosong)}</table>
+    <table class="data ind">${L?r('Nama Lembaga/Sekolah',d.namaPemilikRek)+r('Penanggung Jawab',d.pjLembagaRek)+r('NIK Penanggung Jawab',d.nikPemilikRek)+r('Alamat Lembaga',d.alamatPemilikRek):r('Nama',d.namaPemilikRek)+r('NIK',d.nikPemilikRek)+r('Alamat',d.alamatPemilikRek)}${r('Hubungan dengan Mustahik',d.hubunganRek)}${r('No. HP / WA',d.telpPemilikRek)}</table>
     <p class="isi-surat">Dengan ini menyatakan dengan sebenarnya bahwa:</p>
     <ol class="poin">
       <li>Rekening <b>${dVi(d.namaBank)}</b> nomor <b>${dVi(d.noRekening)}</b> atas nama <b>${dVi(d.namaPemilikRek)}</b> adalah milik Pihak II yang merupakan <b>${dVi(d.hubunganRek)}</b> dari Pihak I.</li>
@@ -4074,7 +4074,7 @@ function dokPernyataan(d){
     </ol>
     <p class="isi-surat">Demikian surat pernyataan ini kami buat dengan sebenar-benarnya dalam keadaan sadar dan tanpa paksaan dari pihak mana pun.</p>
     <div class="tgl-ttd">${dTempatTgl(b?null:d)}</div>
-    ${dTtd([{atas:'&nbsp;',jabatan:'Pihak II / Pemilik Rekening',nama:b?'':d.namaPemilikRek},{atas:'Yang Menyatakan,',jabatan:'Pihak I / Mustahik',nama:b?'':d.nama,meterai:true}])}
+    ${dTtd([{atas:'&nbsp;',jabatan:L?'Pihak II / Penanggung Jawab '+dE(d.namaPemilikRek||'Lembaga'):'Pihak II / Pemilik Rekening',nama:b?'':(L?d.pjLembagaRek:d.namaPemilikRek)},{atas:'Yang Menyatakan,',jabatan:'Pihak I / Mustahik',nama:b?'':d.nama,meterai:true}])}
     ${dTtd([{atas:'Mengetahui,',jabatan:'Ketua RT / Lurah'},{atas:'Diverifikasi oleh,',jabatan:'Petugas BAZNAS Kota Lubuklinggau',nama:dSurveyor(b?null:d)}])}
   </div>`;
 }
@@ -4953,6 +4953,133 @@ async function lsTerapkanSurvei(no){
   const asli=window.pjLengkapi;if(typeof asli!=='function')return;
   window.pjLengkapi=function(no){const h=asli.apply(this,arguments);if(pjAktif===no)lsTerapkanSurvei(no);return h;};
   const st=document.createElement('style');st.textContent='.ls-beda{border-color:#f97316!important;background:#fff7ed!important}.ls-cat{font-size:11.5px;color:#9a3412;margin-top:3px}.ls-cat a{color:#1d4ed8}';document.head.appendChild(st);
+})();
+
+// ════════════════════════════════════════════
+// v27 — Identitas pemilik rekening bila hubungan ≠ "Diri Sendiri" (wajib & tampil hanya saat itu).
+// "Lembaga/Sekolah": nama lembaga = nama pemilik rekening + penanggung jawab. Dicetak di Surat Pernyataan Hubungan Pemilik Rekening.
+// ════════════════════════════════════════════
+const PR_ID={pjLembagaRek:'f-pjLembagaRek',nikPemilikRek:'f-nikPemilikRek',alamatPemilikRek:'f-alamatPemilikRek',telpPemilikRek:'f-telpPemilikRek'};
+function prPerlu(d){return d.metodeSalur==='Transfer Bank'&&!!d.hubunganRek&&d.hubunganRek!=='Diri Sendiri';}
+function prLembaga(d){return d.hubunganRek==='Lembaga/Sekolah';}
+function prKurang(d){
+  if(!prPerlu(d))return [];const L=prLembaga(d),k=[];
+  if(L&&!String(d.pjLembagaRek||'').trim())k.push('Penanggung jawab lembaga');
+  if(!/^\d{16}$/.test(String(d.nikPemilikRek||'').trim()))k.push(L?'NIK penanggung jawab':'NIK pemilik rekening');
+  if(!String(d.alamatPemilikRek||'').trim())k.push(L?'Alamat lembaga':'Alamat pemilik rekening');
+  if(!String(d.telpPemilikRek||'').trim())k.push(L?'No. HP penanggung jawab':'No. HP pemilik rekening');
+  return k;
+}
+function prTampil(){
+  const w=document.getElementById('pr-wrap');if(!w)return;
+  const d={metodeSalur:gv('f-metodeSalur'),hubunganRek:gv('f-hubRek')},L=prLembaga(d);
+  w.style.display=prPerlu(d)?'grid':'none';
+  document.getElementById('pr-pj-f').style.display=L?'':'none';
+  const t=(id,a,b)=>{document.getElementById(id).innerHTML=(L?b:a)+' <span class="req">*</span>';};
+  t('pr-l-nik','NIK Pemilik Rekening','NIK Penanggung Jawab');t('pr-l-alamat','Alamat Pemilik Rekening','Alamat Lembaga/Sekolah');t('pr-l-telp','No. HP/WA Pemilik Rekening','No. HP/WA Penanggung Jawab');
+}
+(function(){
+  const h=document.getElementById('f-hubRek'),g=h&&h.closest('.grid');if(!g)return;
+  const w=document.createElement('div');w.id='pr-wrap';w.className='grid g2';w.style.cssText='display:none;margin-top:10px;padding:10px;border:1px dashed #f0d58a;border-radius:8px;background:#fffdf5';
+  w.innerHTML='<div class="field" style="grid-column:1/-1;font-size:12.5px;color:#7a5a00">Identitas pemilik rekening (dicetak di Surat Pernyataan Hubungan Pemilik Rekening)</div>'+
+    '<div class="field" id="pr-pj-f"><label>Nama Penanggung Jawab Lembaga <span class="req">*</span></label><input id="f-pjLembagaRek" type="text" maxlength="100" placeholder="mis. Kepala Sekolah / Bendahara"/></div>'+
+    '<div class="field"><label id="pr-l-nik"></label><input id="f-nikPemilikRek" type="text" inputmode="numeric" maxlength="16" class="mono" placeholder="16 digit" oninput="this.value=this.value.replace(/\\D/g,\'\')"/></div>'+
+    '<div class="field"><label id="pr-l-alamat"></label><input id="f-alamatPemilikRek" type="text" maxlength="200"/></div>'+
+    '<div class="field"><label id="pr-l-telp"></label><input id="f-telpPemilikRek" type="text" inputmode="tel" maxlength="20" placeholder="08…"/></div>';
+  g.after(w);
+  const cek=window.cekNamaRek;window.cekNamaRek=function(){const r=cek.apply(this,arguments);prTampil();
+    // rekening a.n. wali/orang tua yang sudah diisi di data wali → NIK pemilik diisi otomatis (bila masih kosong)
+    const n=document.getElementById('f-nikPemilikRek'),nw=document.getElementById('f-nikWali'),mw=document.getElementById('f-namaWali');
+    if(n&&nw&&mw&&!n.value&&/^\d{16}$/.test(nw.value)&&['Orang Tua','Wali'].includes(gv('f-hubRek'))&&mw.value&&normNama(mw.value)===normNama(gv('f-namaRek')))n.value=nw.value;
+    return r;};
+  const baca=window.readForm;window.readForm=function(){const d=baca.apply(this,arguments);const p=prPerlu(d);
+    Object.keys(PR_ID).forEach(k=>{d[k]=p&&(k!=='pjLembagaRek'||prLembaga(d))?gv(PR_ID[k]).trim():'';});return d;};
+  const isi=window.fillForm;window.fillForm=function(d){const r=isi.apply(this,arguments);Object.keys(PR_ID).forEach(k=>{const el=document.getElementById(PR_ID[k]);if(el)el.value=(d&&d[k])??'';});prTampil();return r;};
+  const simpan=window.simpanData;window.simpanData=function(){
+    const d=readForm();
+    if(d.nama&&d.asnaf&&prPerlu(d)){const k=prKurang(d);
+      if(k.length){toast('Hubungan pemilik rekening "'+d.hubunganRek+'" — lengkapi: '+k.join(', ')+(k.some(x=>/^NIK/.test(x))?' (NIK 16 digit)':''),true);return;}
+      if(!/^(\+?62|0)8\d{7,12}$/.test(d.telpPemilikRek.replace(/[\s-]/g,''))){toast('No. HP/WA pemilik rekening tidak valid',true);return;}}
+    return simpan.apply(this,arguments);};
+  const kurang=window.mhKurang;if(typeof kurang==='function')window.mhKurang=function(d){return kurang.apply(this,arguments).concat(prKurang(d||{}));};
+  prTampil();
+})();
+
+// ════════════════════════════════════════════
+// v27 — Survei ulang mustahik terdaftar: WK2/WK3 menugaskan dari Daftar Mustahik. Hasilnya mengisi isian kosong
+// di form; isian yang berbeda ditandai & TIDAK menimpa — hanya WK2/WK3 yang bisa memakai nilai survei (dijaga server).
+// ════════════════════════════════════════════
+let suData={},suBoleh=false,suPetugas=[],suPimpinan=['WK2','WK3'],suStatusMuat=0,suAktif='',suBedaL=[];
+async function suMuat(){
+  suStatusMuat=1;
+  try{const r=await dbApi('survei_ulang_status');if(r&&r.ok){suData=r.data||{};suBoleh=!!r.boleh_tugaskan;suPetugas=r.petugas||[];suPimpinan=r.pimpinan||suPimpinan;suStatusMuat=2;if(typeof renderTable==='function')renderTable();}else suStatusMuat=0;}
+  catch(e){suStatusMuat=0;}
+}
+function suTombol(d){
+  if(!d||!d.mustahikId)return '';
+  if(!suStatusMuat&&getToken())setTimeout(suMuat,0);
+  const s=suData[d.mustahikId],b=(warna,teks,judul,fn)=>`<button class="btn btn-sm btn-icon" style="background:${warna};color:#fff;font-size:12px" title="${lsE(judul)}" onclick="event.stopPropagation();${fn}('${d.id}')">${teks}</button>`;
+  if(s&&s.status==='Selesai disurvei'&&!s.diterapkan_pada)return b('#ea580c','🔁'+(s.jumlah_beda?'<sup>'+s.jumlah_beda+'</sup>':''),'Hasil survei ulang siap ditinjau'+(s.jumlah_beda?' — '+s.jumlah_beda+' isian berbeda':''),'suTinjau');
+  if(s&&s.status!=='Selesai disurvei')return b('#2563eb','🔁','Survei ulang ditugaskan ke '+s.surveyor+' · jadwal '+s.jadwal+(suBoleh?' (klik untuk ubah)':''),suBoleh?'suModal':'suInfo');
+  return suBoleh?b('#94a3b8','🔁','Tugaskan survei ulang'+(s&&s.diterapkan_pada?' (terakhir ditinjau '+String(s.diterapkan_pada).slice(0,10)+')':''),'suModal'):'';
+}
+function suInfo(id){const d=dataList.find(x=>String(x.id)===String(id)),s=d&&suData[d.mustahikId];if(s)toast('Survei ulang ditugaskan ke '+s.surveyor+', jadwal '+s.jadwal+'.');}
+function suModal(id){
+  const d=dataList.find(x=>String(x.id)===String(id));if(!d)return;const s=suData[d.mustahikId]||{},buka=s.status&&s.status!=='Selesai disurvei';
+  let m=document.getElementById('su-modal');if(m)m.remove();
+  m=document.createElement('div');m.id='su-modal';m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  m.innerHTML=`<div style="background:#fff;border-radius:12px;max-width:420px;width:100%;padding:18px">
+    <h3 style="margin:0 0 4px">🔁 Survei ulang</h3><div style="font-size:12.5px;color:#64748b;margin-bottom:12px">${lsE(d.nama)} · ID ${lsE(d.mustahikId)}<br>Hasilnya tidak menimpa data: isian kosong diisi, yang berbeda ditandai untuk diputuskan WK2/WK3.</div>
+    <label style="font-size:12.5px;font-weight:600">Surveyor</label><select id="su-surveyor" style="width:100%;margin:4px 0 10px"><option value="">— pilih —</option>${suPetugas.map(p=>`<option${p===s.surveyor?' selected':''}>${lsE(p)}</option>`).join('')}</select>
+    <label style="font-size:12.5px;font-weight:600">Jadwal kunjungan</label><input id="su-jadwal" type="date" value="${lsE(buka?String(s.jadwal).slice(0,10):'')}" style="width:100%;margin:4px 0 12px">
+    <div id="su-galat" style="color:#b91c1c;font-size:12.5px;margin-bottom:8px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-outline" onclick="document.getElementById('su-modal').remove()">Batal</button><button class="btn btn-primary" id="su-kirim" onclick="suTugaskan('${d.id}')">${buka?'Ubah tugas':'Tugaskan'}</button></div></div>`;
+  document.body.appendChild(m);
+}
+async function suTugaskan(id){
+  const d=dataList.find(x=>String(x.id)===String(id)),g=document.getElementById('su-galat'),sv=document.getElementById('su-surveyor').value,j=document.getElementById('su-jadwal').value;
+  if(!sv||!j){g.textContent='Pilih surveyor dan jadwal.';return;}
+  const btn=document.getElementById('su-kirim');btn.disabled=true;g.textContent='';
+  try{const r=await dbApi('survei_ulang_tugaskan',{mustahikId:d.mustahikId,surveyor:sv,jadwal:j});
+    if(!r.ok){g.textContent=r.pesan||'Gagal.';btn.disabled=false;return;}
+    document.getElementById('su-modal').remove();toast('✓ '+r.pesan);suMuat();}
+  catch(e){g.textContent='Tidak tersambung ke server.';btn.disabled=false;}
+}
+function suPakaiSurvei(i){const b=suBedaL[i];if(!b)return;lsIsi(LS_PETA[b.k],b.survei);const el=document.getElementById(LS_PETA[b.k]);
+  const c=el&&(el.closest('.field')||el.parentNode).querySelector('.ls-cat');if(c)c.innerHTML='✓ Memakai hasil survei: <b>'+lsE(b.survei)+'</b> (data lama: '+lsE(b.pengajuan)+') <a href="#" onclick="suPakaiLama('+i+');return false">kembalikan data lama</a>';}
+function suPakaiLama(i){const b=suBedaL[i];if(!b)return;lsIsi(LS_PETA[b.k],b.pengajuan);const el=document.getElementById(LS_PETA[b.k]);
+  const c=el&&(el.closest('.field')||el.parentNode).querySelector('.ls-cat');if(c)c.innerHTML=suTeks(b,i);}
+const suTeks=(b,i)=>'⚠ Hasil survei ulang: <b>'+lsE(b.survei)+'</b> (data sekarang: <b>'+lsE(b.pengajuan)+'</b>). '+
+  (suPimpinan.includes(ssGet('baznas_jabatan')||'PETUGAS')?'<a href="#" onclick="suPakaiSurvei('+i+');return false">Pakai hasil survei</a>':'Menunggu keputusan Wakil Ketua II/III.');
+async function suTinjau(id){
+  const d=dataList.find(x=>String(x.id)===String(id)),s=d&&suData[d.mustahikId];if(!s)return;
+  editData(id);
+  let r;try{r=await dbApi('survei_hasil',{no:s.no});}catch(e){toast('Tidak tersambung ke server.',true);return;}
+  if(!r||!r.ok||!r.ada){toast((r&&r.pesan)||'Hasil survei ulang tidak ditemukan.',true);return;}
+  if(document.getElementById('edit-id').value!==String(d.id))return;
+  suAktif=s.no;const isi=r.isian||{};let terisi=0;
+  Object.keys(LS_PETA).forEach(k=>{
+    if(['nik','noKK'].includes(k)||isi[k]===undefined||isi[k]==='')return;
+    const el=document.getElementById(LS_PETA[k]);if(!el)return;
+    if(String(el.value||'').trim()===''||k==='tanggalSurvey'||k==='surveyor'){if(lsIsi(LS_PETA[k],isi[k]))terisi++;}
+  });
+  if(r.catatanSurvey){const c=document.getElementById('f-catatanSurvey');if(c&&!c.value.includes(r.catatanSurvey))c.value=(c.value?c.value+'\n':'')+'Survei ulang ('+(isi.surveyor||'')+'): '+r.catatanSurvey;}
+  suBedaL=(r.beda||[]).filter(b=>LS_PETA[b.k]);
+  suBedaL.forEach((b,i)=>lsTandai(LS_PETA[b.k],suTeks(b,i)));   // nilai lama dibiarkan — tidak menimpa
+  const boleh=suPimpinan.includes(ssGet('baznas_jabatan')||'PETUGAS');
+  const t=document.getElementById('form-title'),bn=document.createElement('div');bn.id='su-ringkas';
+  bn.style.cssText='margin:8px 0;padding:8px 10px;border-radius:8px;font-size:13px;'+(suBedaL.length?'background:#fff7ed;border:1px solid #fdba74;color:#9a3412':'background:#e6f4f1;border:1px solid #b2ddd6;color:#0a6654');
+  bn.innerHTML='🔁 Survei ulang '+lsE(isi.tanggalSurvey||'')+' oleh <b>'+lsE(isi.surveyor||'')+'</b> — rekomendasi <b>'+lsE(r.rekomendasi||'—')+'</b>; '+terisi+' isian kosong diisi otomatis.'+
+    (r.nik_cocok==='Tidak'?' <b>NIK/KK dikoreksi surveyor — periksa dokumen.</b>':'')+
+    (suBedaL.length?'<br><b>'+suBedaL.length+' isian berbeda dari data sekarang</b> (ditandai oranye, data lama tetap) — '+(boleh?'pilih "Pakai hasil survei" bila disetujui, lalu <b>Simpan</b>.':'<b>keputusan oleh Wakil Ketua II/III</b>. Anda tetap bisa menyimpan isian yang kosong.'):'')+
+    '<br><span style="font-size:11.5px">Setelah disimpan, hasil survei ulang ini ditandai sudah ditinjau.</span>';
+  if(t)t.after(bn);
+}
+(function(){
+  const wa=window.mhWaTombol;if(typeof wa==='function')window.mhWaTombol=function(d){return wa.apply(this,arguments)+suTombol(d);};
+  const baca=window.readForm;window.readForm=function(){const d=baca.apply(this,arguments);if(suAktif)d.survei_ulang=suAktif;else delete d.survei_ulang;return d;};
+  const reset=window.resetForm;window.resetForm=function(){suAktif='';suBedaL=[];const b=document.getElementById('su-ringkas');if(b)b.remove();if(typeof lsBersihkan==='function')lsBersihkan();return reset.apply(this,arguments);};
+  const simpan=window.simpanData;window.simpanData=function(){const ada=!!suAktif,h=simpan.apply(this,arguments);if(ada&&!suAktif)setTimeout(suMuat,4000);return h;};
 })();
 
 document.querySelectorAll('input[name=dok-jenis]').forEach(r=>r.addEventListener('change',ndOpsiToggle));
@@ -6670,7 +6797,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='26 · 12 Nov 2026';
+const APP_VERSI='27 · 12 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
