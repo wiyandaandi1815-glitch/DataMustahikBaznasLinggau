@@ -1287,6 +1287,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
       <label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="radio" name="dok-sumber" value="kosong" style="width:auto"> Blangko kosong <span id="dok-jml-wrap">&nbsp;<input id="dok-jml" type="number" min="1" max="50" value="1" style="width:70px"/> lembar</span></label>
       <div style="font-size:12px;color:var(--g500);margin-top:12px">Setiap mustahik dicetak di halaman terpisah. Di jendela cetak pilih kertas <strong>A4</strong>, matikan "Headers and footers", atau pilih <strong>Save as PDF</strong>.</div>
     </div>
+      <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;cursor:pointer;background:#e6f4f1;border:1px solid #b2ddd6;border-radius:8px;padding:8px"><input type="checkbox" id="dok-ttd" checked style="width:auto;margin-top:2px"> <span><b>Sertakan TTD digital dari survei</b><br><span style="font-size:12px;color:var(--g500)">TTD mustahik &amp; surveyor dari survei terakhir tercetak di Formulir, Surat Pernyataan Mustahik, Persetujuan Publikasi, Pernyataan Rekening (Pihak I) &amp; BAST (Pihak Kedua). Tanpa survei → kolom kosong untuk TTD basah.</span></span></label>
       <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;cursor:pointer;background:#fff8e6;border:1px solid #f0d78a;border-radius:8px;padding:8px"><input type="checkbox" id="dok-lamp" style="width:auto;margin-top:2px"> <span><b>Lampirkan berkas unggahan</b> setelah Formulir Pendaftaran<br><span style="font-size:12px;color:var(--g500)">4 berkas per halaman A4 (KK ½ halaman). Hanya untuk 1 mustahik per cetak; berkas PDF hanya didaftar namanya.</span></span></label>
     <div class="modal-ftr"><button class="btn btn-outline" onclick="closeModal('modal-dok')">Batal</button><button class="btn btn-primary" onclick="cetakDokumen()">Cetak</button></div>
   </div>
@@ -3957,6 +3958,15 @@ const DOK_ASNAF=['Fakir','Miskin','Amil','Muallaf','Riqab','Gharim','Fisabililla
 const DOK_BANTUAN=['Zakat Konsumtif','Zakat Produktif','Infak/Sedekah','Bantuan Pendidikan','Bantuan Kesehatan','Bantuan Rumah Layak Huni','Bantuan Modal Usaha','Bantuan Dakwah'];
 const DOK_NAMA={formulir:'Formulir Pendaftaran Mustahik',transfer:'Surat Permohonan Transfer',pernyataan:'Surat Pernyataan Hubungan Pemilik Rekening',sanggup:'Surat Pernyataan Mustahik',serah:'Berita Acara Serah Terima Bantuan',publikasi:'Surat Persetujuan Publikasi Foto & Cerita'};
 let _dokTarget=null; // id mustahik bila dibuka dari Detail
+// v29: TTD digital dari survei (mustahikId → {mustahik, surveyor, nama_surveyor}); kosong → kolom untuk TTD basah
+let _dokTtd={};
+function dTtdGbr(d,siapa){const t=d&&d.mustahikId&&_dokTtd[d.mustahikId];return (t&&t[siapa])||'';}
+async function dokMuatTtd(list){
+  _dokTtd={};const c=document.getElementById('dok-ttd');if(c&&!c.checked)return 0;
+  const mids=[...new Set(list.filter(d=>d&&d.mustahikId).map(d=>d.mustahikId))].slice(0,30);if(!mids.length)return 0;
+  try{const r=await dbApi('survei_ttd',{mustahikIds:mids});if(r&&r.ok)_dokTtd=r.data||{};}catch(e){}
+  return Object.keys(_dokTtd).length;
+}
 
 function dE(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function dV(v,blank){v=(v===undefined||v===null)?'':String(v).trim();return v?dE(v):`<span class="isi">${blank||'&nbsp;'}</span>`;}
@@ -3986,13 +3996,13 @@ function dKop(){
 function dTtd(kolom){
   return `<table class="ttd${kolom.some(k=>k.meterai)?' m':''}"><tr>${kolom.map(k=>k.spacer?'<td></td>':`<td>
     <div>${k.atas||'&nbsp;'}</div><div class="jab">${k.jabatan}</div>
-    <div class="ruang"></div>
+    <div class="ruang">${k.img?`<img class="ttd-img" src="${k.img}" alt="Tanda tangan">`:''}</div>
     <div class="nama">${k.nama?dE(k.nama):'(.................................................)'}</div>
     ${k.bawah?`<div class="kecil">${k.bawah}</div>`:''}</td>`).join('')}</tr></table>`;
 }
 function dDua(kiri,kanan){return `<table class="dua"><tr><td><table class="data">${kiri}</table></td><td><table class="data">${kanan}</table></td></tr></table>`;}
 function dTempatTgl(d){return 'Lubuklinggau, '+(d&&d.tanggalSurvey?dE(dTgl(d.tanggalSurvey)):'..............................');}
-function dSurveyor(d){return (d&&d.surveyor)||'';}
+function dSurveyor(d){const t=d&&d.mustahikId&&_dokTtd[d.mustahikId];return (t&&t.surveyor&&t.nama_surveyor)||(d&&d.surveyor)||'';}
 
 // ── 1. Formulir Pendaftaran Mustahik ──
 function dokFormulir(d){
@@ -4025,7 +4035,7 @@ function dokFormulir(d){
     ${dDua(r('Bank / No. Rekening',b?'':[d.namaBank,d.noRekening].filter(Boolean).join(' / ')),r('Atas Nama / Hubungan',b?'':[d.namaPemilikRek,d.hubunganRek].filter(Boolean).join(' / ')))}
     <div class="pernyataan">Dengan ini saya menyatakan bahwa data yang saya berikan di atas adalah <b>benar</b> dan dapat dipertanggungjawabkan. Saya bersedia data ini diverifikasi oleh petugas BAZNAS Kota Lubuklinggau dan apabila di kemudian hari terbukti tidak benar, saya bersedia menerima konsekuensi sesuai ketentuan yang berlaku. Data bantuan saya dapat dilihat oleh anggota keluarga dalam Kartu Keluarga yang sama melalui Cek Status Keluarga.</div>
     <div class="tgl-ttd">${dTempatTgl(b?null:d)}</div>
-    ${dTtd([{atas:'Mengetahui,',jabatan:'Ketua RT / Lurah'},{atas:'&nbsp;',jabatan:'Petugas Survei',nama:dSurveyor(b?null:d)},{atas:'&nbsp;',jabatan:'Pemohon',nama:b?'':d.nama}])}
+    ${dTtd([{atas:'Mengetahui,',jabatan:'Ketua RT / Lurah'},{atas:'&nbsp;',jabatan:'Petugas Survei',nama:dSurveyor(b?null:d),img:dTtdGbr(d,'surveyor')},{atas:'&nbsp;',jabatan:'Pemohon',nama:b?'':d.nama,img:dTtdGbr(d,'mustahik')}])}
     <div class="c" style="margin-top:2px">Menyetujui,</div>
     ${dTtd([{jabatan:DOK_PIMPINAN.waka2.jabatan+' BAZNAS Kota Lubuklinggau',nama:DOK_PIMPINAN.waka2.nama},{jabatan:DOK_PIMPINAN.ketua.jabatan+' BAZNAS Kota Lubuklinggau',nama:DOK_PIMPINAN.ketua.nama}])}
   </div>`;
@@ -4074,7 +4084,7 @@ function dokPernyataan(d){
     </ol>
     <p class="isi-surat">Demikian surat pernyataan ini kami buat dengan sebenar-benarnya dalam keadaan sadar dan tanpa paksaan dari pihak mana pun.</p>
     <div class="tgl-ttd">${dTempatTgl(b?null:d)}</div>
-    ${dTtd([{atas:'&nbsp;',jabatan:L?'Pihak II / Penanggung Jawab '+dE(d.namaPemilikRek||'Lembaga'):'Pihak II / Pemilik Rekening',nama:b?'':(L?d.pjLembagaRek:d.namaPemilikRek)},{atas:'Yang Menyatakan,',jabatan:'Pihak I / Mustahik',nama:b?'':d.nama,meterai:true}])}
+    ${dTtd([{atas:'&nbsp;',jabatan:L?'Pihak II / Penanggung Jawab '+dE(d.namaPemilikRek||'Lembaga'):'Pihak II / Pemilik Rekening',nama:b?'':(L?d.pjLembagaRek:d.namaPemilikRek)},{atas:'Yang Menyatakan,',jabatan:'Pihak I / Mustahik',nama:b?'':d.nama,meterai:true,img:dTtdGbr(d,'mustahik')}])}
     ${dTtd([{atas:'Mengetahui,',jabatan:'Ketua RT / Lurah'},{atas:'Diverifikasi oleh,',jabatan:'Petugas BAZNAS Kota Lubuklinggau',nama:dSurveyor(b?null:d)}])}
   </div>`;
 }
@@ -4100,7 +4110,7 @@ function dokSanggup(d){
     </ol>
     <p class="isi-surat">Demikian surat pernyataan ini saya buat dengan sebenar-benarnya dalam keadaan sadar dan tanpa paksaan dari pihak mana pun.</p>
     <div class="tgl-ttd">${dTempatTgl(b?null:d)}</div>
-    ${dTtd([{atas:'Diverifikasi oleh,',jabatan:'Petugas BAZNAS Kota Lubuklinggau',nama:dSurveyor(b?null:d)},{atas:'Yang Menyatakan,',jabatan:'Mustahik',nama:b?'':d.nama,meterai:true}])}
+    ${dTtd([{atas:'Diverifikasi oleh,',jabatan:'Petugas BAZNAS Kota Lubuklinggau',nama:dSurveyor(b?null:d),img:dTtdGbr(d,'surveyor')},{atas:'Yang Menyatakan,',jabatan:'Mustahik',nama:b?'':d.nama,meterai:true,img:dTtdGbr(d,'mustahik')}])}
     ${dTtd([{spacer:true},{atas:'Mengetahui,',jabatan:'Ketua RT / Lurah'}])}
   </div>`;
 }
@@ -4123,7 +4133,7 @@ function dokPublikasi(d){
     </ol>
     <p class="isi-surat">Demikian surat persetujuan ini saya buat dalam keadaan sadar dan tanpa paksaan dari pihak mana pun.</p>
     <div class="tgl-ttd">${dTempatTgl(b?null:d)}</div>
-    ${dTtd([{atas:'Petugas,',jabatan:'BAZNAS Kota Lubuklinggau',nama:dSurveyor(b?null:d)},{atas:'Yang Memberi Persetujuan,',jabatan:'Mustahik / Wali',nama:b?'':d.nama}])}
+    ${dTtd([{atas:'Petugas,',jabatan:'BAZNAS Kota Lubuklinggau',nama:dSurveyor(b?null:d),img:dTtdGbr(d,'surveyor')},{atas:'Yang Memberi Persetujuan,',jabatan:'Mustahik / Wali',nama:b?'':d.nama,img:dTtdGbr(d,'mustahik')}])}
   </div>`;
 }
 
@@ -4150,7 +4160,7 @@ function dokSerah(d,rpd){
       ${r('Sumber Dana',ks('Zakat')+ks('Infak/Sedekah')+ks('DSKL'))}${r('Bentuk Penyerahan',ks('Tunai')+ks('Transfer')+ks('Barang'))}</table>
     ${tabelRpd}
     <p class="isi-surat" style="margin-top:2mm">PIHAK KEDUA menyatakan bantuan telah diterima <b>dalam keadaan baik dan lengkap</b>, akan digunakan sesuai peruntukannya${item.length?' dan Rencana Penggunaan Dana di atas':''}, serta bersedia dipantau oleh BAZNAS Kota Lubuklinggau.</p>
-    ${dTtd([{atas:'PIHAK PERTAMA',jabatan:'Yang Menyerahkan'},{atas:'PIHAK KEDUA',jabatan:'Yang Menerima',nama:b?'':d.nama}])}
+    ${dTtd([{atas:'PIHAK PERTAMA',jabatan:'Yang Menyerahkan'},{atas:'PIHAK KEDUA',jabatan:'Yang Menerima',nama:b?'':d.nama,img:dTtdGbr(d,'mustahik')}])}
     ${dTtd([{atas:'Saksi,',jabatan:'Ketua RT / Pendamping'},{atas:'Mengetahui,',jabatan:DOK_PIMPINAN.waka2.jabatan+' BAZNAS Kota Lubuklinggau',nama:DOK_PIMPINAN.waka2.nama}])}
     <div style="border-top:1.5px dashed #000;margin:4mm 0 2mm;position:relative"><span style="position:absolute;left:0;top:-3.2mm;background:#fff;font-size:9pt">✂ gunting di sini — arsip BAZNAS (Buku Bukti Kas)</span></div>
     <div style="border:1px solid #000;padding:2.5mm 4mm">
@@ -4218,7 +4228,8 @@ const DOK_CSS=`.nk{display:inline-block;width:22mm;border-bottom:1px solid #000}
     table.ttd{width:100%;border-collapse:collapse;margin-top:4px;page-break-inside:avoid;table-layout:fixed}
     table.ttd td{text-align:center;vertical-align:top;padding:0 4px;font-size:10pt}
     table.ttd .jab{font-weight:bold}
-    table.ttd .ruang{height:16mm}
+    table.ttd .ruang{height:16mm;display:flex;align-items:center;justify-content:center}
+    table.ttd .ruang img.ttd-img{max-height:100%;max-width:85%;object-fit:contain}
     table.ttd.m .ruang{height:24mm}
     table.ttd .nama{font-weight:bold;text-decoration:underline}
     table.ttd .kecil{font-size:9pt}
@@ -4275,9 +4286,19 @@ function cetakDokumen(){
   if(lamp&&!list[0].mustahikId){toast('Mustahik ini belum punya ID Mustahik dari server — berkas belum bisa dilampirkan.',true);return;}
   const win=window.open('','_blank','width=900,height=750,scrollbars=yes');
   if(!win){toast('Popup diblokir browser. Izinkan popup untuk halaman ini.',true);return;}
+  if(sumber!=='kosong'&&['formulir','sanggup','publikasi','pernyataan','serah'].includes(jenis)){
+    closeModal('modal-dok');win.document.write('<p style="font-family:sans-serif;padding:20px">⏳ Mengambil tanda tangan dari survei…</p>');
+    dokMuatTtd(list).then(n=>{const sisa=list.filter(d=>d&&d.mustahikId&&!_dokTtd[d.mustahikId]).length;dokLanjut(win,jenis,list,lamp);
+      if(document.getElementById('dok-ttd')&&document.getElementById('dok-ttd').checked)toast('✍ TTD digital dari survei: '+n+' mustahik'+(sisa?' · '+sisa+' tanpa survei bertanda tangan (kolom kosong untuk TTD basah)':''));});
+    return;
+  }
+  _dokTtd={};dokLanjut(win,jenis,list,lamp);
+}
+function dokLanjut(win,jenis,list,lamp){
   if(lamp){dokCetakLampiran(win,list[0]);closeModal('modal-dok');return;}
+  const sumber=list[0]?'isi':'kosong';
   if(jenis==='serah'&&sumber!=='kosong'){dokCetakSerah(win,list);closeModal('modal-dok');return;}
-  win.document.write(dokDokumenHtml(jenis,list));
+  win.document.open();win.document.write(dokDokumenHtml(jenis,list));
   win.document.close();
   win.onload=()=>setTimeout(()=>{win.focus();win.print();},400);
   closeModal('modal-dok');
@@ -6834,7 +6855,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='28 · 12 Nov 2026';
+const APP_VERSI='29 · 12 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
