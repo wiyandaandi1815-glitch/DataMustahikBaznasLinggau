@@ -220,7 +220,7 @@ async function masuk(){
   $('btn-masuk').disabled=true;
   try{
     token=kode;const r=await api('cek');
-    if(!r.ok){token='';g.textContent=r.pesan||'Kode akses tidak valid.';g.style.display='block';return;}
+    if(!r.ok||r.peran!=='surveyor'){token='';g.textContent=r.peran==='penggalang'?'Ini kode akses penggalang — masuk lewat halaman penggalang.html.':r.ok?'Kode ini tidak bisa dipakai di halaman survei.':(r.pesan||'Kode akses tidak valid.');g.style.display='block';return;}
     nama=r.nama;jabatan=r.jabatan||'PETUGAS';
     ss.set('baznas_token',token);ss.set('baznas_surveyor',nama);ss.set('baznas_jabatan',jabatan);
     $('in-kode').value='';await mulai();
