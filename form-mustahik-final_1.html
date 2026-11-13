@@ -3938,6 +3938,10 @@ function pjLengkapi(no){
     lembagaPendidikan:p.lembagaPendidikan,jenjangPendidikan:p.jenjangPendidikan,prodiKelas:p.prodiKelas,semester:p.semester,kelas:p.kelas,
     statusVerifikasi:'belum_verifikasi',isActive:'true',statusKuliah:p.statusKuliah,
     ...(p.nik_pengisi&&(['Ayah','Ibu','Wali lain'].includes(p.hubungan_pengisi)||(kkUsia(p.tanggalLahir)>=0&&kkUsia(p.tanggalLahir)<18))?{namaWali:p.nama_pengisi,nikWali:p.nik_pengisi,hubunganWali:['Ayah','Ibu','Wali lain'].includes(p.hubungan_pengisi)?p.hubungan_pengisi:'Wali lain'}:{}),
+    ...['agama','kodePos','penghasilan_kk','penghasilan_lain','bansos','utang','anak_sekolah','lansia_sakit','motor','mobil','tanah_lain','ternak','emas_tabungan','elektronik',
+      'statusJkn','aksesFaskes','kondisiKesehatan','anggotaSakit','frekuensiSakit','pengeluaranKesehatan','penyakitDiderita','riwayatMedis','status_rumah','listrik','air','mck',
+      'metodeSalur','namaBank','noRekening','namaPemilikRek','hubunganRek'].reduce((o,k)=>{if(p[k])o[k]=p[k];return o;},{}),   // v37: data tambahan dari pemohon
+    anggotaKeluarga:(()=>{try{return typeof p.anggotaKeluarga==='string'&&p.anggotaKeluarga?JSON.parse(p.anggotaKeluarga):(p.anggotaKeluarga||[]);}catch(e){return [];}})(),
     catatanSurvey:'Dari pengajuan mandiri '+p.no_pengajuan+(p.diisi_oleh==='Diwakilkan'?' (diisikan '+p.nama_pengisi+', '+p.hubungan_pengisi+')':'')+'. Alasan: '+p.alasan});
   tampilUser();
   pjAktif=no;
@@ -7177,7 +7181,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='36 · 13 Nov 2026';
+const APP_VERSI='37 · 13 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
