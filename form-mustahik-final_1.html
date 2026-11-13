@@ -1287,7 +1287,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
       <label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="radio" name="dok-sumber" value="kosong" style="width:auto"> Blangko kosong <span id="dok-jml-wrap">&nbsp;<input id="dok-jml" type="number" min="1" max="50" value="1" style="width:70px"/> lembar</span></label>
       <div style="font-size:12px;color:var(--g500);margin-top:12px">Setiap mustahik dicetak di halaman terpisah. Di jendela cetak pilih kertas <strong>A4</strong>, matikan "Headers and footers", atau pilih <strong>Save as PDF</strong>.</div>
     </div>
-      <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;cursor:pointer;background:#e6f4f1;border:1px solid #b2ddd6;border-radius:8px;padding:8px"><input type="checkbox" id="dok-ttd" checked style="width:auto;margin-top:2px"> <span><b>Sertakan TTD digital dari survei</b><br><span style="font-size:12px;color:var(--g500)">TTD mustahik &amp; surveyor dari survei terakhir tercetak di Formulir, Surat Pernyataan Mustahik, Persetujuan Publikasi, Pernyataan Rekening (Pihak I) &amp; BAST (Pihak Kedua). Tanpa survei → kolom kosong untuk TTD basah.</span></span></label>
+      <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;cursor:pointer;background:#e6f4f1;border:1px solid #b2ddd6;border-radius:8px;padding:8px"><input type="checkbox" id="dok-ttd" checked style="width:auto;margin-top:2px"> <span><b>Sertakan TTD digital &amp; foto dari survei</b><br><span style="font-size:12px;color:var(--g500)">TTD mustahik &amp; surveyor dari survei terakhir tercetak di Formulir, Surat Pernyataan Mustahik, Persetujuan Publikasi, Pernyataan Rekening (Pihak I) &amp; BAST (Pihak Kedua). Tanpa survei → kolom kosong untuk TTD basah.</span></span></label>
       <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;cursor:pointer;background:#fff8e6;border:1px solid #f0d78a;border-radius:8px;padding:8px"><input type="checkbox" id="dok-lamp" style="width:auto;margin-top:2px"> <span><b>Lampirkan berkas unggahan</b> setelah Formulir Pendaftaran<br><span style="font-size:12px;color:var(--g500)">4 berkas per halaman A4 (KK ½ halaman). Hanya untuk 1 mustahik per cetak; berkas PDF hanya didaftar namanya.</span></span></label>
     <div class="modal-ftr"><button class="btn btn-outline" onclick="closeModal('modal-dok')">Batal</button><button class="btn btn-primary" onclick="cetakDokumen()">Cetak</button></div>
   </div>
@@ -3964,7 +3964,7 @@ function dTtdGbr(d,siapa){const t=d&&d.mustahikId&&_dokTtd[d.mustahikId];return 
 async function dokMuatTtd(list){
   _dokTtd={};const c=document.getElementById('dok-ttd');if(c&&!c.checked)return 0;
   const mids=[...new Set(list.filter(d=>d&&d.mustahikId).map(d=>d.mustahikId))].slice(0,30);if(!mids.length)return 0;
-  try{const r=await dbApi('survei_ttd',{mustahikIds:mids});if(r&&r.ok)_dokTtd=r.data||{};}catch(e){}
+  try{const r=await dbApi('survei_ttd',{mustahikIds:mids,foto:!!window._dokFoto});if(r&&r.ok)_dokTtd=r.data||{};}catch(e){}
   return Object.keys(_dokTtd).length;
 }
 
@@ -4341,7 +4341,7 @@ function cetakDokumen(){
   if(!win){toast('Popup diblokir browser. Izinkan popup untuk halaman ini.',true);return;}
   if(sumber!=='kosong'&&['formulir','sanggup','publikasi','pernyataan','serah'].includes(jenis)){
     closeModal('modal-dok');win.document.write('<p style="font-family:sans-serif;padding:20px">⏳ Mengambil tanda tangan dari survei…</p>');
-    dokMuatTtd(list).then(n=>{const sisa=list.filter(d=>d&&d.mustahikId&&!_dokTtd[d.mustahikId]).length;dokLanjut(win,jenis,list,lamp);
+    window._dokFoto=jenis==='formulir';dokMuatTtd(list).then(n=>{const sisa=list.filter(d=>d&&d.mustahikId&&!_dokTtd[d.mustahikId]).length;dokLanjut(win,jenis,list,lamp);
       if(document.getElementById('dok-ttd')&&document.getElementById('dok-ttd').checked)toast('✍ TTD digital dari survei: '+n+' mustahik'+(sisa?' · '+sisa+' tanpa survei bertanda tangan (kolom kosong untuk TTD basah)':''));});
     return;
   }
@@ -5426,6 +5426,20 @@ function sfRtKK(){try{if(typeof KK_RT_IDS==='undefined')return;}catch(e){return;
 document.addEventListener('DOMContentLoaded',sfRtKK);setTimeout(sfRtKK,0);
 sfSusun();document.addEventListener('DOMContentLoaded',sfSusun);
 document.addEventListener('change',e=>{if(e.target&&['f-tglLahir','f-katBantuan'].includes(e.target.id))setTimeout(sfPetunjukC,50);});setTimeout(sfPetunjukC,300);
+
+// v35 — Foto survei tampil di Detail Daftar Mustahik & tercetak di Formulir (Cetak Formulir, Surat & Nota Dinas A4)
+const fsE=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fsGrid=(f,w)=>`<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">${f.map(x=>`<figure style="margin:0;break-inside:avoid"><img src="${x.src}" style="width:100%;max-height:${w};object-fit:contain;border:1px solid #999"><figcaption style="font-size:9pt;text-align:center">${fsE(x.ket)}</figcaption></figure>`).join('')}</div>`;
+(function(){
+  const f0=dokFormulir;dokFormulir=function(d){let h=f0.apply(this,arguments);const t=d&&d.mustahikId&&_dokTtd[d.mustahikId];
+    if(t&&t.foto&&t.foto.length)h+=`<div class="hal">${dKop()}<div class="judul">DOKUMENTASI FOTO SURVEI</div><div style="text-align:center;font-size:10pt;margin-bottom:6px">${fsE(d.nama)} · ID ${fsE(d.mustahikId)} · survei ${fsE(dTgl(t.tanggal))} oleh ${fsE(t.nama_surveyor)}</div>${fsGrid(t.foto,'95mm')}</div>`;
+    return h;};
+  const ld=lihatDetail;lihatDetail=function(id){const r=ld.apply(this,arguments);const d=dataList.find(x=>x.id==id);const b=document.getElementById('modal-detail-body');
+    if(d&&d.mustahikId&&b){const w=document.createElement('div');w.id='fs-detail';w.style.marginTop='12px';w.innerHTML='<b>📷 Foto Survei</b><div class="hint">Memuat…</div>';b.appendChild(w);
+      dbApi('survei_ttd',{mustahikIds:[d.mustahikId],foto:true}).then(x=>{const t=x&&x.ok&&x.data&&x.data[d.mustahikId];if(!document.getElementById('fs-detail'))return;
+        w.innerHTML='<b>📷 Foto Survei</b>'+(t&&t.foto&&t.foto.length?'<div class="hint">Survei '+fsE(t.tanggal)+' oleh '+fsE(t.nama_surveyor)+'</div>'+fsGrid(t.foto,'260px'):'<div class="hint">Belum ada foto survei untuk mustahik ini.</div>');}).catch(()=>{w.innerHTML='<b>📷 Foto Survei</b><div class="hint">Gagal memuat (perlu internet).</div>';});}
+    return r;};
+})();
 
 document.querySelectorAll('input[name=dok-jenis]').forEach(r=>r.addEventListener('change',ndOpsiToggle));
 
@@ -7142,7 +7156,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='34 · 13 Nov 2026';
+const APP_VERSI='35 · 13 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
