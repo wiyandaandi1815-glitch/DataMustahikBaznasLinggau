@@ -5229,6 +5229,94 @@ function pjTinggalKunjungan(p){return pjSiap(p)&&!pjSudahSurvei(p);}
   const st=document.createElement('style');st.textContent='table.pj-tbl tr.pj-survei td{background:#eefaf6!important}';document.head.appendChild(st);
 })();
 
+// ════════════════════════════════════════════
+// v33 — MASTER UPZ DISATUKAN: tombol 🏢 Master UPZ (tab Muzaki) & Data UPZ (tab Penggalang) memakai satu data & satu formulir.
+// Kode otomatis UPZ-NNN. UPZ lama berkode manual (MasterUPZ) tetap terbaca, ditandai "data lama, lengkapi".
+// ════════════════════════════════════════════
+let upzG=null;
+async function upzGMuat(){
+  const r=await dbApi('upz_daftar');
+  if(!r.ok)throw new Error(r.pesan||'Gagal memuat Data UPZ');
+  upzG=r;return r;
+}
+function upzGBaris(u,boleh){
+  const amil=u.lama?'—':`Zakat: BAZNAS ${pgE(u.amil_zakat_baznas)}% · UPZ ${pgE(u.amil_zakat_upz)}%${u.amil_infak_baznas||u.amil_infak_upz?`<br>Infak: BAZNAS ${pgE(u.amil_infak_baznas||'—')}% · UPZ ${pgE(u.amil_infak_upz||'—')}%`:''}`;
+  const kat=u.kategori||(u.kategori_lama?u.kategori_lama+' <i>(kategori lama)</i>':'');
+  const tombol=!boleh?'':u.lama?`<button class="btn btn-primary btn-sm" onclick="upzGForm('${pgE(u.kode)}')">Lengkapi</button>`:`<button class="btn btn-outline btn-sm" onclick="upzGForm('${pgE(u.kode)}')">Ubah</button>`;
+  return `<tr${u.lama?' style="background:#fff8e6"':''}>
+    <td class="mono" style="font-weight:700">${pgE(u.kode)}${u.lama?'<div><span class="badge b-gold" style="font-size:10.5px">data lama, lengkapi</span></div>':''}</td>
+    <td style="font-weight:700">${pgE(u.nama)}<div style="font-size:11px;color:var(--g500);font-weight:400">${kat}</div></td>
+    <td>${pgBadge(u.status)}</td>
+    <td>${u.sk_nomor?pgE(u.sk_nomor)+'<div style="font-size:11px;color:var(--g500)">'+pgTgl(u.sk_tanggal)+(u.sk_berlaku_sampai?' s.d. '+pgTgl(u.sk_berlaku_sampai):'')+'</div>':'—'}</td>
+    <td style="font-size:12px">${amil}</td>
+    <td>${pgE(u.kontak_nama)}<div style="font-size:11px;color:var(--g500)">${pgE(u.kontak_telepon)}</div></td>
+    <td>${tombol}</td></tr>`;
+}
+function upzGTabel(list,boleh){
+  const lama=list.filter(u=>u.lama).length;
+  return `${lama?`<div style="background:#fff8e6;border:1px solid #f0d48a;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12.5px">⚠ ${lama} UPZ lama berkode manual belum lengkap (SK, pengurus, hak amil). ${boleh?'Klik <b>Lengkapi</b> — kode lama tetap dipakai agar data muzaki & setoran tidak berubah.':'Hanya Wakil Ketua III yang dapat melengkapi.'}</div>`:''}
+  <div style="overflow-x:auto"><table class="pj-tbl" style="width:100%"><thead><tr><th>Kode</th><th>Nama / Kategori</th><th>Status</th><th>SK</th><th>Hak Amil</th><th>Kontak</th><th></th></tr></thead><tbody>
+  ${list.length?list.map(u=>upzGBaris(u,boleh)).join(''):'<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--g500)">Data UPZ masih kosong.</td></tr>'}</tbody></table></div>`;
+}
+// ── Tab Muzaki: 🏢 Master UPZ ──
+async function upzGMasterBuka(){
+  const b=document.getElementById('upz-body');
+  b.innerHTML='<div style="padding:16px;color:var(--g500)">Memuat Data UPZ…</div>';const md=b.closest('.modal');if(md)md.style.maxWidth='1000px';openModal('modal-upz');
+  try{await upzGMuat();}catch(e){b.innerHTML='<div style="padding:16px;color:var(--red)">'+pgE(e.message||'Gagal terhubung ke server.')+'</div>';return;}
+  upzGIsiMaster();
+}
+// tab Muzaki memakai Master UPZ gabungan (blok muzaki v8 dideklarasikan sesudah blok ini → ditimpa saat jalan + saat DOM siap)
+mzUpzBuka=upzGMasterBuka;document.addEventListener('DOMContentLoaded',()=>{mzUpzBuka=upzGMasterBuka;});
+function upzGIsiMaster(){
+  const b=document.getElementById('upz-body');if(!b||!upzG)return;
+  b.innerHTML=`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+    ${upzG.boleh_ubah?'<button class="btn btn-primary" type="button" onclick="upzGForm()">+ Tambah UPZ</button>':''}
+    <span class="hint">Satu data dengan <b>Data UPZ</b> di tab Penggalang &amp; pendaftaran online (penggalang.html). Kode dibuat otomatis (UPZ-001, UPZ-002, …).${upzG.boleh_ubah?'':' Menambah/mengubah UPZ khusus Wakil Ketua III.'}</span></div>`
+    +upzGTabel(upzG.data,upzG.boleh_ubah);
+}
+// ── Tab Penggalang: tabel Data UPZ memakai baris & tombol yang sama ──
+const _pgRenderV33=pgRender;
+pgRender=function(){
+  _pgRenderV33();
+  if(!pgData)return;
+  const t=document.getElementById('pg-upz');if(!t)return;
+  t.innerHTML=pgData.upz.length?pgData.upz.map(u=>upzGBaris(u,true)).join(''):'<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--g500)">Data UPZ masih kosong.</td></tr>';
+  const tb=t.closest('.card');
+  if(tb&&!document.getElementById('pg-upz-tambah')){const d=document.createElement('div');d.id='pg-upz-tambah';d.style.cssText='margin-bottom:8px';d.innerHTML='<button class="btn btn-primary btn-sm" onclick="upzGForm()">+ Tambah UPZ</button> <span style="font-size:12px;color:var(--g500)">Kode otomatis UPZ-NNN · baris kuning = data lama dari Master UPZ, perlu dilengkapi.</span>';tb.parentNode.insertBefore(d,tb);}
+};
+pgUpz=function(kode){upzGForm(kode);};
+// ── Formulir tunggal (tambah / ubah / lengkapi) ──
+function upzGSumber(){return (upzG&&upzG.data)||(pgData&&pgData.upz)||[];}
+function upzGOpsi(){const s=upzG||{status:pgData&&pgData.status_upz,amil_default:pgData&&pgData.amil_default};return {status:s.status||s.status_upz,amil:s.amil_default};}
+function upzGForm(kode){
+  const u=kode?upzGSumber().find(y=>y.kode===kode):null;if(kode&&!u)return;
+  const o=upzGOpsi(),lama=!!(u&&u.lama);
+  const judul=!u?'Tambah UPZ (kode otomatis)':lama?'Lengkapi UPZ lama '+kode+' — '+u.nama:'Ubah '+kode+' — '+u.nama;
+  const info=!u?'Kode UPZ dibuat otomatis oleh sistem (UPZ-NNN) saat disimpan.'
+    :lama?`Data lama dari Master UPZ (kode <b>${pgE(kode)}</b> tetap dipakai).${u.kategori_lama&&!u.kategori?' Kategori lama: <b>'+pgE(u.kategori_lama)+'</b> — pilih salah satu dari 13 kategori.':''} Lengkapi SK, pengurus, rekening, dan hak amil.`
+    :'Status <b>Nonaktif</b> otomatis mencabut kode akses penggalang UPZ ini.';
+  pgModal(judul,`<div id="pg-uf-galat" style="display:none;background:#fdecea;border:1px solid #f5c6c0;color:#c0392b;border-radius:8px;padding:8px 12px;margin-bottom:10px"></div>
+    <div style="font-size:12.5px;background:#eef7f4;border-radius:8px;padding:8px 12px;margin-bottom:10px">${info}</div>`
+    +UPZF.html(u?UPZF.dariUpz(u):{status:'Menunggu SK'},{jenis:'UPZ',mode:'admin',status:o.status,amilDefault:o.amil})
+    +`<div style="font-size:12px;color:var(--g500);margin-top:8px">Isian sama dengan formulir pendaftaran online.</div>`,
+    `<button class="btn btn-outline" onclick="closeModal('modal-pg')">Batal</button><button class="btn btn-primary" id="pg-btn-upz" onclick="upzGSimpan(${kode?`'${pgE(kode)}'`:'null'},${lama})">${lama?'Simpan & Lengkapi':'Simpan'}</button>`);
+  UPZF.pasang();
+}
+async function upzGSimpan(kode,lama){
+  const o=UPZF.baca(),k=UPZF.periksa(o,{jenis:'UPZ',mode:'admin'}),g=document.getElementById('pg-uf-galat');
+  if(k.length){g.innerHTML='<b>Mohon lengkapi:</b> '+k.map(pgE).join(', ')+'.';g.style.display='block';g.scrollIntoView({block:'center'});return;}
+  g.style.display='none';const b=document.getElementById('pg-btn-upz');b.disabled=true;
+  try{
+    const data=UPZF.keUpz(o);
+    const r=kode&&!lama?await dbApi('upz_ubah',Object.assign({kode},data)):await dbApi('upz_baru',Object.assign(lama?{dari_lama:kode}:{},data));
+    if(!r.ok){g.textContent=r.pesan;g.style.display='block';g.scrollIntoView({block:'center'});return;}
+    toast(r.pesan);closeModal('modal-pg');
+    if(document.getElementById('modal-upz')&&document.getElementById('modal-upz').classList.contains('open')){try{await upzGMuat();upzGIsiMaster();}catch(e){}}
+    if(typeof mzMuat==='function')try{mzMuat(true);}catch(e){}
+    if(pgData)pgMuat();
+  }catch(e){toast('Gagal terhubung ke server.',true);}finally{b.disabled=false;}
+}
+
 document.querySelectorAll('input[name=dok-jenis]').forEach(r=>r.addEventListener('change',ndOpsiToggle));
 
 // ── Data pendidikan (beasiswa) ──
@@ -6944,7 +7032,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='32 · 12 Nov 2026';
+const APP_VERSI='33 · 13 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
