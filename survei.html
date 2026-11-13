@@ -23,7 +23,7 @@ main{max-width:860px;margin:0 auto;padding:12px}
 .btn.bahaya{background:#fff;color:var(--red);border:1.5px solid #fca5a5}
 label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}
 label .w{color:var(--red)}
-input[type=text],input[type=password],input[type=tel],input[type=datetime-local],select,textarea{width:100%;font:inherit;padding:10px;border:1.5px solid #cbd5e1;border-radius:9px;background:#fff;min-height:44px}
+input[type=text],input[type=password],input[type=tel],input[type=datetime-local],input[type=date],select,textarea{width:100%;font:inherit;padding:10px;border:1.5px solid #cbd5e1;border-radius:9px;background:#fff;min-height:44px}
 textarea{min-height:70px}
 .pil{display:flex;flex-wrap:wrap;gap:6px}
 .pil label{margin:0;font-weight:500;border:1.5px solid #cbd5e1;border-radius:9px;padding:8px 11px;background:#fff;cursor:pointer}
@@ -42,6 +42,10 @@ textarea{min-height:70px}
 .chips b{display:block;font-size:20px;line-height:1.15}
 .bagian{font-weight:800;font-size:14px;margin:16px 0 4px;padding:6px 2px;border-bottom:2px solid var(--teal);color:var(--g800)}
 .info-peran{background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:9px;padding:8px 10px;font-size:13px;margin:0 0 8px}
+.ak-brs{border:1.5px solid #cbd5e1;border-radius:10px;padding:8px 10px;margin:8px 0;background:#fafcff}
+.ak-brs .ak-kepala{display:flex;justify-content:space-between;align-items:center;font-weight:700;color:var(--teal-d)}
+.ak-brs .ak-kepala button{border:0;background:none;color:#b91c1c;font-weight:700;font-size:14px;cursor:pointer}
+.ak-tambah{border:1.5px dashed var(--teal);background:#fff;color:var(--teal-d);border-radius:9px;padding:9px 12px;font-weight:700;width:100%;margin-top:4px}
 .auto{background:#eef6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:8px;padding:7px 10px;margin:8px 0;font-size:13.5px}
 .nota-brs{border:1px solid var(--g200);border-radius:9px;padding:9px;margin:8px 0;background:#fafafa}
 .baris{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -172,7 +176,7 @@ const DB_URL='https://script.google.com/macros/s/AKfycbwcFWag2lgTgaaV5lKBWU_YDrh
 // Dua mode dalam satu halaman: survei calon mustahik (v19) dan monitoring pascabantuan (v20).
 const MODE={
   survei:{pre:'',judul:'Kunjungan Survei',selesai:'Selesai disurvei',siap:'Siap survei',isi:'Isi form survei',kirim:'Kirim hasil survei',hasil:'Hasil survei',
-    lblKes:'Rekomendasi surveyor',lblTtd:'Tanda tangan surveyor',kosong:'Belum ada kunjungan yang ditugaskan kepada Anda.',pihak2:'Surveyor'},
+    lblKes:'I. Hasil Survei — Rekomendasi surveyor',lblTtd:'Tanda tangan surveyor',kosong:'Belum ada kunjungan yang ditugaskan kepada Anda.',pihak2:'Surveyor'},
   monitoring:{pre:'mon-',judul:'Monitoring Pascabantuan',selesai:'Selesai',siap:'Jatuh tempo',isi:'Isi lembar monitoring',kirim:'Kirim lembar monitoring',hasil:'Lembar monitoring',
     lblKes:'Kesimpulan petugas',lblTtd:'Tanda tangan petugas',kosong:'Belum ada monitoring yang ditugaskan kepada Anda.',pihak2:'Petugas'}
 };
@@ -385,6 +389,9 @@ function medan(f){
   if(f.t==='banyak')return '<label>'+esc(f.l)+w+'</label><div class="pil banyak">'+f.o.map(o=>'<label><input type="checkbox" name="'+id+'" value="'+esc(o)+'"><span>'+esc(o)+'</span></label>').join('')+'</div>';   // v31
   if(f.t==='ya')return '<label>'+esc(f.l)+'</label><div class="pil">'+['Tidak','Ya'].map(o=>'<label><input type="radio" name="'+id+'" value="'+o+'"><span>'+o+'</span></label>').join('')+'</div>';
   if(f.t==='angka')return '<label for="'+id+'">'+esc(f.l)+w+'</label><input id="'+id+'" type="text" inputmode="numeric" data-angka="1" autocomplete="off">';
+  if(f.t==='tanggal')return '<label for="'+id+'">'+esc(f.l)+w+'</label><input id="'+id+'" type="date">';   // v34
+  if(f.t==='nik')return '<label for="'+id+'">'+esc(f.l)+w+'</label><input id="'+id+'" type="text" inputmode="numeric" maxlength="16" data-nik="1" autocomplete="off" placeholder="16 digit">';
+  if(f.t==='tabel')return '<label>'+esc(f.l)+w+'</label><div class="kecil">Isi sesuai Kartu Keluarga, mulai dari Kepala Keluarga. NIK tidak disimpan di HP setelah terkirim.</div><div id="'+id+'"></div><button type="button" class="ak-tambah" onclick="akTambah()">+ Tambah anggota keluarga</button>';
   return '<label for="'+id+'">'+esc(f.l)+w+'</label><input id="'+id+'" type="text" maxlength="'+(f.max||200)+'" autocomplete="off"'+(f.k==='telepon'?' inputmode="tel"':'')+'>';
 }
 // v26: turunan otomatis (sama dengan server): penghasilan = KK + lain; kondisiRumah dari rincian rumah
@@ -399,8 +406,8 @@ function turunan(){
   if(mode!=='survei'||!draf)return;const x=draf.isian||{};
   if(aktif&&draf.foto&&rs().foto_jenis&&fotoGrup(x.kategoriBantuan||aktif.kategoriBantuan)!==fotoGrupTampil)tampilFoto();
   const tot=(Number(x.penghasilan_kk)||0)+(Number(x.penghasilan_lain)||0),a=$('auto-hasil'),b=$('auto-rumah');
-  if(a)a.innerHTML='Penghasilan keluarga (otomatis): <b>'+rp(tot)+'</b>';
-  if(b)b.innerHTML='Kondisi rumah (otomatis): <b>'+esc(x.status_rumah?kondisiRumahDari(x):'—')+'</b>';
+  if(a)a.innerHTML='Penghasilan Keluarga per Bulan (Rp) — otomatis: <b>'+rp(tot)+'</b>';
+  if(b)b.innerHTML='Kondisi Rumah — otomatis: <b>'+esc(x.status_rumah?kondisiRumahDari(x):'—')+'</b>';
 }
 function nikUbah(){const c=$('in-nik-cocok').checked;$('nik-benar-wrap').style.display=c?'none':'block';simpanDraf();}
 const centang=(nm,v)=>{const r=document.querySelector('input[name="'+nm+'"][value="'+CSS.escape(String(v))+'"]');if(r)r.checked=true;};
@@ -419,7 +426,7 @@ async function bukaForm(id){
     '<div id="nik-benar-wrap" style="display:none"><div class="kecil" style="color:#92400e">Tidak cocok? Tulis NIK dan No. KK yang benar (16 digit). Dikirim langsung ke server, tidak disimpan setelah terkirim.</div>'+
     '<label for="in-nik-benar">NIK yang benar</label><input id="in-nik-benar" type="text" inputmode="numeric" maxlength="16" autocomplete="off">'+
     '<label for="in-kk-benar">No. KK yang benar</label><input id="in-kk-benar" type="text" inputmode="numeric" maxlength="16" autocomplete="off"></div>':'')
-    +def.map(b=>'<h2>'+esc(b.bagian)+'</h2>'+b.isi.map(medan).join('')+(mode==='survei'&&b.bagian==='Kondisi rumah'?'<div class="auto" id="auto-rumah"></div>':'')+(mode==='survei'&&/^Penghasilan/.test(b.bagian)?'<div class="auto" id="auto-hasil"></div>':'')).join('');
+    +def.map(b=>'<h2>'+esc(b.bagian)+'</h2>'+b.isi.map(medan).join('')+(mode==='survei'&&/^D\. Kondisi/.test(b.bagian)?'<div class="auto" id="auto-rumah"></div>':'')+(mode==='survei'&&/^E\. Ekonomi/.test(b.bagian)?'<div class="auto" id="auto-hasil"></div>':'')).join('');
   if(mode==='survei'){$('in-nik-cocok').checked=draf.nik_cocok===true;$('in-nik-benar').value=draf.nik_benar||'';$('in-kk-benar').value=draf.kk_benar||'';$('nik-benar-wrap').style.display=draf.nik_cocok===true?'none':'block';
     ['in-nik-benar','in-kk-benar'].forEach(i=>$(i).addEventListener('input',()=>{$(i).value=$(i).value.replace(/\D/g,'').slice(0,16);}));}
   // kecocokan nota dengan RPD (monitoring, bila ada RPD Final)
@@ -436,7 +443,8 @@ async function bukaForm(id){
   $('pil-rek').innerHTML=opsiKes(x).map(o=>'<label><input type="radio" name="q-rek" value="'+esc(o)+'"><span>'+esc(o)+'</span></label>').join('');
   // isi dari draf
   def.forEach(b=>b.isi.forEach(f=>{const v=draf.isian[f.k];if(v===undefined||v==='')return;
-    if(f.t==='banyak'){const a=String(v).split(';').map(x=>x.trim());document.querySelectorAll('input[name="q-'+f.k+'"]').forEach(c=>{c.checked=a.includes(c.value);});}
+    if(f.t==='tabel'){let a=v;if(typeof a==='string'){try{a=JSON.parse(a);}catch(e){a=[];}}akIsi(Array.isArray(a)?a:[]);}
+    else if(f.t==='banyak'){const a=String(v).split(';').map(x=>x.trim());document.querySelectorAll('input[name="q-'+f.k+'"]').forEach(c=>{c.checked=a.includes(c.value);});}
     else if(f.t==='pilih'||f.t==='ya')centang('q-'+f.k,v);else $('q-'+f.k).value=f.t==='angka'?ribuan(v):v;}));
   if(rpd)draf.nota.forEach((n,i)=>{if(!n||!$('n-nilai-'+i))return;if(n.hasil)centang('n-hasil-'+i,n.hasil);$('n-nilai-'+i).value=ribuan(n.nilai||'');$('n-ket-'+i).value=n.ket||'';});
   if(draf.rekomendasi)centang('q-rek',draf.rekomendasi);
@@ -447,13 +455,26 @@ async function bukaForm(id){
   tampilFoto();ttdPasang('mustahik');ttdPasang('surveyor');
   if(draf.gps)tampilGps();else ambilGps(false);
 }
+// v34: tabel anggota keluarga (kolom sama dengan form "Tambah Mustahik Baru")
+const akDef=()=>{for(const b of formDef(aktif))for(const f of b.isi)if(f.t==='tabel')return f;return null;};
+function akBaris(d,i){const f=akDef();d=d||{};
+  return '<div class="ak-brs"><div class="ak-kepala"><span>Anggota '+(i+1)+'</span><button type="button" onclick="akHapus(this)">✕ Hapus</button></div>'+f.kolom.map(c=>{const v=d[c.k]||'',nm='ak-'+c.k;
+    if(c.o)return '<label>'+esc(c.l)+'</label><select data-ak="'+c.k+'"><option value="">— pilih —</option>'+c.o.map(o=>'<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';
+    if(c.t==='tanggal')return '<label>'+esc(c.l)+'</label><input type="date" data-ak="'+c.k+'" value="'+esc(v)+'">';
+    if(c.t==='nik')return '<label>'+esc(c.l)+'</label><input type="text" inputmode="numeric" maxlength="16" data-nik="1" data-ak="'+c.k+'" value="'+esc(v)+'" autocomplete="off">';
+    return '<label>'+esc(c.l)+'</label><input type="text" maxlength="120" data-ak="'+c.k+'" value="'+esc(v)+'" autocomplete="off">';}).join('')+'</div>';}
+function akIsi(list){const w=$('q-anggotaKeluarga');if(!w)return;w.innerHTML=(list||[]).map((d,i)=>akBaris(d,i)).join('');}
+function akBaca(){const w=$('q-anggotaKeluarga');if(!w)return [];return [...w.querySelectorAll('.ak-brs')].map(b=>{const o={};b.querySelectorAll('[data-ak]').forEach(e=>{o[e.dataset.ak]=String(e.value).trim();});return o;});}
+function akTambah(){const a=akBaca();if(a.length>=20){toast('Maksimal 20 anggota.',true);return;}a.push({});akIsi(a);simpanDraf();}
+function akHapus(btn){const b=btn.closest('.ak-brs'),w=$('q-anggotaKeluarga'),i=[...w.children].indexOf(b);const a=akBaca();a.splice(i,1);akIsi(a);simpanDraf();}
 function ribuan(v){const d=String(v).replace(/\D/g,'');return d?Number(d).toLocaleString('id-ID'):'';}
-['form-isi','nota-isi'].forEach(n=>{$(n).addEventListener('input',e=>{if(e.target.dataset.angka)e.target.value=ribuan(e.target.value);simpanDraf();});$(n).addEventListener('change',simpanDraf);});
+['form-isi','nota-isi'].forEach(n=>{$(n).addEventListener('input',e=>{if(e.target.dataset.angka)e.target.value=ribuan(e.target.value);if(e.target.dataset.nik)e.target.value=e.target.value.replace(/\D/g,'').slice(0,16);simpanDraf();});$(n).addEventListener('change',simpanDraf);});
 $('pil-rek').addEventListener('change',simpanDraf);
 function bacaIsian(){
   const o={};
   formDef(aktif).forEach(b=>b.isi.forEach(f=>{
-    if(f.t==='banyak'){const a=[...document.querySelectorAll('input[name="q-'+f.k+'"]:checked')].map(c=>c.value);if(a.length)o[f.k]=a.join('; ');}
+    if(f.t==='tabel'){const a=akBaca().filter(r=>r.nama);if(a.length)o[f.k]=a;}   // v34
+    else if(f.t==='banyak'){const a=[...document.querySelectorAll('input[name="q-'+f.k+'"]:checked')].map(c=>c.value);if(a.length)o[f.k]=a.join('; ');}
     else if(f.t==='pilih'||f.t==='ya'){const r=document.querySelector('input[name="q-'+f.k+'"]:checked');if(r)o[f.k]=r.value;}
     else{const v=$('q-'+f.k).value.trim();if(v)o[f.k]=f.t==='angka'?v.replace(/\D/g,''):v;}
   }));
@@ -620,10 +641,15 @@ async function cetakForm(id){
   const src=r=>'data:'+r.mime+';base64,'+r.base64;
   const urutK=ketFoto(x),fotoUrut=foto.map((f,i)=>({f,i})).sort((a,b)=>{const p=k=>{const n=urutK.indexOf(k);return n<0?99:n;};return p(a.f.ket)-p(b.f.ket)||a.i-b.i;});
   const nilai=(f,v)=>{if(v===undefined||v==='')return '—';if(f.t==='angka')return /\(Rp\)/.test(f.l)?rp(v):Number(v).toLocaleString('id-ID');
-    if(f.t==='pilih'){const o=f.o.find(z=>Array.isArray(z)&&z[0]===v);if(o)return esc(o[1]);}return esc(v);};
+    if(f.t==='pilih'){const o=f.o.find(z=>Array.isArray(z)&&z[0]===v);if(o)return esc(o[1]);}
+    if(f.t==='nik')return '************'+esc(String(v).slice(-4));   // v34: NIK disamarkan di cetakan
+    if(f.t==='tanggal')return esc(tglTeks(v));
+    if(f.t==='tabel'){let a=v;if(typeof a==='string'){try{a=JSON.parse(a);}catch(e){a=[];}}if(!Array.isArray(a)||!a.length)return '—';
+      return '<table class="nota"><tr><th>No</th>'+f.kolom.map(c=>'<th>'+esc(c.l)+'</th>').join('')+'</tr>'+a.map((r,i)=>'<tr><td>'+(i+1)+'</td>'+f.kolom.map(c=>'<td>'+(c.t==='nik'&&r[c.k]?'************'+esc(String(r[c.k]).slice(-4)):c.t==='tanggal'&&r[c.k]?esc(tglTeks(r[c.k])):esc(r[c.k]||''))+'</td>').join('')+'</tr>').join('')+'</table>';}
+    return esc(v);};
   // v28: isian kosong (mis. survei form lama) → dari data pengajuan; kondisi rumah dihitung dari rincian rumah
   const awal=x.awal||{},DD=['telepon','alamat','kelurahan','kecamatan','asnaf','kategoriBantuan'];
-  const isiCetak=f=>{const v=x.isian[f.k];if(v!==undefined&&v!=='')return v;if(sv&&DD.includes(f.k))return awal[f.k]!==undefined&&awal[f.k]!==''?awal[f.k]:(x[f.k]||'');return v;};
+  const isiCetak=f=>{const v=x.isian[f.k];if(v!==undefined&&v!=='')return v;if(sv&&(DD.includes(f.k)||awal.hasOwnProperty(f.k)))return awal[f.k]!==undefined&&awal[f.k]!==''?awal[f.k]:(x[f.k]||'');return v;};
   const kRumah=x.isian.kondisiRumah||(x.isian.status_rumah?kondisiRumahDari(x.isian):'');
   const nikTeks=x.nik_cocok==='Ya'?'Cocok':x.nik_cocok==='Tidak'?'<b>Tidak cocok — dikoreksi surveyor</b>':'Belum dicek (dikirim dengan form survei lama, sebelum 12 Nov 2026)';
   const tambahSv=sv?'<div class="bag">Ringkasan (otomatis)</div><table><tr><th>Penghasilan keluarga per bulan</th><td><b>'+rp(x.isian.penghasilan)+'</b></td></tr><tr><th>Kondisi rumah</th><td><b>'+esc(kRumah||'—')+'</b></td></tr>'+
@@ -648,7 +674,7 @@ async function cetakForm(id){
     brs('Alamat',esc(x.alamat)+', Kel. '+esc(x.kelurahan)+', Kec. '+esc(x.kecamatan))+brs('Jenis bantuan',esc(x.jenis_bantuan))+
     (sv?'':brs('Tanggal penyaluran',tglTeks(x.tgl_salur)+' (jatuh tempo monitoring '+tglTeks(x.jatuh_tempo)+')'))+
     brs(sv?'Waktu survei':'Waktu kunjungan',tgl)+brs('Lokasi (GPS)',x.lat?esc(x.lat)+', '+esc(x.lng)+(x.akurasi_m?' (±'+esc(x.akurasi_m)+' m)':''):'tidak terbaca — '+esc(x.alasan_tanpa_gps))+'</table>'+
-    formDef(x).map(b=>'<div class="bag">'+esc(b.bagian)+'</div><table>'+b.isi.map(f=>'<tr><th>'+esc(f.l)+'</th><td>'+nilai(f,isiCetak(f))+'</td></tr>').join('')+'</table>').join('')+tambahSv+banding+nota+
+    formDef(x).map(b=>'<div class="bag">'+esc(b.bagian)+'</div><table>'+b.isi.map(f=>f.t==='tabel'?'<tr><td colspan="2">'+nilai(f,isiCetak(f))+'</td></tr>':'<tr><th>'+esc(f.l)+'</th><td>'+nilai(f,isiCetak(f))+'</td></tr>').join('')+'</table>').join('')+tambahSv+banding+nota+
     '<div class="akhir"><div class="bag">'+M().lblKes+'</div><table><tr><th>'+(sv?'Rekomendasi':'Kesimpulan')+'</th><td><b>'+esc(sv?x.rekomendasi:x.kesimpulan)+'</b></td></tr><tr><th>Catatan</th><td>'+(esc(x.catatan)||'—')+'</td></tr></table>'+
     '<div class="ttd2"><div>'+(sv?'Calon mustahik':'Mustahik')+' / keluarga,<img src="'+src(t1)+'" alt="Tanda tangan mustahik"><b><u>'+esc(x.nama_ttd_mustahik)+'</u></b></div>'+
     '<div>'+M().pihak2+',<img src="'+src(t2)+'" alt="Tanda tangan petugas"><b><u>'+esc(x.petugas)+'</u></b></div>'+
