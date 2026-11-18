@@ -1,0 +1,76 @@
+/* ═══ PPID BAZNAS Kota Lubuklinggau — memakai token & header dari kabar.css ═══ */
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+.kb-dd-btn.kb-aktif{color:var(--kb-hijau)}
+.pp-hero{background:linear-gradient(135deg,var(--kb-hijau),var(--kb-hijau-tua));color:#fff;padding:36px 0 40px}
+.pp-hero .kb-wrap{padding-bottom:0}
+.pp-badge{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);border-radius:99px;padding:4px 12px;font-size:12px;font-weight:700;margin-bottom:10px}
+.pp-hero h1{margin:0 0 8px;font-size:clamp(24px,4vw,36px);line-height:1.15;font-weight:800}
+.pp-hero p{margin:0;max-width:720px;opacity:.92;font-size:15px}
+.pp-tata{display:grid;gap:20px;padding-top:22px!important}
+@media(min-width:960px){.pp-tata{grid-template-columns:240px minmax(0,1fr);align-items:start;gap:26px}}
+.pp-samping{display:none}
+@media(min-width:960px){.pp-samping{display:flex;flex-direction:column;gap:2px;position:sticky;top:84px;background:var(--kb-kartu);border:1px solid var(--kb-garis);border-radius:14px;padding:12px}
+  .pp-samping b{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--kb-redup);padding:4px 10px 8px}
+  .pp-samping a{text-decoration:none;color:var(--kb-teks);font-weight:600;font-size:13.5px;padding:9px 10px;border-radius:8px}
+  .pp-samping a:hover,.pp-samping a.aktif{background:var(--kb-hijau-muda);color:var(--kb-hijau-tua)}}
+.pp-isi{display:flex;flex-direction:column;gap:20px;min-width:0}
+.pp-kartu{background:var(--kb-kartu);border:1px solid var(--kb-garis);border-radius:16px;padding:20px}
+@media(min-width:700px){.pp-kartu{padding:26px 28px}}
+.pp-kepala{border-bottom:1px solid var(--kb-garis);padding-bottom:12px;margin-bottom:14px}
+.pp-kepala span{font-size:11.5px;font-weight:800;color:var(--kb-hijau);text-transform:uppercase;letter-spacing:.5px}
+.pp-kepala h2{margin:2px 0 0;font-size:21px;font-weight:800}
+.pp-redup{color:var(--kb-redup);font-size:14.5px;margin:0 0 14px}
+.pp-grid2{display:grid;gap:14px}
+@media(min-width:700px){.pp-grid2{grid-template-columns:1fr 1fr}.pp-penuh{grid-column:1/-1}}
+.pp-kotak{background:var(--kb-latar);border:1px solid var(--kb-garis);border-radius:12px;padding:14px 16px;font-size:14px}
+.pp-kotak h3{margin:0 0 8px;font-size:14.5px;color:var(--kb-hijau)}
+.pp-kotak ul{margin:0;padding-left:18px;color:var(--kb-redup)}.pp-kotak li{margin:3px 0}
+.pp-struk{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13.5px}.pp-struk dt{color:var(--kb-redup)}.pp-struk dd{margin:0;font-weight:700}
+.pp-tunggu{margin-top:10px;font-size:12.5px;background:var(--kb-krem);color:var(--kb-krem-teks);border-radius:8px;padding:7px 10px}
+.pp-tab{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.pp-tab button{border:1px solid var(--kb-garis);background:var(--kb-latar);color:var(--kb-redup);font:inherit;font-weight:700;font-size:13px;padding:7px 14px;border-radius:99px;cursor:pointer;min-height:38px}
+.pp-tab button[aria-selected=true]{background:var(--kb-hijau);border-color:var(--kb-hijau);color:#fff}
+.pp-dok{display:flex;flex-direction:column;gap:10px}
+.pp-item{display:flex;align-items:center;justify-content:space-between;gap:14px;border:1px solid var(--kb-garis);border-radius:12px;padding:12px 14px}
+.pp-item:hover{border-color:var(--kb-hijau)}
+.pp-item b{display:block;font-size:14.5px}.pp-item small{font-size:12.5px;color:var(--kb-redup)}
+.pp-unduh{flex:none;display:inline-flex;align-items:center;gap:6px;background:var(--kb-hijau-muda);color:var(--kb-hijau-tua)!important;font-weight:700;font-size:13px;padding:8px 14px;border-radius:9px;text-decoration:none;white-space:nowrap}
+.pp-unduh:hover{background:var(--kb-hijau);color:#fff!important}
+@media(max-width:600px){.pp-item{flex-direction:column;align-items:flex-start}}
+.pp-kosong{color:var(--kb-redup);font-size:14px;padding:14px;border:1px dashed var(--kb-garis);border-radius:12px;text-align:center}
+.pp-cari{display:flex;flex-direction:column;gap:4px;max-width:420px;margin-bottom:12px}
+.pp-cari input,.pp-form input,.pp-form select,.pp-form textarea,.pp-cek input{font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--kb-garis);border-radius:10px;background:var(--kb-kartu);color:var(--kb-teks);min-height:44px;width:100%}
+.pp-tabel{overflow-x:auto;border:1px solid var(--kb-garis);border-radius:12px}
+.pp-tabel table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px}
+.pp-tabel th{background:var(--kb-latar);text-align:left;padding:10px 12px;font-size:12px;text-transform:uppercase;letter-spacing:.3px;color:var(--kb-redup)}
+.pp-tabel td{padding:10px 12px;border-top:1px solid var(--kb-garis);vertical-align:top}
+.pp-st{display:inline-block;font-size:11.5px;font-weight:700;border-radius:99px;padding:3px 10px}
+.pp-st.buka{background:#dcfce7;color:#166534}.pp-st.kecuali{background:#fee2e2;color:#991b1b}
+@media (prefers-color-scheme:dark){.pp-st.buka{background:#12352c;color:#9fe3c2}.pp-st.kecuali{background:#3b1717;color:#f5b0b0}}
+.pp-catatan{font-size:12.5px;color:var(--kb-redup);margin:10px 0 0}
+.pp-form{display:grid;gap:12px}
+@media(min-width:700px){.pp-form{grid-template-columns:1fr 1fr}}
+.pp-fld{display:flex;flex-direction:column;gap:5px}.pp-fld label{font-size:13px;font-weight:700}.pp-fld small{font-weight:400;color:var(--kb-redup)}
+.pp-fld input[type=file]{padding:8px;font-size:13px}
+.pp-setuju{display:flex;gap:8px;align-items:flex-start;font-size:13.5px}.pp-setuju input{margin-top:3px;width:18px;height:18px}
+.pp-jebak{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.pp-galat{background:#fdecea;border:1px solid #f5c6c0;color:#a12d1f;border-radius:10px;padding:9px 12px;font-size:13.5px;margin-bottom:10px}
+.pp-tiket{margin-top:14px;background:var(--kb-hijau-muda);border:1px solid var(--kb-hijau);border-radius:12px;padding:14px 16px;font-size:14px}
+.pp-tiket b.no{font-size:20px;color:var(--kb-hijau-tua);display:block;margin:4px 0;letter-spacing:.5px}
+.pp-cek{margin-top:20px;border-top:1px solid var(--kb-garis);padding-top:16px}
+.pp-cek h3{margin:0 0 10px;font-size:15px}
+.pp-cek-form{display:grid;gap:8px}
+@media(min-width:600px){.pp-cek-form{grid-template-columns:1.4fr 1fr auto}}
+.pp-hasil{margin-top:12px;border:1px solid var(--kb-garis);border-radius:12px;padding:12px 14px;font-size:14px}
+.pp-hasil .pp-jawab{white-space:pre-wrap;background:var(--kb-latar);border-radius:8px;padding:8px 10px;margin-top:6px}
+.pp-langkah{display:grid;gap:10px;margin-bottom:16px}
+@media(min-width:700px){.pp-langkah{grid-template-columns:repeat(3,1fr)}}
+.pp-langkah div{background:var(--kb-latar);border:1px solid var(--kb-garis);border-radius:12px;padding:12px 14px;font-size:13.5px;color:var(--kb-redup)}
+.pp-langkah b{display:block;color:var(--kb-hijau);margin-bottom:4px}
+.pp-faq{border:1px solid var(--kb-garis);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.pp-faq summary{padding:13px 16px;font-weight:700;font-size:14.5px;cursor:pointer;background:var(--kb-latar);list-style:none;display:flex;justify-content:space-between;gap:10px}
+.pp-faq summary::-webkit-details-marker{display:none}
+.pp-faq summary::after{content:"+";color:var(--kb-hijau);font-size:18px;line-height:1}.pp-faq[open] summary::after{content:"−"}
+.pp-faq p{margin:0;padding:12px 16px;font-size:14px;color:var(--kb-redup);border-top:1px solid var(--kb-garis)}
+body.pp .kb-kaki{margin-top:24px}

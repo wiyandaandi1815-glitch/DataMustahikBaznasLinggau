@@ -5626,6 +5626,146 @@ async function hlSimpan(id){
 }
 
 // ════════════════════════════════════════════
+// v41 — PPID: kelola dokumen informasi publik, permohonan informasi, keberatan, profil (bidang Administrasi, SDM, Umum & Komunikasi).
+// WK4 & WK3 mengelola; Ketua memutus keberatan; lainnya melihat. NIK pemohon tersamar; KTP hanya dibuka PPID & Ketua (tercatat di Log).
+// ════════════════════════════════════════════
+let ppData=null,ppTab='mohon',ppPdf=null;
+const ppE=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ppTgl=s=>{if(!s)return '—';const d=new Date(String(s).slice(0,10)+'T00:00:00');return isNaN(d)?ppE(s):d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});};
+(function(){
+  const pasang=()=>{
+    const bar=document.querySelector('.tab-bar');if(!bar||document.getElementById('tab-ppid-btn'))return;
+    const b=document.createElement('button');b.className='tab-btn';b.id='tab-ppid-btn';b.type='button';b.innerHTML='📂 PPID <span id="ppid-count" class="badge b-red" style="display:none;margin-left:4px">0</span>';
+    b.onclick=function(){switchTab('t-ppid',this);ppMuat();};
+    const imp=document.getElementById('tab-import-btn');if(imp)imp.before(b);else bar.appendChild(b);
+    const p=document.createElement('div');p.id='t-ppid';p.className='tab-pane';
+    p.innerHTML=`<div class="main"><div class="pg-title">PPID — Layanan Informasi Publik</div>
+      <div class="pg-sub">Halaman publik: <a href="ppid.html" target="_blank" rel="noopener"><b>ppid.html</b></a>. Jawab permohonan paling lambat <b>10 hari kerja</b> (+7 bila diperpanjang); keberatan diputus Atasan PPID paling lambat <b>30 hari kerja</b>. Tidak ada hapus — dokumen cukup dinonaktifkan.</div>
+      <div class="pp-sub" id="pp-sub" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div>
+      <div id="pp-panel"><div class="hint">Memuat…</div></div></div>`;
+    const t=document.getElementById('t-import');(t?t.parentNode:document.body).insertBefore(p,t||null);
+    const st=document.createElement('style');st.textContent=`.pp-sub button{border:1px solid var(--g200);background:#fff;border-radius:99px;padding:7px 14px;font:inherit;font-weight:700;font-size:12.5px;cursor:pointer;color:var(--g700)}
+.pp-sub button.on{background:var(--teal);border-color:var(--teal);color:#fff}.pp-lewat{color:var(--red);font-weight:700}
+#t-ppid table.pj-tbl{min-width:0!important;width:100%}#t-ppid .card{overflow:visible}#t-ppid td{vertical-align:top}`;document.head.appendChild(st);
+    setTimeout(ppHitung,4000);
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',pasang);else pasang();
+})();
+async function ppHitung(){if(typeof getToken!=='function'||!getToken()){setTimeout(ppHitung,15000);return;}try{const r=await dbApi('ppid_daftar');if(r.ok){ppData=r;ppBadge();}}catch(e){}}
+function ppBadge(){const n=ppData.permohonan.filter(x=>['Diterima','Diproses','Diperpanjang'].includes(x.status)).length+ppData.keberatan.filter(x=>['Diterima','Diproses'].includes(x.status)).length;
+  const b=document.getElementById('ppid-count');if(b){b.textContent=n;b.style.display=n?'inline-block':'none';}}
+async function ppMuat(){
+  const box=document.getElementById('pp-panel');if(!box)return;box.innerHTML='<div class="hint">Memuat…</div>';
+  try{const r=await dbApi('ppid_daftar');if(!r.ok){box.innerHTML='<div class="hint" style="color:var(--red)">'+ppE(r.pesan)+'</div>';return;}ppData=r;}
+  catch(e){box.innerHTML='<div class="hint" style="color:var(--red)">Gagal terhubung ke server.</div>';return;}
+  ppBadge();ppRender();
+}
+function ppRender(){
+  const r=ppData,aktifM=r.permohonan.filter(x=>['Diterima','Diproses','Diperpanjang'].includes(x.status)).length,aktifK=r.keberatan.filter(x=>['Diterima','Diproses'].includes(x.status)).length;
+  document.getElementById('pp-sub').innerHTML=[['mohon','Permohonan'+(aktifM?' ('+aktifM+')':'')],['keb','Keberatan'+(aktifK?' ('+aktifK+')':'')],['dok','Dokumen ('+r.dokumen.length+')'],['profil','Profil & struktur']]
+    .map(([k,l])=>`<button type="button" class="${ppTab===k?'on':''}" onclick="ppTab='${k}';ppRender()">${l}</button>`).join('')+(r.boleh_ubah?'':'<span class="hint" style="align-self:center">Hanya melihat — pengelola PPID: Wakil Ketua IV & III.</span>');
+  const box=document.getElementById('pp-panel');
+  const stB=s=>`<span class="badge ${({'Diterima':'b-blue','Diproses':'b-gold','Diperpanjang':'b-gold','Dikabulkan':'b-green','Dikabulkan sebagian':'b-teal','Ditolak':'b-red','Terbuka':'b-green','Dikecualikan':'b-red'})[s]||'b-gray'}">${ppE(s)}</span>`;
+  if(ppTab==='mohon'){
+    box.innerHTML=`<div class="card"><div class="tbl-scroll"><table class="pj-tbl"><thead><tr><th>No. registrasi</th><th>Pemohon</th><th>Informasi diminta</th><th>Status / batas</th><th></th></tr></thead><tbody>${
+      r.permohonan.length?r.permohonan.map(m=>`<tr><td class="mono" style="font-weight:700">${ppE(m.no_reg)}<div class="hint">${ppTgl(m.waktu)}</div></td>
+        <td><b>${ppE(m.nama)}</b><div class="hint">${ppE(m.jenis_pemohon)} · NIK ${ppE(m.nik)}<br>${ppE(m.hp)}${m.email?' · '+ppE(m.email):''}</div></td>
+        <td style="max-width:340px">${ppE(m.rincian)}<div class="hint">Tujuan: ${ppE(m.tujuan)}<br>${ppE(m.cara_peroleh)}${m.cara_salinan?' · '+ppE(m.cara_salinan):''}</div></td>
+        <td>${stB(m.status)}<div class="hint ${m.lewat?'pp-lewat':''}">${['Diterima','Diproses','Diperpanjang'].includes(m.status)?'batas '+ppTgl(m.status==='Diperpanjang'?m.batas_perpanjangan:m.batas)+(m.lewat?' — LEWAT':''):'diputus '+ppTgl(m.diputus_pada)}</div></td>
+        <td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="ppMohonForm('${ppE(m.no_reg)}')">${r.boleh_ubah?'Tindak lanjut':'Lihat'}</button></td></tr>`).join('')
+      :'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--g500)">Belum ada permohonan informasi.</td></tr>'}</tbody></table></div></div>`;
+  }else if(ppTab==='keb'){
+    box.innerHTML=`<div class="card"><div class="tbl-scroll"><table class="pj-tbl"><thead><tr><th>No. keberatan</th><th>Atas permohonan</th><th>Alasan</th><th>Status / batas</th><th></th></tr></thead><tbody>${
+      r.keberatan.length?r.keberatan.map(k=>`<tr><td class="mono" style="font-weight:700">${ppE(k.no_keb)}<div class="hint">${ppTgl(k.waktu)}</div></td><td class="mono">${ppE(k.no_reg)}<div class="hint">${ppE(k.nama)}</div></td>
+        <td style="max-width:340px"><b>${ppE(k.alasan)}</b><div class="hint">${ppE(k.uraian)}</div></td>
+        <td>${stB(k.status)}<div class="hint ${k.lewat?'pp-lewat':''}">${['Diterima','Diproses'].includes(k.status)?'batas '+ppTgl(k.batas)+(k.lewat?' — LEWAT':''):'diputus '+ppTgl(k.diputus_pada)}</div></td>
+        <td><button class="btn btn-outline btn-sm" onclick="ppKebForm('${ppE(k.no_keb)}')">${r.boleh_keberatan?'Tanggapi':'Lihat'}</button></td></tr>`).join('')
+      :'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--g500)">Belum ada keberatan.</td></tr>'}</tbody></table></div></div>`;
+  }else if(ppTab==='dok'){
+    box.innerHTML=(r.boleh_ubah?'<div style="margin-bottom:10px"><button class="btn btn-primary" onclick="ppDokForm()">+ Dokumen baru</button> <span class="hint">PDF maks. 4 MB, atau tautan https. Dokumen Dikecualikan wajib alasan uji konsekuensi.</span></div>':'')+
+      `<div class="card"><div class="tbl-scroll"><table class="pj-tbl"><thead><tr><th>Kode</th><th>Judul</th><th>Kategori</th><th>Status</th><th>Berkas</th><th></th></tr></thead><tbody>${
+      r.dokumen.length?r.dokumen.map(d=>`<tr${d.aktif==='TRUE'?'':' style="opacity:.55"'}><td class="mono">${ppE(d.id)}</td><td><b>${ppE(d.judul)}</b><div class="hint">${[d.kelompok,d.periode].filter(Boolean).map(ppE).join(' · ')}${d.aktif==='TRUE'?'':' · NONAKTIF'}</div></td>
+        <td>${ppE(d.kategori)}</td><td>${stB(d.status)}</td><td>${d.file_id?`<button class="btn btn-outline btn-sm" onclick="ppLihat('dok','${ppE(d.id)}')">PDF</button>`:''}${d.tautan?` <a href="${ppE(d.tautan)}" target="_blank" rel="noopener">tautan ↗</a>`:''}</td>
+        <td>${r.boleh_ubah?`<button class="btn btn-outline btn-sm" onclick="ppDokForm('${ppE(d.id)}')">Ubah</button>`:''}</td></tr>`).join('')
+      :'<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--g500)">Belum ada dokumen. Mulai dari laporan keuangan & laporan kinerja (Informasi Berkala).</td></tr>'}</tbody></table></div></div>`;
+  }else{
+    const p=r.profil,f=(k,l,ph)=>`<div class="field"><label>${l}</label><input id="pp-p-${k}" value="${ppE(p[k])}" placeholder="${ppE(ph||'')}" ${r.boleh_ubah?'':'disabled'}/></div>`;
+    box.innerHTML=`<div class="card"><div class="card-body"><div class="hint" style="margin-bottom:10px">Selama <b>Nomor SK</b> kosong, ppid.html menampilkan struktur berdasarkan jabatan dengan keterangan "menunggu penetapan SK". Isi nama pejabat setelah SK terbit.</div>
+      <div class="grid g2">${f('sk','Nomor & tanggal SK PPID','mis. Nomor 12 Tahun 2026 tanggal …')}${f('atasan','Atasan PPID (nama, jabatan)','Ketua BAZNAS Kota Lubuklinggau')}
+      ${f('pelaksana','PPID Pelaksana','Wakil Ketua IV')}${f('sekretaris','Sekretaris PPID','Sekretaris & Kepala Pelaksana')}${f('petugas','Petugas Layanan Informasi','Kepala Bidang Administrasi, SDM & Umum')}
+      ${f('email','Email desk PPID')}${f('wa','WhatsApp/Telepon desk')}${f('jam','Jam layanan')}<div class="field c2"><label>Alamat</label><input id="pp-p-alamat" value="${ppE(p.alamat)}" ${r.boleh_ubah?'':'disabled'}/></div></div>
+      ${r.boleh_ubah?'<div id="pp-p-galat" class="hint" style="color:var(--red);margin-top:6px"></div><button class="btn btn-primary" id="pp-p-simpan" onclick="ppProfilSimpan()" style="margin-top:10px">Simpan profil</button>':''}</div></div>`;
+  }
+}
+function ppModal(judul,isi,tombol){let m=document.getElementById('modal-pp');
+  if(!m){m=document.createElement('div');m.className='modal-overlay';m.id='modal-pp';m.innerHTML='<div class="modal" style="max-width:760px"><div class="modal-hdr"><h3 id="pp-m-judul"></h3><button class="x-btn" onclick="closeModal(\'modal-pp\')">×</button></div><div class="modal-body" id="pp-m-isi"></div><div class="modal-ftr" id="pp-m-ftr"></div></div>';document.body.appendChild(m);}
+  document.getElementById('pp-m-judul').textContent=judul;document.getElementById('pp-m-isi').innerHTML=isi;document.getElementById('pp-m-ftr').innerHTML=tombol;openModal('modal-pp');}
+const ppGalat='<div id="pp-m-galat" style="display:none;background:#fdecea;border:1px solid #f5c6c0;color:#c0392b;border-radius:8px;padding:8px 12px;margin-bottom:10px"></div>';
+function ppTampilGalat(t){const g=document.getElementById('pp-m-galat');g.textContent=t;g.style.display=t?'block':'none';}
+async function ppLihat(jenis,id){
+  toast('Membuka berkas…');
+  try{const r=await dbApi('ppid_file',{jenis,id});if(!r.ok){toast(r.pesan,true);return;}
+    const bin=atob(r.base64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+    window.open(URL.createObjectURL(new Blob([u],{type:r.mime})),'_blank','noopener');}catch(e){toast('Gagal terhubung ke server.',true);}
+}
+function ppMohonForm(no){
+  const m=ppData.permohonan.find(x=>x.no_reg===no);if(!m)return;const ub=ppData.boleh_ubah,final=['Dikabulkan','Dikabulkan sebagian','Ditolak'].includes(m.status);
+  ppModal('Permohonan '+no,ppGalat+`<div class="grid g2" style="font-size:13px;margin-bottom:10px">
+      <div><b>${ppE(m.nama)}</b> (${ppE(m.jenis_pemohon)})<br>NIK ${ppE(m.nik)} · ${ppE(m.pekerjaan||'—')}<br>${ppE(m.alamat)}<br>${ppE(m.hp)}${m.email?' · '+ppE(m.email):''}</div>
+      <div>Diajukan ${ppTgl(m.waktu)} · batas ${ppTgl(m.batas)}${m.batas_perpanjangan?' (diperpanjang s.d. '+ppTgl(m.batas_perpanjangan)+')':''}<br>${ppE(m.cara_peroleh)}${m.cara_salinan?' · '+ppE(m.cara_salinan):''}<br>
+        ${ppData.boleh_keberatan?`<button class="btn btn-outline btn-sm" style="margin-top:6px" onclick="ppLihat('ktp','${ppE(no)}')">🪪 Lihat KTP</button>${m.ada_kuasa?` <button class="btn btn-outline btn-sm" style="margin-top:6px" onclick="ppLihat('kuasa','${ppE(no)}')">Surat kuasa</button>`:''}<div class="hint">Membuka KTP tercatat di Log.</div>`:''}</div></div>
+    <div style="background:var(--g50);border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:10px"><b>Informasi diminta:</b> ${ppE(m.rincian)}<br><b>Tujuan:</b> ${ppE(m.tujuan)}</div>
+    <div class="grid g2"><div class="field"><label>Status</label><select id="pp-m-st" ${ub&&!final?'':'disabled'}>${ppData.status_mohon.map(s=>`<option ${s===m.status?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="field"><div class="hint" style="margin-top:22px">Diperpanjang: +7 hari kerja, hanya sekali. Putusan akhir tidak dapat diubah (jalur keberatan).</div></div>
+      <div class="field c2"><label>Jawaban / informasi yang diberikan (tampil ke pemohon saat cek status)</label><textarea id="pp-m-jawab" rows="4" maxlength="2000" ${ub&&!final?'':'disabled'}>${ppE(m.jawaban)}</textarea></div>
+      <div class="field c2"><label>Alasan penolakan (wajib bila Ditolak — sebut pasal pengecualian/uji konsekuensi)</label><textarea id="pp-m-tolak" rows="2" maxlength="800" ${ub&&!final?'':'disabled'}>${ppE(m.alasan_tolak)}</textarea></div></div>
+    ${m.diputus_oleh?`<div class="hint">Diputus ${ppE(m.diputus_oleh)} · ${ppTgl(m.diputus_pada)}</div>`:''}`,
+    `<button class="btn btn-outline" onclick="closeModal('modal-pp')">Tutup</button>${ub&&!final?`<button class="btn btn-primary" id="pp-m-ok" onclick="ppMohonSimpan('${ppE(no)}')">Simpan</button>`:''}`);
+}
+async function ppMohonSimpan(no){const b=document.getElementById('pp-m-ok');b.disabled=true;ppTampilGalat('');
+  try{const r=await dbApi('ppid_mohon_ubah',{no,status:document.getElementById('pp-m-st').value,jawaban:document.getElementById('pp-m-jawab').value,alasan_tolak:document.getElementById('pp-m-tolak').value});
+    if(!r.ok){ppTampilGalat(r.pesan);return;}toast(r.pesan);closeModal('modal-pp');ppMuat();}catch(e){toast('Gagal terhubung ke server.',true);}finally{b.disabled=false;}}
+function ppKebForm(no){
+  const k=ppData.keberatan.find(x=>x.no_keb===no);if(!k)return;const ub=ppData.boleh_keberatan,final=['Dikabulkan','Ditolak'].includes(k.status),m=ppData.permohonan.find(x=>x.no_reg===k.no_reg);
+  ppModal('Keberatan '+no,ppGalat+`<div style="font-size:13px;margin-bottom:10px">Atas permohonan <b class="mono">${ppE(k.no_reg)}</b> — ${ppE(k.nama)} · diajukan ${ppTgl(k.waktu)} · batas ${ppTgl(k.batas)}</div>
+    ${m?`<div style="background:var(--g50);border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:8px"><b>Permohonan:</b> ${ppE(m.rincian)}<br><b>Putusan awal:</b> ${ppE(m.status)}${m.alasan_tolak?' — '+ppE(m.alasan_tolak):''}</div>`:''}
+    <div style="background:#fff8e6;border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:10px"><b>${ppE(k.alasan)}</b><br>${ppE(k.uraian)}</div>
+    <div class="grid g2"><div class="field"><label>Status</label><select id="pp-m-st" ${ub&&!final?'':'disabled'}>${ppData.status_keb.map(s=>`<option ${s===k.status?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="field"><div class="hint" style="margin-top:22px">Diputus Atasan PPID (Ketua). WK IV/III dapat mencatat atas nama Atasan PPID.</div></div>
+      <div class="field c2"><label>Tanggapan tertulis Atasan PPID</label><textarea id="pp-m-tg" rows="4" maxlength="2000" ${ub&&!final?'':'disabled'}>${ppE(k.tanggapan)}</textarea></div></div>
+    ${k.diputus_oleh?`<div class="hint">Diputus ${ppE(k.diputus_oleh)} · ${ppTgl(k.diputus_pada)}</div>`:''}`,
+    `<button class="btn btn-outline" onclick="closeModal('modal-pp')">Tutup</button>${ub&&!final?`<button class="btn btn-primary" id="pp-m-ok" onclick="ppKebSimpan('${ppE(no)}')">Simpan</button>`:''}`);
+}
+async function ppKebSimpan(no){const b=document.getElementById('pp-m-ok');b.disabled=true;ppTampilGalat('');
+  try{const r=await dbApi('ppid_keb_ubah',{no,status:document.getElementById('pp-m-st').value,tanggapan:document.getElementById('pp-m-tg').value});
+    if(!r.ok){ppTampilGalat(r.pesan);return;}toast(r.pesan);closeModal('modal-pp');ppMuat();}catch(e){toast('Gagal terhubung ke server.',true);}finally{b.disabled=false;}}
+function ppDokForm(id){
+  const d=id?ppData.dokumen.find(x=>x.id===id):null;if(id&&!d)return;ppPdf=null;const v=k=>ppE(d?d[k]:'');
+  ppModal(d?'Ubah '+d.id:'Dokumen PPID baru',ppGalat+`<div class="grid g2">
+    <div class="field c2"><label>Judul dokumen *</label><input id="pp-d-judul" maxlength="160" value="${v('judul')}" placeholder="mis. Laporan Keuangan Audited Tahun Buku 2025"/></div>
+    <div class="field"><label>Kategori *</label><select id="pp-d-kat">${ppData.kategori.map(k=>`<option ${d&&d.kategori===k?'selected':''}>${k}</option>`).join('')}</select></div>
+    <div class="field"><label>Kelompok</label><input id="pp-d-kel" maxlength="60" value="${v('kelompok')}" placeholder="Laporan Keuangan · RKAT · SOP · Regulasi …"/></div>
+    <div class="field"><label>Periode / tahun</label><input id="pp-d-per" maxlength="20" value="${v('periode')}" placeholder="2025"/></div>
+    <div class="field"><label>Status *</label><select id="pp-d-st" onchange="document.getElementById('pp-d-kw').style.display=this.value==='Dikecualikan'?'':'none'">${ppData.status_dok.map(k=>`<option ${d&&d.status===k?'selected':''}>${k}</option>`).join('')}</select></div>
+    <div class="field c2" id="pp-d-kw" style="${d&&d.status==='Dikecualikan'?'':'display:none'}"><label>Alasan pengecualian (uji konsekuensi, pasal UU KIP) *</label><textarea id="pp-d-kecuali" rows="2" maxlength="400">${v('alasan_kecuali')}</textarea></div>
+    <div class="field c2"><label>Ringkasan</label><textarea id="pp-d-ring" rows="2" maxlength="400">${v('ringkasan')}</textarea></div>
+    <div class="field"><label>File PDF (maks. 4 MB) ${d&&d.file_id?'— kosongkan bila tidak diganti':''}</label><input id="pp-d-file" type="file" accept="application/pdf" onchange="ppPilihPdf(this)"/>${d&&d.file_nama?`<div class="hint">Saat ini: ${ppE(d.file_nama)}</div>`:''}</div>
+    <div class="field"><label>atau tautan https</label><input id="pp-d-url" maxlength="400" value="${v('tautan')}" placeholder="https://…"/></div>
+    <div class="field c2"><label><input type="checkbox" id="pp-d-aktif" ${!d||d.aktif==='TRUE'?'checked':''}/> Aktif (tampil di ppid.html; hilangkan centang untuk menurunkan, data tidak dihapus)</label></div></div>`,
+    `<button class="btn btn-outline" onclick="closeModal('modal-pp')">Batal</button><button class="btn btn-primary" id="pp-m-ok" onclick="ppDokSimpan(${d?`'${ppE(d.id)}'`:'null'})">Simpan</button>`);
+}
+function ppPilihPdf(inp){const f=inp.files&&inp.files[0];ppPdf=null;if(!f)return;
+  if(f.type!=='application/pdf'){toast('File harus PDF.',true);inp.value='';return;}if(f.size>4*1048576){toast('Ukuran PDF maksimal 4 MB.',true);inp.value='';return;}
+  const r=new FileReader();r.onload=()=>{ppPdf={mime:'application/pdf',nama:f.name,base64:String(r.result).split(',')[1]};};r.readAsDataURL(f);}
+async function ppDokSimpan(id){const b=document.getElementById('pp-m-ok'),v=k=>document.getElementById('pp-d-'+k).value;b.disabled=true;ppTampilGalat('');
+  const d={id:id||'',judul:v('judul'),kategori:v('kat'),kelompok:v('kel'),periode:v('per'),status:v('st'),alasan_kecuali:v('kecuali'),ringkasan:v('ring'),tautan:v('url').trim(),aktif:document.getElementById('pp-d-aktif').checked};
+  if(ppPdf)d.file=ppPdf;
+  try{const r=await dbApi('ppid_dok_simpan',d);if(!r.ok){ppTampilGalat(r.pesan);return;}toast(r.pesan);closeModal('modal-pp');ppTab='dok';ppMuat();}catch(e){toast('Gagal terhubung ke server.',true);}finally{b.disabled=false;}}
+async function ppProfilSimpan(){const b=document.getElementById('pp-p-simpan');b.disabled=true;const o={};
+  ['sk','atasan','pelaksana','sekretaris','petugas','email','wa','jam','alamat'].forEach(k=>o[k]=document.getElementById('pp-p-'+k).value);
+  try{const r=await dbApi('ppid_profil_simpan',o);document.getElementById('pp-p-galat').textContent=r.ok?'':r.pesan;if(r.ok){toast(r.pesan);ppData.profil=r.profil;}}catch(e){toast('Gagal terhubung ke server.',true);}finally{b.disabled=false;}}
+
+// ════════════════════════════════════════════
 // v39 — TATA LETAK: menu samping kiri per bidang (Pengumpulan · Pendistribusian & Pendayagunaan · Keuangan, Pelaporan & Akuntansi ·
 // Administrasi, SDM, Umum & Komunikasi). Tombol tab lama dipindah (bukan dibuat ulang) → onclick, badge, & aturan peran tetap.
 // Tabel Pengajuan Masuk diringkas: 5 kolom tanpa geser samping, judul kolom tetap terlihat saat digulir, di HP jadi kartu.
@@ -5635,7 +5775,7 @@ async function hlSimpan(id){
     {ik:'💰',nama:'Pengumpulan',isi:['#tab-mz-btn','#tab-pg-btn','#tab-kt-btn','#tab-hl-btn']},
     {ik:'🤲',nama:'Pendistribusian & Pendayagunaan',isi:['#tab-pj-btn','@survei','@monitoring','[onclick^="switchTab(\'t-daftar\'"]','[onclick^="switchTab(\'t-form\'"]','#tab-lb-btn']},
     {ik:'📊',nama:'Keuangan, Pelaporan & Akuntansi',isi:['~Laporan & rekap keuangan']},
-    {ik:'🗂',nama:'Administrasi, SDM, Umum & Komunikasi',isi:['#tab-import-btn','~Pengguna & peran']}
+    {ik:'🗂',nama:'Administrasi, SDM, Umum & Komunikasi',isi:['#tab-ppid-btn','#tab-import-btn','~Pengguna & peran']}
   ];
   const LABEL={'#tab-pg-btn':'Penggalang & UPZ'};
   const css=document.createElement('style');
@@ -7461,7 +7601,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='40 · 18 Nov 2026';
+const APP_VERSI='41 · 18 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
