@@ -2637,7 +2637,7 @@ function renderTable(){
       <td class="chk-col"><input type="checkbox" class="row-chk" data-id="${d.id}" ${d._selected?'checked':''} onchange="onRowCheck(this,${d.id})"/></td>
       <td>${start+i+1}</td>
       <td class="mono" style="font-size:11.5px;color:var(--teal-dark);font-weight:700;letter-spacing:.5px">${d.mustahikId||(d._pending?'⏳ menunggu':'—')}</td>
-      <td style="font-weight:700;max-width:180px;overflow:hidden;text-overflow:ellipsis">${d.nama}</td>
+      <td style="font-weight:700;max-width:180px;overflow:hidden;text-overflow:ellipsis">${d.nama}${d.alasan_input_langsung?`<div><span class="badge b-gold" style="font-size:10px" title="${String(d.alasan_input_langsung).replace(/"/g,'&quot;')}">✋ input langsung</span></div>`:''}</td>
       <td style="text-align:center">${d.anggotaKeluarga&&d.anggotaKeluarga.length?`<span class="badge b-teal">${d.anggotaKeluarga.length} org</span>`:'—'}</td>
       <td class="mono" style="font-size:11.5px">${d.nik||'—'}</td>
       <td>${d.asnaf?`<span class="badge b-teal">${d.asnaf}</span>`:'—'}</td>
@@ -3677,7 +3677,7 @@ async function dbMuatDaftar(silent){
     const msg=`Ada ${lokalSaja.length} data di perangkat ini yang belum ada di database`+
       (valid.length<lokalSaja.length?` (${lokalSaja.length-valid.length} di antaranya NIK belum 16 digit — perbaiki lewat Edit)`:'')+
       `. Kirim ${valid.length} data ber-NIK valid ke database sekarang?`;
-    if(valid.length)showKonfirm('☁️','Kirim Data Lokal?',msg,()=>{valid.forEach(d=>d._pending=true);dbEnqueueSimpan(valid.map(d=>({rec:d})));},'Kirim Sekarang','btn-primary');
+    if(valid.length)showKonfirm('☁️','Kirim Data Lokal?',msg,()=>{valid.forEach(d=>{d._pending=true;if(!d.no_pengajuan&&!d.alasan_input)d.alasan_input='Migrasi data lama';});dbEnqueueSimpan(valid.map(d=>({rec:d})));},'Kirim Sekarang','btn-primary');
     else toast(msg,true);
   }
   if(!silent)toast(`✓ ${r.data.length} data dimuat dari database.`);
@@ -3851,6 +3851,7 @@ function pjDetail(no){
       ${baris('Pekerjaan',pjEsc(p.pekerjaan))}${baris('Penghasilan / bulan',fRpPj(p.penghasilan))}${baris('Pengeluaran / bulan',fRpPj(p.totalPengeluaran))}
       ${baris('Anggota serumah / ditanggung',pjEsc(p.jumlahAnggota||'—')+' orang / '+pjEsc(p.jumlahTanggungan||'—')+' jiwa'+((p.jumlahTanggungan&&!(/^\d{1,2}$/.test(String(p.jumlahTanggungan))&&+p.jumlahTanggungan<=30))||(+p.jumlahTanggungan>+p.jumlahAnggota&&+p.jumlahAnggota>0)?' <b style="color:#c0392b">⚠ perlu dicek saat kunjungan</b>':''))}${baris('Kondisi rumah',pjEsc(p.kondisiRumah))}
       ${baris('Bantuan diajukan',pjEsc(p.kategoriBantuan))}${p.lembagaPendidikan||p.jenjangPendidikan?baris('Pendidikan',[p.lembagaPendidikan,p.jenjangPendidikan,p.prodiKelas,p.semester?'Semester '+p.semester:''].filter(Boolean).map(pjEsc).join(' · ')):''}${baris('Kebutuhan mendesak',pjEsc(p.kebutuhanUtama))}${baris('Alasan',pjEsc(p.alasan))}
+      ${p.dibantu_petugas?baris('Dibantu petugas','🧑‍💼 '+pjEsc(p.dibantu_petugas)+' · '+pjEsc(String(p.dibantu_pada||'').slice(0,16).replace('T',' '))):''}
       ${baris('Diisi oleh',p.diisi_oleh==='Diwakilkan'?pjEsc(p.nama_pengisi)+' ('+pjEsc(p.hubungan_pengisi)+') · '+pjEsc(p.hp_pengisi)+(p.nik_pengisi?'<br><span class="mono">NIK wali '+pjEsc(p.nik_pengisi)+'</span>':''):'Yang bersangkutan')}
       ${(()=>{const u=kkUsia(p.tanggalLahir);return u>=0&&u<18?baris('Usia',u+' tahun — <strong>atas nama anak</strong>, diwakili orang tua/wali'):'';})()}
       ${p.statusKuliah?baris('Status kuliah',pjEsc(p.statusKuliah)):''}
@@ -5465,6 +5466,71 @@ const fsGrid=(f,w)=>`<div style="display:grid;grid-template-columns:repeat(2,1fr
         w.innerHTML='<b>📷 Foto Survei</b>'+(t&&t.foto&&t.foto.length?'<div class="hint">Survei '+fsE(t.tanggal)+' oleh '+fsE(t.nama_surveyor)+'</div>'+fsGrid(t.foto,'260px'):'<div class="hint">Belum ada foto survei untuk mustahik ini.</div>');}).catch(()=>{w.innerHTML='<b>📷 Foto Survei</b><div class="hint">Gagal memuat (perlu internet).</div>';});}
     return r;};
 })();
+
+// ════════════════════════════════════════════
+// v38 — Data mustahik hanya dari calon mustahik: input langsung khusus WK3 (+alasan), edit data inti khusus WK3/survei ulang,
+// usulan perubahan kontak (petugas → WK2/WK3), tombol "Bantu Isi Pengajuan". Penolakan juga di server.
+// ════════════════════════════════════════════
+const IL_ALASAN=['Migrasi data lama','Darurat/bencana','Rujukan instansi','Lainnya'];
+const ilJab=()=>ssGet('baznas_jabatan')||'PETUGAS',ilWk3=()=>ilJab()==='WK3',ilPimpinan=()=>['WK2','WK3'].includes(ilJab());
+const ilE=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function ilBaru(){return ilWk3()&&!gv('edit-id')&&!pjAktif;}
+function ilTampil(){
+  let w=document.getElementById('il-wrap');
+  if(!w){const t=document.getElementById('form-title');if(!t)return;w=document.createElement('div');w.id='il-wrap';w.className='card';w.style.cssText='border:2px solid #f0b429;background:#fffbea;padding:10px 14px;margin:8px 0';
+    w.innerHTML='<b>✋ Input langsung (Wakil Ketua III)</b> <span class="hint">— bukan dari pengajuan; wajib alasan, tercatat di Log & ditandai "input langsung" di Daftar Mustahik.</span>'+
+      '<div class="grid g2" style="margin-top:6px"><div class="field"><label>Alasan <span class="req">*</span></label><select id="il-alasan"><option value="">— Pilih —</option>'+IL_ALASAN.map(a=>'<option>'+a+'</option>').join('')+'</select></div>'+
+      '<div class="field"><label>Keterangan <span class="hint">(wajib bila "Lainnya")</span></label><input id="il-ket" type="text" maxlength="200"/></div></div>';
+    t.after(w);}
+  w.style.display=ilBaru()?'':'none';
+}
+(function(){
+  // menu/tombol "Tambah Mustahik Baru" & tab Input/Edit hanya untuk WK3 (tab tetap dipakai Lengkapi & Terima)
+  let jabLalu=null;
+  const atur=()=>{document.querySelectorAll('[onclick*="\'t-form\'"]').forEach(b=>{if(b.closest('#t-form'))return;b.style.display=ilWk3()?'':'none';});ilTampil();
+    const j=(ssGet('baznas_token')?ilJab():'')+'|'+!!document.getElementById('uk-btn');if(j!==jabLalu){jabLalu=j;if(ssGet('baznas_token'))ukTombol();}};
+  document.addEventListener('DOMContentLoaded',atur);setTimeout(atur,0);setInterval(atur,1500);
+  const rf=window.resetForm;window.resetForm=function(){const r=rf.apply(this,arguments);setTimeout(ilTampil,0);const a=document.getElementById('il-alasan');if(a){a.value='';document.getElementById('il-ket').value='';}return r;};
+  const ed=window.editData;window.editData=function(id){
+    if(!ilWk3()&&!editData._izin){ukForm(id);return;}
+    editData._izin=false;const r=ed.apply(this,arguments);setTimeout(ilTampil,0);return r;};
+  const baca=window.readForm;window.readForm=function(){const d=baca.apply(this,arguments);if(ilBaru()){d.alasan_input=gv('il-alasan');d.alasan_ket=gv('il-ket').trim();}return d;};
+  const sim=window.simpanData;window.simpanData=function(){
+    if(ilBaru()){const a=gv('il-alasan');if(!a||(a==='Lainnya'&&gv('il-ket').trim().length<3)){toast('Input langsung: pilih alasan'+(a==='Lainnya'?' dan isi keterangan':'')+'.',true);document.getElementById('il-wrap').scrollIntoView({block:'center'});return;}}
+    else if(!ilWk3()&&!pjAktif&&!gv('edit-id')){toast('Mustahik baru hanya dari pengajuan (Lengkapi & Terima). Input langsung khusus Wakil Ketua III.',true);return;}
+    return sim.apply(this,arguments);};
+  // jalur Excel (menu Import, khusus WK3): mustahik baru dicatat input langsung "dari Excel"
+  if(typeof doImport==='function'){const di=doImport;doImport=function(){try{importBuffer.forEach(d=>{if(d&&!d.no_pengajuan)d.alasan_input='dari Excel';});}catch(e){}return di.apply(this,arguments);};}
+  if(typeof suTinjau==='function'){const st=suTinjau;suTinjau=function(){editData._izin=true;return st.apply(this,arguments);};}
+})();
+// ── Usulan perubahan kontak ──
+const UK_ISIAN=[['telepon','No. HP / WA'],['email','Email'],['alamat','Alamat (termasuk RT/RW)'],['kelurahan','Kelurahan'],['kecamatan','Kecamatan'],['kodePos','Kode Pos']];
+function ukModal(judul,isi,tombol){let m=document.getElementById('modal-uk');
+  if(!m){m=document.createElement('div');m.className='modal-overlay';m.id='modal-uk';m.innerHTML='<div class="modal" style="max-width:760px"><div class="modal-hdr"><h3 id="uk-judul"></h3><button class="x-btn" onclick="closeModal(\'modal-uk\')">×</button></div><div class="modal-body" id="uk-isi"></div><div class="modal-ftr" id="uk-ftr"></div></div>';document.body.appendChild(m);}
+  document.getElementById('uk-judul').textContent=judul;document.getElementById('uk-isi').innerHTML=isi;document.getElementById('uk-ftr').innerHTML=tombol;openModal('modal-uk');}
+function ukForm(id){const d=dataList.find(x=>x.id==id);if(!d)return;closeModal('modal-detail');
+  if(!d.mustahikId){toast('Data belum tersinkron ke server.',true);return;}
+  ukModal('Usulan perubahan kontak — '+d.nama,'<div class="hint" style="margin-bottom:8px">Data inti (NIK, KK, asnaf, ekonomi, bantuan, rekening) hanya diubah Wakil Ketua III atau lewat survei ulang. Usulan kontak disetujui Wakil Ketua II/III.</div><div class="grid g2">'+
+    UK_ISIAN.map(([k,l])=>'<div class="field'+(k==='alamat'?' c2':'')+'"><label>'+l+'</label><input id="uk-'+k+'" type="text" value="'+ilE(d[k]||'')+'"/></div>').join('')+
+    '<div class="field c2"><label>Catatan (opsional)</label><input id="uk-catatan" type="text" maxlength="200"/></div></div>',
+    '<button class="btn btn-outline" onclick="closeModal(\'modal-uk\')">Batal</button><button class="btn btn-primary" id="uk-kirim" onclick="ukKirim(\''+ilE(d.mustahikId)+'\')">Kirim Usulan</button>');}
+async function ukKirim(mid){const data={};UK_ISIAN.forEach(([k])=>data[k]=gv('uk-'+k).trim());const b=document.getElementById('uk-kirim');b.disabled=true;
+  try{const r=await dbApi('usulan_kontak_kirim',{mustahikId:mid,data,catatan:gv('uk-catatan').trim()});toast(r.ok?'✓ '+r.pesan:r.pesan,!r.ok);if(r.ok){closeModal('modal-uk');ukTombol();}}catch(e){toast('Gagal terhubung ke server.',true);}finally{b.disabled=false;}}
+async function ukTombol(){const q=document.getElementById('q-search');if(!q)return;let b=document.getElementById('uk-btn');
+  if(!b){b=document.createElement('button');b.id='uk-btn';b.type='button';b.className='btn btn-outline';b.style.marginLeft='6px';b.onclick=ukDaftar;q.parentElement.appendChild(b);}
+  b.innerHTML='📝 Usulan Kontak <span id="uk-count" class="badge b-red" style="display:none">0</span>';
+  try{const r=await dbApi('usulan_kontak_daftar');const n=r&&r.ok?r.data.filter(u=>u.status==='Menunggu').length:0;const c=document.getElementById('uk-count');if(c){c.textContent=n;c.style.display=n?'inline-block':'none';}}catch(e){}}
+async function ukDaftar(){let r;try{r=await dbApi('usulan_kontak_daftar');}catch(e){toast('Gagal terhubung ke server.',true);return;}if(!r||!r.ok){toast((r&&r.pesan)||'Gagal memuat.',true);return;}
+  const lbl=k=>(UK_ISIAN.find(x=>x[0]===k)||[k,k])[1];
+  ukModal('📝 Usulan Perubahan Kontak',r.data.length?'<table class="pj-tbl" style="width:100%"><thead><tr><th>Mustahik</th><th>Perubahan</th><th>Pengusul</th><th>Status</th><th></th></tr></thead><tbody>'+r.data.map(u=>'<tr><td><b>'+ilE(u.nama)+'</b><div class="hint mono">'+ilE(u.mustahikId)+'</div></td><td style="font-size:12px">'+
+    Object.keys(u.data).map(k=>lbl(k)+': <s>'+ilE(u.lama[k]||'—')+'</s> → <b>'+ilE(u.data[k]||'(kosong)')+'</b>').join('<br>')+(u.catatan?'<div class="hint">'+ilE(u.catatan)+'</div>':'')+'</td><td style="font-size:12px">'+ilE(u.diusulkan_oleh)+'<div class="hint">'+ilE(String(u.waktu).slice(0,16).replace('T',' '))+'</div></td><td>'+ilE(u.status)+(u.diputus_oleh?'<div class="hint">'+ilE(u.diputus_oleh)+'</div>':'')+'</td><td>'+
+    (r.boleh_putus&&u.status==='Menunggu'?'<button class="btn btn-primary btn-sm" onclick="ukPutus(\''+ilE(u.id)+'\',true)">Setujui</button> <button class="btn btn-outline btn-sm" onclick="ukPutus(\''+ilE(u.id)+'\',false)">Tolak</button>':'')+'</td></tr>').join('')+'</tbody></table>':'<p class="hint">Belum ada usulan.</p>',
+    '<button class="btn btn-outline" onclick="closeModal(\'modal-uk\')">Tutup</button>');}
+async function ukPutus(id,setuju){try{const r=await dbApi('usulan_kontak_putus',{id,setuju});toast(r.ok?'✓ '+r.pesan:r.pesan,!r.ok);if(r.ok){ukDaftar();ukTombol();if(setuju&&typeof dbMuatDaftar==='function')dbMuatDaftar(true);}}catch(e){toast('Gagal terhubung ke server.',true);}}
+// ── Bantu Isi Pengajuan (pemohon datang ke kantor) ──
+function ilBantu(){window.open('pengajuan.html?bantu=1','_blank');}
+(function(){const pasang=()=>{const f=document.getElementById('pj-filter');if(!f||document.getElementById('pj-bantu'))return;const b=document.createElement('button');b.id='pj-bantu';b.type='button';b.className='btn btn-primary btn-sm';b.style.marginLeft='6px';
+  b.textContent='🧑‍💼 Bantu Isi Pengajuan';b.title='Pemohon datang ke kantor: petugas membantu mengisi pengajuan atas permintaan pemohon';b.onclick=ilBantu;f.after(b);};document.addEventListener('DOMContentLoaded',pasang);setTimeout(pasang,0);})();
 
 document.querySelectorAll('input[name=dok-jenis]').forEach(r=>r.addEventListener('change',ndOpsiToggle));
 
@@ -7181,7 +7247,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='37 · 13 Nov 2026';
+const APP_VERSI='38 · 18 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){

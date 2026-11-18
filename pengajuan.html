@@ -612,10 +612,17 @@ function pjtBaca(){const o={};PJT_GRUP.forEach(([,ks])=>ks.forEach(k=>{const f=p
   if(k==='anggotaKeluarga'){const a=[...document.querySelectorAll('.t-ak-brs')].map(b=>{const r={};b.querySelectorAll('[data-ak]').forEach(e=>r[e.dataset.ak]=e.value.trim());return r;}).filter(r=>r.nama);if(a.length)o[k]=a;return;}
   if(f.t==='banyak'){const a=[...document.querySelectorAll('input[name="t-'+k+'"]:checked')].map(c=>c.value);if(a.length)o[k]=a.join('; ');return;}
   const e=document.getElementById('t-'+k);if(!e||!e.value)return;o[k]=e.dataset.angka?e.value.replace(/\D/g,''):e.value.trim();}));return o;}
+// ── v38: mode "dibantu petugas" (dibuka dari aplikasi petugas: tombol Bantu Isi Pengajuan; sesi petugas disalin oleh browser, tidak lewat URL) ──
+const PJ_BANTU=(()=>{try{if(!/[?&]bantu=1\b/.test(location.search))return null;const t=sessionStorage.getItem('baznas_token'),n=sessionStorage.getItem('baznas_surveyor');return t&&n?{token:t,nama:n}:null;}catch(e){return null;}})();
+if(PJ_BANTU){const c=document.getElementById('persetujuan').closest('label');const w=document.createElement('div');
+  w.innerHTML='<div style="background:#fff8e6;border:1.5px solid #f0b429;border-radius:10px;padding:10px 12px;margin:10px 0">🧑‍💼 <b>Diisi dengan bantuan petugas:</b> '+pjtE(PJ_BANTU.nama)+
+    '<label class="consent" style="margin-top:8px"><input type="checkbox" id="persetujuan-bantu"> <span>Data diisi dengan bantuan petugas atas permintaan saya. <span class="req">*</span></span></label></div>';
+  c.before(w);}
 document.getElementById('fpj').addEventListener('submit',async ev=>{
   ev.preventDefault();tampilErr('');
   const diisi=document.querySelector('input[name=diisi]:checked').value;
   const d=Object.assign(pjtBaca(),{website:v('website'),diisi_oleh:diisi,persetujuan:document.getElementById('persetujuan').checked});   // v37
+  if(PJ_BANTU){d.bantu_token=PJ_BANTU.token;d.persetujuan_bantu=document.getElementById('persetujuan-bantu').checked;}   // v38
   ['nama','nik','noKK','jenisKelamin','statusKeluarga','tempatLahir','tanggalLahir','alamat','kecamatan','kelurahan','telepon','email',
    'pekerjaan','penghasilan','totalPengeluaran','jumlahAnggota','jumlahTanggungan','kondisiRumah','kategoriBantuan','kebutuhanUtama','alasan',
    'nama_pengisi','hubungan_pengisi','hp_pengisi','nik_pengisi','lembagaPendidikan','jenjangPendidikan','prodiKelas','semester','statusKuliah','kelas'].forEach(k=>d[k]=v(k));
@@ -648,6 +655,7 @@ document.getElementById('fpj').addEventListener('submit',async ev=>{
   if(!dok.kk&&!rf.kk)s.push('Foto KK');
   if(diisi==='Diwakilkan'&&(!d.nama_pengisi||!d.hubungan_pengisi||!d.hp_pengisi))s.push('Data pengisi (nama, hubungan, No HP)');
   if(!d.persetujuan)s.push('Centang persetujuan');
+  if(PJ_BANTU&&!d.persetujuan_bantu)s.push('Centang persetujuan pemohon (dibantu petugas)');
   if(s.length){tampilErr('<strong>Mohon lengkapi:</strong> '+s.map(esc).join(', ')+'.');return;}
   if(diisi==='Sendiri'){d.nama_pengisi='';d.hubungan_pengisi='';d.hp_pengisi='';d.nik_pengisi='';}
   if(dok.ktp)d.ktp={mime:dok.ktp.mime,base64:dok.ktp.base64};if(dok.kk)d.kk={mime:dok.kk.mime,base64:dok.kk.base64};
