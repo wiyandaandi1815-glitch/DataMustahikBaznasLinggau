@@ -633,11 +633,13 @@ async function cetakForm(id){
   const sv=mode==='survei';
   toast('Menyiapkan cetakan…');
   let t1,t2,foto=[];
+  const ambil=async d=>{const r=await api(mode+'_file',Object.assign(sv?{no:id}:{id},d),60);if(!r.ok)throw new Error(r.pesan);return r;};
   try{
-    const ambil=async d=>{const r=await api(mode+'_file',Object.assign(sv?{no:id}:{id},d),60);if(!r.ok)throw new Error(r.pesan);return r;};
     t1=await ambil({jenis:'ttd_mustahik'});t2=await ambil({jenis:sv?'ttd_surveyor':'ttd_petugas'});
-    for(let i=0;i<(x.jumlah_foto||0);i++)foto.push(await ambil({i}));
-  }catch(e){toast('Gagal mengambil tanda tangan/foto. Cetak perlu sinyal internet.',true);return;}
+  }catch(e){toast('Gagal mengambil tanda tangan: '+(e.message||'cetak perlu sinyal internet.'),true);return;}
+  const gagal=[];   // v38.2: foto yang gagal diambil tidak membatalkan cetakan; pesannya ditampilkan
+  for(let i=0;i<(x.jumlah_foto||0);i++){try{foto.push(await ambil({i}));}catch(e){gagal.push('Foto ke-'+(i+1)+': '+(e.message||'gagal'));}}
+  if(gagal.length)toast('⚠ '+gagal.length+' foto tidak dapat diambil — '+gagal[0],true);
   const src=r=>'data:'+r.mime+';base64,'+r.base64;
   const urutK=ketFoto(x),fotoUrut=foto.map((f,i)=>({f,i})).sort((a,b)=>{const p=k=>{const n=urutK.indexOf(k);return n<0?99:n;};return p(a.f.ket)-p(b.f.ket)||a.i-b.i;});
   const nilai=(f,v)=>{if(v===undefined||v==='')return '—';if(f.t==='angka')return /\(Rp\)/.test(f.l)?rp(v):Number(v).toLocaleString('id-ID');
@@ -679,7 +681,7 @@ async function cetakForm(id){
     '<div class="ttd2"><div>'+(sv?'Calon mustahik':'Mustahik')+' / keluarga,<img src="'+src(t1)+'" alt="Tanda tangan mustahik"><b><u>'+esc(x.nama_ttd_mustahik)+'</u></b></div>'+
     '<div>'+M().pihak2+',<img src="'+src(t2)+'" alt="Tanda tangan petugas"><b><u>'+esc(x.petugas)+'</u></b></div>'+
     (sv?'<div class="rt">Mengetahui, Ketua RT / Lurah<div class="ruang-rt"></div><b>(...........................................)</b></div>':'')+'</div></div>'+   /* v30: TTD basah + cap RT/Lurah */
-    (foto.length?'<div class="bag">Dokumentasi foto</div><div class="fotos">'+fotoUrut.map(({f,i})=>'<figure><img src="'+src(f)+'" alt="'+esc(f.ket||'Foto '+(i+1))+'"><figcaption>'+esc(f.ket||'Foto '+(i+1))+'</figcaption></figure>').join('')+'</div>':'');
+    (foto.length?'<div class="bag">Dokumentasi foto</div><div class="fotos">'+fotoUrut.map(({f,i})=>'<figure><img src="'+src(f)+'" alt="'+esc(f.ket||'Foto '+(i+1))+'"><figcaption>'+esc(f.ket||'Foto '+(i+1))+'</figcaption></figure>').join('')+'</div>':'')+(gagal.length?'<div style="color:#b91c1c;font-size:10pt;margin-top:6px">Foto tidak dapat dimuat: '+gagal.map(esc).join('; ')+'</div>':'');
   const im=[...$('cetak').querySelectorAll('img')];
   await Promise.all(im.map(g=>g.complete?0:new Promise(r=>{g.onload=g.onerror=r;})));
   window.print();
