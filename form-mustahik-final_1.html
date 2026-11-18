@@ -5766,6 +5766,246 @@ async function ppProfilSimpan(){const b=document.getElementById('pp-p-simpan');b
   try{const r=await dbApi('ppid_profil_simpan',o);document.getElementById('pp-p-galat').textContent=r.ok?'':r.pesan;if(r.ok){toast(r.pesan);ppData.profil=r.profil;}}catch(e){toast('Gagal terhubung ke server.',true);}finally{b.disabled=false;}}
 
 // ════════════════════════════════════════════
+// v43 — RKAT & ANGGARAN (tahap 1): impor template SIMBA (lk1/lk2/lk3), pos anggaran, pagu vs realisasi per Pilar Linggau Juara
+// dan per sumber dana/asnaf (matriks dua arah), target vs realisasi jiwa. Realisasi dari sheet Penyaluran (dikirim Excel) via peta kode_rkat.
+// Lihat: pimpinan. Impor, pemetaan pos & peta realisasi: WK3.
+// ════════════════════════════════════════════
+/** Baca workbook template SIMBA (versi kolom berbeda-beda) → baris pos anggaran. Dipakai juga oleh uji node. */
+function rkatBacaWb(X, wb) {
+  const out = [], ringkas = {};
+  const angka = v => { if (typeof v === 'number') return v; const s = String(v || '').replace(/[^\d,.-]/g, ''); const n = Number(s.replace(/\./g, '').replace(',', '.')); return isFinite(n) ? n : 0; };
+  ['lk1', 'lk2', 'lk3'].forEach(lb => {
+    const ws = wb.Sheets[lb]; if (!ws) return;
+    const a = X.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    const c = {}; let mulai = -1;
+    for (let i = 0; i < Math.min(a.length, 12); i++) {
+      a[i].forEach((v, j) => { const t = String(v).trim().toLowerCase();
+        if (c.nilai === undefined && t === 'nilai anggaran') c.nilai = j;
+        if (c.jan === undefined && t === 'jan') c.jan = j;
+        if (c.nama === undefined && (t === 'nama' || t === 'nama program/kegiatan')) c.nama = j;
+        if (c.ket === undefined && /^keterangan/.test(t)) c.ket = j;
+        if (c.vol === undefined && /^(mustahik|volume|perorangan)$/.test(t)) c.vol = j;
+        if (c.lembaga === undefined && t === 'lembaga') c.lembaga = j;
+        if (c.frek === undefined && t === 'frekuensi') c.frek = j;
+        if (c.unit === undefined && t === 'unit cost') c.unit = j; });
+      if (c.jan !== undefined && c.nilai !== undefined && c.nama !== undefined) { mulai = i + 1; break; }
+    }
+    if (mulai < 0) return;
+    if (c.vol === undefined && lb === 'lk1') c.vol = c.nama + 1 + (c.ket !== undefined ? 1 : 0);
+    let kelompok = lb === 'lk1' ? 'Pengumpulan' : lb === 'lk3' ? 'Operasional' : 'Pendistribusian', bidang = '';
+    for (let i = mulai; i < a.length; i++) {
+      const r = a[i], no = String(r[0]).trim(), nama = String(r[c.nama] || '').trim();
+      if (no && isNaN(no) && !nama) { const t = no.toUpperCase();
+        if (/^PENDISTRIBUSIAN|^PENDAYAGUNAAN/.test(t)) { kelompok = t.startsWith('PENDAYA') ? 'Pendayagunaan' : 'Pendistribusian'; bidang = ''; }
+        else bidang = no.replace(/^BIDANG\s+/i, '').replace(/\b\w/g, s => s.toUpperCase()).replace(/\B\w/g, s => s.toLowerCase());
+        continue; }
+      if (!no || isNaN(no) || !nama || /^ketersediaan dana/i.test(nama)) continue;
+      const pagu = angka(r[c.nilai]); if (!(pagu > 0)) continue;
+      const sel = r.slice(c.nilai + 1, c.jan).map(v => String(v).trim());
+      const kkeg = sel.find(v => /^[1-5]\.\d\.(\d\d|##)\.(\d\d|##)$/.test(v)) || '';
+      const kkeu = sel.find(v => /^[3-6]\.\d\.\d\d\.\d\d\.\d\d$/.test(v)) || '';
+      const bulan = []; for (let m = 0; m < 12; m++) bulan.push(Math.round(angka(r[c.jan + m])));
+      const vol = c.vol !== undefined ? angka(r[c.vol]) : 0;
+      out.push({ lembar: lb, baris: i + 1, no, nama, keterangan: c.ket !== undefined ? String(r[c.ket] || '').trim() : '', kelompok, bidang,
+        volume: lb === 'lk1' ? vol + (c.lembaga !== undefined ? angka(r[c.lembaga]) : 0) : vol, frekuensi: c.frek !== undefined ? angka(r[c.frek]) : 0,
+        unit_cost: c.unit !== undefined ? Math.round(angka(r[c.unit])) : 0, pagu: Math.round(pagu), kkeg, kkeu, bulan, sumber: lb === 'lk1' ? bidang : '' });
+      ringkas[lb] = (ringkas[lb] || 0) + Math.round(pagu);
+    }
+  });
+  return { baris: out, ringkas };
+}
+if (typeof module !== 'undefined' && module.exports) module.exports = { rkatBacaWb };
+
+let rkData = null, rkImpor = null;
+const rkE = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const rkRp = n => 'Rp' + Math.round(n || 0).toLocaleString('id-ID');
+const rkJt = n => { n = n || 0; return Math.abs(n) >= 1e9 ? (n / 1e9).toLocaleString('id-ID', { maximumFractionDigits: 2 }) + ' M' : Math.abs(n) >= 1e6 ? (n / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' jt' : Math.round(n).toLocaleString('id-ID'); };
+const rkPct = (a, b) => b ? Math.round(a / b * 1000) / 10 : 0;
+(function () {
+  if (typeof document === 'undefined') return;
+  const pasang = () => {
+    const bar = document.querySelector('.tab-bar'); if (!bar || document.getElementById('tab-rkat-btn')) return;
+    const b = document.createElement('button'); b.className = 'tab-btn'; b.id = 'tab-rkat-btn'; b.type = 'button'; b.innerHTML = '📊 RKAT & Anggaran';
+    b.onclick = function () { switchTab('t-rkat', this); rkMuat(); };
+    bar.appendChild(b);
+    const p = document.createElement('div'); p.id = 't-rkat'; p.className = 'tab-pane';
+    p.innerHTML = `<div class="main"><div class="pg-title">RKAT & Anggaran</div>
+      <div class="pg-sub">Pagu dari template RKAT SIMBA; realisasi dari penyaluran yang dikirim Excel. Setiap pos tercatat dua arah: <b>sumber dana/asnaf</b> (kode akun) dan <b>Pilar Linggau Juara</b>.</div>
+      <div id="rk-atas" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px"></div>
+      <div class="rk-sub" id="rk-sub"></div><div id="rk-isi"><div class="hint">Memuat…</div></div></div>`;
+    const imp = document.getElementById('t-import'); (imp ? imp.parentNode : document.body).insertBefore(p, imp || null);
+    const st = document.createElement('style'); st.textContent = `.rk-sub{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--g200);margin-bottom:12px}
+.rk-sub button{border:0;background:none;padding:8px 12px;font-weight:600;color:var(--g500);cursor:pointer;border-bottom:2px solid transparent;font-size:13px}
+.rk-sub button.on{color:var(--teal);border-bottom-color:var(--teal)}
+.rk-kartu{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:14px}
+.rk-kartu>div{background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:12px 14px}.rk-kartu small{color:var(--g500);font-size:11.5px;display:block}
+.rk-kartu b{font-size:18px;display:block;margin-top:2px}.rk-kartu span{font-size:11.5px;color:var(--g500)}
+.rk-bar{height:6px;background:var(--g100);border-radius:9px;overflow:hidden;margin-top:6px}.rk-bar i{display:block;height:100%;background:var(--teal)}
+.rk-bar i.lebih{background:var(--red)}
+table.rk-tbl{width:100%;min-width:0!important;border-collapse:collapse;font-size:12.5px;background:#fff}
+table.rk-tbl th,table.rk-tbl td{position:static!important;left:auto!important;right:auto!important;min-width:0!important;max-width:none!important;width:auto!important;font-family:inherit!important;letter-spacing:normal!important;border-left:0!important;border-right:0!important;text-align:left;white-space:normal;z-index:auto!important}
+table.rk-tbl th::after,table.rk-tbl td::after,table.rk-tbl th::before,table.rk-tbl td::before{display:none!important}
+table.rk-tbl th{background:var(--g50)!important;padding:8px!important;font-size:11.5px!important;color:var(--g500)!important;font-weight:700!important}
+table.rk-tbl td{padding:7px 8px!important;border-top:1px solid var(--g100);border-bottom:0!important;vertical-align:top!important;background:#fff!important;color:var(--g700)!important;font-size:12.5px!important;font-weight:400!important}
+table.rk-tbl td b{color:var(--g900,#111)}table.rk-tbl tbody tr:hover td{background:var(--g50)!important}table.rk-tbl td.n,table.rk-tbl th.n{text-align:right!important;white-space:nowrap}
+table.rk-tbl tr.tot td{font-weight:700!important;background:var(--g50)!important}.rk-wrap{overflow-x:auto;border-radius:12px;box-shadow:var(--shadow);margin-bottom:16px}
+.rk-h{font-weight:700;margin:4px 0 8px;font-size:14px}.rk-k{font-size:11px;color:var(--g500)}`;
+    document.head.appendChild(st);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pasang); else pasang();
+})();
+let rkTab = 'ringkas';
+async function rkMuat(tahun) {
+  const isi = document.getElementById('rk-isi'); if (!isi) return; isi.innerHTML = '<div class="hint">Memuat…</div>';
+  let r; try { r = await dbApi('rkat_daftar', { tahun: tahun || (rkData && rkData.tahun) || '' }); } catch (e) { isi.innerHTML = '<div class="hint" style="color:var(--red)">Gagal terhubung ke server.</div>'; return; }
+  if (!r.ok) { isi.innerHTML = '<div class="hint" style="color:var(--red)">' + rkE(r.pesan) + '</div>'; document.getElementById('rk-sub').innerHTML = ''; return; }
+  rkData = r;
+  const th = [...new Set([...r.daftar_tahun, r.tahun])].sort().reverse();
+  document.getElementById('rk-atas').innerHTML = `<label class="hint">Tahun anggaran <select id="rk-tahun" onchange="rkMuat(this.value)">${th.map(t => `<option${t === r.tahun ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+    <span class="hint">${r.versi ? 'Versi impor ke-' + r.versi : 'Belum ada RKAT untuk tahun ini'}</span><button class="btn btn-outline btn-sm" type="button" onclick="rkMuat()">↻ Muat ulang</button>`;
+  const tab = [['ringkas', 'Ringkasan'], ['pos', 'Pos Anggaran'], ['peta', 'Pemetaan Realisasi' + (r.belum_dipetakan.length ? ' (' + r.belum_dipetakan.length + ')' : '')]].concat(r.boleh_ubah ? [['impor', 'Impor RKAT']] : []);
+  if (!tab.some(t => t[0] === rkTab)) rkTab = 'ringkas';
+  document.getElementById('rk-sub').innerHTML = tab.map(t => `<button type="button" class="${t[0] === rkTab ? 'on' : ''}" onclick="rkTab='${t[0]}';rkTampil()">${t[1]}</button>`).join('');
+  rkTampil();
+}
+function rkTampil() {
+  document.querySelectorAll('#rk-sub button').forEach(b => b.classList.toggle('on', b.getAttribute('onclick').includes("'" + rkTab + "'")));
+  const isi = document.getElementById('rk-isi'), r = rkData; if (!r) return;
+  if (rkTab === 'impor') return rkFormImpor();
+  if (!r.pos.length) { isi.innerHTML = '<div class="hint">Belum ada RKAT tahun ' + rkE(r.tahun) + '.' + (r.boleh_ubah ? ' Buka tab <b>Impor RKAT</b> untuk mengunggah template SIMBA.' : ' Menunggu impor oleh Wakil Ketua III.') + '</div>'; return; }
+  if (rkTab === 'pos') return rkPos();
+  if (rkTab === 'peta') return rkPeta();
+  rkRingkas();
+}
+function rkGrup(pos, kunci) { const g = {}; pos.forEach(p => { const k = p[kunci] || '(belum dipetakan)'; const o = g[k] || (g[k] = { k, pagu: 0, real: 0, target: 0, jiwa: 0, n: 0 }); o.pagu += p.pagu; o.real += p.realisasi; o.target += p.volume; o.jiwa += p.jiwa; o.n++; }); return g; }
+function rkBaris(o, tot) { const pc = rkPct(o.real, o.pagu); return `<tr${tot ? ' class="tot"' : ''}><td>${rkE(o.k)}</td><td class="n">${rkRp(o.pagu)}</td><td class="n">${rkRp(o.real)}</td><td class="n">${rkRp(o.pagu - o.real)}</td>
+  <td class="n" style="min-width:90px">${pc}%<div class="rk-bar"><i class="${pc > 100 ? 'lebih' : ''}" style="width:${Math.min(pc, 100)}%"></i></div></td><td class="n">${Math.round(o.target).toLocaleString('id-ID')}</td><td class="n">${o.jiwa.toLocaleString('id-ID')}</td></tr>`; }
+function rkTabel(judul, g, urut) {
+  const rows = (urut ? urut.map(k => g[k]).filter(Boolean).concat(Object.values(g).filter(o => urut.indexOf(o.k) < 0)) : Object.values(g).sort((a, b) => b.pagu - a.pagu));
+  const t = rows.reduce((s, o) => ({ k: 'Jumlah', pagu: s.pagu + o.pagu, real: s.real + o.real, target: s.target + o.target, jiwa: s.jiwa + o.jiwa }), { pagu: 0, real: 0, target: 0, jiwa: 0 });
+  return `<div class="rk-h">${judul}</div><div class="rk-wrap"><table class="rk-tbl"><thead><tr><th></th><th class="n">Pagu</th><th class="n">Realisasi</th><th class="n">Sisa</th><th class="n">Serapan</th><th class="n">Target jiwa</th><th class="n">Jiwa terlayani*</th></tr></thead>
+  <tbody>${rows.map(o => rkBaris(o)).join('')}${rkBaris(t, 1)}</tbody></table></div>`;
+}
+function rkRingkas() {
+  const r = rkData, lk2 = r.pos.filter(p => p.lembar === 'lk2'), sum = (a, k) => a.reduce((s, p) => s + p[k], 0);
+  const pagu2 = sum(lk2, 'pagu'), real2 = sum(lk2, 'realisasi'), terpeta = sum(r.pos, 'realisasi');
+  const pagu1 = sum(r.pos.filter(p => p.lembar === 'lk1'), 'pagu'), pagu3 = sum(r.pos.filter(p => p.lembar === 'lk3'), 'pagu');
+  const pc = rkPct(real2, pagu2);
+  let h = `<div class="rk-kartu">
+    <div><small>Pagu penyaluran (lk2)</small><b>${rkJt(pagu2)}</b><span>${lk2.length} pos</span></div>
+    <div><small>Realisasi terpetakan</small><b>${rkJt(real2)}</b><span>${pc}% dari pagu</span><div class="rk-bar"><i style="width:${Math.min(pc, 100)}%"></i></div></div>
+    <div><small>Sisa pagu penyaluran</small><b>${rkJt(pagu2 - real2)}</b><span>cadangan & terpakai menyusul alur penyaluran</span></div>
+    <div><small>Target jiwa penyaluran</small><b>${Math.round(sum(lk2, 'volume')).toLocaleString('id-ID')}</b><span>${r.jiwa_unik.toLocaleString('id-ID')} jiwa unik (NIK) tersalur ${rkE(r.tahun)}</span></div>
+    <div><small>Target pengumpulan (lk1)</small><b>${rkJt(pagu1)}</b><span>operasional (lk3) ${rkJt(pagu3)}</span></div>
+    ${r.realisasi_total - terpeta > 0 ? `<div style="border:1px solid #f5c6c0"><small>Penyaluran belum dipetakan</small><b style="color:var(--red)">${rkJt(r.realisasi_total - terpeta)}</b><span><a href="#" onclick="rkTab='peta';rkTampil();return false">${r.belum_dipetakan.length} kode → petakan</a></span></div>` : ''}</div>`;
+  h += rkTabel('Per Pilar Linggau Juara', rkGrup(lk2, 'pilar'), r.pilar);
+  h += rkTabel('Per sumber dana', rkGrup(lk2, 'sumber_dana'));
+  const zk = lk2.filter(p => p.asnaf);
+  if (zk.length) h += rkTabel('Per asnaf (zakat)', rkGrup(zk, 'asnaf'), r.asnaf);
+  // matriks dua arah: sumber/asnaf × pilar (pagu)
+  const bar = {}, kol = r.pilar.filter(pl => lk2.some(p => p.pilar === pl)).concat(lk2.some(p => !p.pilar) ? ['(belum)'] : []);
+  lk2.forEach(p => { const k = p.asnaf ? p.sumber_dana + ' · ' + p.asnaf : p.sumber_dana || '(tanpa akun)'; const o = bar[k] || (bar[k] = {}); const c = p.pilar || '(belum)'; o[c] = (o[c] || 0) + p.pagu; o._ = (o._ || 0) + p.pagu; });
+  const kt = {}; Object.values(bar).forEach(o => kol.forEach(c => kt[c] = (kt[c] || 0) + (o[c] || 0)));
+  h += `<div class="rk-h">Matriks pagu: sumber dana/asnaf × Pilar</div><div class="rk-wrap"><table class="rk-tbl"><thead><tr><th></th>${kol.map(c => `<th class="n">${rkE(c.replace('Linggau Juara ', ''))}</th>`).join('')}<th class="n">Jumlah</th></tr></thead><tbody>
+    ${Object.keys(bar).sort().map(k => `<tr><td>${rkE(k)}</td>${kol.map(c => `<td class="n">${bar[k][c] ? rkJt(bar[k][c]) : '–'}</td>`).join('')}<td class="n"><b>${rkJt(bar[k]._)}</b></td></tr>`).join('')}
+    <tr class="tot"><td>Jumlah</td>${kol.map(c => `<td class="n">${rkJt(kt[c])}</td>`).join('')}<td class="n">${rkJt(pagu2)}</td></tr></tbody></table></div>
+    <div class="rk-k">* Jiwa terlayani dihitung dari NIK unik pada penyaluran yang terpetakan ke pos; satu orang bisa terhitung di beberapa pos. Asnaf & sumber dana dari kode akun SIMBA; pilar bawaan dari kode kegiatan dan dapat diubah Wakil Ketua III.</div>`;
+  document.getElementById('rk-isi').innerHTML = h;
+}
+let rkCari = '', rkLembar = 'lk2';
+function rkPos() {
+  const r = rkData, q = rkCari.toLowerCase();
+  const pos = r.pos.filter(p => (rkLembar === 'semua' || p.lembar === rkLembar) && (!q || (p.nama + ' ' + p.keterangan + ' ' + p.kode_pos + ' ' + p.pilar + ' ' + p.asnaf + ' ' + p.bidang).toLowerCase().includes(q)));
+  document.getElementById('rk-isi').innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+    <select onchange="rkLembar=this.value;rkPos()">${[['lk2', 'Penyaluran (lk2)'], ['lk1', 'Pengumpulan (lk1)'], ['lk3', 'Operasional (lk3)'], ['semua', 'Semua lembar']].map(o => `<option value="${o[0]}"${o[0] === rkLembar ? ' selected' : ''}>${o[1]}</option>`).join('')}</select>
+    <input type="search" placeholder="Cari nama, kode, pilar, asnaf…" value="${rkE(rkCari)}" oninput="rkCari=this.value;clearTimeout(window._rkc);window._rkc=setTimeout(()=>{rkPos();const i=document.querySelector('#rk-isi input[type=search]');i.focus();i.setSelectionRange(i.value.length,i.value.length)},250)" style="flex:1;min-width:200px">
+    <span class="hint">${pos.length} pos · ${rkRp(pos.reduce((s, p) => s + p.pagu, 0))}</span></div>
+    <div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>Pos anggaran</th><th>Pilar · Sumber/Asnaf</th><th class="n">Pagu</th><th class="n">Realisasi</th><th class="n">Sisa</th><th class="n">Jiwa</th>${r.boleh_ubah ? '<th></th>' : ''}</tr></thead><tbody>
+    ${pos.map(p => { const pc = rkPct(p.realisasi, p.pagu); return `<tr><td><b>${rkE(p.nama)}</b><div class="rk-k">${rkE(p.keterangan)}</div><div class="rk-k mono">${rkE(p.kode_pos)}${p.bidang ? ' · ' + rkE(p.kelompok + ' / ' + p.bidang) : ''}</div></td>
+      <td>${p.pilar ? rkE(p.pilar.replace('Linggau Juara ', '🏙 ')) : p.lembar === 'lk2' ? '<span class="badge b-gold">belum</span>' : '–'}<div class="rk-k">${rkE(p.sumber_dana)}${p.asnaf ? ' · ' + rkE(p.asnaf) : ''}${p.program_kode ? ' · prog ' + rkE(p.program_kode) : ''}</div></td>
+      <td class="n">${rkRp(p.pagu)}${p.volume ? `<div class="rk-k">${p.volume.toLocaleString('id-ID')} × ${p.frekuensi || 1} × ${rkRp(p.unit_cost)}</div>` : ''}</td>
+      <td class="n">${rkRp(p.realisasi)}<div class="rk-bar"><i class="${pc > 100 ? 'lebih' : ''}" style="width:${Math.min(pc, 100)}%"></i></div><div class="rk-k">${pc}% · ${p.transaksi} trx</div></td>
+      <td class="n" style="${p.pagu - p.realisasi < 0 ? 'color:var(--red);font-weight:700' : ''}">${rkRp(p.pagu - p.realisasi)}</td>
+      <td class="n">${p.jiwa.toLocaleString('id-ID')}${p.lembar === 'lk2' && p.volume ? ' / ' + Math.round(p.volume).toLocaleString('id-ID') : ''}</td>
+      ${r.boleh_ubah ? `<td>${p.lembar === 'lk2' ? `<button class="btn btn-outline btn-sm" type="button" onclick="rkAtur('${rkE(p.kode_pos)}')">Atur</button>` : ''}</td>` : ''}</tr>`; }).join('') || '<tr><td colspan="7" class="hint">Tidak ada pos.</td></tr>'}
+    </tbody></table></div>`;
+}
+function rkModal(judul, isi, tombol) {
+  let m = document.getElementById('modal-rk');
+  if (!m) { m = document.createElement('div'); m.className = 'modal-overlay'; m.id = 'modal-rk'; m.innerHTML = '<div class="modal" style="max-width:560px"><div class="modal-hdr"><h3 id="rk-mjudul"></h3><button class="x-btn" onclick="closeModal(\'modal-rk\')">×</button></div><div class="modal-body" id="rk-misi"></div><div class="modal-ftr" id="rk-mftr"></div></div>'; document.body.appendChild(m); }
+  document.getElementById('rk-mjudul').textContent = judul; document.getElementById('rk-misi').innerHTML = isi; document.getElementById('rk-mftr').innerHTML = tombol; openModal('modal-rk');
+}
+function rkAtur(kode) {
+  const p = rkData.pos.find(x => x.kode_pos === kode); if (!p) return;
+  rkModal('Atur pos anggaran', `<div style="margin-bottom:10px"><b>${rkE(p.nama)}</b><div class="rk-k">${rkE(p.keterangan)}</div><div class="rk-k mono">${rkE(p.kode_pos)} · ${rkE(p.sumber_dana)}</div></div>
+    <div class="fg"><label>Pilar Linggau Juara *</label><select id="rk-f-pilar">${rkData.pilar.map(x => `<option${x === p.pilar ? ' selected' : ''}>${rkE(x)}</option>`).join('')}</select></div>
+    <div class="fg"><label>Asnaf</label><select id="rk-f-asnaf"><option value="">— bukan zakat / tidak spesifik —</option>${rkData.asnaf.map(x => `<option${x === p.asnaf ? ' selected' : ''}>${rkE(x)}</option>`).join('')}</select></div>
+    <div class="fg"><label>Kode program (opsional, mis. 01–53 daftar program)</label><input id="rk-f-prog" maxlength="30" value="${rkE(p.program_kode)}"></div>
+    <div id="rk-f-galat" class="hint" style="color:var(--red)"></div>`,
+    `<button class="btn btn-outline" type="button" onclick="closeModal('modal-rk')">Batal</button><button class="btn btn-primary" type="button" id="rk-f-simpan" onclick="rkAturSimpan('${rkE(kode)}')">Simpan</button>`);
+}
+async function rkAturSimpan(kode) {
+  const b = document.getElementById('rk-f-simpan'); b.disabled = true;
+  const r = await dbApi('rkat_ubah_pos', { kode_pos: kode, pilar: document.getElementById('rk-f-pilar').value, asnaf: document.getElementById('rk-f-asnaf').value, program_kode: document.getElementById('rk-f-prog').value }).catch(() => ({ ok: false, pesan: 'Gagal terhubung.' }));
+  if (!r.ok) { document.getElementById('rk-f-galat').textContent = r.pesan; b.disabled = false; return; }
+  closeModal('modal-rk'); rkMuat();
+}
+function rkPeta() {
+  const r = rkData, pilih = sel => `<option value="">— pilih pos —</option>` + r.pos.filter(p => p.lembar === 'lk2').map(p => `<option value="${rkE(p.kode_pos)}"${p.kode_pos === sel ? ' selected' : ''}>${rkE(p.nama + ' — ' + (p.keterangan || p.kode_pos)).slice(0, 110)}</option>`).join('');
+  const sudah = Object.keys(r.peta).filter(k => r.peta[k]);
+  document.getElementById('rk-isi').innerHTML = `<div class="hint" style="margin-bottom:8px">Penyaluran dari Excel dikelompokkan menurut <b>kode RKAT</b> (bila kosong: nama program). Petakan sekali per kode; berlaku untuk semua transaksi tahun ${rkE(r.tahun)}.${r.boleh_ubah ? '' : ' Pemetaan dilakukan Wakil Ketua III.'}</div>
+    <div class="rk-h">Belum dipetakan (${r.belum_dipetakan.length})</div><div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>Kode RKAT / program</th><th class="n">Transaksi</th><th class="n">Nilai</th>${r.boleh_ubah ? '<th>Pos anggaran</th>' : ''}</tr></thead><tbody>
+    ${r.belum_dipetakan.map((b, i) => `<tr><td><b class="mono">${rkE(b.kunci)}</b><div class="rk-k">${rkE(b.program)}${b.bidang ? ' · ' + rkE(b.bidang) : ''}</div></td><td class="n">${b.transaksi}</td><td class="n">${rkRp(b.nilai)}</td>
+      ${r.boleh_ubah ? `<td><select data-rkpeta="${i}" style="max-width:340px">${pilih('')}</select></td>` : ''}</tr>`).join('') || '<tr><td colspan="4" class="hint">Semua penyaluran sudah terpetakan ✅</td></tr>'}</tbody></table></div>
+    <div class="rk-h">Sudah dipetakan (${sudah.length})</div><div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>Kode RKAT / program</th><th>Pos anggaran</th>${r.boleh_ubah ? '<th></th>' : ''}</tr></thead><tbody>
+    ${sudah.map(k => { const p = r.pos.find(x => x.kode_pos === r.peta[k]); return `<tr><td class="mono">${rkE(k)}</td><td>${p ? rkE(p.nama) + '<div class="rk-k">' + rkE(p.keterangan) + '</div>' : '<span class="badge b-gold">pos tidak ada di versi ini</span> <span class="mono">' + rkE(r.peta[k]) + '</span>'}</td>
+      ${r.boleh_ubah ? `<td><button class="btn btn-outline btn-sm" type="button" data-rklepas="${rkE(k)}">Lepas</button></td>` : ''}</tr>`; }).join('') || '<tr><td colspan="3" class="hint">Belum ada.</td></tr>'}</tbody></table></div>`;
+  document.querySelectorAll('[data-rkpeta]').forEach(s => s.onchange = () => rkPetaSimpan(r.belum_dipetakan[+s.dataset.rkpeta].kunci, s.value, s));
+  document.querySelectorAll('[data-rklepas]').forEach(b => b.onclick = () => { if (confirm('Lepas pemetaan ' + b.dataset.rklepas + '?')) rkPetaSimpan(b.dataset.rklepas, '', b); });
+}
+async function rkPetaSimpan(kunci, kode, el) {
+  if (el) el.disabled = true;
+  const r = await dbApi('rkat_peta', { tahun: rkData.tahun, kunci, kode_pos: kode }).catch(() => ({ ok: false, pesan: 'Gagal terhubung.' }));
+  if (!r.ok) { alert(r.pesan); if (el) el.disabled = false; return; }
+  rkMuat();
+}
+function rkFormImpor() {
+  const th = new Date(Date.now() + 7 * 36e5).getUTCFullYear();
+  document.getElementById('rk-isi').innerHTML = `<div class="card" style="padding:16px;max-width:760px">
+    <div class="hint" style="margin-bottom:10px">Unggah file <b>Lembar Kerja RKAT</b> dari SIMBA (.xlsx, berisi lembar lk1, lk2, lk3). File dibaca di perangkat ini; hanya baris pos anggaran yang dikirim. Impor ulang membuat <b>versi baru</b> — versi lama tetap tersimpan, pemetaan pilar/asnaf & peta realisasi tetap berlaku untuk kode yang sama.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end"><div class="fg" style="margin:0"><label>Tahun anggaran</label><input id="rk-i-tahun" type="number" min="2020" max="2099" value="${rkData && rkData.tahun || th}" style="width:110px"></div>
+    <div class="fg" style="margin:0;flex:1"><label>File RKAT (.xlsx)</label><input id="rk-i-file" type="file" accept=".xlsx,.xlsm,.xls"></div></div>
+    <div id="rk-i-hasil" style="margin-top:12px"></div></div>`;
+  document.getElementById('rk-i-file').onchange = rkBacaFile;
+}
+async function rkBacaFile(ev) {
+  const f = ev.target.files[0], out = document.getElementById('rk-i-hasil'); rkImpor = null; if (!f) return;
+  if (typeof XLSX === 'undefined') { out.innerHTML = '<div class="hint" style="color:var(--red)">Pustaka pembaca Excel belum termuat. Muat ulang halaman.</div>'; return; }
+  out.innerHTML = '<div class="hint">Membaca…</div>';
+  try {
+    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+    const h = rkatBacaWb(XLSX, wb); if (!h.baris.length) { out.innerHTML = '<div class="hint" style="color:var(--red)">Lembar lk1/lk2/lk3 tidak ditemukan atau tidak berisi nilai anggaran.</div>'; return; }
+    const m = /RKAT[ _]?(20\d\d)/i.exec(JSON.stringify(h.baris.slice(0, 5).map(b => b.keterangan))); if (m) document.getElementById('rk-i-tahun').value = m[1];
+    rkImpor = { baris: h.baris, sumber_file: f.name };
+    const nm = { lk1: 'Pengumpulan (lk1)', lk2: 'Penyaluran (lk2)', lk3: 'Operasional (lk3)' };
+    const tanpa = h.baris.filter(b => b.lembar === 'lk2' && !b.kkeu).length;
+    out.innerHTML = `<table class="rk-tbl" style="max-width:480px"><thead><tr><th>Lembar</th><th class="n">Pos</th><th class="n">Nilai</th></tr></thead><tbody>
+      ${['lk1', 'lk2', 'lk3'].map(l => `<tr><td>${nm[l]}</td><td class="n">${h.baris.filter(b => b.lembar === l).length}</td><td class="n">${rkRp(h.ringkas[l])}</td></tr>`).join('')}</tbody></table>
+      ${tanpa ? `<div class="hint" style="color:#a66">${tanpa} pos penyaluran tanpa kode akun — sumber dana/asnaf diisi manual lewat "Atur".</div>` : ''}
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center"><button class="btn btn-primary" type="button" id="rk-i-kirim" onclick="rkKirimImpor()">Simpan sebagai RKAT tahun <span id="rk-i-th">${rkE(document.getElementById('rk-i-tahun').value)}</span></button><span id="rk-i-pesan" class="hint"></span></div>`;
+    document.getElementById('rk-i-tahun').oninput = e => { const s = document.getElementById('rk-i-th'); if (s) s.textContent = e.target.value; };
+  } catch (e) { out.innerHTML = '<div class="hint" style="color:var(--red)">File tidak dapat dibaca: ' + rkE(e.message) + '</div>'; }
+}
+async function rkKirimImpor() {
+  if (!rkImpor) return; const tahun = document.getElementById('rk-i-tahun').value, b = document.getElementById('rk-i-kirim'), ps = document.getElementById('rk-i-pesan');
+  if (!confirm('Simpan RKAT ' + tahun + ' (' + rkImpor.baris.length + ' pos)? Versi sebelumnya untuk tahun ini dinonaktifkan, tidak dihapus.')) return;
+  b.disabled = true; ps.textContent = 'Menyimpan…';
+  const r = await dbApi('rkat_impor', { tahun, baris: rkImpor.baris, sumber_file: rkImpor.sumber_file }).catch(() => ({ ok: false, pesan: 'Gagal terhubung.' }));
+  if (!r.ok) { ps.textContent = r.pesan; ps.style.color = 'var(--red)'; b.disabled = false; return; }
+  rkImpor = null; rkTab = 'ringkas'; rkData = null; await rkMuat(tahun); alert(r.pesan);
+}
+
+// ════════════════════════════════════════════
 // v39 — TATA LETAK: menu samping kiri per bidang (Pengumpulan · Pendistribusian & Pendayagunaan · Keuangan, Pelaporan & Akuntansi ·
 // Administrasi, SDM, Umum & Komunikasi). Tombol tab lama dipindah (bukan dibuat ulang) → onclick, badge, & aturan peran tetap.
 // Tabel Pengajuan Masuk diringkas: 5 kolom tanpa geser samping, judul kolom tetap terlihat saat digulir, di HP jadi kartu.
@@ -5774,7 +6014,7 @@ async function ppProfilSimpan(){const b=document.getElementById('pp-p-simpan');b
   const SB_GRUP=[
     {ik:'💰',nama:'Pengumpulan',isi:['#tab-mz-btn','#tab-pg-btn','#tab-kt-btn','#tab-hl-btn']},
     {ik:'🤲',nama:'Pendistribusian & Pendayagunaan',isi:['#tab-pj-btn','@survei','@monitoring','[onclick^="switchTab(\'t-daftar\'"]','[onclick^="switchTab(\'t-form\'"]','#tab-lb-btn']},
-    {ik:'📊',nama:'Keuangan, Pelaporan & Akuntansi',isi:['~Laporan & rekap keuangan']},
+    {ik:'📊',nama:'Keuangan, Pelaporan & Akuntansi',isi:['#tab-rkat-btn','~Laporan & rekap keuangan']},
     {ik:'🗂',nama:'Administrasi, SDM, Umum & Komunikasi',isi:['#tab-ppid-btn','#tab-import-btn','~Pengguna & peran']}
   ];
   const LABEL={'#tab-pg-btn':'Penggalang & UPZ'};
@@ -7601,7 +7841,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='42 · 18 Nov 2026';
+const APP_VERSI='43 · 18 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
