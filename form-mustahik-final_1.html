@@ -5487,7 +5487,7 @@ function ilTampil(){
 (function(){
   // menu/tombol "Tambah Mustahik Baru" & tab Input/Edit hanya untuk WK3 (tab tetap dipakai Lengkapi & Terima)
   let jabLalu=null;
-  const atur=()=>{document.querySelectorAll('[onclick*="\'t-form\'"]').forEach(b=>{if(b.closest('#t-form'))return;b.style.display=ilWk3()?'':'none';});ilTampil();
+  const atur=()=>{document.querySelectorAll('[onclick*="\'t-form\'"],button[onclick="bukaFormBaru()"]').forEach(b=>{if(b.closest('#t-form'))return;b.style.display=ilWk3()?'':'none';});ilTampil();
     const j=(ssGet('baznas_token')?ilJab():'')+'|'+!!document.getElementById('uk-btn');if(j!==jabLalu){jabLalu=j;if(ssGet('baznas_token'))ukTombol();}};
   document.addEventListener('DOMContentLoaded',atur);setTimeout(atur,0);setInterval(atur,1500);
   const rf=window.resetForm;window.resetForm=function(){const r=rf.apply(this,arguments);setTimeout(ilTampil,0);const a=document.getElementById('il-alasan');if(a){a.value='';document.getElementById('il-ket').value='';}return r;};
@@ -5517,7 +5517,8 @@ function ukForm(id){const d=dataList.find(x=>x.id==id);if(!d)return;closeModal('
 async function ukKirim(mid){const data={};UK_ISIAN.forEach(([k])=>data[k]=gv('uk-'+k).trim());const b=document.getElementById('uk-kirim');b.disabled=true;
   try{const r=await dbApi('usulan_kontak_kirim',{mustahikId:mid,data,catatan:gv('uk-catatan').trim()});toast(r.ok?'✓ '+r.pesan:r.pesan,!r.ok);if(r.ok){closeModal('modal-uk');ukTombol();}}catch(e){toast('Gagal terhubung ke server.',true);}finally{b.disabled=false;}}
 async function ukTombol(){const q=document.getElementById('q-search');if(!q)return;let b=document.getElementById('uk-btn');
-  if(!b){b=document.createElement('button');b.id='uk-btn';b.type='button';b.className='btn btn-outline';b.style.marginLeft='6px';b.onclick=ukDaftar;q.parentElement.appendChild(b);}
+  if(!b){b=document.createElement('button');b.id='uk-btn';b.type='button';b.className='btn btn-outline';b.onclick=ukDaftar;
+    const t=document.querySelector('button[onclick="bukaFormBaru()"]');if(t&&t.parentElement){t.parentElement.appendChild(b);}else{b.style.marginLeft='6px';q.parentElement.appendChild(b);}}   // v38.1: di baris tombol atas, bukan di kotak cari
   b.innerHTML='📝 Usulan Kontak <span id="uk-count" class="badge b-red" style="display:none">0</span>';
   try{const r=await dbApi('usulan_kontak_daftar');const n=r&&r.ok?r.data.filter(u=>u.status==='Menunggu').length:0;const c=document.getElementById('uk-count');if(c){c.textContent=n;c.style.display=n?'inline-block':'none';}}catch(e){}}
 async function ukDaftar(){let r;try{r=await dbApi('usulan_kontak_daftar');}catch(e){toast('Gagal terhubung ke server.',true);return;}if(!r||!r.ok){toast((r&&r.pesan)||'Gagal memuat.',true);return;}
@@ -7247,7 +7248,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='38 · 18 Nov 2026';
+const APP_VERSI='38.1 · 18 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
