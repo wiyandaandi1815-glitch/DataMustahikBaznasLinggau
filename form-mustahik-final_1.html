@@ -5534,6 +5534,127 @@ function ilBantu(){window.open('pengajuan.html?bantu=1','_blank');}
 (function(){const pasang=()=>{const f=document.getElementById('pj-filter');if(!f||document.getElementById('pj-bantu'))return;const b=document.createElement('button');b.id='pj-bantu';b.type='button';b.className='btn btn-primary btn-sm';b.style.marginLeft='6px';
   b.textContent='🧑‍💼 Bantu Isi Pengajuan';b.title='Pemohon datang ke kantor: petugas membantu mengisi pengajuan atas permintaan pemohon';b.onclick=ilBantu;f.after(b);};document.addEventListener('DOMContentLoaded',pasang);setTimeout(pasang,0);})();
 
+// ════════════════════════════════════════════
+// v39 — TATA LETAK: menu samping kiri per bidang (Pengumpulan · Pendistribusian & Pendayagunaan · Keuangan, Pelaporan & Akuntansi ·
+// Administrasi, SDM, Umum & Komunikasi). Tombol tab lama dipindah (bukan dibuat ulang) → onclick, badge, & aturan peran tetap.
+// Tabel Pengajuan Masuk diringkas: 5 kolom tanpa geser samping, judul kolom tetap terlihat saat digulir, di HP jadi kartu.
+// ════════════════════════════════════════════
+(function(){
+  const SB_GRUP=[
+    {ik:'💰',nama:'Pengumpulan',isi:['#tab-mz-btn','#tab-pg-btn','#tab-kt-btn']},
+    {ik:'🤲',nama:'Pendistribusian & Pendayagunaan',isi:['#tab-pj-btn','@survei','@monitoring','[onclick^="switchTab(\'t-daftar\'"]','[onclick^="switchTab(\'t-form\'"]','#tab-lb-btn']},
+    {ik:'📊',nama:'Keuangan, Pelaporan & Akuntansi',isi:['~Laporan & rekap keuangan']},
+    {ik:'🗂',nama:'Administrasi, SDM, Umum & Komunikasi',isi:['#tab-import-btn','~Pengguna & peran']}
+  ];
+  const LABEL={'#tab-pg-btn':'Penggalang & UPZ'};
+  const css=document.createElement('style');
+  css.textContent=`
+.sb-grup{font-size:10.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--g500);padding:14px 12px 5px;display:flex;gap:6px;align-items:center}
+.sb-grup:first-child{padding-top:4px}
+.tab-bar .sb-segera{opacity:.55;cursor:default}
+.tab-bar .sb-segera small{margin-left:auto;font-size:10px;font-weight:600;background:var(--g100);border-radius:6px;padding:1px 6px}
+.tab-bar a.tab-btn{text-decoration:none}
+#sb-buka{display:none;background:rgba(255,255,255,.15);border:0;color:#fff;font-size:20px;border-radius:8px;width:38px;height:38px;cursor:pointer;margin-right:10px}
+#sb-tirai{display:none}
+@media screen{
+  .tab-bar{position:fixed!important;left:0;top:var(--sb-top,62px);bottom:0;width:240px;flex-direction:column;flex-wrap:nowrap;padding:12px 10px 40px!important;border-bottom:0;border-right:1px solid var(--g200);overflow-y:auto!important;overflow-x:hidden!important;z-index:250;box-shadow:none}
+  .tab-bar .tab-btn{width:100%;border-bottom:0!important;margin:1px 0;padding:9px 12px!important;border-radius:8px;font-size:13px;white-space:normal;text-align:left;line-height:1.3}
+  .tab-bar .tab-btn.active{background:var(--teal-light);color:var(--teal-dark,var(--teal));box-shadow:inset 3px 0 0 var(--teal)}
+  .tab-bar .tab-btn:hover:not(.active):not(.sb-segera){background:var(--g50)}
+  .tab-bar .tab-btn .badge{margin-left:auto!important}
+  body{padding-left:240px}
+  .app-header{margin-left:-240px}
+}
+@media screen and (max-width:900px){
+  body{padding-left:0}.app-header{margin-left:0}
+  #sb-buka{display:inline-flex;align-items:center;justify-content:center}
+  .tab-bar{transform:translateX(-100%);transition:transform .2s;width:270px;box-shadow:4px 0 20px rgba(0,0,0,.2)}
+  body.sb-buka .tab-bar{transform:none}
+  body.sb-buka #sb-tirai{display:block;position:fixed;inset:var(--sb-top,62px) 0 0 0;background:rgba(0,0,0,.35);z-index:240}
+}
+/* Pengajuan Masuk ringkas */
+#t-pengajuan .card{overflow:visible}
+#t-pengajuan .tbl-scroll{overflow:visible}
+#t-pengajuan table.pj-tbl{min-width:0!important;width:100%;table-layout:auto}
+#t-pengajuan table.pj-tbl thead th{position:sticky!important;top:var(--sb-top,62px)!important;z-index:20}
+#t-pengajuan table.pj-tbl thead th:first-child{border-top-left-radius:12px}#t-pengajuan table.pj-tbl thead th:last-child{border-top-right-radius:12px}
+#t-pengajuan table.pj-tbl td{vertical-align:top;padding:11px 12px}
+#t-pengajuan .pjr-sub{font-size:11.5px;color:var(--g500);font-weight:400;margin-top:2px}
+#t-pengajuan .pjr-aksi{display:flex;flex-wrap:wrap;gap:5px;justify-content:flex-end}
+#t-pengajuan .pjr-aksi .btn{white-space:nowrap}
+#t-pengajuan table.pj-tbl th::after,#t-pengajuan table.pj-tbl td::after{display:none!important}
+#t-pengajuan table.pj-tbl th,#t-pengajuan table.pj-tbl td{border-left:0!important;border-right:0!important}
+#t-pengajuan .main a.btn{white-space:normal;text-align:left}
+#t-pengajuan td.pjr-a{width:1%;min-width:150px!important}
+@media (max-width:700px){
+  #t-pengajuan table.pj-tbl thead{display:none}
+  #t-pengajuan table.pj-tbl,#t-pengajuan table.pj-tbl tbody{display:block}
+  #t-pengajuan table.pj-tbl tr{display:grid;grid-template-columns:1fr auto;gap:6px 10px;border:1px solid var(--g200);border-radius:10px;margin:8px;padding:10px;background:#fff}
+  #t-pengajuan table.pj-tbl tr td{display:block;padding:0!important;border:0!important;background:transparent!important}
+  #t-pengajuan table.pj-tbl tr td:nth-child(2),#t-pengajuan table.pj-tbl tr td:nth-child(3),#t-pengajuan table.pj-tbl tr td.pjr-a{grid-column:1/-1}
+  #t-pengajuan table.pj-tbl tr td:nth-child(4){grid-column:2;grid-row:1;text-align:right!important}
+  #t-pengajuan table.pj-tbl tr td.pjr-a{min-width:0!important;width:auto;border-top:1px dashed var(--g200)!important;padding-top:8px!important}
+  #t-pengajuan .pjr-aksi{justify-content:flex-start}
+  #t-pengajuan table.pj-tbl tr.pj-grup{display:block;border:0;padding:6px 8px;background:transparent}
+}`;
+  document.head.appendChild(css);
+
+  function susunMenu(){
+    const bar=document.querySelector('.tab-bar');if(!bar||bar.dataset.sb)return;bar.dataset.sb='1';
+    const ambil=new Set();
+    const buat=sel=>{
+      if(sel==='@survei'||sel==='@monitoring'){
+        const a=document.createElement('a');a.className='tab-btn';a.target='_blank';a.rel='noopener';
+        if(sel==='@survei'){a.href='survei.html';a.innerHTML='📋 Kunjungan Survei <span style="font-size:10px;opacity:.6">↗</span>';}
+        else{a.href='survei.html#monitoring';a.innerHTML='📈 Monitoring Pascabantuan <span id="sb-mn-count" class="badge b-red" style="display:none">0</span>';}
+        return a;}
+      if(sel[0]==='~'){const b=document.createElement('div');b.className='tab-btn sb-segera';b.innerHTML=sel.slice(1)+'<small>segera</small>';return b;}
+      const el=bar.querySelector(sel);if(!el||ambil.has(el))return null;ambil.add(el);
+      if(LABEL[sel]){const t=[...el.childNodes].find(n=>n.nodeType===3&&n.textContent.trim());if(t)t.textContent=t.textContent.replace(/Penggalang/,LABEL[sel]);}
+      return el;};
+    const frag=document.createDocumentFragment();
+    SB_GRUP.forEach(g=>{
+      const h=document.createElement('div');h.className='sb-grup';h.textContent=g.ik+' '+g.nama;frag.appendChild(h);
+      g.isi.forEach(s=>{const el=buat(s);if(el)frag.appendChild(el);});
+    });
+    const sisa=[...bar.querySelectorAll(':scope > .tab-btn')].filter(e=>!ambil.has(e));
+    if(sisa.length){const h=document.createElement('div');h.className='sb-grup';h.textContent='• Lainnya';frag.appendChild(h);sisa.forEach(e=>frag.appendChild(e));}
+    bar.innerHTML='';bar.appendChild(frag);
+    bar.addEventListener('click',e=>{if(e.target.closest('.tab-btn:not(.sb-segera)'))document.body.classList.remove('sb-buka');});
+    const hd=document.querySelector('.app-header'),lg=hd&&hd.querySelector('.logo');
+    const ukur=()=>{if(hd)document.documentElement.style.setProperty('--sb-top',hd.offsetHeight+'px');};ukur();addEventListener('resize',ukur);if(hd&&window.ResizeObserver)new ResizeObserver(ukur).observe(hd);
+    if(lg&&!document.getElementById('sb-buka')){const b=document.createElement('button');b.id='sb-buka';b.type='button';b.title='Menu';b.textContent='☰';
+      b.onclick=()=>document.body.classList.toggle('sb-buka');lg.parentNode.insertBefore(b,lg);
+      const t=document.createElement('div');t.id='sb-tirai';t.onclick=()=>document.body.classList.remove('sb-buka');document.body.appendChild(t);}
+    // salin angka monitoring ke menu
+    const mn=document.getElementById('mn-count');
+    if(mn){const sal=()=>{const s=document.getElementById('sb-mn-count');if(s){s.textContent=mn.textContent;s.style.display=mn.style.display;}};sal();new MutationObserver(sal).observe(mn,{attributes:true,childList:true,characterData:true,subtree:true});}
+  }
+
+  // ── Pengajuan Masuk: 8 kolom → 5 kolom (No & Tanggal · Pemohon & HP · Wilayah & Bantuan · Status · Aksi)
+  function ringkasPj(){
+    const tb=document.getElementById('pj-tbody');if(!tb)return;
+    const tr=tb.closest('table').querySelector('thead tr');
+    if(tr&&!tr.dataset.ringkas){tr.dataset.ringkas='1';tr.innerHTML='<th>No / Tanggal</th><th>Pemohon</th><th>Wilayah &amp; Bantuan</th><th>Status</th><th style="text-align:right!important">Aksi</th>';}
+    tb.querySelectorAll('tr:not(.pj-grup)').forEach(r=>{
+      const td=r.children;if(td.length!==8)return;
+      const [no,tg,nm,wl,bt,hp,st,ak]=td;
+      no.insertAdjacentHTML('beforeend','<div class="pjr-sub">'+tg.innerHTML+'</div>');
+      if(hp.textContent.trim())nm.insertAdjacentHTML('beforeend','<div class="pjr-sub mono">'+hp.innerHTML+'</div>');
+      wl.innerHTML='<div>'+wl.innerHTML+'</div><div class="pjr-sub" style="color:var(--g700);font-weight:600">'+bt.innerHTML+'</div>';
+      ak.classList.add('pjr-a');ak.style.whiteSpace='normal';ak.innerHTML='<div class="pjr-aksi">'+ak.innerHTML+'</div>';
+      tg.remove();bt.remove();hp.remove();
+    });
+    tb.querySelectorAll('tr.pj-grup td,td[colspan="8"]').forEach(t=>t.colSpan=5);
+  }
+  function mulai(){
+    susunMenu();
+    const tb=document.getElementById('pj-tbody');
+    if(tb){ringkasPj();new MutationObserver(()=>{try{ringkasPj();}catch(e){}}).observe(tb,{childList:true});}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mulai);else mulai();
+})();
+
 document.querySelectorAll('input[name=dok-jenis]').forEach(r=>r.addEventListener('change',ndOpsiToggle));
 
 // ── Data pendidikan (beasiswa) ──
@@ -7249,7 +7370,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='38.4 · 18 Nov 2026';
+const APP_VERSI='39 · 18 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
