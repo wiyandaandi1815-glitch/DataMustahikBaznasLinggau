@@ -638,7 +638,8 @@ async function cetakForm(id){
     t1=await ambil({jenis:'ttd_mustahik'});t2=await ambil({jenis:sv?'ttd_surveyor':'ttd_petugas'});
   }catch(e){toast('Gagal mengambil tanda tangan: '+(e.message||'cetak perlu sinyal internet.'),true);return;}
   const gagal=[];   // v38.2: foto yang gagal diambil tidak membatalkan cetakan; pesannya ditampilkan
-  for(let i=0;i<(x.jumlah_foto||0);i++){try{foto.push(await ambil({i}));}catch(e){gagal.push('Foto ke-'+(i+1)+': '+(e.message||'gagal'));}}
+  let nF=x.jumlah_foto||0;
+  for(let i=0;i<nF;i++){try{const g=await ambil({i});if(i===0&&g.jumlah>nF)nF=g.jumlah;foto.push(g);}catch(e){gagal.push('Foto ke-'+(i+1)+': '+(e.message||'gagal'));}}   // v38.3: jumlah foto ikut hasil perbaikan server
   if(gagal.length)toast('⚠ '+gagal.length+' foto tidak dapat diambil — '+gagal[0],true);
   const src=r=>'data:'+r.mime+';base64,'+r.base64;
   const urutK=ketFoto(x),fotoUrut=foto.map((f,i)=>({f,i})).sort((a,b)=>{const p=k=>{const n=urutK.indexOf(k);return n<0?99:n;};return p(a.f.ket)-p(b.f.ket)||a.i-b.i;});
