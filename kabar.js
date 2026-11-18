@@ -126,7 +126,8 @@
   function isiKabar() {
     const box = document.getElementById('kb-kabar-grid'); if (!box) return;
     const xs = kabarTersaring();
-    box.innerHTML = xs.length ? xs.map(kartuKabar).join('') : `<div class="kb-kosong kb-span">Belum ada kabar${F.kec ? ' di Kecamatan Lubuk Linggau ' + esc(F.kec) : ''} untuk pilihan ini. <button type="button" class="kb-tautan" data-reset>Tampilkan semua</button></div>`;
+    const sorot = !F.kec && !F.kat && !F.cari.trim();   // v39: kabar terbaru tampil besar bila tanpa saringan
+    box.innerHTML = xs.length ? xs.map((x, i) => i === 0 && sorot && xs.length > 2 ? kartuKabar(x).replace('<article class="kb-kartu">', '<article class="kb-kartu kb-kartu-utama"><span class="kb-terbaru">Kabar terbaru</span>') : kartuKabar(x)).join('') : `<div class="kb-kosong kb-span">Belum ada kabar${F.kec ? ' di Kecamatan Lubuklinggau ' + esc(F.kec) : ''} untuk pilihan ini. <button type="button" class="kb-tautan" data-reset>Tampilkan semua</button></div>`;
     const sum = document.getElementById('kb-jml'); if (sum) sum.textContent = xs.length + ' kabar';
     document.querySelectorAll('[data-kec]').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.kec || '') === F.kec)));
     document.querySelectorAll('[data-kat]').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.kat || '') === F.kat)));
@@ -140,7 +141,7 @@
         <a class="kb-hfoto" href="#${esc(k.id)}">${k.foto ? `<img data-id="${esc(k.id)}" data-f="${esc(k.foto)}" alt="Kampanye: ${esc(k.judul)}">` : `<span class="kb-ph">${ikon[programKelas(k.program)]}</span>`}</a>
         <div class="kb-hisi">
           <div class="kb-meta"><span class="kb-sorot">Highlight minggu ini</span><span class="kb-chip kb-prog-${programKelas(k.program)}">${esc(k.jenis_dana)}</span><span>Sisa ${k.sisa_hari} hari</span></div>
-          <h1><a href="#${esc(k.id)}">${esc(k.judul)}</a></h1>
+          <h2 class="kb-hjudul"><a href="#${esc(k.id)}">${esc(k.judul)}</a></h2>
           <p>${esc(k.ringkas)}</p>
           <div class="kb-bar" role="progressbar" aria-valuenow="${k.persen}" aria-valuemin="0" aria-valuemax="100" aria-label="Tercapai ${k.persen}%"><i data-w="${Math.min(100, k.persen)}"></i></div>
           <div class="kb-kumpul"><span><b>${rp(k.terkumpul)}</b> terkumpul dari ${rpRingkas(k.target)}</span><span>${k.persen}%</span></div>
@@ -157,7 +158,7 @@
       <a class="kb-hfoto kb-prog-${kls}" href="#${esc(x.id)}">${x.foto ? `<img data-id="${esc(x.id)}" data-f="${esc(x.foto)}" alt="Dokumentasi: ${esc(x.judul)}">` : `<span class="kb-ph">${ikon[kls]}</span>`}</a>
       <div class="kb-hisi">
         <div class="kb-meta"><span class="kb-sorot">Highlight minggu ini</span><span class="kb-chip kb-prog-${kls}">${esc(kategori(x.program))}</span><span>${esc(x.tanggal_kegiatan ? tgl(x.tanggal_kegiatan) : relatif(x.waktu_tayang))}</span></div>
-        <h1><a href="#${esc(x.id)}">${esc(x.judul)}</a></h1>
+        <h2 class="kb-hjudul"><a href="#${esc(x.id)}">${esc(x.judul)}</a></h2>
         ${x.ringkas ? `<p>${esc(x.ringkas)}</p>` : ''}
         <div class="kb-hangka"><div><b>${x.jumlah_penerima}</b><small>penerima</small></div><div><b>${rpRingkas(x.total_nilai)}</b><small>tersalurkan</small></div><div><b>${esc(x.kecamatan || 'Kota Lubuklinggau')}</b><small>lokasi</small></div></div>
         <div class="kb-aksi"><a class="kb-btn utama" href="#${esc(x.id)}">Baca selengkapnya</a>
@@ -165,6 +166,57 @@
           <button class="kb-btn garis" type="button" data-bagi="${esc(x.id)}" data-judul="${esc(x.judul)}" aria-label="Bagikan ke media sosial lain">${svgBagi}</button></div>
       </div></section>`;
   }
+  // ── v40: banner geser Highlight — slide manual (admin) + kampanye berjalan, maks 5 ──
+  const svgKiri = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
+  const svgKanan = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>';
+  const urlAman = u => /^(https:\/\/[^\s<>"'`]+|[a-z0-9_\-]+\.html(#[A-Za-z0-9_\-]*)?|#[A-Za-z0-9_\-]+)$/.test(String(u || '')) ? u : '';
+  function slider(tayang) {
+    const hl = (data.highlight || []).map(h => ({ jenis: 'hl', id: h.id, foto: h.foto, judul: h.judul, label: h.label, teks: h.teks, tt: h.tombol_teks, url: urlAman(h.tombol_url) }));
+    const km = tayang.map(k => ({ jenis: 'kmp', id: k.id, foto: k.foto, judul: k.judul, label: 'Kampanye · ' + k.jenis_dana, teks: k.ringkas, k }));
+    const S = hl.concat(km).slice(0, 5);
+    if (!S.length) return '';
+    const titik = i => `<div class="kb-titik" role="tablist" aria-label="Pilih slide">${S.map((_, j) => `<button type="button" role="tab" data-ke="${j}" aria-label="Slide ${j + 1}" aria-selected="${j === i}"></button>`).join('')}</div>`;
+    const tombol = x => {
+      if (x.jenis === 'kmp') return `<button class="kb-sbtn" type="button" data-donasi="${esc(x.id)}" data-hl="${esc(x.id)}">Cara berdonasi →</button><a class="kb-sbtn garis" href="#${esc(x.id)}" data-hl="${esc(x.id)}">Lihat detail</a><button class="kb-sbtn garis kb-sbagi" type="button" data-bagi="${esc(x.id)}" data-judul="${esc(x.judul)}" aria-label="Bagikan">${svgBagi}</button>`;
+      if (!x.url) return '';
+      const luar = /^https:/.test(x.url);
+      return `<a class="kb-sbtn" href="${esc(x.url)}" data-hl="${esc(x.id)}"${luar ? ' target="_blank" rel="noopener"' : ''}>${esc(x.tt || 'Selengkapnya')} →</a>`;
+    };
+    return `<section class="kb-slider" aria-roledescription="carousel" aria-label="Highlight BAZNAS Kota Lubuklinggau" data-n="${S.length}">
+      <div class="kb-slides">${S.map((x, i) => `<article class="kb-slide${i ? '' : ' aktif'}" role="group" aria-roledescription="slide" aria-label="${i + 1} dari ${S.length}"${i ? ' aria-hidden="true"' : ''}>
+        <div class="kb-sfoto${x.foto ? '' : ' kosong'}">${x.foto ? `<img data-id="${esc(x.id)}" data-f="${esc(x.foto)}" alt="${esc(x.judul)}"${i ? ' loading="lazy"' : ' fetchpriority="high"'}>` : `<span class="kb-ph">${ikon[programKelas(x.k ? x.k.program : '')]}</span>`}${S.length > 1 ? titik(i) : ''}</div>
+        <div class="kb-steks">
+          ${x.label ? `<span class="kb-slabel">${esc(x.label)}</span>` : ''}
+          <h2 class="kb-hjudul">${esc(x.judul)}</h2>
+          ${x.teks ? `<p>${esc(x.teks)}</p>` : ''}
+          ${x.k ? `<div class="kb-sprog"><div class="kb-bar" role="progressbar" aria-valuenow="${x.k.persen}" aria-valuemin="0" aria-valuemax="100" aria-label="Tercapai ${x.k.persen}%"><i data-w="${Math.min(100, x.k.persen)}"></i></div>
+            <span><b>${rp(x.k.terkumpul)}</b> terkumpul · ${x.k.persen}% · sisa ${x.k.sisa_hari} hari</span></div>` : ''}
+          <div class="kb-saksi">${tombol(x)}</div>
+        </div></article>`).join('')}</div>
+      ${S.length > 1 ? `<div class="kb-snav"><button type="button" class="kb-panah" data-geser="-1" aria-label="Slide sebelumnya">${svgKiri}</button>${titik(0)}<button type="button" class="kb-panah" data-geser="1" aria-label="Slide berikutnya">${svgKanan}</button></div>` : ''}
+    </section>`;
+  }
+  let slAktif = 0, slTimer = null, slJeda = false;
+  function slKe(i) {
+    const sl = document.querySelector('.kb-slider'); if (!sl) return;
+    const xs = sl.querySelectorAll('.kb-slide'), n = xs.length; if (!n) return;
+    slAktif = (i + n) % n;
+    xs.forEach((x, j) => { x.classList.toggle('aktif', j === slAktif); if (j === slAktif) x.removeAttribute('aria-hidden'); else x.setAttribute('aria-hidden', 'true'); });
+    sl.querySelectorAll('.kb-titik').forEach(t => t.querySelectorAll('button').forEach((b, j) => b.setAttribute('aria-selected', String(j === slAktif))));
+  }
+  function slMulai() {
+    clearInterval(slTimer); slAktif = 0;
+    const sl = document.querySelector('.kb-slider'); if (!sl || +sl.dataset.n < 2) return;
+    if (!gerakMinim) slTimer = setInterval(() => { if (!slJeda && !document.hidden) slKe(slAktif + 1); }, 6000);
+    sl.addEventListener('mouseenter', () => { slJeda = true; }); sl.addEventListener('mouseleave', () => { slJeda = false; });
+    sl.addEventListener('focusin', () => { slJeda = true; }); sl.addEventListener('focusout', () => { slJeda = false; });
+    sl.addEventListener('keydown', e => { if (e.key === 'ArrowLeft') slKe(slAktif - 1); else if (e.key === 'ArrowRight') slKe(slAktif + 1); });
+    let x0 = null;
+    sl.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; slJeda = true; }, { passive: true });
+    sl.addEventListener('touchend', e => { if (x0 !== null) { const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 40) slKe(slAktif + (dx < 0 ? 1 : -1)); } x0 = null; slJeda = false; }, { passive: true });
+  }
+  // v40: statistik pengunjung (GA4, bila dipasang) — hanya nama tombol/ID konten, tanpa data pribadi
+  const lacak = (nama, p) => { try { if (typeof window.gtag === 'function') window.gtag('event', nama, p || {}); } catch (e) { } };
   // ── v18: kalkulator zakat penghasilan + CTA ──
   function samping() {
     return `<aside class="kb-samping" id="zakat" aria-label="Kalkulator zakat">
@@ -189,6 +241,7 @@
     const angka = el => { const v = (el.value || '').replace(/\D/g, '').slice(0, 13); el.value = v ? (+v).toLocaleString('id-ID') : ''; return +v || 0; };
     const t = angka(g) + angka(l);
     o.classList.toggle('wajib', t >= C.nisabBulan);
+    clearTimeout(hitungZakat.t); if (t) hitungZakat.t = setTimeout(() => lacak('hitung_zakat', { capai_nisab: t >= C.nisabBulan }), 1500);
     o.innerHTML = !t ? '<small>Isi penghasilan untuk menghitung</small><b>Rp 0</b><span>Dihitung dari penghasilan bruto per bulan.</span>'
       : t >= C.nisabBulan ? `<small>Zakat penghasilan Anda per bulan</small><b>${rp(t * 0.025)}</b><span>2,5% × ${rp(t)} — sudah mencapai nisab.</span>`
       : `<small>Belum mencapai nisab bulanan</small><b>Infak semampunya</b><span>${rp(t)} di bawah nisab ${rp(C.nisabBulan)}. Anda tetap dapat berinfak/bersedekah berapa pun.</span>`;
@@ -202,16 +255,18 @@
     if (!data) return;
     const h = decodeURIComponent(location.hash.slice(1));
     if (/^(KMP|PUB)-/.test(h)) return detail(h);
-    if (h === 'beasiswa') tabAktif = 'beasiswa';
+    if (h === 'beasiswa' || h === 'kabar' || h === 'kampanye') tabAktif = h;
     const tayang = data.kampanye.filter(k => k.status === 'Tayang'), selesai = data.kampanye.filter(k => k.status === 'Berakhir');
     if (!tabAktif) tabAktif = tayang.length ? 'kampanye' : 'kabar';
     const bln = new Date(data.bulan_ini.bulan + '-01T00:00:00').toLocaleDateString('id-ID', { month: 'long' });
     document.body.classList.remove('kb-mode-detail');
-    app.innerHTML = `${hero(tayang)}
-      <section class="kb-dampak" aria-label="Dampak tahun ${esc(data.dampak.tahun)}">
-        <div><strong data-hitung="${data.dampak.penerima}">${data.dampak.penerima.toLocaleString('id-ID')}</strong><small>penerima manfaat</small></div>
-        <div class="emas"><strong>${rpRingkas(data.dampak.tersalurkan)}</strong><small>tersalurkan</small></div>
-        <div class="kb-cap">Sepanjang tahun ${esc(data.dampak.tahun)} · data langsung dari pembukuan BAZNAS</div>
+    app.innerHTML = `${slider(tayang) || hero(tayang)}
+      <section class="kb-dampak kb-dampak4" aria-label="Ringkasan penyaluran">
+        <div><small>Penerima manfaat ${esc(data.dampak.tahun)}</small><strong data-hitung="${data.dampak.penerima}">${data.dampak.penerima.toLocaleString('id-ID')}</strong></div>
+        <div class="emas"><small>Dana tersalurkan ${esc(data.dampak.tahun)}</small><strong>${rpRingkas(data.dampak.tersalurkan)}</strong></div>
+        <div><small>Penerima bulan ${esc(bln)}</small><strong>${(+data.bulan_ini.penerima || 0).toLocaleString('id-ID')}</strong></div>
+        <div><small>Kampanye berjalan</small><strong>${tayang.length}</strong></div>
+        <div class="kb-cap">Data langsung dari pembukuan BAZNAS Kota Lubuklinggau · diperbarui otomatis</div>
       </section>
       <div class="kb-tata">
       <div class="kb-utama">
@@ -230,7 +285,7 @@
       ${samping()}
       </div>`;
     isiKabar();
-    pasangFoto(app); animasiBar(app);
+    pasangFoto(app); animasiBar(app); slMulai();
     document.title = 'Kabar Kebaikan — BAZNAS Kota Lubuklinggau';
   }
 
@@ -259,6 +314,7 @@
         ${x.kutipan ? `<blockquote class="kb-kutip">${esc(x.kutipan)}</blockquote>` : ''}
         ${x.foto.length > 1 ? `<div class="kb-galeri">${x.foto.slice(1).map(f => `<img data-id="${esc(x.id)}" data-f="${esc(f)}" alt="Dokumentasi kegiatan" loading="lazy">`).join('')}</div>` : ''}
         ${x.testimoni ? `<div class="kb-testi">💬 “${esc(x.testimoni)}”<br><small style="color:var(--kb-redup)">— penerima manfaat (dimuat dengan izin)</small></div>` : ''}
+        ${kmp ? '' : ctaSerupa(kls, x.id)}
         <div class="kb-aksi" style="margin-top:12px">
           ${kmp && !akhir ? `<button class="kb-btn utama" type="button" data-donasi="${esc(x.id)}">Cara berdonasi</button>` : `<a class="kb-btn utama" href="#">Lihat kabar lainnya</a>`}
           <a class="kb-btn wa" href="${waLink(x.judul, x.id, kmp ? x.persen + '% tercapai' : rp(x.total_nilai) + ' tersalurkan')}" target="_blank" rel="noopener" aria-label="Bagikan lewat WhatsApp">${svgWa}</a>
@@ -270,6 +326,14 @@
     window.scrollTo({ top: 0 });
   }
   const cacheDetail = {};
+  // v39: ajakan sesuai kategori kabar — kampanye berjalan dengan program serupa, bila tidak ada → kalkulator zakat
+  function ctaSerupa(kls, id) {
+    const k = data && data.kampanye.find(z => z.status === 'Tayang' && z.id !== id && programKelas(z.program) === kls);
+    return k ? `<div class="kb-serupa"><small>Bantu program serupa</small><b>${esc(k.judul)}</b><span>${rp(k.terkumpul)} terkumpul · ${k.persen}% · sisa ${k.sisa_hari} hari</span>
+        <button class="kb-btn utama" type="button" data-donasi="${esc(k.id)}">Ikut berdonasi</button></div>`
+      : `<div class="kb-serupa"><small>Ingin ikut menebar manfaat seperti ini?</small><b>Tunaikan zakat, infak, dan sedekah Anda melalui BAZNAS Kota Lubuklinggau</b>
+        <a class="kb-btn utama" href="#zakat" data-ke-zakat>Hitung &amp; tunaikan zakat</a></div>`;
+  }
 
   async function bukaDonasi(id) {
     const l = document.getElementById('kb-lembar'), isi = l.querySelector('.kb-lembar-isi');
@@ -288,12 +352,16 @@
   }
 
   async function muat() {
-    app.innerHTML = '<div class="kb-skel" style="height:110px;margin-top:-42px"></div><div class="kb-skel"></div><div class="kb-skel"></div>';
+    app.innerHTML = '<div class="kb-skel" style="height:110px"></div><div class="kb-skel"></div><div class="kb-skel"></div>';
     try { data = await api('daftar_publik'); if (!data.ok) throw new Error(data.pesan); render(); }
-    catch (e) { app.innerHTML = '<div class="kb-kosong" style="margin-top:-30px;background:var(--kb-kartu);border-radius:14px">Gagal memuat data. Periksa koneksi internet lalu <a href="javascript:location.reload()">muat ulang</a>.</div>'; }
+    catch (e) { app.innerHTML = '<div class="kb-kosong" style="background:var(--kb-kartu);border-radius:14px">Gagal memuat data. Periksa koneksi internet lalu <a href="javascript:location.reload()">muat ulang</a>.</div>'; }
   }
 
   document.addEventListener('click', e => {
+    const g = e.target.closest('[data-geser],[data-ke]');
+    if (g) { slKe(g.dataset.geser ? slAktif + +g.dataset.geser : +g.dataset.ke); slJeda = true; return; }
+    const hlk = e.target.closest('[data-hl]'); if (hlk) lacak('klik_highlight', { konten_id: hlk.dataset.hl });
+    if (e.target.closest('.kb-btn.wa,.kb-bagi')) lacak('bagikan_wa', { konten_id: (e.target.closest('[href]') || {}).href ? decodeURIComponent(e.target.closest('[href]').href).split('/k/')[1] || '' : '' });
     const f = e.target.closest('[data-kec],[data-kat],[data-reset],[data-bagi]');
     if (f) {
       if (f.hasAttribute('data-kec')) F.kec = f.dataset.kec || '';
@@ -305,8 +373,8 @@
     const t = e.target.closest('[data-tab],[data-donasi],[data-salin],[data-tutup]');
     if (!t) { if (e.target.id === 'kb-lembar') e.target.classList.remove('buka'); return; }
     if (t.dataset.tab) { e.preventDefault(); tabAktif = t.dataset.tab; if (location.hash) history.replaceState(null, '', location.pathname); render(); const tb = document.querySelector('.kb-tabs'); if (tb && (tabAktif === 'beasiswa' || t.closest('.kb-nav'))) tb.scrollIntoView({ behavior: gerakMinim ? 'auto' : 'smooth' }); }
-    else if (t.dataset.donasi) bukaDonasi(t.dataset.donasi);
-    else if (t.dataset.salin) { (navigator.clipboard ? navigator.clipboard.writeText(t.dataset.salin) : Promise.reject()).then(() => { t.textContent = /^https?:/.test(t.dataset.salin) ? '✓ Tautan disalin' : '✓ Nomor rekening disalin'; }).catch(() => prompt('Salin nomor rekening:', t.dataset.salin)); }
+    else if (t.dataset.donasi) { lacak('cara_berdonasi', { konten_id: t.dataset.donasi }); bukaDonasi(t.dataset.donasi); }
+    else if (t.dataset.salin) { (navigator.clipboard ? navigator.clipboard.writeText(t.dataset.salin) : Promise.reject()).then(() => { lacak(/^https?:/.test(t.dataset.salin) ? 'salin_tautan' : 'salin_rekening'); t.textContent = /^https?:/.test(t.dataset.salin) ? '✓ Tautan disalin' : '✓ Nomor rekening disalin'; }).catch(() => prompt('Salin nomor rekening:', t.dataset.salin)); }
     else if (t.hasAttribute('data-tutup')) document.getElementById('kb-lembar').classList.remove('buka');
   });
   document.addEventListener('input', e => {
@@ -327,6 +395,16 @@
     l.classList.add('buka');
   }
   document.addEventListener('keydown', e => { if (e.key === 'Escape') document.getElementById('kb-lembar').classList.remove('buka'); });
-  window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (!h) { render(); window.scrollTo({ top: 0 }); } else if (/^(KMP|PUB)-/.test(decodeURIComponent(h))) render(); });
+  window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (!h) { render(); window.scrollTo({ top: 0 }); } else if (/^(KMP|PUB)-/.test(decodeURIComponent(h)) || /^(kabar|kampanye|beasiswa)$/.test(h)) { render(); if (!/^(KMP|PUB)-/.test(h)) { const tb = document.querySelector('.kb-tabs'); if (tb) tb.scrollIntoView(); } } });
+  // v39: menu HP (☰) & dropdown Transparansi
+  (function () {
+    const bg = document.getElementById('kb-burger'), mn = document.getElementById('kb-menu'), dd = document.getElementById('kb-dd');
+    const tutupMenu = () => { if (mn) mn.classList.remove('buka'); if (bg) bg.setAttribute('aria-expanded', 'false'); };
+    const tutupDd = () => { if (dd) { dd.classList.remove('buka'); dd.firstElementChild.setAttribute('aria-expanded', 'false'); } };
+    if (bg) bg.addEventListener('click', e => { e.stopPropagation(); const b = mn.classList.toggle('buka'); bg.setAttribute('aria-expanded', String(b)); });
+    if (dd) dd.firstElementChild.addEventListener('click', e => { e.stopPropagation(); const b = dd.classList.toggle('buka'); dd.firstElementChild.setAttribute('aria-expanded', String(b)); });
+    document.addEventListener('click', e => { if (!e.target.closest('#kb-dd')) tutupDd(); if (!e.target.closest('#kb-menu,#kb-burger') || e.target.closest('#kb-menu a')) tutupMenu(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { tutupDd(); tutupMenu(); } });
+  })();
   muat();
 })();
