@@ -343,6 +343,8 @@
     if (!x || !x.ok) { isi.innerHTML = '<p>Gagal memuat informasi rekening. Coba lagi.</p>'; return; }
     const noRek = (String(x.rekening_tujuan).match(/\d[\d\s.-]{6,}\d/) || [''])[0].replace(/[\s.-]/g, '');
     isi.innerHTML = `<h3 style="margin:0 0 4px">Cara berdonasi</h3><p style="margin:0;color:var(--kb-redup);font-size:14px">${esc(x.judul)}</p>
+      ${x.online ? `<button class="kb-btn utama" type="button" style="width:100%;margin-top:12px" data-online="${esc(x.id)}">💳 Donasi online — QRIS · Virtual Account · e-wallet</button>
+        <p class="kb-ol-ket">Tercatat otomatis, tanpa konfirmasi manual. Tidak ada biaya tambahan.</p><div class="kb-ol-atau">atau transfer manual</div>` : ''}
       ${x.rekening_tujuan ? `<div class="kb-rek">${esc(x.rekening_tujuan)}</div>` : ''}
       ${noRek ? `<button class="kb-btn garis" type="button" style="width:100%" data-salin="${esc(noRek)}">📋 Salin nomor rekening</button>` : ''}
       ${x.qris ? `<p style="text-align:center;margin:14px 0 0;font-weight:700">atau pindai QRIS resmi</p><img class="kb-qris" data-id="${esc(x.id)}" data-f="${esc(x.qris)}" alt="QRIS resmi BAZNAS Kota Lubuklinggau">` : ''}
@@ -370,6 +372,8 @@
       else { bagikan(f.dataset.bagi, f.dataset.judul, f); return; }
       isiKabar(); return;
     }
+    const ol = e.target.closest('[data-online],[data-ol-nom],[data-ol-lanjut],[data-ol-kembali],[data-ol-bayar]');
+    if (ol) { olKlik(ol); return; }
     const t = e.target.closest('[data-tab],[data-donasi],[data-salin],[data-tutup]');
     if (!t) { if (e.target.id === 'kb-lembar') e.target.classList.remove('buka'); return; }
     if (t.dataset.tab) { e.preventDefault(); tabAktif = t.dataset.tab; if (location.hash) history.replaceState(null, '', location.pathname); render(); const tb = document.querySelector('.kb-tabs'); if (tb && (tabAktif === 'beasiswa' || t.closest('.kb-nav'))) tb.scrollIntoView({ behavior: gerakMinim ? 'auto' : 'smooth' }); }
@@ -406,5 +410,86 @@
     document.addEventListener('click', e => { if (!e.target.closest('#kb-dd')) tutupDd(); if (!e.target.closest('#kb-menu,#kb-burger') || e.target.closest('#kb-menu a')) tutupMenu(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') { tutupDd(); tutupMenu(); } });
   })();
+  // ═══ v46: Donasi online (Midtrans) — tahap 1 infak/sedekah terikat per kampanye. Kunci rahasia hanya di server. ═══
+  const OL = { x: null, d: {} };
+  const lembar = () => { const l = document.getElementById('kb-lembar'); l.classList.add('buka'); return l.querySelector('.kb-lembar-isi'); };
+  function olForm() {
+    const x = OL.x, d = OL.d, isi = lembar();
+    isi.innerHTML = `<div class="kb-ol-langkah"><b>1 · Nominal &amp; data</b><span>2 · Periksa</span><span>3 · Bayar</span></div>
+      <h3 style="margin:6px 0 2px">Donasi online</h3><p style="margin:0 0 10px;color:var(--kb-redup);font-size:14px">${esc(x.judul)}</p>
+      <div class="kb-ol-nom">${[25000, 50000, 100000, 250000, 500000, 1000000].map(n => `<button type="button" data-ol-nom="${n}" class="${+d.nilai === n ? 'on' : ''}">${rp(n)}</button>`).join('')}</div>
+      <label class="kb-ol-f">Jumlah donasi (Rp) *<input id="ol-nilai" inputmode="numeric" placeholder="minimal 10.000" value="${d.nilai ? Number(d.nilai).toLocaleString('id-ID') : ''}"></label>
+      <label class="kb-ol-f">Nama lengkap *<input id="ol-nama" maxlength="80" autocomplete="name" value="${esc(d.nama || '')}"></label>
+      <label class="kb-ol-f">Nomor WhatsApp *<input id="ol-wa" inputmode="tel" maxlength="16" autocomplete="tel" placeholder="08…" value="${esc(d.wa || '')}"></label>
+      <label class="kb-ol-f">Email (opsional, untuk bukti)<input id="ol-email" type="email" maxlength="120" autocomplete="email" value="${esc(d.email || '')}"></label>
+      <label class="kb-ol-f">Doa atau pesan (opsional)<textarea id="ol-doa" maxlength="200" rows="2">${esc(d.doa || '')}</textarea></label>
+      <label class="kb-ol-c"><input type="checkbox" id="ol-anonim" ${d.anonim ? 'checked' : ''}> Sembunyikan nama saya (Hamba Allah)</label>
+      <label class="kb-ol-c"><input type="checkbox" id="ol-setuju" ${d.setuju ? 'checked' : ''}> Saya berinfak/bersedekah untuk <b>${esc(x.program || x.judul)}</b> melalui kampanye ini, dan dana disalurkan BAZNAS Kota Lubuklinggau sesuai peruntukannya (infak terikat).</label>
+      <p class="kb-ol-galat" id="ol-galat"></p>
+      <button class="kb-btn utama" type="button" style="width:100%" data-ol-lanjut>Lanjut — periksa donasi</button>
+      <button class="kb-btn garis" type="button" style="width:100%;margin-top:8px" data-tutup>Batal</button>
+      <p class="kb-ol-ket">Data kontak tidak dipublikasikan. Pembayaran diproses Midtrans; BAZNAS tidak menyimpan data kartu/rekening Anda.</p>`;
+    document.getElementById('ol-nilai').addEventListener('input', e => { const v = e.target.value.replace(/\D/g, ''); e.target.value = v ? Number(v).toLocaleString('id-ID') : ''; document.querySelectorAll('[data-ol-nom]').forEach(b => b.classList.toggle('on', b.dataset.olNom === v)); });
+  }
+  function olBaca() {
+    const g = id => document.getElementById(id);
+    Object.assign(OL.d, { nilai: Number((g('ol-nilai').value || '').replace(/\D/g, '')), nama: g('ol-nama').value.trim(), wa: g('ol-wa').value.trim(), email: g('ol-email').value.trim(),
+      doa: g('ol-doa').value.trim(), anonim: g('ol-anonim').checked, setuju: g('ol-setuju').checked });
+    const d = OL.d, gal = d.nilai < 10000 ? 'Nominal minimal Rp10.000.' : d.nama.length < 3 ? 'Isi nama lengkap.' : !/^(\+?62|0)8\d{7,12}$/.test(d.wa.replace(/[\s-]/g, '')) ? 'Nomor WhatsApp tidak valid (contoh 081234567890).'
+      : d.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email) ? 'Alamat email tidak valid.' : !d.setuju ? 'Centang pernyataan donasi.' : '';
+    g('ol-galat').textContent = gal; return !gal;
+  }
+  function olPeriksa() {
+    const x = OL.x, d = OL.d, isi = lembar(), wa = d.wa.replace(/\D/g, '');
+    isi.innerHTML = `<div class="kb-ol-langkah"><span>1 · Nominal &amp; data</span><b>2 · Periksa</b><span>3 · Bayar</span></div>
+      <h3 style="margin:6px 0 10px">Periksa donasi Anda</h3>
+      <div class="kb-ol-ring"><div><span>Untuk</span><b>${esc(x.judul)}</b></div><div><span>Jenis dana</span><b>Infak/Sedekah terikat</b></div>
+        <div><span>Atas nama</span><b>${esc(d.anonim ? 'Hamba Allah (nama disembunyikan)' : d.nama)}</b></div><div><span>WhatsApp</span><b>${esc(wa.slice(0, 4) + '••••' + wa.slice(-3))}</b></div>
+        <div class="tot"><span>Total dibayar</span><b>${rp(d.nilai)}</b></div></div>
+      <p class="kb-ol-ket">Metode (QRIS, Virtual Account, e-wallet) dipilih pada langkah berikutnya. Tagihan berlaku 24 jam.</p>
+      <p class="kb-ol-galat" id="ol-galat"></p>
+      <button class="kb-btn utama" type="button" style="width:100%" data-ol-bayar>Bayar sekarang ${rp(d.nilai)}</button>
+      <button class="kb-btn garis" type="button" style="width:100%;margin-top:8px" data-ol-kembali>← Ubah data</button>`;
+  }
+  function olSnapJs(src, ck) {
+    return new Promise((ok, gagal) => { if (window.snap) return ok();
+      const s = document.createElement('script'); s.src = src; s.setAttribute('data-client-key', ck); s.onload = () => ok(); s.onerror = () => gagal(new Error('snap')); document.head.appendChild(s); });
+  }
+  async function olBayar(btn) {
+    btn.disabled = true; btn.textContent = 'Menyiapkan pembayaran…'; const gal = document.getElementById('ol-galat');
+    let r;
+    try { const res = await fetch('/api/bayar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kode_kampanye: OL.x.id, ...OL.d }) }); r = await res.json(); }
+    catch (e) { r = { ok: false, pesan: 'Gagal terhubung. Periksa koneksi internet.' }; }
+    if (!r.ok) { gal.textContent = r.pesan; btn.disabled = false; btn.textContent = 'Coba lagi'; return; }
+    lacak('donasi_online_mulai', { konten_id: OL.x.id, value: OL.d.nilai, currency: 'IDR' });
+    try { await olSnapJs(r.snap_js, r.client_key); } catch (e) { gal.textContent = 'Halaman pembayaran gagal dimuat. Coba lagi.'; btn.disabled = false; return; }
+    const ke = () => olStatus(r.order_id);
+    window.snap.pay(r.token, { onSuccess: ke, onPending: ke, onError: ke, onClose: ke });
+  }
+  async function olStatus(order, n) {
+    n = n || 0; const isi = lembar();
+    if (!n) isi.innerHTML = '<div class="kb-skel" style="height:120px"></div>';
+    let s; try { s = await api('bayar_status', { order_id: order }); } catch (e) { s = { ok: false }; }
+    const ulang = s.ok && s.status === 'Menunggu pembayaran' && n < 40;
+    const ikon = !s.ok ? '⚠️' : s.status === 'Lunas' ? '✅' : s.status === 'Menunggu pembayaran' ? '⏳' : '✖️';
+    const teks = !s.ok ? 'Status belum dapat dimuat. Simpan nomor transaksi di bawah dan cek kembali nanti.'
+      : s.status === 'Lunas' ? `Jazakumullahu khairan. Donasi <b>${rp(s.nilai)}</b> untuk <b>${esc(s.judul)}</b> telah kami terima dan tercatat.`
+      : s.status === 'Menunggu pembayaran' ? 'Menunggu pembayaran. Selesaikan pembayaran di aplikasi bank/e-wallet Anda — halaman ini diperbarui otomatis.'
+      : 'Transaksi ' + esc(String(s.status).toLowerCase()) + '. Silakan mulai donasi baru bila ingin melanjutkan.';
+    if (s.ok && s.status === 'Lunas' && !n) lacak('donasi_online_lunas', { konten_id: s.kode_kampanye, value: s.nilai, currency: 'IDR' });
+    isi.innerHTML = `<div class="kb-ol-status"><div class="ik">${ikon}</div><p>${teks}</p><div class="kb-ol-no">No. transaksi<br><b>${esc(order)}</b></div></div>
+      ${s.ok && s.status === 'Lunas' ? `<a class="kb-btn wa" style="width:100%" href="${waLink('Saya baru berdonasi untuk ' + s.judul + '. Yuk ikut menebar manfaat', s.kode_kampanye)}" target="_blank" rel="noopener">${svgWa} Ajak teman lewat WhatsApp</a>` : ''}
+      <button class="kb-btn utama" type="button" style="width:100%;margin-top:8px" data-tutup>Tutup</button>`;
+    if (ulang && document.getElementById('kb-lembar').classList.contains('buka')) setTimeout(() => { if (document.querySelector('.kb-ol-no b') && document.querySelector('.kb-ol-no b').textContent === order) olStatus(order, n + 1); }, 4000);
+    if (s.ok && s.status === 'Lunas') { delete cacheDetail[s.kode_kampanye]; }
+  }
+  function olKlik(t) {
+    if (t.dataset.online) { const x = cacheDetail[t.dataset.online]; if (!x) return; OL.x = x; OL.d = OL.d.x === x.id ? OL.d : { x: x.id }; lacak('donasi_online_buka', { konten_id: x.id }); olForm(); }
+    else if (t.dataset.olNom) { const i = document.getElementById('ol-nilai'); i.value = Number(t.dataset.olNom).toLocaleString('id-ID'); document.querySelectorAll('[data-ol-nom]').forEach(b => b.classList.toggle('on', b === t)); }
+    else if (t.hasAttribute('data-ol-lanjut')) { if (olBaca()) olPeriksa(); }
+    else if (t.hasAttribute('data-ol-kembali')) olForm();
+    else if (t.hasAttribute('data-ol-bayar')) olBayar(t);
+  }
+  { const m = /^#bayar-(ONL-\d{6}-[A-Z0-9]{8})$/.exec(location.hash); if (m) { history.replaceState(null, '', location.pathname); setTimeout(() => olStatus(m[1]), 300); } }
   muat();
 })();

@@ -6191,6 +6191,49 @@ function usDokCetak(id) {
 }
 
 // ════════════════════════════════════════════
+// v46 — TRANSAKSI ONLINE (Midtrans): pantauan donasi online untuk WK I, WK III, Ketua, Bendahara. Lunas otomatis masuk Penerimaan.
+// ════════════════════════════════════════════
+let olData = null, olFilter = 'Semua';
+const olE = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+(function () {
+  const pasang = () => {
+    const bar = document.querySelector('.tab-bar'); if (!bar || document.getElementById('tab-ol-btn')) return;
+    const b = document.createElement('button'); b.className = 'tab-btn'; b.id = 'tab-ol-btn'; b.type = 'button'; b.innerHTML = '💳 Transaksi Online';
+    b.onclick = function () { switchTab('t-online', this); olMuat(); };
+    bar.appendChild(b);
+    const p = document.createElement('div'); p.id = 't-online'; p.className = 'tab-pane';
+    p.innerHTML = '<div class="main"><div class="pg-title">Transaksi Online</div><div class="pg-sub">Donasi lewat Midtrans (tahap 1: infak/sedekah terikat per kampanye). Status <b>Lunas</b> otomatis tercatat di Penerimaan sebesar nilai bruto, posisi <b>Kas di Payment Gateway</b> sampai dana masuk rekening. Biaya MDR dibebankan ke Dana Amil saat rekonsiliasi.</div><div id="ol-isi"><div class="hint">Memuat…</div></div></div>';
+    const imp = document.getElementById('t-import'); (imp ? imp.parentNode : document.body).insertBefore(p, imp || null);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pasang); else pasang();
+})();
+async function olMuat() {
+  const isi = document.getElementById('ol-isi'); if (!isi) return; isi.innerHTML = '<div class="hint">Memuat…</div>';
+  let r; try { r = await dbApi('online_daftar', {}); } catch (e) { isi.innerHTML = '<div class="hint" style="color:var(--red)">Gagal terhubung ke server.</div>'; return; }
+  if (!r.ok) { isi.innerHTML = '<div class="hint" style="color:var(--red)">' + olE(r.pesan) + '</div>'; return; }
+  olData = r; olTampil();
+}
+function olTampil() {
+  const r = olData, st = ['Semua', 'Lunas', 'Menunggu pembayaran', 'Kedaluwarsa', 'Batal', 'Refund'];
+  const list = r.data.filter(t => olFilter === 'Semua' || t.status === olFilter);
+  const lunas = r.data.filter(t => t.status === 'Lunas'), tot = lunas.reduce((s, t) => s + t.nilai, 0);
+  const rp = n => 'Rp' + Math.round(n || 0).toLocaleString('id-ID');
+  document.getElementById('ol-isi').innerHTML = `
+    ${!r.aktif || !r.kunci_siap ? '<div class="us-catat" style="background:#fff8e1;border:1px solid #f3dd97;border-radius:10px;padding:8px 12px;margin-bottom:10px">⚠️ Donasi online belum aktif. Jalankan <b>siapkanDonasiOnline()</b> di editor Apps Script, lalu isi Environment Variables di Vercel.</div>' : ''}
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+      <div style="background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:10px 14px"><small style="color:var(--g500)">Lunas (tercatat)</small><b style="display:block;font-size:18px">${rp(tot)}</b><small>${lunas.length} transaksi</small></div>
+      <div style="background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:10px 14px"><small style="color:var(--g500)">Menunggu pembayaran</small><b style="display:block;font-size:18px">${r.data.filter(t => t.status === 'Menunggu pembayaran').length}</b></div></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${st.map(s => `<button type="button" class="us-chip${s === olFilter ? ' on' : ''}" onclick="olFilter='${s}';olTampil()">${s}</button>`).join('')}<button class="btn btn-outline btn-sm" type="button" onclick="olMuat()">↻</button></div>
+    <div class="us-wrap"><table class="us-tbl"><thead><tr><th>Waktu / No. transaksi</th><th>Donatur</th><th>Kampanye</th><th class="n">Nilai</th><th>Metode</th><th>Status</th></tr></thead><tbody>
+    ${list.map(t => `<tr><td>${olE(String(t.dibuat_pada).slice(0, 16).replace('T', ' '))}<div class="us-k mono">${olE(t.order_id)}</div></td>
+      <td>${olE(t.nama)}${t.anonim === 'TRUE' ? ' <span class="badge b-gray">Hamba Allah</span>' : ''}<div class="us-k">${olE(t.wa)}${t.muzakiId ? ' · ' + olE(t.muzakiId) : ''}</div></td>
+      <td>${olE(t.judul)}<div class="us-k">${olE(t.kode_kampanye)} · ${olE(t.jenis_dana)}</div></td><td class="n">${rp(t.nilai)}</td>
+      <td>${olE(t.payment_type || '-')}${t.bank_va ? '<div class="us-k">' + olE(t.bank_va) + '</div>' : ''}</td>
+      <td><span class="badge ${t.status === 'Lunas' ? 'b-green' : t.status === 'Menunggu pembayaran' ? 'b-gold' : 'b-gray'}">${olE(t.status)}</span>${t.posisi_kas ? '<div class="us-k">' + olE(t.posisi_kas) + '</div>' : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="hint">Belum ada transaksi.</td></tr>'}
+    </tbody></table></div>`;
+}
+
+// ════════════════════════════════════════════
 // v43 — RKAT & ANGGARAN (tahap 1): impor template SIMBA (lk1/lk2/lk3), pos anggaran, pagu vs realisasi per Pilar Linggau Juara
 // dan per sumber dana/asnaf (matriks dua arah), target vs realisasi jiwa. Realisasi dari sheet Penyaluran (dikirim Excel) via peta kode_rkat.
 // Lihat: pimpinan. Impor, pemetaan pos & peta realisasi: WK3.
@@ -6437,7 +6480,7 @@ async function rkKirimImpor() {
 // ════════════════════════════════════════════
 (function(){
   const SB_GRUP=[
-    {ik:'💰',nama:'Pengumpulan',isi:['#tab-mz-btn','#tab-pg-btn','#tab-kt-btn','#tab-hl-btn']},
+    {ik:'💰',nama:'Pengumpulan',isi:['#tab-mz-btn','#tab-ol-btn','#tab-pg-btn','#tab-kt-btn','#tab-hl-btn']},
     {ik:'🤲',nama:'Pendistribusian & Pendayagunaan',isi:['#tab-pj-btn','#tab-us-btn','@survei','@monitoring','[onclick^="switchTab(\'t-daftar\'"]','[onclick^="switchTab(\'t-form\'"]','#tab-lb-btn']},
     {ik:'📊',nama:'Keuangan, Pelaporan & Akuntansi',isi:['#tab-rkat-btn','~Laporan & rekap keuangan']},
     {ik:'🗂',nama:'Administrasi, SDM, Umum & Komunikasi',isi:['#tab-ppid-btn','#tab-import-btn','~Pengguna & peran']}
@@ -8266,7 +8309,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='45 · 18 Nov 2026';
+const APP_VERSI='46 · 18 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
