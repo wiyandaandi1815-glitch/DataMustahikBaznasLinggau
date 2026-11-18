@@ -109,8 +109,11 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
 .tgl3-info.salah{color:var(--red);font-weight:700}
 .tgl3.salah input{border-color:var(--red)}
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="situs.css">
 </head>
-<body data-hal="pengajuan">
+<body data-hal="pengajuan" class="st">
 <script>
 /* v16: penjaga browser lama / mode hemat data (ES5 — tetap jalan di browser yang sangat lama) */
 (function(){
@@ -127,7 +130,29 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
   });
 })();
 </script>
-<header>
+<header class="kb-nav">
+  <div class="kb-wrap kb-nav-isi">
+    <a class="kb-merek" href="kabar.html"><img src="logo-baznas.jpg" alt="Logo BAZNAS Kota Lubuklinggau" width="42" height="42"><span><b>Pengajuan Bantuan</b><small>BAZNAS Kota Lubuklinggau</small></span></a>
+    <button type="button" class="kb-burger" id="kb-burger" aria-expanded="false" aria-controls="kb-menu" aria-label="Buka menu">☰</button>
+    <nav class="kb-menu" id="kb-menu" aria-label="Menu utama">
+      <a href="kabar.html#kampanye">Kampanye</a><a href="kabar.html#kabar">Kabar</a><a href="kabar.html#beasiswa">Beasiswa</a>
+      <div class="kb-dd" id="kb-dd">
+        <button type="button" class="kb-dd-btn" aria-expanded="false" aria-haspopup="true">PPID <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M5.2 7.2a.8.8 0 011.1 0L10 11.2l3.7-4a.8.8 0 111.1 1.1l-4.2 4.5a.8.8 0 01-1.1 0L5.2 8.3a.8.8 0 010-1.1z"/></svg></button>
+        <div class="kb-dd-isi" role="menu">
+          <a role="menuitem" href="ppid.html#profil">Profil PPID<small>Dasar hukum, struktur &amp; kontak</small></a>
+          <a role="menuitem" href="ppid.html#berkala">Informasi Berkala<small>Laporan keuangan, kinerja, rencana kerja</small></a>
+          <a role="menuitem" href="ppid.html#setiap-saat">Informasi Setiap Saat<small>Regulasi, SOP, keputusan</small></a>
+          <a role="menuitem" href="ppid.html#dip">Daftar Informasi Publik<small>Semua dokumen &amp; status keterbukaan</small></a>
+          <a role="menuitem" href="ppid.html#permohonan">Permohonan Informasi<small>Formulir &amp; cek status</small></a>
+          <a role="menuitem" href="ppid.html#keberatan">Pengajuan Keberatan<small>Alur &amp; formulir keberatan</small></a>
+          <a role="menuitem" href="ppid.html#faq">FAQ PPID<small>Pertanyaan yang sering diajukan</small></a>
+        </div>
+      </div>
+      <a href="pengajuan.html#setoran">Cek setoran</a></nav>
+    <a class="kb-cta kb-cta-nav" href="kabar.html#zakat">Tunaikan Zakat</a>
+  </div>
+</header>
+<header class="st-judul">
   <h1>Pengajuan Bantuan BAZNAS</h1>
   <p>Badan Amil Zakat Nasional Kota Lubuklinggau</p>
 </header>
@@ -337,7 +362,14 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
   <div id="z-beasiswa" class="hidden" style="margin-bottom:16px"></div>
 </section>
 </main>
-<footer>BAZNAS Kota Lubuklinggau · Data Anda dilindungi dan hanya digunakan untuk penyaluran ZIS.<br><a href="kabar.html" style="color:var(--teal);font-weight:700">Kabar penyaluran &amp; kampanye kebaikan →</a><br><a href="muzaki.html" style="color:var(--teal);font-weight:700">Ingin berzakat/berdonasi? Daftar sebagai Muzaki/Donatur →</a></footer>
+<footer class="st-kaki">
+  <div class="st-catatan">BAZNAS Kota Lubuklinggau · Data Anda dilindungi dan hanya digunakan untuk penyaluran ZIS.<br><a href="kabar.html" style="color:var(--teal);font-weight:700">Kabar penyaluran &amp; kampanye kebaikan →</a><br><a href="muzaki.html" style="color:var(--teal);font-weight:700">Ingin berzakat/berdonasi? Daftar sebagai Muzaki/Donatur →</a></div>
+  <img src="logo-baznas.jpg" alt="Logo BAZNAS Kota Lubuklinggau" width="44" height="44"><br>
+  <b>Badan Amil Zakat Nasional (BAZNAS) Kota Lubuklinggau</b><br>
+  Jl. Letkol Sukirno Kompleks Ex. Pemda, Air Kuti, Lubuklinggau Timur I · 0812-7144-8282<br>
+  <a href="kabar.html">Kabar Kebaikan</a> · <a href="ppid.html">PPID &amp; keterbukaan informasi</a> · <a href="pengajuan.html#setoran">Cek setoran &amp; verifikasi BSZ</a> · <a href="https://kotalubuklinggau.baznas.go.id/" target="_blank" rel="noopener">Laporan keuangan ↗</a> · <a href="pengajuan.html">Ajukan bantuan</a> · <a href="muzaki.html">Daftar muzaki/donatur</a> · <a href="penggalang.html">Penggalang &amp; UPZ</a>
+</footer>
+
 
 <script>
 const DB_URL='https://script.google.com/macros/s/AKfycbwcFWag2lgTgaaV5lKBWU_YDrhSHEAgPgXyrfFR9tq6uRyzrg5t_158fHzSBX6183me/exec';
@@ -978,5 +1010,6 @@ window.addEventListener('hashchange',()=>{const h=location.hash;if(h==='#laporan
 aturKelas();isiKeluarga();
 laporPesan('tampilErr');laporPesan('lbErr');drafPasang('fpj');
 </script>
+<script src="situs.js" defer></script>
 </body>
 </html>

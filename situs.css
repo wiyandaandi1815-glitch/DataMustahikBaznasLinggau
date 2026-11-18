@@ -1,0 +1,48 @@
+/* ═══ v42 — header & footer seragam situs publik BAZNAS Kota Lubuklinggau (pengajuan, muzaki, penggalang). Sama dengan kabar.html & ppid.html. ═══ */
+:root{--kb-hijau:#0F6E56;--kb-hijau-tua:#0a4f3e;--kb-hijau-muda:#E1F5EE;--kb-emas:#C9A227;--kb-kartu:#fff;--kb-teks:#1d2b27;--kb-redup:#5d6b67;--kb-garis:#e3e9e6;--kb-latar:#f6f8f7}
+body.st{font-family:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.kb-wrap{max-width:1200px;margin:0 auto;padding:0 16px}
+@media(min-width:900px){.kb-wrap{padding:0 24px}}
+.kb-nav{background:var(--kb-kartu);border-bottom:1px solid var(--kb-garis);position:sticky;top:0;z-index:40;text-align:left;color:var(--kb-teks)}
+.kb-nav-isi{display:flex;align-items:center;gap:18px;padding-top:10px;padding-bottom:10px}
+.kb-merek{display:flex;align-items:center;gap:10px;color:var(--kb-teks);text-decoration:none;min-width:0}
+.kb-merek img{border-radius:50%;background:#fff;object-fit:contain;padding:2px;border:1px solid var(--kb-garis);flex:none}
+.kb-merek span{display:flex;flex-direction:column;line-height:1.25;min-width:0}.kb-merek b{font-size:16px;color:var(--kb-teks)}.kb-merek small{font-size:12px;color:var(--kb-redup)}
+.kb-menu{display:none;gap:4px;margin-left:auto;align-items:center}
+.kb-menu a{color:var(--kb-teks);text-decoration:none;font-weight:600;font-size:14.5px;padding:10px;border-radius:8px}
+.kb-menu a:hover,.kb-menu a.kb-aktif{background:var(--kb-hijau-muda);color:var(--kb-hijau-tua)}
+@media(min-width:1000px){.kb-menu{display:flex}}
+.kb-cta{display:inline-flex;align-items:center;justify-content:center;background:var(--kb-emas);color:#1D2B27!important;font-weight:800;text-decoration:none;border-radius:12px;min-height:44px;padding:0 14px;font-size:14.5px;white-space:nowrap}
+.kb-cta:hover{background:#B8921C}
+.kb-cta-nav{margin-left:auto}@media(min-width:1000px){.kb-cta-nav{margin-left:8px}}
+.kb-burger{display:none;margin-left:auto;background:none;border:1px solid var(--kb-garis);border-radius:10px;width:44px;height:44px;font-size:20px;color:var(--kb-teks);cursor:pointer}
+.kb-dd{position:relative}
+.kb-dd-btn{display:inline-flex;align-items:center;gap:6px;background:none;border:0;font:inherit;font-weight:600;font-size:14.5px;color:var(--kb-teks);padding:10px;border-radius:8px;cursor:pointer}
+.kb-dd-btn:hover,.kb-dd.buka .kb-dd-btn{background:var(--kb-hijau-muda);color:var(--kb-hijau-tua)}
+.kb-dd-btn svg{transition:transform .2s}.kb-dd.buka .kb-dd-btn svg{transform:rotate(180deg)}
+.kb-dd-isi{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:270px;background:#fff;border:1px solid var(--kb-garis);border-radius:12px;box-shadow:0 14px 30px -8px rgba(15,23,42,.18);padding:6px;z-index:50}
+.kb-dd.buka .kb-dd-isi{display:block}
+.kb-menu .kb-dd-isi a{display:block;padding:9px 12px;font-size:14px}
+.kb-dd-isi small{display:block;font-weight:400;font-size:12px;color:var(--kb-redup);margin-top:1px}
+@media(max-width:999px){
+  .kb-nav-isi{position:relative;flex-wrap:wrap}
+  .kb-burger{display:inline-flex;align-items:center;justify-content:center}
+  .kb-cta-nav{display:none}
+  .kb-menu.buka{display:flex;flex-direction:column;align-items:stretch;position:absolute;top:100%;left:0;right:0;background:#fff;border-bottom:1px solid var(--kb-garis);box-shadow:0 12px 24px -10px rgba(0,0,0,.2);padding:8px 14px 14px;margin:0}
+  .kb-menu.buka .kb-dd-btn{width:100%;justify-content:space-between}
+  .kb-dd-isi{position:static;box-shadow:none;border:0;background:var(--kb-latar);min-width:0;margin:2px 0 6px}
+}
+/* judul halaman (pengganti header lama) */
+body.st header.st-judul{background:linear-gradient(135deg,var(--kb-hijau),var(--kb-hijau-tua));color:#fff;padding:22px 16px 24px;text-align:center}
+body.st header.st-judul h1{font-size:clamp(20px,3.4vw,26px);font-weight:800;margin:0}
+body.st header.st-judul p{font-size:13.5px;opacity:.9;margin:4px 0 0}
+body.st .tabs{top:var(--st-nav-h,65px)!important}
+/* footer seragam */
+body.st footer.st-kaki{text-align:center;font-size:12.5px;color:var(--kb-redup);line-height:1.7;padding:24px 16px 32px;margin-top:24px;border-top:1px solid var(--kb-garis);background:#fff}
+body.st footer.st-kaki .st-catatan{max-width:640px;margin:0 auto 14px;font-size:12.5px}
+body.st footer.st-kaki img{width:44px;height:44px;border-radius:50%;background:#fff;padding:2px;object-fit:contain;border:1px solid var(--kb-garis)}
+body.st footer.st-kaki b{color:var(--kb-teks)}
+body.st footer.st-kaki a{color:var(--kb-hijau);font-weight:700;text-decoration:none}
+body.st footer.st-kaki a:hover{text-decoration:underline}
+body.st .pilih{position:relative}
+body.st header.kb-nav{padding:0;text-align:left;background:#fff;color:var(--kb-teks)}
