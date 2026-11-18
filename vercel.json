@@ -1,4 +1,8 @@
 {
+  "redirects": [
+    { "source": "/", "destination": "/kabar.html", "permanent": true },
+    { "source": "/admin", "destination": "/form-mustahik-final_1.html", "permanent": false }
+  ],
   "rewrites": [
     { "source": "/k/:id", "destination": "/api/k?id=:id" },
     { "source": "/logo-baznas.jpg", "destination": "/api/logo" }
