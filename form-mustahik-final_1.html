@@ -6202,7 +6202,7 @@ const olE = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
     b.onclick = function () { switchTab('t-online', this); olMuat(); };
     bar.appendChild(b);
     const p = document.createElement('div'); p.id = 't-online'; p.className = 'tab-pane';
-    p.innerHTML = '<div class="main"><div class="pg-title">Transaksi Online</div><div class="pg-sub">Donasi lewat Midtrans (tahap 1: infak/sedekah terikat per kampanye). Status <b>Lunas</b> otomatis tercatat di Penerimaan sebesar nilai bruto, posisi <b>Kas di Payment Gateway</b> sampai dana masuk rekening. Biaya MDR dibebankan ke Dana Amil saat rekonsiliasi.</div><div id="ol-isi"><div class="hint">Memuat…</div></div></div>';
+    p.innerHTML = '<div class="main"><div class="pg-title">Transaksi Online</div><div class="pg-sub">Donasi lewat Midtrans (infak/sedekah terikat per kampanye, zakat mal dengan e-BSZ otomatis, infak/sedekah tidak terikat). Status <b>Lunas</b> otomatis tercatat di Penerimaan sebesar nilai bruto, posisi <b>Kas di Payment Gateway</b> sampai dana masuk rekening. Biaya MDR dibebankan ke Dana Amil saat rekonsiliasi.</div><div id="ol-isi"><div class="hint">Memuat…</div></div></div>';
     const imp = document.getElementById('t-import'); (imp ? imp.parentNode : document.body).insertBefore(p, imp || null);
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pasang); else pasang();
@@ -6227,9 +6227,9 @@ function olTampil() {
     <div class="us-wrap"><table class="us-tbl"><thead><tr><th>Waktu / No. transaksi</th><th>Donatur</th><th>Kampanye</th><th class="n">Nilai</th><th>Metode</th><th>Status</th></tr></thead><tbody>
     ${list.map(t => `<tr><td>${olE(String(t.dibuat_pada).slice(0, 16).replace('T', ' '))}<div class="us-k mono">${olE(t.order_id)}</div></td>
       <td>${olE(t.nama)}${t.anonim === 'TRUE' ? ' <span class="badge b-gray">Hamba Allah</span>' : ''}<div class="us-k">${olE(t.wa)}${t.muzakiId ? ' · ' + olE(t.muzakiId) : ''}</div></td>
-      <td>${olE(t.judul)}<div class="us-k">${olE(t.kode_kampanye)} · ${olE(t.jenis_dana)}</div></td><td class="n">${rp(t.nilai)}</td>
+      <td>${olE(t.judul)}<div class="us-k">${olE(t.kode_kampanye || (t.layanan === 'zakat' ? 'Zakat Mal' : 'Infak umum'))} · ${olE(t.jenis_dana)}${t.sifat_dana ? ' · ' + olE(t.sifat_dana) : ''}</div></td><td class="n">${rp(t.nilai)}</td>
       <td>${olE(t.payment_type || '-')}${t.bank_va ? '<div class="us-k">' + olE(t.bank_va) + '</div>' : ''}</td>
-      <td><span class="badge ${t.status === 'Lunas' ? 'b-green' : t.status === 'Menunggu pembayaran' ? 'b-gold' : 'b-gray'}">${olE(t.status)}</span>${t.posisi_kas ? '<div class="us-k">' + olE(t.posisi_kas) + '</div>' : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="hint">Belum ada transaksi.</td></tr>'}
+      <td><span class="badge ${t.status === 'Lunas' ? 'b-green' : t.status === 'Menunggu pembayaran' ? 'b-gold' : 'b-gray'}">${olE(t.status)}</span>${t.posisi_kas ? '<div class="us-k">' + olE(t.posisi_kas) + '</div>' : ''}${t.nomor_bsz ? '<div class="us-k mono">e-BSZ ' + olE(t.nomor_bsz) + '</div>' : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="hint">Belum ada transaksi.</td></tr>'}
     </tbody></table></div>`;
 }
 
@@ -8309,7 +8309,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='46 · 18 Nov 2026';
+const APP_VERSI='47 · 19 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){

@@ -2,7 +2,7 @@
    Konfigurasi lewat window.KABAR_CONFIG = { api, foto, bagikan, cekSetoran, laporanKeuangan } */
 (function () {
   const C = Object.assign({ api: '', foto: '/api/foto', bagikan: '/k/', cekSetoran: 'pengajuan.html#setoran', laporanKeuangan: 'https://kotalubuklinggau.baznas.go.id/',
-    muzaki: 'muzaki.html', nisabBulan: 7640144, nisabSumber: 'SK Ketua BAZNAS No. 15 Tahun 2026' }, window.KABAR_CONFIG || {});
+    muzaki: 'muzaki.html', ketua: 'Marjianto, S.H., M.H.', nisabBulan: 7640144, nisabSumber: 'SK Ketua BAZNAS No. 15 Tahun 2026' }, window.KABAR_CONFIG || {});
   const app = document.getElementById('kabar-app');
   const gerakMinim = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   let data = null, tabAktif = '', sudahHitung = false;
@@ -226,7 +226,9 @@
         <label>Penghasilan per bulan<span class="kb-rpin"><span>Rp</span><input id="kb-gaji" inputmode="numeric" autocomplete="off" placeholder="0"></span></label>
         <label>Pendapatan lain per bulan <small>(opsional: bonus, sewa, usaha)</small><span class="kb-rpin"><span>Rp</span><input id="kb-lain" inputmode="numeric" autocomplete="off" placeholder="0"></span></label>
         <div class="kb-hasilz" id="kb-hasilz" aria-live="polite"><small>Isi penghasilan untuk menghitung</small><b>Rp 0</b><span>Dihitung dari penghasilan bruto per bulan.</span></div>
-        <a class="kb-cta" href="${esc(C.muzaki)}">Tunaikan Zakat Sekarang</a>
+        ${data && data.online_umum ? `<button class="kb-cta" type="button" data-ol-umum="zakat" style="width:100%;border:0;cursor:pointer">💳 Bayar Zakat Online</button>
+        <button class="kb-btn garis" type="button" data-ol-umum="infak" style="width:100%;margin-top:8px">Infak/Sedekah online</button>
+        <p class="kb-kecil" style="margin:6px 0 0;text-align:center">QRIS · Virtual Account · e-wallet · e-BSZ langsung terbit</p>` : `<a class="kb-cta" href="${esc(C.muzaki)}">Tunaikan Zakat Sekarang</a>`}
         <p class="kb-aman">${svgPerisai}<span>Transfer hanya ke rekening atas nama <b>BAZNAS Kota Lubuklinggau</b>. Bukti Setor Zakat (BSZ) dapat menjadi pengurang penghasilan kena pajak.</span></p>
       </div>
       <nav class="kb-transparan" aria-label="Transparansi"><b>Transparansi</b>
@@ -372,7 +374,7 @@
       else { bagikan(f.dataset.bagi, f.dataset.judul, f); return; }
       isiKabar(); return;
     }
-    const ol = e.target.closest('[data-online],[data-ol-nom],[data-ol-lanjut],[data-ol-kembali],[data-ol-bayar]');
+    const ol = e.target.closest('[data-online],[data-ol-nom],[data-ol-lanjut],[data-ol-kembali],[data-ol-bayar],[data-ol-umum],[data-ol-jenis],[data-ebsz]');
     if (ol) { olKlik(ol); return; }
     const t = e.target.closest('[data-tab],[data-donasi],[data-salin],[data-tutup]');
     if (!t) { if (e.target.id === 'kb-lembar') e.target.classList.remove('buka'); return; }
@@ -413,20 +415,29 @@
   // ═══ v46: Donasi online (Midtrans) — tahap 1 infak/sedekah terikat per kampanye. Kunci rahasia hanya di server. ═══
   const OL = { x: null, d: {} };
   const lembar = () => { const l = document.getElementById('kb-lembar'); l.classList.add('buka'); return l.querySelector('.kb-lembar-isi'); };
+  const UMUM = { zakat: { judul: 'Zakat Mal', jenis: 'Zakat Mal' }, infak: { judul: 'Infak/Sedekah', jenis: 'Infak/Sedekah (tidak terikat)' } };
   function olForm() {
-    const x = OL.x, d = OL.d, isi = lembar();
+    const x = OL.x, d = OL.d, isi = lembar(), z = x.umum === 'zakat';
+    const pilihJenis = x.umum ? `<div class="kb-ol-nom" style="grid-template-columns:1fr 1fr;margin-bottom:8px">${['zakat', 'infak'].map(j => `<button type="button" data-ol-jenis="${j}" class="${x.umum === j ? 'on' : ''}">${j === 'zakat' ? '🕌 Zakat Mal' : '🤲 Infak/Sedekah'}</button>`).join('')}</div>` : '';
+    const idZakat = z ? `<details class="kb-ol-f" ${d.npwp || d.nik ? 'open' : ''} style="margin:4px 0 10px"><summary style="cursor:pointer;font-weight:600">Data untuk Bukti Setor Zakat (opsional, untuk pengurang pajak)</summary>
+        <label class="kb-ol-f">NPWP<input id="ol-npwp" inputmode="numeric" maxlength="20" autocomplete="off" placeholder="15/16 digit" value="${esc(d.npwp || '')}"></label>
+        <label class="kb-ol-f">atau NIK<input id="ol-nik" inputmode="numeric" maxlength="16" autocomplete="off" placeholder="16 digit" value="${esc(d.nik || '')}"></label>
+        <label class="kb-ol-f">Alamat<input id="ol-alamat" maxlength="200" autocomplete="street-address" value="${esc(d.alamat || '')}"></label></details>` : '';
+    const nyata = z ? `<label class="kb-ol-c"><input type="checkbox" id="ol-setuju" ${d.setuju ? 'checked' : ''}> Saya berniat menunaikan <b>zakat mal</b> karena Allah Ta'ala dan mewakilkan penyalurannya kepada BAZNAS Kota Lubuklinggau sesuai ketentuan syariah (8 asnaf).</label>`
+      : x.umum ? `<label class="kb-ol-c"><input type="checkbox" id="ol-setuju" ${d.setuju ? 'checked' : ''}> Saya berinfak/bersedekah kepada BAZNAS Kota Lubuklinggau untuk disalurkan sesuai program yang dibutuhkan (infak tidak terikat).</label>`
+      : `<label class="kb-ol-c"><input type="checkbox" id="ol-setuju" ${d.setuju ? 'checked' : ''}> Saya berinfak/bersedekah untuk <b>${esc(x.program || x.judul)}</b> melalui kampanye ini, dan dana disalurkan BAZNAS Kota Lubuklinggau sesuai peruntukannya (infak terikat).</label>`;
     isi.innerHTML = `<div class="kb-ol-langkah"><b>1 · Nominal &amp; data</b><span>2 · Periksa</span><span>3 · Bayar</span></div>
-      <h3 style="margin:6px 0 2px">Donasi online</h3><p style="margin:0 0 10px;color:var(--kb-redup);font-size:14px">${esc(x.judul)}</p>
+      <h3 style="margin:6px 0 2px">${x.umum ? (z ? 'Bayar zakat online' : 'Infak/sedekah online') : 'Donasi online'}</h3><p style="margin:0 0 10px;color:var(--kb-redup);font-size:14px">${x.umum ? 'BAZNAS Kota Lubuklinggau' : esc(x.judul)}</p>${pilihJenis}
       <div class="kb-ol-nom">${[25000, 50000, 100000, 250000, 500000, 1000000].map(n => `<button type="button" data-ol-nom="${n}" class="${+d.nilai === n ? 'on' : ''}">${rp(n)}</button>`).join('')}</div>
-      <label class="kb-ol-f">Jumlah donasi (Rp) *<input id="ol-nilai" inputmode="numeric" placeholder="minimal 10.000" value="${d.nilai ? Number(d.nilai).toLocaleString('id-ID') : ''}"></label>
+      <label class="kb-ol-f">${z ? 'Jumlah zakat' : 'Jumlah donasi'} (Rp) *<input id="ol-nilai" inputmode="numeric" placeholder="minimal 10.000" value="${d.nilai ? Number(d.nilai).toLocaleString('id-ID') : ''}"></label>
       <label class="kb-ol-f">Nama lengkap *<input id="ol-nama" maxlength="80" autocomplete="name" value="${esc(d.nama || '')}"></label>
       <label class="kb-ol-f">Nomor WhatsApp *<input id="ol-wa" inputmode="tel" maxlength="16" autocomplete="tel" placeholder="08…" value="${esc(d.wa || '')}"></label>
       <label class="kb-ol-f">Email (opsional, untuk bukti)<input id="ol-email" type="email" maxlength="120" autocomplete="email" value="${esc(d.email || '')}"></label>
-      <label class="kb-ol-f">Doa atau pesan (opsional)<textarea id="ol-doa" maxlength="200" rows="2">${esc(d.doa || '')}</textarea></label>
-      <label class="kb-ol-c"><input type="checkbox" id="ol-anonim" ${d.anonim ? 'checked' : ''}> Sembunyikan nama saya (Hamba Allah)</label>
-      <label class="kb-ol-c"><input type="checkbox" id="ol-setuju" ${d.setuju ? 'checked' : ''}> Saya berinfak/bersedekah untuk <b>${esc(x.program || x.judul)}</b> melalui kampanye ini, dan dana disalurkan BAZNAS Kota Lubuklinggau sesuai peruntukannya (infak terikat).</label>
+      ${idZakat}<label class="kb-ol-f">Doa atau pesan (opsional)<textarea id="ol-doa" maxlength="200" rows="2">${esc(d.doa || '')}</textarea></label>
+      <label class="kb-ol-c"><input type="checkbox" id="ol-anonim" ${d.anonim ? 'checked' : ''}> Sembunyikan nama saya (Hamba Allah)${z ? ' — BSZ tetap atas nama Anda' : ''}</label>
+      ${nyata}
       <p class="kb-ol-galat" id="ol-galat"></p>
-      <button class="kb-btn utama" type="button" style="width:100%" data-ol-lanjut>Lanjut — periksa donasi</button>
+      <button class="kb-btn utama" type="button" style="width:100%" data-ol-lanjut>Lanjut — periksa ${z ? 'zakat' : 'donasi'}</button>
       <button class="kb-btn garis" type="button" style="width:100%;margin-top:8px" data-tutup>Batal</button>
       <p class="kb-ol-ket">Data kontak tidak dipublikasikan. Pembayaran diproses Midtrans; BAZNAS tidak menyimpan data kartu/rekening Anda.</p>`;
     document.getElementById('ol-nilai').addEventListener('input', e => { const v = e.target.value.replace(/\D/g, ''); e.target.value = v ? Number(v).toLocaleString('id-ID') : ''; document.querySelectorAll('[data-ol-nom]').forEach(b => b.classList.toggle('on', b.dataset.olNom === v)); });
@@ -434,16 +445,20 @@
   function olBaca() {
     const g = id => document.getElementById(id);
     Object.assign(OL.d, { nilai: Number((g('ol-nilai').value || '').replace(/\D/g, '')), nama: g('ol-nama').value.trim(), wa: g('ol-wa').value.trim(), email: g('ol-email').value.trim(),
-      doa: g('ol-doa').value.trim(), anonim: g('ol-anonim').checked, setuju: g('ol-setuju').checked });
+      doa: g('ol-doa').value.trim(), anonim: g('ol-anonim').checked, setuju: g('ol-setuju').checked,
+      npwp: g('ol-npwp') ? g('ol-npwp').value.replace(/\D/g, '') : '', nik: g('ol-nik') ? g('ol-nik').value.replace(/\D/g, '') : '', alamat: g('ol-alamat') ? g('ol-alamat').value.trim() : '' });
     const d = OL.d, gal = d.nilai < 10000 ? 'Nominal minimal Rp10.000.' : d.nama.length < 3 ? 'Isi nama lengkap.' : !/^(\+?62|0)8\d{7,12}$/.test(d.wa.replace(/[\s-]/g, '')) ? 'Nomor WhatsApp tidak valid (contoh 081234567890).'
-      : d.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email) ? 'Alamat email tidak valid.' : !d.setuju ? 'Centang pernyataan donasi.' : '';
+      : d.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email) ? 'Alamat email tidak valid.'
+      : d.npwp && !/^\d{15,16}$/.test(d.npwp) ? 'NPWP harus 15 atau 16 digit.' : d.nik && !/^\d{16}$/.test(d.nik) ? 'NIK harus 16 digit.'
+      : !d.setuju ? (OL.x.umum === 'zakat' ? 'Centang pernyataan niat zakat.' : 'Centang pernyataan donasi.') : '';
     g('ol-galat').textContent = gal; return !gal;
   }
   function olPeriksa() {
     const x = OL.x, d = OL.d, isi = lembar(), wa = d.wa.replace(/\D/g, '');
     isi.innerHTML = `<div class="kb-ol-langkah"><span>1 · Nominal &amp; data</span><b>2 · Periksa</b><span>3 · Bayar</span></div>
-      <h3 style="margin:6px 0 10px">Periksa donasi Anda</h3>
-      <div class="kb-ol-ring"><div><span>Untuk</span><b>${esc(x.judul)}</b></div><div><span>Jenis dana</span><b>Infak/Sedekah terikat</b></div>
+      <h3 style="margin:6px 0 10px">Periksa ${x.umum === 'zakat' ? 'zakat' : 'donasi'} Anda</h3>
+      <div class="kb-ol-ring"><div><span>Untuk</span><b>${esc(x.umum ? 'BAZNAS Kota Lubuklinggau' : x.judul)}</b></div><div><span>Jenis dana</span><b>${x.umum ? UMUM[x.umum].jenis : 'Infak/Sedekah terikat'}</b></div>
+        ${x.umum === 'zakat' ? `<div><span>Bukti Setor Zakat</span><b>${d.npwp ? 'NPWP ' + esc(d.npwp) : d.nik ? 'NIK ' + esc(d.nik.slice(0, 4) + '••••••••' + d.nik.slice(-4)) : 'Atas nama (tanpa NPWP/NIK)'}</b></div>` : ''}
         <div><span>Atas nama</span><b>${esc(d.anonim ? 'Hamba Allah (nama disembunyikan)' : d.nama)}</b></div><div><span>WhatsApp</span><b>${esc(wa.slice(0, 4) + '••••' + wa.slice(-3))}</b></div>
         <div class="tot"><span>Total dibayar</span><b>${rp(d.nilai)}</b></div></div>
       <p class="kb-ol-ket">Metode (QRIS, Virtual Account, e-wallet) dipilih pada langkah berikutnya. Tagihan berlaku 24 jam.</p>
@@ -458,10 +473,10 @@
   async function olBayar(btn) {
     btn.disabled = true; btn.textContent = 'Menyiapkan pembayaran…'; const gal = document.getElementById('ol-galat');
     let r;
-    try { const res = await fetch('/api/bayar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kode_kampanye: OL.x.id, ...OL.d }) }); r = await res.json(); }
+    try { const res = await fetch('/api/bayar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(OL.x.umum ? { ...OL.d, kode_kampanye: '', layanan: OL.x.umum, niat: OL.x.umum === 'zakat' && OL.d.setuju } : { ...OL.d, kode_kampanye: OL.x.id }) }); r = await res.json(); }
     catch (e) { r = { ok: false, pesan: 'Gagal terhubung. Periksa koneksi internet.' }; }
     if (!r.ok) { gal.textContent = r.pesan; btn.disabled = false; btn.textContent = 'Coba lagi'; return; }
-    lacak('donasi_online_mulai', { konten_id: OL.x.id, value: OL.d.nilai, currency: 'IDR' });
+    lacak('donasi_online_mulai', { konten_id: OL.x.id || OL.x.umum, value: OL.d.nilai, currency: 'IDR' });
     try { await olSnapJs(r.snap_js, r.client_key); } catch (e) { gal.textContent = 'Halaman pembayaran gagal dimuat. Coba lagi.'; btn.disabled = false; return; }
     const ke = () => olStatus(r.order_id);
     window.snap.pay(r.token, { onSuccess: ke, onPending: ke, onError: ke, onClose: ke });
@@ -473,15 +488,58 @@
     const ulang = s.ok && s.status === 'Menunggu pembayaran' && n < 40;
     const ikon = !s.ok ? '⚠️' : s.status === 'Lunas' ? '✅' : s.status === 'Menunggu pembayaran' ? '⏳' : '✖️';
     const teks = !s.ok ? 'Status belum dapat dimuat. Simpan nomor transaksi di bawah dan cek kembali nanti.'
+      : s.status === 'Lunas' && s.layanan === 'zakat' ? `Ājarakallāhu fīmā a'ṭaita, wa bāraka laka fīmā abqaita. Zakat mal <b>${rp(s.nilai)}</b> telah kami terima dan tercatat.`
       : s.status === 'Lunas' ? `Jazakumullahu khairan. Donasi <b>${rp(s.nilai)}</b> untuk <b>${esc(s.judul)}</b> telah kami terima dan tercatat.`
       : s.status === 'Menunggu pembayaran' ? 'Menunggu pembayaran. Selesaikan pembayaran di aplikasi bank/e-wallet Anda — halaman ini diperbarui otomatis.'
       : 'Transaksi ' + esc(String(s.status).toLowerCase()) + '. Silakan mulai donasi baru bila ingin melanjutkan.';
-    if (s.ok && s.status === 'Lunas' && !n) lacak('donasi_online_lunas', { konten_id: s.kode_kampanye, value: s.nilai, currency: 'IDR' });
+    if (s.ok && s.status === 'Lunas' && !n) lacak('donasi_online_lunas', { konten_id: s.kode_kampanye || s.layanan, value: s.nilai, currency: 'IDR' });
     isi.innerHTML = `<div class="kb-ol-status"><div class="ik">${ikon}</div><p>${teks}</p><div class="kb-ol-no">No. transaksi<br><b>${esc(order)}</b></div></div>
-      ${s.ok && s.status === 'Lunas' ? `<a class="kb-btn wa" style="width:100%" href="${waLink('Saya baru berdonasi untuk ' + s.judul + '. Yuk ikut menebar manfaat', s.kode_kampanye)}" target="_blank" rel="noopener">${svgWa} Ajak teman lewat WhatsApp</a>` : ''}
+      ${s.ok && s.ada_bsz ? `<div class="kb-ol-ring" style="margin-bottom:10px"><div style="display:block"><b>📄 Bukti Setor Zakat elektronik (e-BSZ)</b><span style="display:block;font-size:13px;margin-top:4px">Untuk keamanan, masukkan 4 digit terakhir nomor WhatsApp yang Anda isi.</span></div>
+        <div style="display:flex;gap:8px"><input id="ol-wa4" inputmode="numeric" maxlength="4" placeholder="4 digit" style="flex:1;padding:10px;border:1px solid #ccc;border-radius:10px;font-size:16px"><button class="kb-btn utama" type="button" data-ebsz="${esc(order)}">Unduh e-BSZ</button></div><p class="kb-ol-galat" id="ol-galat-bsz"></p></div>` : ''}
+      ${s.ok && s.status === 'Lunas' && s.kode_kampanye ? `<a class="kb-btn wa" style="width:100%" href="${waLink('Saya baru berdonasi untuk ' + s.judul + '. Yuk ikut menebar manfaat', s.kode_kampanye)}" target="_blank" rel="noopener">${svgWa} Ajak teman lewat WhatsApp</a>` : ''}
       <button class="kb-btn utama" type="button" style="width:100%;margin-top:8px" data-tutup>Tutup</button>`;
     if (ulang && document.getElementById('kb-lembar').classList.contains('buka')) setTimeout(() => { if (document.querySelector('.kb-ol-no b') && document.querySelector('.kb-ol-no b').textContent === order) olStatus(order, n + 1); }, 4000);
     if (s.ok && s.status === 'Lunas') { delete cacheDetail[s.kode_kampanye]; }
+  }
+  // v47: e-BSZ — data diminta lewat POST (nomor transaksi + 4 digit WA), dicetak di jendela baru.
+  const terbilang = n => { n = Math.floor(Math.abs(+n || 0)); const s = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
+    const t = x => x < 12 ? s[x] : x < 20 ? t(x - 10) + ' belas' : x < 100 ? t(Math.floor(x / 10)) + ' puluh ' + t(x % 10) : x < 200 ? 'seratus ' + t(x - 100) : x < 1000 ? t(Math.floor(x / 100)) + ' ratus ' + t(x % 100)
+      : x < 2000 ? 'seribu ' + t(x - 1000) : x < 1e6 ? t(Math.floor(x / 1000)) + ' ribu ' + t(x % 1000) : x < 1e9 ? t(Math.floor(x / 1e6)) + ' juta ' + t(x % 1e6) : t(Math.floor(x / 1e9)) + ' miliar ' + t(x % 1e9);
+    const r = t(n).replace(/\s+/g, ' ').trim(); return r ? r.charAt(0).toUpperCase() + r.slice(1) + ' rupiah' : 'Nol rupiah'; };
+  const muatQr = () => new Promise(ok => { if (window.qrcode) return ok(true); const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'; sc.onload = () => ok(!!window.qrcode); sc.onerror = () => ok(false); document.head.appendChild(sc); });
+  async function olEbsz(btn) {
+    const order = btn.dataset.ebsz, wa4 = (document.getElementById('ol-wa4').value || '').replace(/\D/g, ''), gal = document.getElementById('ol-galat-bsz');
+    if (!/^\d{4}$/.test(wa4)) { gal.textContent = 'Isi 4 digit terakhir nomor WhatsApp.'; return; }
+    const w = window.open('', '_blank'); if (!w) { gal.textContent = 'Izinkan popup untuk mengunduh e-BSZ.'; return; }
+    w.document.write('<p style="font-family:sans-serif;padding:20px">Menyiapkan e-BSZ…</p>');
+    btn.disabled = true; let r; try { r = await api('bsz_online', { order_id: order, wa4 }); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung.' }; } btn.disabled = false;
+    if (!r.ok) { w.close(); gal.textContent = r.pesan; return; }
+    gal.textContent = ''; lacak('unduh_ebsz', { konten_id: 'zakat' });
+    const qr = (await muatQr()) ? (() => { try { const q = qrcode(0, 'M'); q.addData(location.origin + '/pengajuan.html#bsz=' + encodeURIComponent(r.nomor_bsz)); q.make(); return q.createSvgTag({ cellSize: 3, margin: 0 }); } catch (e) { return ''; } })() : '';
+    const m = r.muzaki, st = r.setoran, row = (l, v) => `<tr><td style="width:42mm">${l}</td><td style="width:4mm">:</td><td>${v}</td></tr>`;
+    const idn = m.npwp ? ['NPWP', m.npwp] : m.nomorIdentitas ? [m.jenisIdentitas || 'NIK', m.nomorIdentitas] : null;
+    w.document.open(); w.document.write(`<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>e-BSZ ${esc(r.nomor_bsz)}</title><style>
+      @page{size:A4;margin:15mm}body{font-family:'Times New Roman',serif;font-size:12pt;color:#000;max-width:180mm;margin:10px auto;padding:0 10px}
+      .kop{display:flex;gap:12px;align-items:center;border-bottom:3px double #000;padding-bottom:8px}.kop img{width:22mm;height:22mm;object-fit:contain}.kop div{text-align:center;flex:1}
+      .k1{font-size:14pt;font-weight:bold}.k2{font-size:16pt;font-weight:bold}.k3{font-size:9pt}h1{text-align:center;font-size:14pt;margin:14px 0 0;text-decoration:underline}.no{text-align:center;margin-bottom:12px}
+      table{border-collapse:collapse;width:100%}td,th{padding:3px 4px;vertical-align:top}.g th,.g td{border:1px solid #000}.g th{background:#eee}.r{text-align:right}.c{text-align:center}
+      .kaki{display:flex;justify-content:space-between;align-items:flex-end;margin-top:12mm}.qr{text-align:center;font-size:8pt;width:40mm}.qr svg{width:30mm;height:30mm}.ttd{text-align:center;width:75mm}
+      .ket{margin-top:8mm;font-size:8.5pt;color:#444;border-top:1px solid #ccc;padding-top:2mm}.cetak{margin:16px 0;text-align:center}@media print{.cetak{display:none}}</style></head><body>
+      <div class="kop"><img src="${location.origin}/logo-baznas.jpg" alt=""><div><div class="k1">BADAN AMIL ZAKAT NASIONAL</div><div class="k2">KOTA LUBUK LINGGAU</div>
+        <div class="k3">Jl. Letkol Sukirno Kompleks Ex. Pemda Kelurahan Air Kuti Kecamatan Lubuk Linggau Timur I, Kota Lubuklinggau, Sumatera Selatan 31625<br>Website: https://kotalubuklinggau.baznas.go.id/ · Telp: 0812-7144-8282</div></div></div>
+      <h1>BUKTI SETOR ZAKAT</h1><div class="no">Nomor: ${esc(r.nomor_bsz)}</div>
+      <table>${row('Nama Muzaki', '<b>' + esc(m.nama) + '</b>')}${row('NPWZ', esc(m.npwz || '-'))}${idn ? row(esc(idn[0]), esc(idn[1])) : ''}${m.alamat ? row('Alamat', esc(m.alamat)) : ''}${row('ID Muzaki', esc(m.muzakiId || '-'))}</table>
+      <p>Telah menerima pembayaran zakat dengan rincian:</p>
+      <table class="g"><thead><tr><th>No</th><th>Tanggal Setor</th><th>No. Transaksi</th><th>Jenis Zakat</th><th>Cara Bayar</th><th>Jumlah (Rp)</th></tr></thead>
+      <tbody><tr><td class="c">1</td><td class="c">${esc(tgl(st.tanggal))}</td><td class="c">${esc(st.no_bukti)}</td><td>${esc(st.jenis_dana)}</td><td class="c">${esc(st.metode)}</td><td class="r">${Math.round(st.nilai).toLocaleString('id-ID')}</td></tr>
+      <tr><td colspan="5" class="r"><b>Jumlah</b></td><td class="r"><b>${Math.round(st.nilai).toLocaleString('id-ID')}</b></td></tr></tbody></table>
+      <p><b>Terbilang:</b> <i>${esc(terbilang(st.nilai))}</i></p>
+      <p style="font-size:10.5pt">Bukti Setor Zakat ini diterbitkan secara elektronik oleh sistem BAZNAS Kota Lubuklinggau dan sah tanpa tanda tangan basah. Keasliannya dapat diperiksa dengan memindai kode QR. BSZ dapat digunakan sebagai pengurang penghasilan kena pajak sesuai Undang-Undang Nomor 23 Tahun 2011 tentang Pengelolaan Zakat dan peraturan perpajakan yang berlaku.</p>
+      <div class="kaki"><div class="qr">${qr}<div>Pindai untuk verifikasi keaslian</div></div>
+        <div class="ttd">Lubuklinggau, ${esc(tgl(r.tanggal_terbit))}<br>Ketua BAZNAS Kota Lubuk Linggau<br><br><i style="font-size:9pt">(dokumen elektronik)</i><br><br><b><u>${esc(C.ketua)}</u></b></div></div>
+      <div class="ket">e-BSZ · diterbitkan ${esc(tgl(r.tanggal_terbit))} · ${esc(st.no_bukti)}</div>
+      <div class="cetak"><button onclick="print()" style="font-size:16px;padding:10px 18px">🖨️ Cetak / Simpan PDF</button></div></body></html>`);
+    w.document.close();
   }
   function olKlik(t) {
     if (t.dataset.online) { const x = cacheDetail[t.dataset.online]; if (!x) return; OL.x = x; OL.d = OL.d.x === x.id ? OL.d : { x: x.id }; lacak('donasi_online_buka', { konten_id: x.id }); olForm(); }
@@ -489,6 +547,13 @@
     else if (t.hasAttribute('data-ol-lanjut')) { if (olBaca()) olPeriksa(); }
     else if (t.hasAttribute('data-ol-kembali')) olForm();
     else if (t.hasAttribute('data-ol-bayar')) olBayar(t);
+    else if (t.dataset.olUmum) {   // v47: zakat mal / infak tidak terikat tanpa kampanye
+      const j = t.dataset.olUmum; OL.x = { id: '', umum: j, judul: UMUM[j].judul }; OL.d = OL.d.x === 'umum' ? OL.d : { x: 'umum' };
+      const h = document.getElementById('kb-hasilz'); if (j === 'zakat' && h && h.classList.contains('wajib') && !OL.d.nilai) { const v = +(h.querySelector('b').textContent.replace(/\D/g, '')); if (v >= 10000) OL.d.nilai = v; }
+      lacak('donasi_online_buka', { konten_id: j }); olForm();
+    }
+    else if (t.dataset.olJenis) { if (document.getElementById('ol-nama')) olBaca(); OL.d.setuju = false; OL.x = { id: '', umum: t.dataset.olJenis, judul: UMUM[t.dataset.olJenis].judul }; olForm(); }
+    else if (t.dataset.ebsz) olEbsz(t);
   }
   { const m = /^#bayar-(ONL-\d{6}-[A-Z0-9]{8})$/.exec(location.hash); if (m) { history.replaceState(null, '', location.pathname); setTimeout(() => olStatus(m[1]), 300); } }
   muat();
