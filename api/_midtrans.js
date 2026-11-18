@@ -15,11 +15,16 @@ async function bacaBody(req) {
   const b = await new Promise((ok) => { let s = ''; req.on('data', c => { s += c; if (s.length > 1e5) req.destroy(); }); req.on('end', () => ok(s)); req.on('error', () => ok('')); });
   try { return JSON.parse(b || '{}'); } catch (e) { return {}; }
 }
+function bersihCust(c) { const o = {}; c = c || {};
+  if (c.first_name) o.first_name = String(c.first_name).slice(0, 50);
+  if (c.phone) o.phone = String(c.phone);
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(c.email || '').trim())) o.email = String(c.email).trim();
+  return o; }
 async function buatSnap(o, finishUrl) {
   const r = await fetch(BASE.snap + '/snap/v1/transactions', {
     method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: auth() },
     body: JSON.stringify({ transaction_details: { order_id: o.order_id, gross_amount: o.gross_amount }, item_details: [o.item],
-      customer_details: o.customer, callbacks: { finish: finishUrl }, expiry: { unit: 'hours', duration: 24 }, credit_card: { secure: true } })
+      customer_details: bersihCust(o.customer), callbacks: { finish: finishUrl }, expiry: { unit: 'hour', duration: 24 }, credit_card: { secure: true } })
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok || !j.token) throw new Error('Snap ' + r.status + ' ' + (j.error_messages || []).join('; '));
