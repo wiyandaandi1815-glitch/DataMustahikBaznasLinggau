@@ -5,5 +5,5 @@ async function panggil(aksi, data) {
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return r.json();
 }
-const ID_RE = /^(KMP-\d{4}-[A-Z0-9]+(-[A-Z0-9]+)*|PUB-\d{4}-\d{4})$/;
+const ID_RE = /^(KMP-\d{4}-[A-Z0-9]+(-[A-Z0-9]+)*|PUB-\d{4}-\d{4}|HL-\d{4}-\d{4})$/;
 module.exports = { panggil, ID_RE };

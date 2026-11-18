@@ -5,9 +5,9 @@ const rp = n => 'Rp ' + Math.round(+n || 0).toLocaleString('id-ID');
 module.exports = async (req, res) => {
   const id = String(req.query.id || '').toUpperCase();
   const host = (req.headers['x-forwarded-proto'] || 'https') + '://' + req.headers.host;
-  const tujuan = '/kabar.html' + (ID_RE.test(id) ? '#' + id : '');
+  const tujuan = '/kabar.html' + ((ID_RE.test(id) && !/^HL-/.test(id)) ? '#' + id : '');
   let judul = 'Kabar Kebaikan — BAZNAS Kota Lubuklinggau', desk = 'Kabar penyaluran dan kampanye kebaikan BAZNAS Kota Lubuklinggau.', gambar = host + '/logo-baznas.jpg';
-  if (ID_RE.test(id)) {
+  if ((ID_RE.test(id) && !/^HL-/.test(id))) {
     try {
       const x = await panggil('detail_publik', { id });
       if (x.ok) {
