@@ -68,6 +68,12 @@ footer{text-align:center;font-size:12px;color:var(--g500);padding:20px 16px 32px
 .batas{display:inline-block;background:#fdecea;color:var(--red);font-weight:800;border-radius:6px;padding:2px 8px}
 .cetak-saja{display:none}
 .anak-info{background:#eef6ff;border:1px solid #bcd6f5;color:#1e3a8a;border-radius:8px;padding:10px 12px;font-size:13.5px}
+.tahap{border:1px solid var(--g200);border-radius:10px;padding:10px 12px;margin-top:10px;text-align:left}
+.tahap b{font-size:14px}.tahap ol{list-style:none;display:flex;gap:4px;padding:0;margin:8px 0 2px}
+.tahap li{flex:1;text-align:center;font-size:11.5px;color:var(--g500);position:relative;padding-top:20px}
+.tahap li::before{content:'';position:absolute;top:4px;left:50%;transform:translateX(-50%);width:12px;height:12px;border-radius:50%;background:var(--g200)}
+.tahap li.ok{color:var(--teal-dark);font-weight:700}.tahap li.ok::before{background:var(--teal)}
+.tahap li.kini::before{box-shadow:0 0 0 4px rgba(16,128,104,.25)}
 .kel-ringkas{background:var(--teal);color:#fff;border-radius:10px;padding:14px;text-align:left;margin-bottom:12px}
 .kel-ringkas .big{font-size:22px;font-weight:800}
 .kel-kartu{border:1.5px solid var(--g300);border-radius:10px;padding:12px 14px;margin-top:10px;text-align:left;background:#fff}
@@ -743,14 +749,15 @@ async function cekMustahik(){
     box.classList.remove('hidden');
     if(!r.ok){isi.innerHTML='<p style="color:var(--red)">'+esc(r.pesan)+'</p>';return;}
     const aktif=r.status_aktif==='Aktif';
-    const rows=r.riwayat.map(x=>'<tr><td>'+tglId(x.tanggal)+'</td><td>'+esc(x.program||'-')+'</td><td>'+esc(x.bentuk||'-')+'</td><td class="n">'+rp(x.nilai)+'</td></tr>').join('');
+    const rows=r.riwayat.map(x=>'<tr><td>'+tglId(x.tanggal)+'</td><td>'+esc(x.program||'-')+'</td><td>'+esc(x.bentuk||'-')+'</td></tr>').join('');
     isi.innerHTML='<div style="font-family:monospace;font-weight:800;font-size:16px">'+esc(r.mustahikId)+'</div>'+
       '<div style="font-size:18px;font-weight:800;margin-top:2px">'+esc(r.nama)+'</div>'+
       '<div class="st '+(aktif?'Diterima':'Tidak')+'">'+(aktif?'✅ Terdaftar sebagai mustahik (Aktif)':'Terdaftar — status Nonaktif')+'</div>'+
       '<div class="info"><div>Asnaf</div><div>'+esc(r.asnaf||'-')+'</div><div>Jenis bantuan</div><div>'+esc(r.jenis_bantuan||'-')+'</div><div>Status verifikasi</div><div>'+esc(r.status_verifikasi||'-')+'</div></div>'+
+      htmlTahap(r.tahap_penyaluran)+
       '<h4 style="text-align:left;margin-top:16px;color:var(--teal-dark)">Riwayat bantuan diterima</h4>'+
-      (r.riwayat.length?'<div style="overflow-x:auto"><table class="riw"><thead><tr><th>Tanggal</th><th>Program</th><th>Bentuk</th><th class="n">Nominal</th></tr></thead><tbody>'+rows+
-        '</tbody><tfoot><tr><td colspan="3">Total ('+r.jumlah_penyaluran+' kali)</td><td class="n">'+rp(r.total)+'</td></tr></tfoot></table></div>'
+      (r.riwayat.length?'<div style="overflow-x:auto"><table class="riw"><thead><tr><th>Tanggal</th><th>Program</th><th>Bentuk</th></tr></thead><tbody>'+rows+
+        '</tbody><tfoot><tr><td colspan="3">Jumlah: '+r.jumlah_penyaluran+' kali</td></tr></tfoot></table></div>'
         :'<p style="text-align:left;color:var(--g500);margin-top:6px">Belum ada catatan penyaluran bantuan.</p>')+
       (r.barang&&r.barang.length?'<h4 style="text-align:left;margin-top:18px;color:var(--teal-dark)">Barang yang dipinjamkan</h4>'+
         '<div style="overflow-x:auto"><table class="riw"><thead><tr><th>Barang</th><th>Sejak</th><th>Status</th></tr></thead><tbody>'+
@@ -815,17 +822,19 @@ async function cekKeluarga(){
     const r=await api('cek_keluarga',{mustahikId:id,tanggalLahir:tgl});
     if(!r.ok){isi.innerHTML='<p style="color:var(--red)">'+esc(r.pesan)+'</p>';return;}
     const kartu=r.anggota.map(a=>{
-      const rows=a.riwayat.map(x=>'<tr><td>'+tglId(x.tanggal)+'</td><td>'+esc(x.program||'-')+'</td><td>'+esc(x.bentuk||'-')+'</td><td class="n">'+rp(x.nilai)+'</td></tr>').join('');
+      const rows=a.riwayat.map(x=>'<tr><td>'+tglId(x.tanggal)+'</td><td>'+esc(x.program||'-')+'</td><td>'+esc(x.bentuk||'-')+'</td></tr>').join('');
+      const kaliTh=a.riwayat.filter(x=>String(x.tanggal).slice(0,4)===String(r.tahun)).length;
       return '<div class="kel-kartu'+(a.saya?' saya':'')+'"><div class="hd"><div><div style="font-size:16px;font-weight:800">'+esc(a.nama)+(a.saya?'<span class="kel-tag">Saya</span>':'')+'</div>'+
         '<div style="font-size:12.5px;color:var(--g500)">'+esc(a.hubungan)+' · <span style="font-family:monospace">'+esc(a.mustahikId)+'</span></div></div>'+
         '<span class="st '+(a.status_aktif==='Aktif'?'Diterima':'Tidak')+'" style="margin:0;font-size:12px">'+esc(a.status_aktif)+'</span></div>'+
-        '<div class="info" style="margin-top:6px"><div>Jenis bantuan</div><div>'+esc(a.jenis_bantuan||'-')+'</div><div>Diterima '+esc(r.tahun)+'</div><div>'+rp(a.total_tahun_ini)+'</div></div>'+
-        (rows?'<div style="overflow-x:auto"><table class="riw"><thead><tr><th>Tanggal</th><th>Program</th><th>Bentuk</th><th class="n">Nominal</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td colspan="3">Total ('+a.jumlah_penyaluran+' kali)</td><td class="n">'+rp(a.total)+'</td></tr></tfoot></table></div>'
+        '<div class="info" style="margin-top:6px"><div>Jenis bantuan</div><div>'+esc(a.jenis_bantuan||'-')+'</div><div>Diterima '+esc(r.tahun)+'</div><div>'+kaliTh+' kali</div></div>'+htmlTahap(a.tahap_penyaluran)+
+        (rows?'<div style="overflow-x:auto"><table class="riw"><thead><tr><th>Tanggal</th><th>Program</th><th>Bentuk</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td colspan="3">Jumlah: '+a.jumlah_penyaluran+' kali</td></tr></tfoot></table></div>'
           :'<p style="color:var(--g500);font-size:13px;margin-top:6px">Belum ada catatan penyaluran.</p>')+
         (a.barang&&a.barang.length?'<div style="font-size:13px;margin-top:6px"><strong>Barang dipinjamkan:</strong> '+a.barang.map(x=>esc(x.jenis)+' ('+esc(x.status)+')').join(', ')+'</div>':'')+htmlLaporanBea(a.laporan_beasiswa)+'</div>';
     }).join('');
-    isi.innerHTML='<div class="kel-ringkas"><div style="font-size:13px;opacity:.9">Total bantuan keluarga tahun '+esc(r.tahun)+'</div><div class="big">'+rp(r.total_tahun_ini)+'</div>'+
-      '<div style="font-size:12.5px;opacity:.9">'+r.jumlah_anggota+' anggota terdaftar sebagai mustahik · seluruhnya '+rp(r.total_semua)+'</div></div>'+
+    const kaliKel=r.anggota.reduce((s,a)=>s+a.riwayat.filter(x=>String(x.tanggal).slice(0,4)===String(r.tahun)).length,0);
+    isi.innerHTML='<div class="kel-ringkas"><div style="font-size:13px;opacity:.9">Bantuan keluarga tahun '+esc(r.tahun)+'</div><div class="big">'+kaliKel+' kali penyaluran</div>'+
+      '<div style="font-size:12.5px;opacity:.9">'+r.jumlah_anggota+' anggota terdaftar sebagai mustahik</div></div>'+
       (r.catatan?'<p style="font-size:13px;color:var(--g500);text-align:left">ℹ️ '+esc(r.catatan)+'</p>':'')+kartu+
       r.pengajuan_diproses.map(p=>'<div class="kel-proses">📝 Pengajuan <strong>'+esc(p.no_pengajuan)+'</strong> sedang diproses — status: '+esc(p.status)+'</div>').join('')+
       '<p style="font-size:12px;color:var(--g500);margin-top:12px;text-align:left">Nama disamarkan untuk melindungi data pribadi. Data penyaluran diperbarui berkala oleh BAZNAS Kota Lubuklinggau.</p>';
@@ -849,7 +858,7 @@ async function cekStatus(){
       '<div style="font-size:12.5px;color:var(--g500)">Diajukan '+esc(r.tanggal_pengajuan)+'</div>'+
       '<div class="st '+esc(r.status.split(' ')[0])+'">'+esc(r.status)+'</div>'+
       (r.jadwal_kunjungan?'<p><strong>Jadwal kunjungan:</strong> '+esc(r.jadwal_kunjungan)+'</p>':'')+
-      '<p style="margin-top:8px">'+esc(r.keterangan)+'</p>'+
+      '<p style="margin-top:8px">'+esc(r.keterangan)+'</p>'+htmlTahap(r.tahap_penyaluran)+
       (r.berkas_status?'<div class="info" style="max-width:420px;margin:10px auto 0"><div>Berkas</div><div>'+esc(r.berkas_status)+'</div>'+
         (r.berkas_status==='Belum diserahkan'&&r.batas_berkas&&r.status==='Menunggu verifikasi'?'<div>Batas serah</div><div>'+tglPanjang(r.batas_berkas)+'</div>':'')+'</div>':'')+
       (r.berkas_kurang&&r.berkas_kurang.length?'<div class="berkas" style="margin-top:10px">'+htmlBerkas({wajib:r.berkas_kurang,pendukung:[]},r.berkas_status==='Belum lengkap'?'Berkas yang masih kurang':'Berkas yang harus diserahkan')+'</div>'+
@@ -924,6 +933,14 @@ function aturRef(){
 }
 // ── Laporan / status beasiswa (keluarga yang sudah masuk boleh melihat nilai) ──
 function stLb(s){return '<span class="lb-st '+esc(String(s||'Belum').split(' ')[0])+'">'+esc(s||'Belum lapor')+'</span>';}
+// v44: tahap Usulan Penyaluran (tanpa nilai rupiah)
+function htmlTahap(t){
+  if(!t||!t.length)return '';
+  const L=['Diusulkan','Disetujui','Proses pembayaran','Sudah diterima'];
+  return '<h4 style="text-align:left;margin-top:16px;color:var(--teal-dark)">Perkembangan penyaluran</h4>'+t.map(x=>'<div class="tahap"><b>'+esc(x.program||'Bantuan')+'</b>'+
+    '<ol>'+L.map((l,i)=>'<li class="'+(i<x.langkah?'ok':'')+(i===x.langkah-1?' kini':'')+'">'+l+'</li>').join('')+'</ol>'+
+    '<div style="font-size:12.5px;color:var(--g500)">'+(x.langkah===4?'✅ Bantuan sudah diterima':'Tahap saat ini: <b>'+esc(x.tahap)+'</b>')+(x.tanggal?' · '+tglId(x.tanggal):'')+'</div></div>').join('');
+}
 function htmlLaporanBea(l){
   if(!l||!l.length)return '';
   return '<h4 style="text-align:left;margin-top:14px;color:#1e40af">🎓 Laporan beasiswa</h4><div style="overflow-x:auto"><table class="riw"><thead><tr><th>Semester</th><th>Kelas</th><th>Status</th><th class="n">Nilai</th><th class="n">Hadir</th></tr></thead><tbody>'+

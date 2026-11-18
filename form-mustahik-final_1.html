@@ -5766,6 +5766,280 @@ async function ppProfilSimpan(){const b=document.getElementById('pp-p-simpan');b
   try{const r=await dbApi('ppid_profil_simpan',o);document.getElementById('pp-p-galat').textContent=r.ok?'':r.pesan;if(r.ok){toast(r.pesan);ppData.profil=r.profil;}}catch(e){toast('Gagal terhubung ke server.',true);}finally{b.disabled=false;}}
 
 // ════════════════════════════════════════════
+// v44 — USULAN PENYALURAN (batch): Draf → WK II → Ketua → Anggaran WK III → SPP → Otorisasi WK III + Ketua → Bayar → Selesai (terkunci).
+// Tombol hanya muncul untuk peran yang berhak (server memeriksa ulang). Menu di bidang Pendistribusian & Pendayagunaan.
+// ════════════════════════════════════════════
+let usData = null, usPool = null, usFilter = '', usBuka = null, usEdit = null;
+const usE = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const usRp = n => 'Rp' + Math.round(n || 0).toLocaleString('id-ID');
+const usTgl = s => { if (!s) return ''; const d = new Date(String(s).length === 10 ? s + 'T12:00:00' : s); return isNaN(d) ? usE(s) : d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }); };
+const US_LANGKAH = [
+  { st: 'Draf', nama: 'Draf', siapa: 'Penyusun', k: 'diusulkan' },
+  { st: 'Menunggu WK II', nama: 'WK II', siapa: 'Wakil Ketua II', k: 'wk2' },
+  { st: 'Menunggu Ketua', nama: 'Ketua', siapa: 'Ketua', k: 'ketua' },
+  { st: 'Menunggu Anggaran', nama: 'Anggaran', siapa: 'Wakil Ketua III', k: 'anggaran' },
+  { st: 'Proses SPP', nama: 'SPP', siapa: 'Bendahara (WK III)', k: 'spp' },
+  { st: 'Menunggu Otorisasi', nama: 'Otorisasi', siapa: 'WK III & Ketua', k: 'otor' },
+  { st: 'Siap Bayar', nama: 'Bayar', siapa: 'Bendahara (WK III)', k: 'bayar' },
+  { st: 'Selesai', nama: 'Selesai', siapa: '', k: 'selesai' }];
+const US_BADGE = { 'Draf': 'b-gray', 'Selesai': 'b-green', 'Dibatalkan': 'b-red', 'Siap Bayar': 'b-gold' };
+const US_AKSI = { kirim: 'Kirim ke WK II', setuju: 'Setujui', kembalikan: 'Kembalikan', batal: 'Batalkan', coret: 'Coret terpilih', anggaran: 'Setujui anggaran', spp: 'Catat SPP', otorisasi: 'Otorisasi', bayar: 'Catat pembayaran', ubah: 'Ubah draf' };
+(function () {
+  const pasang = () => {
+    const bar = document.querySelector('.tab-bar'); if (!bar || document.getElementById('tab-us-btn')) return;
+    const b = document.createElement('button'); b.className = 'tab-btn'; b.id = 'tab-us-btn'; b.type = 'button';
+    b.innerHTML = '📦 Usulan Penyaluran <span id="us-count" class="badge b-red" style="display:none">0</span>';
+    b.onclick = function () { switchTab('t-usulan', this); usBuka = null; usMuat(); };
+    bar.appendChild(b);
+    const p = document.createElement('div'); p.id = 't-usulan'; p.className = 'tab-pane';
+    p.innerHTML = '<div class="main" id="us-main"><div class="hint">Memuat…</div></div>';
+    const imp = document.getElementById('t-import'); (imp ? imp.parentNode : document.body).insertBefore(p, imp || null);
+    const st = document.createElement('style'); st.textContent = `
+.us-alur{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:11.5px;color:var(--g500);margin:4px 0 12px}
+.us-alur span{background:var(--g100);border-radius:6px;padding:2px 7px}
+.us-chip{border:1px solid var(--g200);background:#fff;border-radius:99px;padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--g700)}
+.us-chip.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.us-kartu{background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:12px 14px;margin-bottom:10px;cursor:pointer;border-left:4px solid var(--g200)}
+.us-kartu.aksi{border-left-color:var(--red)}.us-kartu:hover{box-shadow:0 2px 12px rgba(0,0,0,.12)}
+.us-kartu .t{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.us-kartu .s{font-size:12.5px;color:var(--g500);margin-top:2px}
+.us-step{display:flex;gap:2px;margin-top:8px}.us-step i{flex:1;height:5px;border-radius:3px;background:var(--g100)}.us-step i.ok{background:var(--teal)}.us-step i.kini{background:var(--gold,#c9a227)}
+.us-lang{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin:10px 0 14px}
+.us-lang div{text-align:center;font-size:11px;color:var(--g500);padding-top:22px;position:relative;line-height:1.25}
+.us-lang div::before{content:'';position:absolute;top:4px;left:50%;transform:translateX(-50%);width:14px;height:14px;border-radius:50%;background:var(--g200)}
+.us-lang div.ok{color:var(--teal-dark,var(--teal))}.us-lang div.ok::before{background:var(--teal)}
+.us-lang div.kini{color:#7c5c00;font-weight:700}.us-lang div.kini::before{background:var(--gold,#c9a227);box-shadow:0 0 0 4px rgba(201,162,39,.25)}
+.us-lang small{display:block;font-size:10px;color:var(--g500);font-weight:400}
+.us-info{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-bottom:12px}
+.us-info>div{background:#fff;border-radius:10px;box-shadow:var(--shadow);padding:8px 12px;font-size:12px;color:var(--g500)}.us-info b{display:block;color:var(--g800,#222);font-size:14px}
+.us-catat{background:#fff8e1;border:1px solid #f3dd97;border-radius:10px;padding:8px 12px;font-size:13px;margin-bottom:12px}
+.us-aksi{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;position:sticky;bottom:0;background:var(--g50,#f7f8fa);padding:8px 0;z-index:5}
+table.us-tbl{width:100%;min-width:0!important;border-collapse:collapse;font-size:12.5px;background:#fff}
+table.us-tbl th,table.us-tbl td{position:static!important;left:auto!important;right:auto!important;min-width:0!important;max-width:none!important;width:auto!important;font-family:inherit!important;letter-spacing:normal!important;border-left:0!important;border-right:0!important;text-align:left;white-space:normal;z-index:auto!important;background:#fff!important;color:var(--g700)!important;font-size:12.5px!important;font-weight:400!important;padding:7px 8px!important;vertical-align:top!important}
+table.us-tbl th{background:var(--g50)!important;color:var(--g500)!important;font-weight:700!important;font-size:11.5px!important}
+table.us-tbl th::after,table.us-tbl td::after,table.us-tbl th::before,table.us-tbl td::before{display:none!important}
+table.us-tbl td{border-top:1px solid var(--g100)!important;border-bottom:0!important}table.us-tbl .n{text-align:right!important;white-space:nowrap}
+table.us-tbl tr.coret td{opacity:.55;text-decoration:line-through}table.us-tbl tr.coret td:last-child{text-decoration:none}
+table.us-tbl input,table.us-tbl select{padding:4px 6px;font-size:12px;width:100%}
+.us-wrap{overflow-x:auto;border-radius:12px;box-shadow:var(--shadow);margin-bottom:12px}
+.us-hasil{max-height:260px;overflow:auto;border:1px solid var(--g200);border-radius:10px;background:#fff}
+.us-hasil div{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--g100);font-size:12.5px}
+.us-k{font-size:11px;color:var(--g500)}
+#us-sv{width:auto!important;margin:0}
+.us-form{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:12px}
+@media(max-width:700px){.us-lang{grid-template-columns:repeat(4,1fr);row-gap:10px}}`;
+    document.head.appendChild(st);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pasang); else pasang();
+})();
+function usBadge() {
+  const n = usData ? usData.data.filter(usPerlu).length : 0;
+  const el = document.getElementById('us-count'); if (el) { el.textContent = n; el.style.display = n ? '' : 'none'; } return n;
+}
+async function usMuat() {
+  const m = document.getElementById('us-main'); if (!m) return;
+  let r; try { r = await dbApi('usulan_daftar', {}); } catch (e) { m.innerHTML = '<div class="hint" style="color:var(--red)">Gagal terhubung ke server.</div>'; return; }
+  if (!r.ok) { m.innerHTML = '<div class="hint" style="color:var(--red)">' + usE(r.pesan) + '</div>'; return; }
+  usData = r; const n = usBadge();
+  if (!usFilter) usFilter = n ? 'saya' : 'jalan';
+  if (usBuka && usData.data.some(b => b.id === usBuka)) return usDetail(usBuka);
+  usBuka = null; usDaftar();
+}
+function usPerlu(b) { return b.boleh.length && (b.status !== 'Draf' || b.dibuat_oleh === usData.nama); }
+function usIdx(st) { return US_LANGKAH.findIndex(l => l.st === st); }
+function usDaftar() {
+  const r = usData, n = usBadge();
+  const F = { saya: ['Perlu tindakan saya', b => usPerlu(b)], jalan: ['Berjalan', b => b.status !== 'Selesai' && b.status !== 'Dibatalkan'], selesai: ['Selesai', b => b.status === 'Selesai'], batal: ['Dibatalkan', b => b.status === 'Dibatalkan'], semua: ['Semua', () => true] };
+  const list = r.data.filter(F[usFilter][1]);
+  document.getElementById('us-main').innerHTML = `<div class="pg-title">Usulan Penyaluran</div>
+    <div class="pg-sub">Satu usulan = satu gelombang penyaluran (mis. UMKM Gelombang I). Setelah dikirim tidak bisa diubah penyusun; setelah <b>Selesai</b> terkunci — perbaikan lewat usulan koreksi baru. Mustahik dapat memantau tahapnya (tanpa nilai) di halaman Cek Status.</div>
+    <div class="us-alur">${US_LANGKAH.map(l => '<span>' + l.nama + '</span>').join('›')}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+      ${r.boleh_buat ? '<button class="btn btn-primary" type="button" onclick="usEditor()">+ Usulan baru</button>' : ''}
+      ${Object.keys(F).map(k => `<button type="button" class="us-chip${k === usFilter ? ' on' : ''}" onclick="usFilter='${k}';usDaftar()">${F[k][0]}${k === 'saya' && n ? ' (' + n + ')' : ''}</button>`).join('')}
+      <button class="btn btn-outline btn-sm" type="button" onclick="usMuat()">↻</button></div>
+    ${list.map(b => { const i = usIdx(b.status); return `<div class="us-kartu${usPerlu(b) ? ' aksi' : ''}" onclick="usDetail('${usE(b.id)}')">
+      <div class="t"><div><b>${usE(b.judul)}</b> <span class="mono us-k">${usE(b.id)}</span><div class="s">${usE(b.program)} · ${usE(b.bidang)} · ${b.jumlah} mustahik · <b>${usRp(b.total)}</b></div></div>
+      <div style="text-align:right"><span class="badge ${US_BADGE[b.status] || 'b-gold'}">${usE(b.status)}</span>${usPerlu(b) ? '<div class="us-k" style="color:var(--red);font-weight:700;margin-top:3px">● perlu tindakan Anda</div>' : i > 0 && i < 7 ? '<div class="us-k" style="margin-top:3px">menunggu ' + usE(US_LANGKAH[i].siapa) + '</div>' : ''}</div></div>
+      <div class="us-step">${US_LANGKAH.map((l, k) => `<i class="${b.status === 'Dibatalkan' ? '' : k < i || b.status === 'Selesai' ? 'ok' : k === i ? 'kini' : ''}"></i>`).join('')}</div></div>`; }).join('') || '<div class="hint">Tidak ada usulan pada kelompok ini.</div>'}`;
+}
+function usLangkah(b) {
+  const i = b.status === 'Dibatalkan' ? -1 : usIdx(b.status);
+  const ket = { 0: [b.diusulkan_oleh || b.dibuat_oleh, b.diusulkan_pada || b.dibuat_pada], 1: [b.wk2_oleh, b.wk2_pada], 2: [b.ketua_oleh, b.ketua_pada], 3: [b.anggaran_oleh, b.anggaran_pada],
+    4: [b.spp_oleh, b.spp_pada], 5: [[b.otor_wk3_oleh && 'WK III ✓', b.otor_ketua_oleh && 'Ketua ✓'].filter(Boolean).join(' · '), ''], 6: [b.dibayar ? usRp(b.dibayar) + ' dibayar' : '', ''], 7: ['', b.selesai_pada] };
+  return '<div class="us-lang">' + US_LANGKAH.map((l, k) => `<div class="${b.status === 'Selesai' || k < i ? 'ok' : k === i ? 'kini' : ''}">${l.nama}<small>${usE(ket[k][0] || (k === i ? l.siapa : ''))}${ket[k][1] ? '<br>' + usTgl(ket[k][1]) : ''}</small></div>`).join('') + '</div>';
+}
+function usDetail(id) {
+  const b = usData.data.find(x => x.id === id); if (!b) return usDaftar(); usBuka = id;
+  const pilih = b.boleh.includes('coret') || b.boleh.includes('bayar') || b.boleh.includes('setuju');
+  const aktif = b.items.filter(i => i.status === 'aktif');
+  document.getElementById('us-main').innerHTML = `<button class="btn btn-outline btn-sm" type="button" onclick="usBuka=null;usDaftar()">← Daftar usulan</button>
+    <div class="pg-title" style="margin-top:8px">${usE(b.judul)} <span class="badge ${US_BADGE[b.status] || 'b-gold'}" style="vertical-align:middle">${usE(b.status)}</span></div>
+    <div class="pg-sub"><span class="mono">${usE(b.id)}</span> · ${usE(b.program)} · ${usE(b.bidang)} · tahun anggaran ${usE(b.tahun)}${b.koreksi_dari ? ' · koreksi atas ' + usE(b.koreksi_dari) : ''}</div>
+    ${b.status === 'Dibatalkan' ? '' : usLangkah(b)}
+    ${b.catatan_terakhir ? '<div class="us-catat">📝 ' + usE(b.catatan_terakhir) + '</div>' : ''}
+    <div class="us-info"><div>Mustahik<b>${b.jumlah}</b></div><div>Total usulan<b>${usRp(b.total)}</b></div><div>Sudah dibayar<b>${usRp(b.dibayar)}</b></div>
+      <div>Pos RKAT<b style="font-size:12.5px">${usE(b.nama_pos || b.kode_pos || '— ditetapkan WK III —')}</b></div>${b.no_spp ? '<div>SPP<b style="font-size:12.5px">' + usE(b.no_spp) + ' · ' + usTgl(b.tgl_spp) + '</b></div>' : ''}</div>
+    ${b.catatan ? '<div class="hint" style="margin-bottom:10px">Catatan penyusun: ' + usE(b.catatan) + '</div>' : ''}
+    ${pilih && aktif.length ? '<div class="hint" style="margin-bottom:6px">Centang mustahik untuk ' + (b.boleh.includes('bayar') ? 'dicatat pembayarannya atau dicoret' : 'dicoret (tidak dilanjutkan)') + '.</div>' : ''}
+    <div class="us-wrap"><table class="us-tbl"><thead><tr>${pilih ? '<th><input type="checkbox" id="us-semua"></th>' : ''}<th>#</th><th>Mustahik</th><th>Kelurahan</th><th class="n">Nilai</th><th>Bentuk</th><th>Status</th></tr></thead><tbody>
+    ${b.items.map((i, k) => `<tr class="${i.status === 'dicoret' ? 'coret' : ''}">${pilih ? `<td>${i.status === 'aktif' ? `<input type="checkbox" class="us-cek" value="${usE(i.mustahikId)}">` : ''}</td>` : ''}<td>${k + 1}</td>
+      <td><b>${usE(i.nama)}</b><div class="us-k mono">${usE(i.mustahikId)}</div>${i.keterangan ? '<div class="us-k">' + usE(i.keterangan) + '</div>' : ''}</td><td>${usE(i.kelurahan)}</td><td class="n">${usRp(i.nilai)}</td><td>${usE(i.bentuk)}</td>
+      <td>${i.status === 'dibayar' ? '<span class="badge b-green">Dibayar</span><div class="us-k">' + usTgl(i.tgl_bayar) + ' · ' + usE(i.cara_bayar) + (i.no_bukti ? ' · ' + usE(i.no_bukti) : '') + '</div>' + (i.file_bukti ? `<a href="#" class="us-k" onclick="usLihatBukti('${usE(b.id)}','${usE(i.mustahikId)}');return false">lihat bukti</a>` : '')
+        : i.status === 'dicoret' ? '<span class="badge b-red">Dicoret</span><div class="us-k">' + usE(i.alasan_coret) + ' — ' + usE(i.dicoret_oleh) + '</div>' : '<span class="badge b-gray">Aktif</span>'}</td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="us-aksi">${b.boleh.map(a => `<button type="button" class="btn ${['setuju', 'kirim', 'anggaran', 'spp', 'otorisasi', 'bayar'].includes(a) ? 'btn-primary' : 'btn-outline'}" onclick="usAksi('${a}')">${US_AKSI[a]}</button>`).join('')}
+      <button type="button" class="btn btn-outline" onclick="usCetak('${usE(b.id)}')">🖨 Cetak</button>
+      ${b.status === 'Selesai' && usData.boleh_buat ? `<button type="button" class="btn btn-outline" onclick="usEditor(null,'${usE(b.id)}')">Buat usulan koreksi</button>` : ''}</div>
+    <div class="rk-h" style="font-weight:700;margin:6px 0">Riwayat</div>
+    <div class="us-wrap"><table class="us-tbl"><tbody>${b.riwayat.slice().reverse().map(h => `<tr><td style="white-space:nowrap">${usTgl(h.waktu)} ${new Date(h.waktu).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</td><td><b>${usE(h.oleh)}</b> <span class="us-k">${usE(h.jabatan)}</span></td><td>${usE(h.aksi)}${h.dari !== h.ke ? ' · ' + usE(h.dari) + ' → <b>' + usE(h.ke) + '</b>' : ''}${h.catatan ? '<div class="us-k">' + usE(h.catatan) + '</div>' : ''}</td></tr>`).join('')}</tbody></table></div>`;
+  const s = document.getElementById('us-semua'); if (s) s.onchange = () => document.querySelectorAll('.us-cek').forEach(c => c.checked = s.checked);
+}
+const usTerpilih = () => [...document.querySelectorAll('.us-cek:checked')].map(c => c.value);
+function usModal(judul, isi, tombol) {
+  let m = document.getElementById('modal-us');
+  if (!m) { m = document.createElement('div'); m.className = 'modal-overlay'; m.id = 'modal-us'; m.innerHTML = '<div class="modal" style="max-width:560px"><div class="modal-hdr"><h3 id="us-mj"></h3><button class="x-btn" onclick="closeModal(\'modal-us\')">×</button></div><div class="modal-body" id="us-mi"></div><div class="modal-ftr" id="us-mf"></div></div>'; document.body.appendChild(m); }
+  document.getElementById('us-mj').textContent = judul; document.getElementById('us-mi').innerHTML = isi + '<div id="us-galat" style="color:var(--red);font-size:13px;margin-top:8px"></div>';
+  document.getElementById('us-mf').innerHTML = '<button class="btn btn-outline" type="button" onclick="closeModal(\'modal-us\')">Batal</button>' + tombol; openModal('modal-us');
+}
+async function usKirim(aksi, data, tombol) {
+  if (tombol) tombol.disabled = true; const g = document.getElementById('us-galat');
+  const r = await dbApi(aksi, data).catch(() => ({ ok: false, pesan: 'Gagal terhubung.' }));
+  if (!r.ok) { if (g) g.textContent = r.pesan; else alert(r.pesan); if (tombol) tombol.disabled = false; return null; }
+  closeModal('modal-us'); if (typeof toast === 'function') toast(r.pesan); await usMuat(); return r;
+}
+async function usAksi(a) {
+  const b = usData.data.find(x => x.id === usBuka); if (!b) return; const pil = usTerpilih();
+  const tot = b.items.filter(i => i.status === 'aktif' && !pil.includes(i.mustahikId)).reduce((s, i) => s + i.nilai, 0);
+  if (a === 'ubah') return usEditor(b.id);
+  if (a === 'kirim') return usModal('Kirim ke Wakil Ketua II', `<p>Kirim <b>${usE(b.id)}</b> (${b.jumlah} mustahik, ${usRp(b.total)}) ke Wakil Ketua II? Setelah dikirim, usulan tidak bisa diubah kecuali dikembalikan.</p>`, `<button class="btn btn-primary" type="button" onclick="usKirim('usulan_proses',{id:'${b.id}',aksi:'kirim'},this)">Kirim</button>`);
+  if (a === 'setuju') return usModal('Setujui usulan', `<p>${pil.length ? '<b>' + pil.length + ' mustahik dicoret</b>; yang disetujui ' + (b.jumlah - pil.length) + ' mustahik, ' + usRp(tot) + '.' : 'Setujui seluruh ' + b.jumlah + ' mustahik, ' + usRp(b.total) + '.'}</p>
+    <div class="field"><label>Catatan ${pil.length ? '/ alasan pencoretan *' : '(opsional)'}</label><textarea id="us-cat" rows="3"></textarea></div>`,
+    `<button class="btn btn-primary" type="button" onclick="usKirim('usulan_proses',{id:'${b.id}',aksi:'setuju',catatan:document.getElementById('us-cat').value,coret:${JSON.stringify(pil).replace(/"/g, '&quot;')}.map(m=>({mustahikId:m}))},this)">Setujui</button>`);
+  if (a === 'coret') { if (!pil.length) return alert('Centang mustahik yang dicoret.');
+    return usModal('Coret mustahik', `<p>${pil.length} mustahik dicoret dari usulan dan dapat diusulkan lagi di usulan lain.</p><div class="field"><label>Alasan *</label><textarea id="us-cat" rows="3"></textarea></div>`,
+      `<button class="btn btn-primary" type="button" onclick="usKirim('usulan_proses',{id:'${b.id}',aksi:'coret',catatan:document.getElementById('us-cat').value,coret:${JSON.stringify(pil).replace(/"/g, '&quot;')}.map(m=>({mustahikId:m}))},this)">Coret</button>`); }
+  if (a === 'kembalikan' || a === 'batal') return usModal(a === 'batal' ? 'Batalkan usulan' : 'Kembalikan ke penyusun', `<p>${a === 'batal' ? 'Usulan dibatalkan dan semua mustahik kembali dapat diusulkan.' : 'Usulan kembali ke Draf untuk diperbaiki penyusun, lalu dikirim ulang.'}</p><div class="field"><label>Catatan / alasan *</label><textarea id="us-cat" rows="3"></textarea></div>`,
+    `<button class="btn ${a === 'batal' ? 'btn-danger' : 'btn-primary'}" type="button" onclick="usKirim('usulan_proses',{id:'${b.id}',aksi:'${a}',catatan:document.getElementById('us-cat').value},this)">${a === 'batal' ? 'Batalkan' : 'Kembalikan'}</button>`);
+  if (a === 'anggaran') {
+    usModal('Setujui anggaran', '<div class="hint">Memuat pos RKAT ' + usE(b.tahun) + '…</div>', '');
+    const r = await dbApi('rkat_daftar', { tahun: b.tahun }).catch(() => ({ ok: false, pesan: 'Gagal terhubung.' }));
+    if (!r.ok || !r.pos.length) { document.getElementById('us-mi').innerHTML = '<p style="color:var(--red)">' + usE(r.ok ? 'RKAT ' + b.tahun + ' belum diimpor. Impor dulu di menu RKAT & Anggaran.' : r.pesan) + '</p>'; return; }
+    const pos = r.pos.filter(p => p.lembar === 'lk2').map(p => ({ ...p, sisa: p.pagu - p.realisasi - (p.cadangan || 0) }));
+    const kata = (b.program + ' ' + b.judul).toLowerCase().split(/\W+/).filter(w => w.length > 3);
+    pos.sort((x, y) => kata.filter(w => (y.nama + ' ' + y.keterangan).toLowerCase().includes(w)).length - kata.filter(w => (x.nama + ' ' + x.keterangan).toLowerCase().includes(w)).length);
+    return usModal('Setujui anggaran', `<p>Total usulan <b>${usRp(b.total)}</b>. Pilih pos RKAT ${usE(b.tahun)}; nilai dicadangkan sampai dibayar.</p>
+      <div class="field"><label>Pos anggaran *</label><select id="us-pos" style="width:100%">${pos.map(p => `<option value="${usE(p.kode_pos)}"${p.sisa < b.total ? ' disabled' : ''}>${usE(p.nama + (p.keterangan ? ' — ' + p.keterangan : '')).slice(0, 90)} · sisa ${usRp(p.sisa)}${p.sisa < b.total ? ' (tidak cukup)' : ''}</option>`).join('')}</select></div>
+      <div class="field" style="margin-top:8px"><label>Catatan (opsional)</label><textarea id="us-cat" rows="2"></textarea></div>`,
+      `<button class="btn btn-primary" type="button" onclick="usKirim('usulan_proses',{id:'${b.id}',aksi:'anggaran',kode_pos:document.getElementById('us-pos').value,catatan:document.getElementById('us-cat').value},this)">Setujui &amp; cadangkan</button>`);
+  }
+  if (a === 'spp') return usModal('Catat SPP', `<div class="us-form"><div class="field"><label>Nomor SPP *</label><input id="us-spp" maxlength="60"></div><div class="field"><label>Tanggal SPP *</label><input id="us-tspp" type="date" value="${new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10)}"></div></div>
+    <p class="hint">Cetak daftar nominatif lewat tombol Cetak sebagai lampiran SPP. Setelah ini usulan menunggu otorisasi WK III dan Ketua.</p>`,
+    `<button class="btn btn-primary" type="button" onclick="usKirim('usulan_proses',{id:'${b.id}',aksi:'spp',no_spp:document.getElementById('us-spp').value,tgl_spp:document.getElementById('us-tspp').value},this)">Simpan SPP</button>`);
+  if (a === 'otorisasi') return usModal('Otorisasi pembayaran', `<p>Otorisasi pembayaran <b>${usE(b.id)}</b>: ${b.jumlah} mustahik, <b>${usRp(b.total)}</b>, SPP ${usE(b.no_spp)}.</p><p class="hint">Pembayaran dapat dicatat setelah Wakil Ketua III dan Ketua sama-sama mengotorisasi.</p>`,
+    `<button class="btn btn-primary" type="button" onclick="usKirim('usulan_proses',{id:'${b.id}',aksi:'otorisasi'},this)">Otorisasi</button>`);
+  if (a === 'bayar') { if (!pil.length) return alert('Centang mustahik yang sudah dibayar.');
+    const nilai = b.items.filter(i => pil.includes(i.mustahikId)).reduce((s, i) => s + i.nilai, 0);
+    return usModal('Catat pembayaran', `<p><b>${pil.length} mustahik · ${usRp(nilai)}</b></p><div class="us-form">
+      <div class="field"><label>Tanggal bayar *</label><input id="us-tb" type="date" value="${new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10)}"></div>
+      <div class="field"><label>Cara *</label><select id="us-cara">${usData.bentuk.map(x => '<option>' + x + '</option>').join('')}</select></div>
+      <div class="field"><label>No. bukti / kwitansi</label><input id="us-nb" maxlength="60"></div>
+      <div class="field"><label>Foto bukti / BAST (opsional)</label><input id="us-fb" type="file" accept="image/*,application/pdf"></div></div>
+      <p class="hint">Tercatat otomatis di Penyaluran & realisasi RKAT. Tidak perlu diinput lagi lewat Excel.</p>`,
+      `<button class="btn btn-primary" type="button" id="us-bayar-ok">Simpan pembayaran</button>`);
+  }
+}
+document.addEventListener('click', async e => {
+  if (!e.target || e.target.id !== 'us-bayar-ok') return;
+  const f = document.getElementById('us-fb').files[0]; let bukti = null;
+  if (f) { if (f.size > 5 * 1024 * 1024) { document.getElementById('us-galat').textContent = 'File maks. 5 MB.'; return; }
+    bukti = await new Promise(ok => { const rd = new FileReader(); rd.onload = () => ok({ mime: f.type, base64: String(rd.result).split(',')[1] }); rd.readAsDataURL(f); }); }
+  usKirim('usulan_bayar', { id: usBuka, mustahikId: usTerpilih(), tanggal: document.getElementById('us-tb').value, cara: document.getElementById('us-cara').value, no_bukti: document.getElementById('us-nb').value, bukti }, e.target);
+});
+async function usLihatBukti(id, mid) {
+  const r = await dbApi('usulan_bukti', { id, mustahikId: mid }).catch(() => ({ ok: false, pesan: 'Gagal terhubung.' }));
+  if (!r.ok) return alert(r.pesan); const w = window.open(); if (w) w.document.write(r.mime === 'application/pdf' ? '<embed src="data:application/pdf;base64,' + r.base64 + '" style="width:100%;height:100vh">' : '<img src="data:' + r.mime + ';base64,' + r.base64 + '" style="max-width:100%">');
+}
+// ── Penyusunan / ubah draf
+async function usEditor(id, koreksi) {
+  const b = id ? usData.data.find(x => x.id === id) : null; usBuka = null;
+  usEdit = { id: b ? b.id : '', koreksi_dari: b ? b.koreksi_dari : (koreksi || ''), items: b ? b.items.filter(i => i.status === 'aktif').map(i => ({ mustahikId: i.mustahikId, nama: i.nama, kelurahan: i.kelurahan, nilai: i.nilai, bentuk: i.bentuk, keterangan: i.keterangan })) : [] };
+  const asal = koreksi ? usData.data.find(x => x.id === koreksi) : null;
+  const progs = [...new Set(usData.data.map(x => x.program))];
+  document.getElementById('us-main').innerHTML = `<button class="btn btn-outline btn-sm" type="button" onclick="usDaftar()">← Batal</button>
+    <div class="pg-title" style="margin-top:8px">${b ? 'Ubah draf ' + usE(b.id) : asal ? 'Usulan koreksi atas ' + usE(asal.id) : 'Usulan penyaluran baru'}</div>
+    <div class="us-form" style="margin-top:10px">
+      <div class="field"><label>Judul usulan *</label><input id="us-judul" maxlength="120" placeholder="mis. UMKM Gelombang I" value="${usE(b ? b.judul : asal ? 'Koreksi ' + asal.judul : '')}"></div>
+      <div class="field"><label>Program *</label><input id="us-prog" maxlength="120" list="us-progs" placeholder="mis. Bantuan Modal Usaha UMKM" value="${usE(b ? b.program : asal ? asal.program : '')}"><datalist id="us-progs">${progs.map(p => '<option value="' + usE(p) + '">').join('')}</datalist></div>
+      <div class="field"><label>Bidang</label><select id="us-bid">${usData.bidang.map(x => `<option${(b ? b.bidang : asal ? asal.bidang : '') === x ? ' selected' : ''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label>Tahun anggaran</label><input id="us-th" type="number" min="2020" max="2099" value="${usE(b ? b.tahun : asal ? asal.tahun : new Date().getFullYear())}"></div></div>
+    <div class="field" style="margin-bottom:12px"><label>Catatan untuk pimpinan</label><textarea id="us-catatan" rows="2" placeholder="mis. hasil survei kelayakan usaha terlampir">${usE(b ? b.catatan : '')}</textarea></div>
+    <div class="rk-h" style="font-weight:700">Tambah mustahik</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0"><input id="us-cari" type="search" placeholder="Cari nama, ID Mustahik, kelurahan, jenis bantuan…" style="flex:1;min-width:220px"><label class="hint" style="display:flex;gap:4px;align-items:center"><input type="checkbox" id="us-sv"> hanya yang sudah disurvei</label></div>
+    <div class="us-hasil" id="us-hasil"><div class="hint">Memuat daftar mustahik…</div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 6px;flex-wrap:wrap;gap:8px"><b>Mustahik diusulkan (<span id="us-n">0</span>) · <span id="us-tot">Rp0</span></b>
+      <span class="hint">Isi nilai sama untuk semua: <input id="us-rata" type="number" min="0" step="50000" style="width:130px"> <button class="btn btn-outline btn-sm" type="button" onclick="usRata()">Terapkan</button></span></div>
+    <div class="us-wrap"><table class="us-tbl"><thead><tr><th>#</th><th>Mustahik</th><th class="n" style="width:140px">Nilai (Rp) *</th><th style="width:110px">Bentuk</th><th>Keterangan</th><th></th></tr></thead><tbody id="us-pilih"></tbody></table></div>
+    <div class="us-aksi"><button class="btn btn-outline" type="button" onclick="usSimpan(false,this)">Simpan draf</button><button class="btn btn-primary" type="button" onclick="usSimpan(true,this)">Simpan &amp; kirim ke WK II</button><span id="us-epesan" class="hint" style="color:var(--red)"></span></div>`;
+  usGambarPilih();
+  if (!usPool) { const r = await dbApi('usulan_pool', {}).catch(() => ({ ok: false })); usPool = r.ok ? r.data : []; }
+  const cari = () => { const q = document.getElementById('us-cari').value.toLowerCase().trim(), sv = document.getElementById('us-sv').checked, ada = new Set(usEdit.items.map(i => i.mustahikId));
+    const h = usPool.filter(p => (!sv || p.survei) && (!q || (p.nama + ' ' + p.mustahikId + ' ' + p.kelurahan + ' ' + p.kecamatan + ' ' + p.kategori + ' ' + p.asnaf).toLowerCase().includes(q))).slice(0, 60);
+    document.getElementById('us-hasil').innerHTML = h.map(p => `<div><span><b>${usE(p.nama)}</b> <span class="mono us-k">${usE(p.mustahikId)}</span><br><span class="us-k">${usE(p.kelurahan)} · ${usE(p.kategori || p.asnaf)}${p.survei ? ' · ✅ disurvei' : ''}${p.verifikasi !== 'terverifikasi' ? ' · ' + usE(p.verifikasi || 'belum verifikasi') : ''}</span></span>
+      ${ada.has(p.mustahikId) ? '<span class="us-k">✓ dipilih</span>' : p.sedang && p.sedang !== usEdit.id ? '<span class="us-k">di ' + usE(p.sedang) + '</span>' : `<button class="btn btn-outline btn-sm" type="button" data-us-tambah="${usE(p.mustahikId)}">+ Tambah</button>`}</div>`).join('') || '<div class="hint">Tidak ada yang cocok.</div>';
+    document.querySelectorAll('[data-us-tambah]').forEach(t => t.onclick = () => { const p = usPool.find(x => x.mustahikId === t.dataset.usTambah); const rata = Number(document.getElementById('us-rata').value) || '';
+      usEdit.items.push({ mustahikId: p.mustahikId, nama: p.nama, kelurahan: p.kelurahan, nilai: rata, bentuk: 'Transfer', keterangan: '' }); usGambarPilih(); cari(); }); };
+  document.getElementById('us-cari').oninput = cari; document.getElementById('us-sv').onchange = cari; cari();
+}
+function usGambarPilih() {
+  const tb = document.getElementById('us-pilih'); if (!tb) return;
+  tb.innerHTML = usEdit.items.map((i, k) => `<tr><td>${k + 1}</td><td><b>${usE(i.nama)}</b><div class="us-k mono">${usE(i.mustahikId)} · ${usE(i.kelurahan)}</div></td>
+    <td><input type="number" min="0" step="50000" value="${i.nilai}" data-k="${k}" data-f="nilai"></td><td><select data-k="${k}" data-f="bentuk">${usData.bentuk.map(x => `<option${x === i.bentuk ? ' selected' : ''}>${x}</option>`).join('')}</select></td>
+    <td><input maxlength="150" value="${usE(i.keterangan)}" data-k="${k}" data-f="keterangan" placeholder="mis. warung sembako"></td><td><button class="btn btn-ghost btn-sm" type="button" data-hapus="${k}" title="Keluarkan">✕</button></td></tr>`).join('') || '<tr><td colspan="6" class="hint">Belum ada mustahik. Cari lalu klik “+ Tambah”.</td></tr>';
+  tb.querySelectorAll('[data-f]').forEach(el => el.oninput = el.onchange = () => { const i = usEdit.items[+el.dataset.k]; i[el.dataset.f] = el.dataset.f === 'nilai' ? Number(el.value) || '' : el.value; usTotal(); });
+  tb.querySelectorAll('[data-hapus]').forEach(el => el.onclick = () => { usEdit.items.splice(+el.dataset.hapus, 1); usGambarPilih(); const c = document.getElementById('us-cari'); if (c) c.oninput(); });
+  usTotal();
+}
+function usTotal() { document.getElementById('us-n').textContent = usEdit.items.length; document.getElementById('us-tot').textContent = usRp(usEdit.items.reduce((s, i) => s + (Number(i.nilai) || 0), 0)); }
+function usRata() { const v = Number(document.getElementById('us-rata').value) || 0; if (!v) return; usEdit.items.forEach(i => i.nilai = v); usGambarPilih(); }
+async function usSimpan(kirim, btn) {
+  const ps = document.getElementById('us-epesan'); ps.textContent = '';
+  const kosong = usEdit.items.filter(i => !(Number(i.nilai) > 0)); if (kosong.length) { ps.textContent = 'Nilai bantuan belum diisi untuk ' + kosong.length + ' mustahik.'; return; }
+  if (kirim && !usEdit.items.length) { ps.textContent = 'Tambahkan minimal satu mustahik.'; return; }
+  btn.disabled = true;
+  const d = { id: usEdit.id, judul: document.getElementById('us-judul').value, program: document.getElementById('us-prog').value, bidang: document.getElementById('us-bid').value, tahun: document.getElementById('us-th').value,
+    catatan: document.getElementById('us-catatan').value, koreksi_dari: usEdit.koreksi_dari, items: usEdit.items.map(i => ({ mustahikId: i.mustahikId, nilai: i.nilai, bentuk: i.bentuk, keterangan: i.keterangan })) };
+  const r = await dbApi('usulan_simpan', d).catch(() => ({ ok: false, pesan: 'Gagal terhubung.' }));
+  if (!r.ok) { ps.textContent = r.pesan; btn.disabled = false; return; }
+  if (kirim) { const k = await dbApi('usulan_proses', { id: r.id, aksi: 'kirim' }).catch(() => ({ ok: false, pesan: 'Gagal terhubung.' })); if (!k.ok) alert('Draf tersimpan, tetapi belum terkirim: ' + k.pesan); }
+  usPool = null; usBuka = r.id; if (typeof toast === 'function') toast(kirim ? r.id + ' dikirim ke WK II.' : r.pesan); await usMuat();
+}
+// ── Cetak daftar nominatif + jejak persetujuan
+function usCetak(id) {
+  const b = usData.data.find(x => x.id === id); if (!b) return; const it = b.items.filter(i => i.status !== 'dicoret');
+  const logo = typeof DOK_LOGO !== 'undefined' && !/__LOGO/.test(DOK_LOGO) ? '<img src="' + DOK_LOGO + '" style="height:64px">' : '';
+  const ttd = [['Diusulkan', b.diusulkan_oleh, b.diusulkan_pada], ['Disetujui Wakil Ketua II', b.wk2_oleh, b.wk2_pada], ['Disetujui Ketua', b.ketua_oleh, b.ketua_pada], ['Anggaran Wakil Ketua III', b.anggaran_oleh, b.anggaran_pada],
+    ['Otorisasi Wakil Ketua III', b.otor_wk3_oleh, b.otor_wk3_pada], ['Otorisasi Ketua', b.otor_ketua_oleh, b.otor_ketua_pada]];
+  const w = window.open('', '_blank'); if (!w) return alert('Izinkan pop-up untuk mencetak.');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${usE(b.id)}</title><style>body{font-family:Arial,sans-serif;font-size:12px;margin:24px;color:#111}
+    .kop{display:flex;gap:12px;align-items:center;border-bottom:3px double #000;padding-bottom:8px;margin-bottom:12px}.kop b{font-size:15px}
+    table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #444;padding:4px 6px;text-align:left}td.n,th.n{text-align:right}
+    .ttd{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}.ttd div{border:1px solid #bbb;padding:6px;min-height:58px}
+    @media print{button{display:none}}</style></head><body>
+    <div class="kop">${logo}<div><b>BADAN AMIL ZAKAT NASIONAL KOTA LUBUK LINGGAU</b><div>Daftar Nominatif Usulan Penyaluran</div></div></div>
+    <table style="width:auto;border:0"><tr><td style="border:0">Nomor usulan</td><td style="border:0">: <b>${usE(b.id)}</b></td></tr><tr><td style="border:0">Judul / program</td><td style="border:0">: ${usE(b.judul)} — ${usE(b.program)}</td></tr>
+    <tr><td style="border:0">Bidang / tahun</td><td style="border:0">: ${usE(b.bidang)} / ${usE(b.tahun)}</td></tr><tr><td style="border:0">Pos RKAT</td><td style="border:0">: ${usE(b.nama_pos || b.kode_pos || '-')}</td></tr>
+    <tr><td style="border:0">SPP</td><td style="border:0">: ${usE(b.no_spp || '-')} ${b.tgl_spp ? '(' + usTgl(b.tgl_spp) + ')' : ''}</td></tr><tr><td style="border:0">Status</td><td style="border:0">: ${usE(b.status)}</td></tr></table>
+    <table><thead><tr><th>No</th><th>Nama</th><th>ID Mustahik</th><th>Kelurahan</th><th>Bentuk</th><th class="n">Nilai (Rp)</th><th>Dibayar</th><th style="width:90px">Tanda tangan</th></tr></thead><tbody>
+    ${it.map((i, k) => `<tr><td>${k + 1}</td><td>${usE(i.nama)}</td><td>${usE(i.mustahikId)}</td><td>${usE(i.kelurahan)}</td><td>${usE(i.bentuk)}</td><td class="n">${Math.round(i.nilai).toLocaleString('id-ID')}</td><td>${i.status === 'dibayar' ? usTgl(i.tgl_bayar) : ''}</td><td></td></tr>`).join('')}
+    <tr><td colspan="5"><b>Jumlah ${it.length} mustahik</b></td><td class="n"><b>${Math.round(it.reduce((s, i) => s + i.nilai, 0)).toLocaleString('id-ID')}</b></td><td colspan="2"></td></tr></tbody></table>
+    <div class="ttd">${ttd.map(t => `<div><div style="font-size:11px;color:#555">${t[0]}</div><b>${usE(t[1] || '')}</b><div style="font-size:11px">${t[2] ? 'disetujui di aplikasi ' + usTgl(t[2]) : ''}</div></div>`).join('')}</div>
+    <p style="font-size:10px;color:#666;margin-top:12px">Dicetak dari aplikasi Data Mustahik BAZNAS Kota Lubuklinggau, ${new Date().toLocaleString('id-ID')}.</p>
+    <button onclick="print()">Cetak</button></body></html>`);
+  w.document.close();
+}
+
+// ════════════════════════════════════════════
 // v43 — RKAT & ANGGARAN (tahap 1): impor template SIMBA (lk1/lk2/lk3), pos anggaran, pagu vs realisasi per Pilar Linggau Juara
 // dan per sumber dana/asnaf (matriks dua arah), target vs realisasi jiwa. Realisasi dari sheet Penyaluran (dikirim Excel) via peta kode_rkat.
 // Lihat: pimpinan. Impor, pemetaan pos & peta realisasi: WK3.
@@ -5877,24 +6151,24 @@ function rkTampil() {
   if (rkTab === 'peta') return rkPeta();
   rkRingkas();
 }
-function rkGrup(pos, kunci) { const g = {}; pos.forEach(p => { const k = p[kunci] || '(belum dipetakan)'; const o = g[k] || (g[k] = { k, pagu: 0, real: 0, target: 0, jiwa: 0, n: 0 }); o.pagu += p.pagu; o.real += p.realisasi; o.target += p.volume; o.jiwa += p.jiwa; o.n++; }); return g; }
-function rkBaris(o, tot) { const pc = rkPct(o.real, o.pagu); return `<tr${tot ? ' class="tot"' : ''}><td>${rkE(o.k)}</td><td class="n">${rkRp(o.pagu)}</td><td class="n">${rkRp(o.real)}</td><td class="n">${rkRp(o.pagu - o.real)}</td>
+function rkGrup(pos, kunci) { const g = {}; pos.forEach(p => { const k = p[kunci] || '(belum dipetakan)'; const o = g[k] || (g[k] = { k, pagu: 0, real: 0, cad: 0, target: 0, jiwa: 0, n: 0 }); o.pagu += p.pagu; o.real += p.realisasi; o.cad += p.cadangan || 0; o.target += p.volume; o.jiwa += p.jiwa; o.n++; }); return g; }
+function rkBaris(o, tot) { const pc = rkPct(o.real, o.pagu); return `<tr${tot ? ' class="tot"' : ''}><td>${rkE(o.k)}</td><td class="n">${rkRp(o.pagu)}</td><td class="n">${rkRp(o.real)}</td><td class="n">${rkRp(o.cad)}</td><td class="n">${rkRp(o.pagu - o.real - o.cad)}</td>
   <td class="n" style="min-width:90px">${pc}%<div class="rk-bar"><i class="${pc > 100 ? 'lebih' : ''}" style="width:${Math.min(pc, 100)}%"></i></div></td><td class="n">${Math.round(o.target).toLocaleString('id-ID')}</td><td class="n">${o.jiwa.toLocaleString('id-ID')}</td></tr>`; }
 function rkTabel(judul, g, urut) {
   const rows = (urut ? urut.map(k => g[k]).filter(Boolean).concat(Object.values(g).filter(o => urut.indexOf(o.k) < 0)) : Object.values(g).sort((a, b) => b.pagu - a.pagu));
-  const t = rows.reduce((s, o) => ({ k: 'Jumlah', pagu: s.pagu + o.pagu, real: s.real + o.real, target: s.target + o.target, jiwa: s.jiwa + o.jiwa }), { pagu: 0, real: 0, target: 0, jiwa: 0 });
-  return `<div class="rk-h">${judul}</div><div class="rk-wrap"><table class="rk-tbl"><thead><tr><th></th><th class="n">Pagu</th><th class="n">Realisasi</th><th class="n">Sisa</th><th class="n">Serapan</th><th class="n">Target jiwa</th><th class="n">Jiwa terlayani*</th></tr></thead>
+  const t = rows.reduce((s, o) => ({ k: 'Jumlah', pagu: s.pagu + o.pagu, real: s.real + o.real, cad: s.cad + o.cad, target: s.target + o.target, jiwa: s.jiwa + o.jiwa }), { pagu: 0, real: 0, cad: 0, target: 0, jiwa: 0 });
+  return `<div class="rk-h">${judul}</div><div class="rk-wrap"><table class="rk-tbl"><thead><tr><th></th><th class="n">Pagu</th><th class="n">Realisasi</th><th class="n">Cadangan</th><th class="n">Sisa</th><th class="n">Serapan</th><th class="n">Target jiwa</th><th class="n">Jiwa terlayani*</th></tr></thead>
   <tbody>${rows.map(o => rkBaris(o)).join('')}${rkBaris(t, 1)}</tbody></table></div>`;
 }
 function rkRingkas() {
   const r = rkData, lk2 = r.pos.filter(p => p.lembar === 'lk2'), sum = (a, k) => a.reduce((s, p) => s + p[k], 0);
-  const pagu2 = sum(lk2, 'pagu'), real2 = sum(lk2, 'realisasi'), terpeta = sum(r.pos, 'realisasi');
+  const pagu2 = sum(lk2, 'pagu'), real2 = sum(lk2, 'realisasi'), cad2 = lk2.reduce((s, p) => s + (p.cadangan || 0), 0), terpeta = sum(r.pos, 'realisasi');
   const pagu1 = sum(r.pos.filter(p => p.lembar === 'lk1'), 'pagu'), pagu3 = sum(r.pos.filter(p => p.lembar === 'lk3'), 'pagu');
   const pc = rkPct(real2, pagu2);
   let h = `<div class="rk-kartu">
     <div><small>Pagu penyaluran (lk2)</small><b>${rkJt(pagu2)}</b><span>${lk2.length} pos</span></div>
     <div><small>Realisasi terpetakan</small><b>${rkJt(real2)}</b><span>${pc}% dari pagu</span><div class="rk-bar"><i style="width:${Math.min(pc, 100)}%"></i></div></div>
-    <div><small>Sisa pagu penyaluran</small><b>${rkJt(pagu2 - real2)}</b><span>cadangan & terpakai menyusul alur penyaluran</span></div>
+    <div><small>Sisa pagu penyaluran</small><b>${rkJt(pagu2 - real2 - cad2)}</b><span>dicadangkan usulan ${rkJt(cad2)}</span></div>
     <div><small>Target jiwa penyaluran</small><b>${Math.round(sum(lk2, 'volume')).toLocaleString('id-ID')}</b><span>${r.jiwa_unik.toLocaleString('id-ID')} jiwa unik (NIK) tersalur ${rkE(r.tahun)}</span></div>
     <div><small>Target pengumpulan (lk1)</small><b>${rkJt(pagu1)}</b><span>operasional (lk3) ${rkJt(pagu3)}</span></div>
     ${r.realisasi_total - terpeta > 0 ? `<div style="border:1px solid #f5c6c0"><small>Penyaluran belum dipetakan</small><b style="color:var(--red)">${rkJt(r.realisasi_total - terpeta)}</b><span><a href="#" onclick="rkTab='peta';rkTampil();return false">${r.belum_dipetakan.length} kode → petakan</a></span></div>` : ''}</div>`;
@@ -5925,7 +6199,7 @@ function rkPos() {
       <td>${p.pilar ? rkE(p.pilar.replace('Linggau Juara ', '🏙 ')) : p.lembar === 'lk2' ? '<span class="badge b-gold">belum</span>' : '–'}<div class="rk-k">${rkE(p.sumber_dana)}${p.asnaf ? ' · ' + rkE(p.asnaf) : ''}${p.program_kode ? ' · prog ' + rkE(p.program_kode) : ''}</div></td>
       <td class="n">${rkRp(p.pagu)}${p.volume ? `<div class="rk-k">${p.volume.toLocaleString('id-ID')} × ${p.frekuensi || 1} × ${rkRp(p.unit_cost)}</div>` : ''}</td>
       <td class="n">${rkRp(p.realisasi)}<div class="rk-bar"><i class="${pc > 100 ? 'lebih' : ''}" style="width:${Math.min(pc, 100)}%"></i></div><div class="rk-k">${pc}% · ${p.transaksi} trx</div></td>
-      <td class="n" style="${p.pagu - p.realisasi < 0 ? 'color:var(--red);font-weight:700' : ''}">${rkRp(p.pagu - p.realisasi)}</td>
+      <td class="n" style="${p.pagu - p.realisasi - (p.cadangan || 0) < 0 ? 'color:var(--red);font-weight:700' : ''}">${rkRp(p.pagu - p.realisasi - (p.cadangan || 0))}${p.cadangan ? '<div class="rk-k">cadangan ' + rkRp(p.cadangan) + '</div>' : ''}</td>
       <td class="n">${p.jiwa.toLocaleString('id-ID')}${p.lembar === 'lk2' && p.volume ? ' / ' + Math.round(p.volume).toLocaleString('id-ID') : ''}</td>
       ${r.boleh_ubah ? `<td>${p.lembar === 'lk2' ? `<button class="btn btn-outline btn-sm" type="button" onclick="rkAtur('${rkE(p.kode_pos)}')">Atur</button>` : ''}</td>` : ''}</tr>`; }).join('') || '<tr><td colspan="7" class="hint">Tidak ada pos.</td></tr>'}
     </tbody></table></div>`;
@@ -5938,9 +6212,9 @@ function rkModal(judul, isi, tombol) {
 function rkAtur(kode) {
   const p = rkData.pos.find(x => x.kode_pos === kode); if (!p) return;
   rkModal('Atur pos anggaran', `<div style="margin-bottom:10px"><b>${rkE(p.nama)}</b><div class="rk-k">${rkE(p.keterangan)}</div><div class="rk-k mono">${rkE(p.kode_pos)} · ${rkE(p.sumber_dana)}</div></div>
-    <div class="fg"><label>Pilar Linggau Juara *</label><select id="rk-f-pilar">${rkData.pilar.map(x => `<option${x === p.pilar ? ' selected' : ''}>${rkE(x)}</option>`).join('')}</select></div>
-    <div class="fg"><label>Asnaf</label><select id="rk-f-asnaf"><option value="">— bukan zakat / tidak spesifik —</option>${rkData.asnaf.map(x => `<option${x === p.asnaf ? ' selected' : ''}>${rkE(x)}</option>`).join('')}</select></div>
-    <div class="fg"><label>Kode program (opsional, mis. 01–53 daftar program)</label><input id="rk-f-prog" maxlength="30" value="${rkE(p.program_kode)}"></div>
+    <div class="field"><label>Pilar Linggau Juara *</label><select id="rk-f-pilar">${rkData.pilar.map(x => `<option${x === p.pilar ? ' selected' : ''}>${rkE(x)}</option>`).join('')}</select></div>
+    <div class="field"><label>Asnaf</label><select id="rk-f-asnaf"><option value="">— bukan zakat / tidak spesifik —</option>${rkData.asnaf.map(x => `<option${x === p.asnaf ? ' selected' : ''}>${rkE(x)}</option>`).join('')}</select></div>
+    <div class="field"><label>Kode program (opsional, mis. 01–53 daftar program)</label><input id="rk-f-prog" maxlength="30" value="${rkE(p.program_kode)}"></div>
     <div id="rk-f-galat" class="hint" style="color:var(--red)"></div>`,
     `<button class="btn btn-outline" type="button" onclick="closeModal('modal-rk')">Batal</button><button class="btn btn-primary" type="button" id="rk-f-simpan" onclick="rkAturSimpan('${rkE(kode)}')">Simpan</button>`);
 }
@@ -5973,8 +6247,8 @@ function rkFormImpor() {
   const th = new Date(Date.now() + 7 * 36e5).getUTCFullYear();
   document.getElementById('rk-isi').innerHTML = `<div class="card" style="padding:16px;max-width:760px">
     <div class="hint" style="margin-bottom:10px">Unggah file <b>Lembar Kerja RKAT</b> dari SIMBA (.xlsx, berisi lembar lk1, lk2, lk3). File dibaca di perangkat ini; hanya baris pos anggaran yang dikirim. Impor ulang membuat <b>versi baru</b> — versi lama tetap tersimpan, pemetaan pilar/asnaf & peta realisasi tetap berlaku untuk kode yang sama.</div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end"><div class="fg" style="margin:0"><label>Tahun anggaran</label><input id="rk-i-tahun" type="number" min="2020" max="2099" value="${rkData && rkData.tahun || th}" style="width:110px"></div>
-    <div class="fg" style="margin:0;flex:1"><label>File RKAT (.xlsx)</label><input id="rk-i-file" type="file" accept=".xlsx,.xlsm,.xls"></div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end"><div class="field" style="margin:0"><label>Tahun anggaran</label><input id="rk-i-tahun" type="number" min="2020" max="2099" value="${rkData && rkData.tahun || th}" style="width:110px"></div>
+    <div class="field" style="margin:0;flex:1"><label>File RKAT (.xlsx)</label><input id="rk-i-file" type="file" accept=".xlsx,.xlsm,.xls"></div></div>
     <div id="rk-i-hasil" style="margin-top:12px"></div></div>`;
   document.getElementById('rk-i-file').onchange = rkBacaFile;
 }
@@ -6013,7 +6287,7 @@ async function rkKirimImpor() {
 (function(){
   const SB_GRUP=[
     {ik:'💰',nama:'Pengumpulan',isi:['#tab-mz-btn','#tab-pg-btn','#tab-kt-btn','#tab-hl-btn']},
-    {ik:'🤲',nama:'Pendistribusian & Pendayagunaan',isi:['#tab-pj-btn','@survei','@monitoring','[onclick^="switchTab(\'t-daftar\'"]','[onclick^="switchTab(\'t-form\'"]','#tab-lb-btn']},
+    {ik:'🤲',nama:'Pendistribusian & Pendayagunaan',isi:['#tab-pj-btn','#tab-us-btn','@survei','@monitoring','[onclick^="switchTab(\'t-daftar\'"]','[onclick^="switchTab(\'t-form\'"]','#tab-lb-btn']},
     {ik:'📊',nama:'Keuangan, Pelaporan & Akuntansi',isi:['#tab-rkat-btn','~Laporan & rekap keuangan']},
     {ik:'🗂',nama:'Administrasi, SDM, Umum & Komunikasi',isi:['#tab-ppid-btn','#tab-import-btn','~Pengguna & peran']}
   ];
@@ -7841,7 +8115,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='43 · 18 Nov 2026';
+const APP_VERSI='44 · 18 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
