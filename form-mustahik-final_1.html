@@ -5829,6 +5829,8 @@ table.us-tbl input,table.us-tbl select{padding:4px 6px;font-size:12px;width:100%
 #us-sv{width:auto!important;margin:0}
 .us-form{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:12px}
 .us-tenggat{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px}.us-tenggat.kuning{background:#fff7e0;color:#92600a;border:1px solid #f3d27a}.us-tenggat.merah{background:#fde8e8;color:#b42318;border:1px solid #f5b5b5}
+.us-blok{border:1px solid var(--g200);border-radius:10px;padding:10px 12px;margin:10px 0;background:#fff}.us-blok-h{font-weight:700;margin-bottom:4px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.us-serah{margin:6px 0 0;padding-left:18px;font-size:13px}.us-serah li{margin:2px 0}
 .us-ring{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:16px 0 10px}
 .us-ring>div{background:#fff;border:1px solid var(--g200);border-radius:10px;padding:8px 12px}.us-ring span{display:block;font-size:11px;color:var(--g500)}.us-ring b{font-size:16px;color:var(--g800,#1f2937)}
 .us-ring .hijau{border-color:#9fd5c4;background:#effaf6}.us-ring .hijau b{color:var(--teal)}
@@ -5888,7 +5890,59 @@ async function usMuat() {
   if (usBuka && usData.data.some(b => b.id === usBuka)) return usDetail(usBuka);
   usBuka = null; usDaftar();
 }
-function usPerlu(b) { return b.boleh.length && (b.status !== 'Draf' || b.dibuat_oleh === usData.nama); }
+function usPerlu(b) { const a = b.boleh.filter(x => x !== 'sk' && x !== 'serah'); return (a.length && (b.status !== 'Draf' || b.dibuat_oleh === usData.nama)) || usSkKurang(b) || usSerahKurang(b); }
+// v55: SK Penetapan Penerima & dokumentasi Tersalurkan
+const usSkKurang = b => b.wajib_sk && !b.no_sk && b.boleh.includes('sk') && ['Menunggu Anggaran', 'Proses SPP'].includes(b.status);
+const usSerahKurang = b => b.boleh.includes('serah') && b.dibayar > 0 && !b.tersalur;
+function usSerahTenggat(b) {
+  if (!(b.dibayar > 0) || b.tersalur) return '';
+  const n = usHariKerja(b.bayar_terakhir);
+  return `<span class="us-tenggat ${n > 3 ? 'merah' : 'kuning'}" title="BAST & foto penyerahan paling lambat 3 hari kerja setelah dibayar">${n > 3 ? '⛔ Dokumentasi terlambat ' + n + ' hari kerja' : '📷 Dokumentasi: sisa ' + (3 - n) + ' hari kerja'}</span>`;
+}
+function usSkHtml(b) {
+  if (!b.wajib_sk && !b.no_sk) return '';
+  const ada = !!b.no_sk, boleh = b.boleh.includes('sk');
+  return `<div class="us-blok"><div class="us-blok-h">📜 SK Penetapan Penerima ${b.wajib_sk ? '<span class="us-tag kuning">wajib</span>' : ''}</div>
+    ${ada ? `<div>Nomor <b>${usE(b.no_sk)}</b> · tanggal ${usTgl(b.tgl_sk)} <span class="us-k">dicatat ${usE(b.sk_oleh)}</span></div>` : '<div class="us-k">Wajib karena total ≥ Rp5 juta, kolektif, atau bedah rumah. SPP tidak dapat dicatat sebelum nomor SK dicatat.</div>'}
+    <div class="us-aksi" style="margin-top:6px"><button type="button" class="btn btn-outline btn-sm" onclick="usDokCetakJenis('${usE(b.id)}','sk')">🖨 Cetak draf SK + lampiran</button>
+      ${boleh ? `<button type="button" class="btn ${ada ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="usSkCatat('${usE(b.id)}')">${ada ? 'Ubah nomor SK' : 'Catat nomor SK'}</button>` : ''}</div></div>`;
+}
+function usSkCatat(id) {
+  const b = usData.data.find(x => x.id === id), t = new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10);
+  usModal('Nomor SK Penetapan — ' + id, `<div class="us-form"><div class="field"><label>Nomor SK *</label><input id="us-nosk" maxlength="80" value="${usE(b.no_sk || '')}" placeholder="mis. 12/BAZNAS-LLG/XI/2026"></div>
+    <div class="field"><label>Tanggal SK *</label><input id="us-tglsk" type="date" max="${t}" value="${usE(b.tgl_sk || t)}"></div></div><div id="us-galat" class="hint" style="color:var(--red)"></div>`,
+    `<button class="btn btn-primary" type="button" onclick="usSkSimpan('${usE(id)}')">Simpan</button>`);
+}
+async function usSkSimpan(id) {
+  const r = await dbApi('usulan_sk', { id, no_sk: document.getElementById('us-nosk').value, tgl_sk: document.getElementById('us-tglsk').value }).catch(() => ({ ok: false, pesan: 'Gagal terhubung.' }));
+  if (!r.ok) { document.getElementById('us-galat').textContent = r.pesan; return; }
+  closeModal('modal-us'); toast(r.pesan); await usMuat(); usDetail(id);
+}
+function usSerahHtml(b) {
+  if (!(b.dibayar > 0)) return '';
+  const sr = b.serah || [], boleh = b.boleh.includes('serah');
+  return `<div class="us-blok"><div class="us-blok-h">📷 Dokumentasi penyaluran ${b.tersalur ? '<span class="badge b-green">✅ Tersalurkan</span>' : usSerahTenggat(b)}</div>
+    <div class="us-k">Unggah BAST bertanda tangan dan minimal satu foto penyerahan, paling lambat 3 hari kerja setelah dibayar (pembayaran terakhir ${usTgl(b.bayar_terakhir)}).</div>
+    ${sr.length ? '<ul class="us-serah">' + sr.map(x => `<li>${x.jenis === 'BAST' ? '📄 BAST' : '🖼 Foto'} · ${usTgl(x.pada)} · ${usE(x.oleh)}${x.catatan ? ' · ' + usE(x.catatan) : ''} <a href="#" onclick="usSerahLihat('${usE(b.id)}',${x.no});return false">lihat</a></li>`).join('') + '</ul>' : '<div class="us-k" style="margin-top:4px">Belum ada dokumen.</div>'}
+    ${boleh ? `<div class="us-form" style="margin-top:8px"><div class="field"><label>Jenis</label><select id="us-sj"><option value="Foto">Foto penyerahan</option><option value="BAST">BAST bertanda tangan</option></select></div>
+      <div class="field"><label>File (JPG/PNG/PDF, maks. 5 MB)</label><input id="us-sf" type="file" accept="image/*,application/pdf"></div>
+      <div class="field"><label>Keterangan</label><input id="us-sc" maxlength="200" placeholder="mis. penyerahan di Kel. Puncak Kemuning"></div></div>
+      <button type="button" class="btn btn-primary btn-sm" id="us-sbtn" onclick="usSerahKirim('${usE(b.id)}')">Unggah</button> <span id="us-smsg" class="us-k"></span>` : ''}</div>`;
+}
+async function usSerahKirim(id) {
+  const f = document.getElementById('us-sf').files[0], m = document.getElementById('us-smsg'), bt = document.getElementById('us-sbtn');
+  if (!f) { m.textContent = 'Pilih file dulu.'; return; }
+  if (f.size > 5 * 1024 * 1024) { m.textContent = 'File melebihi 5 MB.'; return; }
+  bt.disabled = true; m.textContent = 'Mengunggah…';
+  const file = await new Promise(ok => { const rd = new FileReader(); rd.onload = () => ok({ mime: f.type, base64: String(rd.result).split(',')[1] }); rd.readAsDataURL(f); });
+  const r = await dbApi('usulan_serah', { id, jenis: document.getElementById('us-sj').value, file, catatan: document.getElementById('us-sc').value }).catch(() => ({ ok: false, pesan: 'Gagal terhubung.' }));
+  bt.disabled = false; if (!r.ok) { m.textContent = r.pesan; return; }
+  toast(r.pesan); await usMuat(); usDetail(id);
+}
+async function usSerahLihat(id, no) {
+  const r = await dbApi('usulan_serah_lihat', { id, no }).catch(() => ({ ok: false, pesan: 'Gagal terhubung.' }));
+  if (!r.ok) return alert(r.pesan); const w = window.open(); if (w) w.document.write(r.mime === 'application/pdf' ? '<embed src="data:application/pdf;base64,' + r.base64 + '" style="width:100%;height:100vh">' : '<img src="data:' + r.mime + ';base64,' + r.base64 + '" style="max-width:100%">');
+}
 function usIdx(st) { return US_LANGKAH.findIndex(l => l.st === st); }
 // v54: peringatan program sama (tahun anggaran usulan) & hitungan hari kerja per tahap
 const usNormP = x => String(x || '').replace(/\s+/g, ' ').trim().toLowerCase();
@@ -5919,7 +5973,7 @@ function usDaftar() {
       <button class="btn btn-outline btn-sm" type="button" onclick="usMuat()">↻</button></div>
     ${list.map(b => { const i = usIdx(b.status); return `<div class="us-kartu${usPerlu(b) ? ' aksi' : ''}" onclick="usDetail('${usE(b.id)}')">
       <div class="t"><div><b>${usE(b.judul)}</b> <span class="mono us-k">${usE(b.id)}</span><div class="s">${usE(b.program)} · ${usE(b.bidang)} · ${b.jumlah} mustahik · <b>${usRp(b.total)}</b></div></div>
-      <div style="text-align:right"><span class="badge ${US_BADGE[b.status] || 'b-gold'}">${usE(b.status)}</span>${usTenggat(b) ? '<div style="margin-top:4px">' + usTenggat(b) + '</div>' : ''}${usPerlu(b) ? '<div class="us-k" style="color:var(--red);font-weight:700;margin-top:3px">● perlu tindakan Anda</div>' : i > 0 && i < 8 ? '<div class="us-k" style="margin-top:3px">menunggu ' + usE(US_LANGKAH[i].siapa) + '</div>' : ''}</div></div>
+      <div style="text-align:right"><span class="badge ${US_BADGE[b.status] || 'b-gold'}">${usE(b.status)}</span>${usTenggat(b) ? '<div style="margin-top:4px">' + usTenggat(b) + '</div>' : ''}${b.wajib_sk && !b.no_sk && ['Menunggu Anggaran', 'Proses SPP'].includes(b.status) ? '<div style="margin-top:4px"><span class="us-tenggat kuning">📜 SK Penetapan belum dicatat</span></div>' : ''}${b.tersalur ? '<div style="margin-top:4px"><span class="badge b-green">✅ Tersalurkan</span></div>' : usSerahTenggat(b) ? '<div style="margin-top:4px">' + usSerahTenggat(b) + '</div>' : ''}${usPerlu(b) ? '<div class="us-k" style="color:var(--red);font-weight:700;margin-top:3px">● perlu tindakan Anda</div>' : i > 0 && i < 8 ? '<div class="us-k" style="margin-top:3px">menunggu ' + usE(US_LANGKAH[i].siapa) + '</div>' : ''}</div></div>
       <div class="us-step">${US_LANGKAH.map((l, k) => `<i class="${b.status === 'Dibatalkan' ? '' : k < i || b.status === 'Selesai' ? 'ok' : k === i ? 'kini' : ''}"></i>`).join('')}</div></div>`; }).join('') || '<div class="hint">Tidak ada usulan pada kelompok ini.</div>'}`;
 }
 function usLangkah(b) {
@@ -5950,7 +6004,8 @@ function usDetail(id) {
       <td>${i.status === 'dibayar' ? '<span class="badge b-green">Dibayar</span><div class="us-k">' + usTgl(i.tgl_bayar) + ' · ' + usE(i.cara_bayar) + (i.no_bukti ? ' · ' + usE(i.no_bukti) : '') + '</div>' + (i.file_bukti ? `<a href="#" class="us-k" onclick="usLihatBukti('${usE(b.id)}','${usE(i.mustahikId)}');return false">lihat bukti</a>` : '')
         : i.status === 'dicoret' ? '<span class="badge b-red">Dicoret</span><div class="us-k">' + usE(i.alasan_coret) + ' — ' + usE(i.dicoret_oleh) + '</div>' : '<span class="badge b-gray">Aktif</span>'}</td></tr>`).join('')}
     </tbody></table></div>
-    <div class="us-aksi">${b.boleh.map(a => `<button type="button" class="btn ${['setuju', 'kirim', 'verifikasi', 'anggaran', 'spp', 'otorisasi', 'bayar'].includes(a) ? 'btn-primary' : 'btn-outline'}" onclick="usAksi('${a}')">${US_AKSI[a]}</button>`).join('')}
+    ${usSkHtml(b)}${usSerahHtml(b)}
+    <div class="us-aksi">${b.boleh.filter(a => US_AKSI[a]).map(a => `<button type="button" class="btn ${['setuju', 'kirim', 'verifikasi', 'anggaran', 'spp', 'otorisasi', 'bayar'].includes(a) ? 'btn-primary' : 'btn-outline'}" onclick="usAksi('${a}')">${US_AKSI[a]}</button>`).join('')}
       <button type="button" class="btn btn-outline" onclick="usDokPilih('${usE(b.id)}')">🖨 Dokumen (ND · SPP · Kuitansi · BAST)</button>
       ${b.status === 'Selesai' && usData.boleh_buat ? `<button type="button" class="btn btn-outline" onclick="usEditor(null,'${usE(b.id)}')">Buat usulan koreksi</button>` : ''}</div>
     <div class="rk-h" style="font-weight:700;margin:6px 0">Riwayat</div>
@@ -6217,7 +6272,8 @@ const USD_JENIS = [
   ['spp', 'Surat Perintah Pembayaran (SPP)', 'Bendahara · otorisasi WK III · persetujuan Ketua'],
   ['kw1', 'Kuitansi per penerima', '2 kuitansi per halaman A4'],
   ['kwk', 'Kuitansi kolektif + lampiran tanda tangan', '1 kuitansi untuk seluruh penerima'],
-  ['bast', 'Berita Acara Serah Terima (kolektif) + lampiran', 'Pihak I: Wakil Ketua II · Pihak II: perwakilan penerima']];
+  ['bast', 'Berita Acara Serah Terima (kolektif) + lampiran', 'Pihak I: Wakil Ketua II · Pihak II: perwakilan penerima'],
+  ['sk', 'SK Penetapan Penerima + lampiran', 'Keputusan Ketua · wajib ≥ Rp5 juta / kolektif / bedah rumah']];   // v55
 function usDokPilih(id) {
   const b = usData && usData.data.find(x => x.id === id); if (!b) return;
   const t = new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10);
@@ -6335,6 +6391,17 @@ function usdBast(b, list, wakil) {
     ${dTtd([{ atas: 'PIHAK KEDUA', jabatan: 'Perwakilan Penerima', nama: w ? w.nama : '' }, { atas: 'PIHAK PERTAMA', jabatan: DOK_PIMPINAN.waka2.jabatan, nama: DOK_PIMPINAN.waka2.nama }])}
     ${dTtd([{ spacer: true }, { atas: 'Mengetahui,', jabatan: DOK_PIMPINAN.ketua.jabatan + ' BAZNAS Kota Lubuklinggau', nama: DOK_PIMPINAN.ketua.nama }, { spacer: true }])}`) + usdLampTtd(b, list, 'Berita Acara Serah Terima');
 }
+// v55: SK Penetapan Penerima dari usulan — memakai templat SK Penetapan (sk-block), nilai = bruto usulan.
+function usDokCetakJenis(id, jenis) {
+  const b = usData.data.find(x => x.id === id); if (!b || jenis !== 'sk') return;
+  const list = usdList(b).map(d => ({ d, nilai: +d.nilaiModal || 0 }));
+  if (!list.length) return alert('Tidak ada penerima aktif pada usulan ini.');
+  list.sort((a, c) => String(a.d.kecamatan || '').localeCompare(String(c.d.kecamatan || '')) || String(a.d.nama || '').localeCompare(String(c.d.nama || '')));
+  const sd = (b.pos_info && b.pos_info.sumber_dana) || '', sumber = (typeof SK_SUMBER !== 'undefined' && SK_SUMBER.find(x => sd && sd.toLowerCase().includes(x.toLowerCase().split('/')[0]))) || 'Zakat';
+  const w = window.open('', '_blank'); if (!w) return alert('Izinkan pop-up untuk mencetak.');
+  w.document.open(); w.document.write(skHtml(list, { judul: b.judul + ' (' + usdProg(b) + ')', tahun: String(b.tahun), sumber })); w.document.close();
+  setTimeout(() => { try { w.focus(); w.print(); } catch (e) { } }, 700);
+}
 function usDokHtml(b, jenis, tgl, wakil) {
   const list = usdList(b), p = usdPos(b);
   if (!list.length) return '';
@@ -6358,6 +6425,7 @@ function usDokCetak(id) {
   const jenis = (document.querySelector('input[name=usd-j]:checked') || {}).value || 'nominatif', tgl = document.getElementById('usd-tgl').value, wakil = document.getElementById('usd-wakil').value;
   closeModal('modal-us');
   if (jenis === 'nominatif') return usCetak(id);
+  if (jenis === 'sk') return usDokCetakJenis(id, 'sk');
   const html = usDokHtml(b, jenis, tgl, wakil); if (!html) return alert('Tidak ada penerima aktif pada usulan ini.');
   const w = window.open('', '_blank'); if (!w) return alert('Izinkan pop-up untuk mencetak.');
   w.document.open(); w.document.write(html); w.document.close(); setTimeout(() => { try { w.focus(); w.print(); } catch (e) { } }, 700);
@@ -8761,7 +8829,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='54.1 · 19 Nov 2026';
+const APP_VERSI='55 · 19 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
