@@ -6220,6 +6220,7 @@ function olTampil() {
   const rp = n => 'Rp' + Math.round(n || 0).toLocaleString('id-ID');
   document.getElementById('ol-isi').innerHTML = `
     ${!r.aktif || !r.kunci_siap ? '<div class="us-catat" style="background:#fff8e1;border:1px solid #f3dd97;border-radius:10px;padding:8px 12px;margin-bottom:10px">⚠️ Donasi online belum aktif. Jalankan <b>siapkanDonasiOnline()</b> di editor Apps Script, lalu isi Environment Variables di Vercel.</div>' : ''}
+    ${olTarifHtml(r)}
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
       <div style="background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:10px 14px"><small style="color:var(--g500)">Lunas (tercatat)</small><b style="display:block;font-size:18px">${rp(tot)}</b><small>${lunas.length} transaksi</small></div>
       <div style="background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:10px 14px"><small style="color:var(--g500)">Menunggu pembayaran</small><b style="display:block;font-size:18px">${r.data.filter(t => t.status === 'Menunggu pembayaran').length}</b></div></div>
@@ -6227,10 +6228,43 @@ function olTampil() {
     <div class="us-wrap"><table class="us-tbl"><thead><tr><th>Waktu / No. transaksi</th><th>Donatur</th><th>Kampanye</th><th class="n">Nilai</th><th>Metode</th><th>Status</th></tr></thead><tbody>
     ${list.map(t => `<tr><td>${olE(String(t.dibuat_pada).slice(0, 16).replace('T', ' '))}<div class="us-k mono">${olE(t.order_id)}</div></td>
       <td>${olE(t.nama)}${t.anonim === 'TRUE' ? ' <span class="badge b-gray">Hamba Allah</span>' : ''}<div class="us-k">${olE(t.wa)}${t.muzakiId ? ' · ' + olE(t.muzakiId) : ''}</div></td>
-      <td>${olE(t.judul)}<div class="us-k">${olE(t.kode_kampanye || (t.layanan === 'zakat' ? 'Zakat Mal' : 'Infak umum'))} · ${olE(t.jenis_dana)}${t.sifat_dana ? ' · ' + olE(t.sifat_dana) : ''}</div></td><td class="n">${rp(t.nilai)}</td>
+      <td>${olE(t.judul)}${t.jumlah ? ' <span class="badge b-gray">' + olE(t.jumlah) + (t.layanan === 'fitrah' ? ' jiwa' : ' hari') + '</span>' : ''}<div class="us-k">${olE(t.kode_kampanye || ({ zakat: 'Zakat Mal', fitrah: 'Zakat Fitrah ' + (t.tahun_hijriah || '') + ' H', fidyah: 'Fidyah ' + (t.tahun_hijriah || '') + ' H — tanpa hak amil' }[t.layanan] || 'Infak umum'))} · ${olE(t.jenis_dana)}${t.sifat_dana ? ' · ' + olE(t.sifat_dana) : ''}</div></td><td class="n">${rp(t.nilai)}</td>
       <td>${olE(t.payment_type || '-')}${t.bank_va ? '<div class="us-k">' + olE(t.bank_va) + '</div>' : ''}</td>
       <td><span class="badge ${t.status === 'Lunas' ? 'b-green' : t.status === 'Menunggu pembayaran' ? 'b-gold' : 'b-gray'}">${olE(t.status)}</span>${t.posisi_kas ? '<div class="us-k">' + olE(t.posisi_kas) + '</div>' : ''}${t.nomor_bsz ? '<div class="us-k mono">e-BSZ ' + olE(t.nomor_bsz) + '</div>' : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="hint">Belum ada transaksi.</td></tr>'}
     </tbody></table></div>`;
+}
+
+// v48: tarif zakat fitrah & fidyah (per tahun Hijriah, sesuai SK) — diatur WK III, dilihat WK I/Ketua/Bendahara
+function olTarifHtml(r) {
+  const rp = n => 'Rp' + Math.round(n || 0).toLocaleString('id-ID'), hari = new Date().toISOString().slice(0, 10);
+  const blok = j => { const t = (r.tarif || []).filter(x => x.jenis === j).sort((a, b) => a.tahun_hijriah < b.tahun_hijriah ? 1 : -1); const th = t[0] && t[0].tahun_hijriah; const k = t.filter(x => x.tahun_hijriah === th);
+    const buka = k[0] && k[0].berlaku_mulai <= hari && hari <= k[0].berlaku_sampai;
+    return `<div style="flex:1;min-width:260px;background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:10px 14px"><b>${j === 'fitrah' ? '🌙 Zakat Fitrah' : 'Fidyah'}</b>${k.length ? ` ${olE(th)} H <span class="badge ${buka ? 'b-green' : 'b-gray'}">${buka ? 'Dibuka' : 'Di luar masa berlaku'}</span><div class="us-k">${olE(k[0].sk)} · ${olE(k[0].berlaku_mulai)} s.d. ${olE(k[0].berlaku_sampai)}</div>
+        <div style="margin-top:4px">${k.map(x => olE(x.kelas) + ': <b>' + rp(x.nominal) + '</b>/' + (j === 'fitrah' ? 'jiwa' : 'hari')).join(' · ')}</div>` : '<div class="us-k">Belum diatur — layanan online tidak tampil.</div>'}
+      ${r.boleh_tarif ? `<button class="btn btn-outline btn-sm" type="button" style="margin-top:6px" onclick="olTarifForm('${j}')">Atur tarif</button>` : ''}</div>`; };
+  return `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">${blok('fitrah')}${blok('fidyah')}</div><div id="ol-tarif-form"></div>`;
+}
+function olTarifForm(j) {
+  const t = (olData.tarif || []).filter(x => x.jenis === j).sort((a, b) => a.tahun_hijriah < b.tahun_hijriah ? 1 : -1), th = t[0] && t[0].tahun_hijriah, k = t.filter(x => x.tahun_hijriah === th);
+  const v = (i, f) => k[i] ? olE(k[i][f]) : '';
+  document.getElementById('ol-tarif-form').innerHTML = `<div style="background:#fff;border:1px solid var(--g200,#ddd);border-radius:12px;padding:12px 14px;margin-bottom:12px">
+    <b>Atur tarif ${j === 'fitrah' ? 'zakat fitrah (per jiwa)' : 'fidyah (per hari)'}</b>
+    <div class="us-k" style="margin:2px 0 8px">Sesuai SK penetapan pleno pimpinan. Menyimpan tarif baru menggantikan tarif tahun yang sama; riwayat tetap tersimpan di sheet Tarif_Online.</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px">
+      <label>Tahun Hijriah<input id="olt-th" class="form-control" value="${olE(th || '1448')}"></label>
+      <label>Nomor SK<input id="olt-sk" class="form-control" value="${v(0, 'sk')}" placeholder="…/KPTS/BAZNAS-LLG/…"></label>
+      <label>Berlaku mulai<input id="olt-m" type="date" class="form-control" value="${v(0, 'berlaku_mulai')}"></label>
+      <label>Berlaku sampai<input id="olt-s" type="date" class="form-control" value="${v(0, 'berlaku_sampai')}"></label></div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:6px 8px;margin-top:8px">${[0, 1, 2].map(i => `<input id="olt-k${i}" class="form-control" placeholder="Kelas ${i + 1}${i ? ' (opsional)' : ''}, mis. Beras medium" value="${v(i, 'kelas')}"><input id="olt-n${i}" class="form-control" inputmode="numeric" placeholder="Nominal Rp" value="${k[i] ? k[i].nominal : ''}">`).join('')}</div>
+    ${j === 'fitrah' ? '<div class="us-k" style="margin-top:6px">Tanggal "sampai" sebaiknya hari terakhir Ramadan agar zakat fitrah tersalurkan sebelum salat Idulfitri.</div>' : '<div class="us-k" style="margin-top:6px">Fidyah disalurkan utuh untuk fakir miskin — tanpa hak amil.</div>'}
+    <div style="margin-top:10px;display:flex;gap:8px"><button class="btn btn-primary btn-sm" type="button" onclick="olTarifSimpan('${j}',this)">Simpan tarif</button><button class="btn btn-outline btn-sm" type="button" onclick="document.getElementById('ol-tarif-form').innerHTML=''">Batal</button></div></div>`;
+}
+async function olTarifSimpan(j, btn) {
+  const g = id => document.getElementById(id).value.trim();
+  const kelas = [0, 1, 2].map(i => ({ kelas: g('olt-k' + i), nominal: Number(g('olt-n' + i).replace(/\D/g, '')) })).filter(x => x.kelas || x.nominal);
+  btn.disabled = true;
+  let r; try { r = await dbApi('tarif_online_simpan', { jenis: j, tahun_hijriah: g('olt-th'), sk: g('olt-sk'), berlaku_mulai: g('olt-m'), berlaku_sampai: g('olt-s'), kelas }); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server.' }; }
+  btn.disabled = false; toast(r.pesan, !r.ok); if (r.ok) olMuat();
 }
 
 // ════════════════════════════════════════════
@@ -8309,7 +8343,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='47 · 19 Nov 2026';
+const APP_VERSI='48 · 19 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){

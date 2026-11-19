@@ -229,6 +229,8 @@
         ${data && data.online_umum ? `<button class="kb-cta" type="button" data-ol-umum="zakat" style="width:100%;border:0;cursor:pointer">💳 Bayar Zakat Online</button>
         <button class="kb-btn garis" type="button" data-ol-umum="infak" style="width:100%;margin-top:8px">Infak/Sedekah online</button>
         <p class="kb-kecil" style="margin:6px 0 0;text-align:center">QRIS · Virtual Account · e-wallet · e-BSZ langsung terbit</p>` : `<a class="kb-cta" href="${esc(C.muzaki)}">Tunaikan Zakat Sekarang</a>`}
+        ${data && data.online_khusus && (data.online_khusus.fitrah || data.online_khusus.fidyah) ? `<div class="kb-ol-ram">${data.online_khusus.fitrah ? `<button class="kb-btn utama" type="button" data-ol-umum="fitrah" style="width:100%;margin-top:10px">🌙 Zakat Fitrah ${esc(data.online_khusus.fitrah.tahun_hijriah)} H — ${rp(data.online_khusus.fitrah.kelas[0].nominal)}/jiwa</button>` : ''}
+          ${data.online_khusus.fidyah ? `<button class="kb-btn garis" type="button" data-ol-umum="fidyah" style="width:100%;margin-top:8px">Fidyah — ${rp(data.online_khusus.fidyah.kelas[0].nominal)}/hari</button>` : ''}</div>` : ''}
         <p class="kb-aman">${svgPerisai}<span>Transfer hanya ke rekening atas nama <b>BAZNAS Kota Lubuklinggau</b>. Bukti Setor Zakat (BSZ) dapat menjadi pengurang penghasilan kena pajak.</span></p>
       </div>
       <nav class="kb-transparan" aria-label="Transparansi"><b>Transparansi</b>
@@ -374,7 +376,7 @@
       else { bagikan(f.dataset.bagi, f.dataset.judul, f); return; }
       isiKabar(); return;
     }
-    const ol = e.target.closest('[data-online],[data-ol-nom],[data-ol-lanjut],[data-ol-kembali],[data-ol-bayar],[data-ol-umum],[data-ol-jenis],[data-ebsz]');
+    const ol = e.target.closest('[data-online],[data-ol-nom],[data-ol-lanjut],[data-ol-kembali],[data-ol-bayar],[data-ol-umum],[data-ol-jenis],[data-ebsz],[data-ol-kelas],[data-ol-tambah-jiwa],[data-ol-hapus-jiwa]');
     if (ol) { olKlik(ol); return; }
     const t = e.target.closest('[data-tab],[data-donasi],[data-salin],[data-tutup]');
     if (!t) { if (e.target.id === 'kb-lembar') e.target.classList.remove('buka'); return; }
@@ -415,8 +417,47 @@
   // ═══ v46: Donasi online (Midtrans) — tahap 1 infak/sedekah terikat per kampanye. Kunci rahasia hanya di server. ═══
   const OL = { x: null, d: {} };
   const lembar = () => { const l = document.getElementById('kb-lembar'); l.classList.add('buka'); return l.querySelector('.kb-lembar-isi'); };
-  const UMUM = { zakat: { judul: 'Zakat Mal', jenis: 'Zakat Mal' }, infak: { judul: 'Infak/Sedekah', jenis: 'Infak/Sedekah (tidak terikat)' } };
+  const UMUM = { zakat: { judul: 'Zakat Mal', jenis: 'Zakat Mal' }, infak: { judul: 'Infak/Sedekah', jenis: 'Infak/Sedekah (tidak terikat)' },
+    fitrah: { judul: 'Zakat Fitrah', jenis: 'Zakat Fitrah' }, fidyah: { judul: 'Fidyah', jenis: 'Fidyah (untuk fakir miskin)' } };
+  // v48: zakat fitrah (per jiwa) & fidyah (per hari) — tarif dari SK penetapan, total dihitung ulang di server
+  const tarifK = j => (data && data.online_khusus && data.online_khusus[j]) || null;
+  const olTotal = () => { const t = tarifK(OL.x.umum), d = OL.d; if (!t) return 0; const k = t.kelas[d.kelas || 0] || t.kelas[0];
+    return k.nominal * (OL.x.umum === 'fitrah' ? (d.jiwa || []).filter(n => n.trim().length >= 2).length : (+d.hari || 0)); };
+  function olFormKhusus() {
+    const x = OL.x, d = OL.d, isi = lembar(), fit = x.umum === 'fitrah', t = tarifK(x.umum);
+    if (!t) { isi.innerHTML = '<p>Layanan ini sedang tidak dibuka.</p><button class="kb-btn utama" type="button" style="width:100%" data-tutup>Tutup</button>'; return; }
+    if (fit && !(d.jiwa && d.jiwa.length)) d.jiwa = [d.nama || ''];
+    if (!fit && !d.hari) d.hari = 1;
+    isi.innerHTML = `<div class="kb-ol-langkah"><b>1 · ${fit ? 'Jiwa' : 'Hari'} &amp; data</b><span>2 · Periksa</span><span>3 · Bayar</span></div>
+      <h3 style="margin:6px 0 2px">${fit ? 'Zakat fitrah' : 'Fidyah'} ${esc(t.tahun_hijriah)} H</h3><p style="margin:0 0 10px;color:var(--kb-redup);font-size:13px">Tarif sesuai ${esc(t.sk)} · dibuka s.d. ${esc(tgl(t.sampai))}</p>
+      ${t.kelas.length > 1 ? `<div class="kb-ol-nom" style="grid-template-columns:repeat(${t.kelas.length},1fr)">${t.kelas.map((k, i) => `<button type="button" data-ol-kelas="${i}" class="${(d.kelas || 0) === i ? 'on' : ''}">${esc(k.kelas)}<br><b>${rp(k.nominal)}</b></button>`).join('')}</div>` : `<p class="kb-ol-ket" style="text-align:left">${esc(t.kelas[0].kelas)}: <b>${rp(t.kelas[0].nominal)}</b> per ${fit ? 'jiwa' : 'hari'}</p>`}
+      ${fit ? `<div class="kb-ol-f"><b>Nama jiwa yang dizakati *</b> <small>(diri sendiri & tanggungan, maks. 20)</small>
+          ${d.jiwa.map((n, i) => `<div style="display:flex;gap:6px;margin-top:6px"><input data-ol-jiwa="${i}" maxlength="60" placeholder="Nama jiwa ${i + 1}" value="${esc(n)}" style="flex:1">${d.jiwa.length > 1 ? `<button type="button" class="kb-btn garis" data-ol-hapus-jiwa="${i}" aria-label="Hapus jiwa ${i + 1}" style="padding:0 12px">✕</button>` : ''}</div>`).join('')}
+          ${d.jiwa.length < 20 ? '<button type="button" class="kb-btn garis" data-ol-tambah-jiwa style="width:100%;margin-top:8px">+ Tambah jiwa</button>' : ''}</div>`
+        : `<label class="kb-ol-f">Jumlah hari puasa yang ditinggalkan *<input id="ol-hari" type="number" min="1" max="60" inputmode="numeric" value="${esc(d.hari)}"></label>
+          <label class="kb-ol-f">Fidyah atas nama (orang yang tidak berpuasa)<input id="ol-atas" maxlength="60" placeholder="Kosongkan bila diri sendiri" value="${esc(d.atas_nama || '')}"></label>`}
+      <div class="kb-ol-ring" style="margin:10px 0"><div class="tot"><span>Total</span><b id="ol-total">${rp(olTotal())}</b></div></div>
+      <label class="kb-ol-f">Nama pembayar *<input id="ol-nama" maxlength="80" autocomplete="name" value="${esc(d.nama || '')}"></label>
+      <label class="kb-ol-f">Nomor WhatsApp *<input id="ol-wa" inputmode="tel" maxlength="16" autocomplete="tel" placeholder="08…" value="${esc(d.wa || '')}"></label>
+      <label class="kb-ol-f">Email (opsional, untuk bukti)<input id="ol-email" type="email" maxlength="120" autocomplete="email" value="${esc(d.email || '')}"></label>
+      <label class="kb-ol-c"><input type="checkbox" id="ol-anonim" ${d.anonim ? 'checked' : ''}> Sembunyikan nama saya (Hamba Allah)</label>
+      <label class="kb-ol-c"><input type="checkbox" id="ol-setuju" ${d.setuju ? 'checked' : ''}> ${fit ? 'Saya berniat menunaikan <b>zakat fitrah</b> untuk diri saya dan/atau tanggungan saya yang tercantum, karena Allah Ta\'ala, dan mewakilkan penyalurannya kepada BAZNAS Kota Lubuklinggau sebelum salat Idulfitri.'
+        : 'Saya membayar <b>fidyah</b> atas puasa Ramadan yang ditinggalkan karena uzur syar\'i, untuk diberikan kepada fakir miskin melalui BAZNAS Kota Lubuklinggau.'}</label>
+      <p class="kb-ol-galat" id="ol-galat"></p>
+      <button class="kb-btn utama" type="button" style="width:100%" data-ol-lanjut>Lanjut — periksa</button>
+      <button class="kb-btn garis" type="button" style="width:100%;margin-top:8px" data-tutup>Batal</button>
+      <p class="kb-ol-ket">${fit ? 'Bukti Setor Zakat elektronik (e-BSZ) terbit otomatis setelah lunas.' : 'Fidyah disalurkan utuh kepada fakir miskin (tanpa potongan hak amil).'}</p>`;
+  }
+  document.addEventListener('input', e => { if (e.target.matches('[data-ol-jiwa],#ol-hari') && OL.x && /^(fitrah|fidyah)$/.test(OL.x.umum)) { olBacaKhusus(); const o = document.getElementById('ol-total'); if (o) o.textContent = rp(olTotal()); } });
+  function olBacaKhusus() {
+    const g = id => document.getElementById(id);
+    if (!g('ol-nama')) return;
+    if (OL.x.umum === 'fitrah') OL.d.jiwa = [...document.querySelectorAll('[data-ol-jiwa]')].map(e => e.value);
+    else { OL.d.hari = Math.max(0, parseInt(g('ol-hari').value, 10) || 0); OL.d.atas_nama = g('ol-atas').value.trim(); }
+    Object.assign(OL.d, { nama: g('ol-nama').value.trim(), wa: g('ol-wa').value.trim(), email: g('ol-email').value.trim(), anonim: g('ol-anonim').checked, setuju: g('ol-setuju').checked, doa: '' });
+  }
   function olForm() {
+    if (OL.x.umum === 'fitrah' || OL.x.umum === 'fidyah') return olFormKhusus();
     const x = OL.x, d = OL.d, isi = lembar(), z = x.umum === 'zakat';
     const pilihJenis = x.umum ? `<div class="kb-ol-nom" style="grid-template-columns:1fr 1fr;margin-bottom:8px">${['zakat', 'infak'].map(j => `<button type="button" data-ol-jenis="${j}" class="${x.umum === j ? 'on' : ''}">${j === 'zakat' ? '🕌 Zakat Mal' : '🤲 Infak/Sedekah'}</button>`).join('')}</div>` : '';
     const idZakat = z ? `<details class="kb-ol-f" ${d.npwp || d.nik ? 'open' : ''} style="margin:4px 0 10px"><summary style="cursor:pointer;font-weight:600">Data untuk Bukti Setor Zakat (opsional, untuk pengurang pajak)</summary>
@@ -444,6 +485,13 @@
   }
   function olBaca() {
     const g = id => document.getElementById(id);
+    if (OL.x.umum === 'fitrah' || OL.x.umum === 'fidyah') {
+      olBacaKhusus(); const d = OL.d; d.nilai = olTotal();
+      const gal = OL.x.umum === 'fitrah' && !(d.jiwa || []).some(n => n.trim().length >= 2) ? 'Isi minimal satu nama jiwa.' : OL.x.umum === 'fidyah' && !(d.hari >= 1 && d.hari <= 60) ? 'Jumlah hari 1–60.'
+        : d.nilai < 10000 ? 'Total minimal Rp10.000.' : d.nama.length < 3 ? 'Isi nama pembayar.' : !/^(\+?62|0)8\d{7,12}$/.test(d.wa.replace(/[\s-]/g, '')) ? 'Nomor WhatsApp tidak valid (contoh 081234567890).'
+        : d.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email) ? 'Alamat email tidak valid.' : !d.setuju ? 'Centang pernyataan niat.' : '';
+      g('ol-galat').textContent = gal; return !gal;
+    }
     Object.assign(OL.d, { nilai: Number((g('ol-nilai').value || '').replace(/\D/g, '')), nama: g('ol-nama').value.trim(), wa: g('ol-wa').value.trim(), email: g('ol-email').value.trim(),
       doa: g('ol-doa').value.trim(), anonim: g('ol-anonim').checked, setuju: g('ol-setuju').checked,
       npwp: g('ol-npwp') ? g('ol-npwp').value.replace(/\D/g, '') : '', nik: g('ol-nik') ? g('ol-nik').value.replace(/\D/g, '') : '', alamat: g('ol-alamat') ? g('ol-alamat').value.trim() : '' });
@@ -456,8 +504,10 @@
   function olPeriksa() {
     const x = OL.x, d = OL.d, isi = lembar(), wa = d.wa.replace(/\D/g, '');
     isi.innerHTML = `<div class="kb-ol-langkah"><span>1 · Nominal &amp; data</span><b>2 · Periksa</b><span>3 · Bayar</span></div>
-      <h3 style="margin:6px 0 10px">Periksa ${x.umum === 'zakat' ? 'zakat' : 'donasi'} Anda</h3>
+      <h3 style="margin:6px 0 10px">Periksa ${x.umum === 'zakat' || x.umum === 'fitrah' ? 'zakat' : x.umum === 'fidyah' ? 'fidyah' : 'donasi'} Anda</h3>
       <div class="kb-ol-ring"><div><span>Untuk</span><b>${esc(x.umum ? 'BAZNAS Kota Lubuklinggau' : x.judul)}</b></div><div><span>Jenis dana</span><b>${x.umum ? UMUM[x.umum].jenis : 'Infak/Sedekah terikat'}</b></div>
+        ${x.umum === 'fitrah' ? `<div><span>Jiwa (${d.jiwa.filter(n => n.trim().length >= 2).length})</span><b>${esc(d.jiwa.filter(n => n.trim().length >= 2).join(', '))}</b></div>` : ''}
+        ${x.umum === 'fidyah' ? `<div><span>Fidyah</span><b>${esc(d.hari)} hari${d.atas_nama ? ' a.n. ' + esc(d.atas_nama) : ''}</b></div>` : ''}
         ${x.umum === 'zakat' ? `<div><span>Bukti Setor Zakat</span><b>${d.npwp ? 'NPWP ' + esc(d.npwp) : d.nik ? 'NIK ' + esc(d.nik.slice(0, 4) + '••••••••' + d.nik.slice(-4)) : 'Atas nama (tanpa NPWP/NIK)'}</b></div>` : ''}
         <div><span>Atas nama</span><b>${esc(d.anonim ? 'Hamba Allah (nama disembunyikan)' : d.nama)}</b></div><div><span>WhatsApp</span><b>${esc(wa.slice(0, 4) + '••••' + wa.slice(-3))}</b></div>
         <div class="tot"><span>Total dibayar</span><b>${rp(d.nilai)}</b></div></div>
@@ -473,7 +523,8 @@
   async function olBayar(btn) {
     btn.disabled = true; btn.textContent = 'Menyiapkan pembayaran…'; const gal = document.getElementById('ol-galat');
     let r;
-    try { const res = await fetch('/api/bayar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(OL.x.umum ? { ...OL.d, kode_kampanye: '', layanan: OL.x.umum, niat: OL.x.umum === 'zakat' && OL.d.setuju } : { ...OL.d, kode_kampanye: OL.x.id }) }); r = await res.json(); }
+    try { const res = await fetch('/api/bayar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(OL.x.umum ? { ...OL.d, kode_kampanye: '', layanan: OL.x.umum, niat: OL.x.umum !== 'infak' && OL.d.setuju,
+      jiwa: OL.x.umum === 'fitrah' ? OL.d.jiwa.filter(n => n.trim().length >= 2) : undefined } : { ...OL.d, kode_kampanye: OL.x.id }) }); r = await res.json(); }
     catch (e) { r = { ok: false, pesan: 'Gagal terhubung. Periksa koneksi internet.' }; }
     if (!r.ok) { gal.textContent = r.pesan; btn.disabled = false; btn.textContent = 'Coba lagi'; return; }
     lacak('donasi_online_mulai', { konten_id: OL.x.id || OL.x.umum, value: OL.d.nilai, currency: 'IDR' });
@@ -488,7 +539,8 @@
     const ulang = s.ok && s.status === 'Menunggu pembayaran' && n < 40;
     const ikon = !s.ok ? '⚠️' : s.status === 'Lunas' ? '✅' : s.status === 'Menunggu pembayaran' ? '⏳' : '✖️';
     const teks = !s.ok ? 'Status belum dapat dimuat. Simpan nomor transaksi di bawah dan cek kembali nanti.'
-      : s.status === 'Lunas' && s.layanan === 'zakat' ? `Ājarakallāhu fīmā a'ṭaita, wa bāraka laka fīmā abqaita. Zakat mal <b>${rp(s.nilai)}</b> telah kami terima dan tercatat.`
+      : s.status === 'Lunas' && (s.layanan === 'zakat' || s.layanan === 'fitrah') ? `Ājarakallāhu fīmā a'ṭaita, wa bāraka laka fīmā abqaita. ${s.layanan === 'fitrah' ? 'Zakat fitrah' : 'Zakat mal'} <b>${rp(s.nilai)}</b> telah kami terima dan tercatat.`
+      : s.status === 'Lunas' && s.layanan === 'fidyah' ? `Jazakumullahu khairan. Fidyah <b>${rp(s.nilai)}</b> telah kami terima dan akan disalurkan kepada fakir miskin.`
       : s.status === 'Lunas' ? `Jazakumullahu khairan. Donasi <b>${rp(s.nilai)}</b> untuk <b>${esc(s.judul)}</b> telah kami terima dan tercatat.`
       : s.status === 'Menunggu pembayaran' ? 'Menunggu pembayaran. Selesaikan pembayaran di aplikasi bank/e-wallet Anda — halaman ini diperbarui otomatis.'
       : 'Transaksi ' + esc(String(s.status).toLowerCase()) + '. Silakan mulai donasi baru bila ingin melanjutkan.';
@@ -533,7 +585,7 @@
       <table class="g"><thead><tr><th>No</th><th>Tanggal Setor</th><th>No. Transaksi</th><th>Jenis Zakat</th><th>Cara Bayar</th><th>Jumlah (Rp)</th></tr></thead>
       <tbody><tr><td class="c">1</td><td class="c">${esc(tgl(st.tanggal))}</td><td class="c">${esc(st.no_bukti)}</td><td>${esc(st.jenis_dana)}</td><td class="c">${esc(st.metode)}</td><td class="r">${Math.round(st.nilai).toLocaleString('id-ID')}</td></tr>
       <tr><td colspan="5" class="r"><b>Jumlah</b></td><td class="r"><b>${Math.round(st.nilai).toLocaleString('id-ID')}</b></td></tr></tbody></table>
-      <p><b>Terbilang:</b> <i>${esc(terbilang(st.nilai))}</i></p>
+      ${st.rincian ? `<p style="font-size:11pt"><b>Rincian:</b> ${esc(st.rincian)}</p>` : ''}<p><b>Terbilang:</b> <i>${esc(terbilang(st.nilai))}</i></p>
       <p style="font-size:10.5pt">Bukti Setor Zakat ini diterbitkan secara elektronik oleh sistem BAZNAS Kota Lubuklinggau dan sah tanpa tanda tangan basah. Keasliannya dapat diperiksa dengan memindai kode QR. BSZ dapat digunakan sebagai pengurang penghasilan kena pajak sesuai Undang-Undang Nomor 23 Tahun 2011 tentang Pengelolaan Zakat dan peraturan perpajakan yang berlaku.</p>
       <div class="kaki"><div class="qr">${qr}<div>Pindai untuk verifikasi keaslian</div></div>
         <div class="ttd">Lubuklinggau, ${esc(tgl(r.tanggal_terbit))}<br>Ketua BAZNAS Kota Lubuk Linggau<br><br><i style="font-size:9pt">(dokumen elektronik)</i><br><br><b><u>${esc(C.ketua)}</u></b></div></div>
@@ -548,12 +600,16 @@
     else if (t.hasAttribute('data-ol-kembali')) olForm();
     else if (t.hasAttribute('data-ol-bayar')) olBayar(t);
     else if (t.dataset.olUmum) {   // v47: zakat mal / infak tidak terikat tanpa kampanye
-      const j = t.dataset.olUmum; OL.x = { id: '', umum: j, judul: UMUM[j].judul }; OL.d = OL.d.x === 'umum' ? OL.d : { x: 'umum' };
+      const j = t.dataset.olUmum, grup = /^(fitrah|fidyah)$/.test(j) ? 'khusus-' + j : 'umum';
+      OL.x = { id: '', umum: j, judul: UMUM[j].judul }; OL.d = OL.d.x === grup ? OL.d : { x: grup };
       const h = document.getElementById('kb-hasilz'); if (j === 'zakat' && h && h.classList.contains('wajib') && !OL.d.nilai) { const v = +(h.querySelector('b').textContent.replace(/\D/g, '')); if (v >= 10000) OL.d.nilai = v; }
       lacak('donasi_online_buka', { konten_id: j }); olForm();
     }
     else if (t.dataset.olJenis) { if (document.getElementById('ol-nama')) olBaca(); OL.d.setuju = false; OL.x = { id: '', umum: t.dataset.olJenis, judul: UMUM[t.dataset.olJenis].judul }; olForm(); }
     else if (t.dataset.ebsz) olEbsz(t);
+    else if (t.dataset.olKelas) { olBacaKhusus(); OL.d.kelas = +t.dataset.olKelas; olFormKhusus(); }
+    else if (t.hasAttribute('data-ol-tambah-jiwa')) { olBacaKhusus(); OL.d.jiwa.push(''); olFormKhusus(); const j = document.querySelectorAll('[data-ol-jiwa]'); j[j.length - 1].focus(); }
+    else if (t.dataset.olHapusJiwa) { olBacaKhusus(); OL.d.jiwa.splice(+t.dataset.olHapusJiwa, 1); olFormKhusus(); }
   }
   { const m = /^#bayar-(ONL-\d{6}-[A-Z0-9]{8})$/.exec(location.hash); if (m) { history.replaceState(null, '', location.pathname); setTimeout(() => olStatus(m[1]), 300); } }
   muat();
