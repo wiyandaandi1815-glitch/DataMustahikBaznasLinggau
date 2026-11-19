@@ -219,6 +219,16 @@ body.kb{font-family:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Robot
 .kb-transparan a{font-weight:600;text-decoration:none;min-height:34px;display:flex;align-items:center}
 /* lembar bagikan & detail */
 .kb-bagi-daftar{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* v53: lembar bagikan media sosial */
+.kb-sos-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.kb-sos{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;border:1px solid var(--kb-garis,#e3e8e6);border-radius:12px;background:#fff;color:var(--kb-teks);font-size:12px;font-weight:600;text-decoration:none;cursor:pointer;font-family:inherit;min-height:84px;justify-content:center}
+.kb-sos:hover{border-color:var(--kb-aksen)}.kb-sos .ik{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px}
+.kb-sos .ik b{font-family:Arial,sans-serif;font-weight:800}.kb-sos .ik svg{width:20px;height:20px}
+.kb-sos.wa .ik{background:#25d366}.kb-sos.fb .ik{background:#1877f2}.kb-sos.xx .ik{background:#111}.kb-sos.tg .ik{background:#229ed9}
+.kb-sos.th .ik{background:#222}.kb-sos.li .ik{background:#0a66c2;font-size:14px}.kb-sos.em .ik{background:#6b7280}.kb-sos.ig .ik{background:linear-gradient(45deg,#f9a825,#e91e63,#7b1fa2)}
+.kb-sos-teks{width:100%;box-sizing:border-box;border:1px solid var(--kb-garis,#e3e8e6);border-radius:10px;padding:8px 10px;font:inherit;font-size:13px;resize:none;background:#f8faf9}
+.kb-sos-ig{background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:8px 12px;font-size:12.5px;margin-bottom:8px;line-height:1.5}.kb-sos-ig ol{margin:4px 0 0;padding-left:18px}
+@media(max-width:380px){.kb-sos-grid{grid-template-columns:repeat(3,1fr)}}
 body.kb-mode-detail #kabar-app{max-width:780px;margin:18px auto 0}
 body.kb-mode-detail #kabar-app .kb-samping{position:static;margin-top:18px}
 .kb-kaki{margin-top:36px}
@@ -315,3 +325,18 @@ body.kb-mode-detail #kabar-app .kb-samping{position:static;margin-top:18px}
 .kb-ol-ring>div:last-child{border:0}.kb-ol-ring span{color:var(--kb-redup)}.kb-ol-ring b{text-align:right}.kb-ol-ring .tot b{font-size:18px;color:var(--kb-aksen)}
 .kb-ol-status{text-align:center;padding:6px 0 10px}.kb-ol-status .ik{font-size:44px}.kb-ol-status p{font-size:15px;line-height:1.5}
 .kb-ol-no{background:var(--kb-hijau-muda);border-radius:10px;padding:8px;font-size:12.5px;color:var(--kb-redup)}.kb-ol-no b{font-family:monospace;font-size:15px;color:var(--kb-teks)}
+
+/* v53: daftar donatur kampanye */
+.kb-ke-donatur{display:inline-block;margin:2px 0 8px;font-size:13px;font-weight:600;color:var(--kb-aksen);text-decoration:none}
+.kb-donatur{margin-top:16px;border:1px solid var(--kb-garis,#e3e8e6);border-radius:14px;padding:12px 14px;background:#fff}
+.kb-donatur h4{margin:0 0 8px;font-size:16px}.kb-donatur h4 small{color:var(--kb-redup);font-weight:500}
+.kb-donatur-kepala,.kb-donatur-daftar li{display:grid;grid-template-columns:96px 1fr auto;gap:8px;align-items:center}
+.kb-donatur-kepala{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--kb-redup);padding:0 0 6px;border-bottom:1px solid var(--kb-garis,#e3e8e6)}
+.kb-donatur-kepala span:last-child,.kb-donatur-daftar .j{text-align:right}
+.kb-donatur-daftar{list-style:none;margin:0;padding:0}
+.kb-donatur-daftar li{padding:8px 0;border-bottom:1px dashed var(--kb-garis,#e3e8e6);font-size:14px}
+.kb-donatur-daftar li:last-child{border-bottom:0}
+.kb-donatur-daftar .t{color:var(--kb-redup);font-size:12.5px}.kb-donatur-daftar .n{font-weight:600;overflow-wrap:anywhere}.kb-donatur-daftar .j{font-weight:700;color:var(--kb-aksen);white-space:nowrap}
+.kb-donatur-cat{display:block;margin-top:6px;color:var(--kb-redup);font-size:12px}.kb-donatur-kosong{margin:0;color:var(--kb-redup);font-size:14px}
+@media(max-width:400px){.kb-donatur-kepala,.kb-donatur-daftar li{grid-template-columns:78px 1fr auto;gap:6px}.kb-donatur-daftar li{font-size:13px}}
+.kb-donatur{scroll-margin-top:80px}

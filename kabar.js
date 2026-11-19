@@ -61,9 +61,12 @@
         <div class="kb-bar" role="progressbar" aria-valuenow="${k.persen}" aria-valuemin="0" aria-valuemax="100" aria-label="Tercapai ${k.persen}%"><i data-w="${Math.min(100, k.persen)}"></i></div>
         <div class="kb-kumpul"><span><b data-hitung="${k.terkumpul}" data-fmt="rp">${rp(k.terkumpul)}</b> terkumpul</span><span>${k.persen}%</span></div>
         <div class="kb-tiga"><div><b>${rpRingkas(k.target)}</b><small>Target</small></div><div><b>${k.donatur.toLocaleString('id-ID')}</b><small>Donatur</small></div><div><b>${akhir ? '—' : k.sisa_hari}</b><small>Hari lagi</small></div></div>
-        ${akhir ? `<div class="kb-hasil">✅ Terkumpul ${rp(k.terkumpul)} dari ${k.donatur} donatur. Jazakumullah khairan.</div>` :
+        ${k.donatur ? `<a class="kb-ke-donatur" href="#${esc(k.id)}" data-ke-donatur>👥 Lihat daftar ${k.donatur.toLocaleString('id-ID')} donatur →</a>` : ''}
+        ${akhir ? `<div class="kb-hasil">✅ Terkumpul ${rp(k.terkumpul)} dari ${k.donatur} donatur. Jazakumullah khairan.</div>
+          <button class="kb-btn garis" type="button" style="width:100%;margin-top:8px" data-bagi="${esc(k.id)}" data-judul="${esc(k.judul)}">${svgBagi} Bagikan kabar baik ini</button>` :
         `<div class="kb-aksi"><button class="kb-btn utama" type="button" data-donasi="${esc(k.id)}">Cara berdonasi</button>
-          <a class="kb-btn wa" href="${waLink(k.judul, k.id, k.persen + '% tercapai')}" target="_blank" rel="noopener" aria-label="Bagikan lewat WhatsApp">${svgWa}</a></div>`}
+          <a class="kb-btn wa" href="${waLink(k.judul, k.id, k.persen + '% tercapai')}" target="_blank" rel="noopener" aria-label="Bagikan lewat WhatsApp">${svgWa}</a>
+          <button class="kb-btn garis" type="button" data-bagi="${esc(k.id)}" data-judul="${esc(k.judul)}" aria-label="Bagikan ke Facebook, Instagram, X, dan lainnya">${svgBagi}</button></div>`}
       </div></article>`;
   }
   // v12: ringkasan & tab Perkembangan Beasiswa — hanya agregat (kelompok < 3 tampil "<3"), tanpa nama/nilai/sekolah perorangan
@@ -293,6 +296,20 @@
     document.title = 'Kabar Kebaikan — BAZNAS Kota Lubuklinggau';
   }
 
+  // v53: daftar donatur kampanye (tanggal, nama, jumlah). Setoran lewat petugas disamarkan; pilihan Hamba Allah dihormati.
+  let keDonatur = false;
+  const tglP = s => { const d = new Date(String(s).slice(0, 10) + 'T00:00:00'); return isNaN(d) ? '' : d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }); };
+  function donaturBaris(d) { return `<li><span class="t">${tglP(d.tanggal)}</span><span class="n">${esc(d.nama)}</span><span class="j">${rp(d.nilai)}</span></li>`; }
+  function donaturHtml(x) {
+    const L = x.daftar_donatur || [], n = L.length + (x.daftar_donatur_lebih || 0);
+    if (!L.length) return `<section class="kb-donatur" id="kb-donatur"><h4>Donatur</h4><p class="kb-donatur-kosong">Belum ada donasi tercatat. Jadilah donatur pertama 🤲</p></section>`;
+    return `<section class="kb-donatur" id="kb-donatur"><h4>Donatur <small>(${n.toLocaleString('id-ID')})</small></h4>
+      <div class="kb-donatur-kepala"><span>Tanggal</span><span>Nama</span><span>Jumlah</span></div>
+      <ol class="kb-donatur-daftar" data-id="${esc(x.id)}">${L.slice(0, 10).map(donaturBaris).join('')}</ol>
+      ${L.length > 10 ? `<button class="kb-btn garis" type="button" style="width:100%;margin-top:8px" data-donatur-lagi="${esc(x.id)}">Tampilkan lebih banyak</button>` : ''}
+      ${x.daftar_donatur_lebih ? `<small class="kb-donatur-cat">Menampilkan ${L.length} donasi terbaru.</small>` : ''}
+      <small class="kb-donatur-cat">Nama donatur yang menyetor melalui petugas ditampilkan tersamar untuk menjaga privasi.</small></section>`;
+  }
   async function detail(id) {
     app.innerHTML = '<a class="kb-kembali" href="#">← Semua kabar</a><div class="kb-skel"></div>';
     let x;
@@ -323,9 +340,11 @@
           ${kmp && !akhir ? `<button class="kb-btn utama" type="button" data-donasi="${esc(x.id)}">Cara berdonasi</button>` : `<a class="kb-btn utama" href="#">Lihat kabar lainnya</a>`}
           <a class="kb-btn wa" href="${waLink(x.judul, x.id, kmp ? x.persen + '% tercapai' : rp(x.total_nilai) + ' tersalurkan')}" target="_blank" rel="noopener" aria-label="Bagikan lewat WhatsApp">${svgWa}</a>
           <button class="kb-btn garis" type="button" data-bagi="${esc(x.id)}" data-judul="${esc(x.judul)}" aria-label="Bagikan ke media sosial lain">${svgBagi}</button></div>
+        ${kmp ? donaturHtml(x) : ''}
       </div></article>${samping()}`;
     if (kmp) cacheDetail[x.id] = x;
     pasangFoto(app); animasiBar(app);
+    if (keDonatur) { keDonatur = false; const dn = document.getElementById('kb-donatur'); if (dn) { setTimeout(() => dn.scrollIntoView({ block: 'start' }), 50); document.title = x.judul + ' — BAZNAS Kota Lubuklinggau'; return; } }
     document.title = x.judul + ' — BAZNAS Kota Lubuklinggau';
     window.scrollTo({ top: 0 });
   }
@@ -368,6 +387,9 @@
     if (g) { slKe(g.dataset.geser ? slAktif + +g.dataset.geser : +g.dataset.ke); slJeda = true; return; }
     const hlk = e.target.closest('[data-hl]'); if (hlk) lacak('klik_highlight', { konten_id: hlk.dataset.hl });
     if (e.target.closest('.kb-btn.wa,.kb-bagi')) lacak('bagikan_wa', { konten_id: (e.target.closest('[href]') || {}).href ? decodeURIComponent(e.target.closest('[href]').href).split('/k/')[1] || '' : '' });
+    if (e.target.closest('[data-ke-donatur]')) keDonatur = true;
+    const dl = e.target.closest('[data-donatur-lagi]');
+    if (dl) { const x = cacheDetail[dl.dataset.donaturLagi], ol = document.querySelector('.kb-donatur-daftar'); if (x && ol) { const n = ol.children.length; ol.insertAdjacentHTML('beforeend', x.daftar_donatur.slice(n, n + 20).map(donaturBaris).join('')); if (ol.children.length >= x.daftar_donatur.length) dl.remove(); } return; }
     const f = e.target.closest('[data-kec],[data-kat],[data-reset],[data-bagi]');
     if (f) {
       if (f.hasAttribute('data-kec')) F.kec = f.dataset.kec || '';
@@ -390,16 +412,40 @@
     else if (e.target.id === 'kb-gaji' || e.target.id === 'kb-lain') hitungZakat();
   });
   // bagikan: lembar bagikan bawaan HP (WA, FB, IG, Telegram…) bila ada; di komputer salin tautan
-  async function bagikan(id, judul, tombol) {
-    const url = tautan(id);
-    if (navigator.share) { try { await navigator.share({ title: judul, text: judul + ' — Kabar Kebaikan BAZNAS Kota Lubuklinggau', url }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
-    const fb = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url), xx = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(judul) + '&url=' + encodeURIComponent(url);
+  // v53: lembar bagikan media sosial — WA, Facebook, X, Telegram, Threads, LinkedIn, Email, Instagram/TikTok (salin teks), aplikasi lain (HP)
+  function bagikan(id, judul, tombol) {
+    const url = tautan(id), x = cacheDetail[id] || (data && [...(data.kampanye || []), ...(data.kabar || [])].find(k => k.id === id)) || {};
+    const kmp = /^KMP-/.test(id) && x.status !== 'Berakhir';
+    const ajak = kmp ? (x.persen > 0 ? `Sudah ${x.persen}% tercapai. ` : '') + 'Yuk ikut berdonasi melalui BAZNAS Kota Lubuklinggau 🤲' : 'Kabar kebaikan dari BAZNAS Kota Lubuklinggau 💚';
+    const teks = `${judul}\n${ajak}`, cap = `${teks}\n${url}\n\n#BAZNASLubuklinggau #KabarKebaikan #ZakatInfakSedekah`;
+    const e = encodeURIComponent, L = {
+      wa: waLink(judul, id, kmp && x.persen != null ? x.persen + '% tercapai' : ''),
+      fb: 'https://www.facebook.com/sharer/sharer.php?u=' + e(url),
+      x: 'https://twitter.com/intent/tweet?text=' + e(teks) + '&url=' + e(url) + '&hashtags=BAZNASLubuklinggau',
+      tg: 'https://t.me/share/url?url=' + e(url) + '&text=' + e(teks),
+      th: 'https://www.threads.net/intent/post?text=' + e(teks + '\n' + url),
+      li: 'https://www.linkedin.com/sharing/share-offsite/?url=' + e(url),
+      em: 'mailto:?subject=' + e(judul) + '&body=' + e(teks + '\n\n' + url) };
+    const btn = (k, kelas, ikon, nama) => `<a class="kb-sos ${kelas}" href="${L[k]}" target="_blank" rel="noopener" data-sos="${k}"><span class="ik">${ikon}</span>${nama}</a>`;
     const l = document.getElementById('kb-lembar'), isi = l.querySelector('.kb-lembar-isi');
-    isi.innerHTML = `<h3 style="margin:0 0 4px">Bagikan kabar ini</h3><p style="margin:0 0 12px;color:var(--kb-redup);font-size:14px">${esc(judul)}</p>
-      <div class="kb-bagi-daftar"><a class="kb-btn wa" href="${waLink(judul, id)}" target="_blank" rel="noopener">${svgWa} WhatsApp</a>
-      <a class="kb-btn garis" href="${fb}" target="_blank" rel="noopener">Facebook</a><a class="kb-btn garis" href="${xx}" target="_blank" rel="noopener">X / Twitter</a>
-      <button class="kb-btn garis" type="button" data-salin="${esc(url)}">📋 Salin tautan</button></div>
+    isi.innerHTML = `<h3 style="margin:0 0 4px">Bagikan ${kmp ? 'kampanye' : 'kabar'} ini</h3><p style="margin:0 0 12px;color:var(--kb-redup);font-size:14px">${esc(judul)}</p>
+      <div class="kb-sos-grid">${btn('wa', 'wa', svgWa, 'WhatsApp')}${btn('fb', 'fb', '<b>f</b>', 'Facebook')}${btn('x', 'xx', '<b>𝕏</b>', 'X')}${btn('tg', 'tg', '<b>✈</b>', 'Telegram')}
+        ${btn('th', 'th', '<b>@</b>', 'Threads')}${btn('li', 'li', '<b>in</b>', 'LinkedIn')}${btn('em', 'em', '<b>✉</b>', 'Email')}
+        <button type="button" class="kb-sos ig" data-sos-ig><span class="ik"><b>◎</b></span>Instagram / TikTok</button></div>
+      <div class="kb-sos-ig" id="kb-sos-ig" hidden><b>Instagram & TikTok</b> belum menyediakan tombol bagikan dari situs web. Caranya:
+        <ol><li>Salin teks di bawah (sudah berisi tautan).</li><li>Buka Instagram/TikTok → buat Story atau Postingan → tempel teks, atau pakai stiker <b>Tautan</b> di Story.</li></ol></div>
+      <textarea class="kb-sos-teks" readonly rows="4" aria-label="Teks untuk dibagikan">${esc(cap)}</textarea>
+      <div class="kb-bagi-daftar" style="margin-top:8px"><button class="kb-btn garis" type="button" data-salin-teks="${esc(cap)}">📋 Salin teks + tautan</button>
+        <button class="kb-btn garis" type="button" data-salin="${esc(url)}">🔗 Salin tautan saja</button></div>
+      ${navigator.share ? '<button class="kb-btn garis" type="button" style="width:100%;margin-top:8px" data-sos-lain>📱 Aplikasi lain di HP (Instagram, TikTok, Line…)</button>' : ''}
       <button class="kb-btn utama" type="button" style="width:100%;margin-top:12px" data-tutup>Tutup</button>`;
+    isi.onclick = async ev => {
+      const a = ev.target.closest('[data-sos]'); if (a) { lacak('bagikan', { metode: a.dataset.sos, konten_id: id }); return; }
+      if (ev.target.closest('[data-sos-ig]')) { const k = document.getElementById('kb-sos-ig'); k.hidden = !k.hidden; lacak('bagikan', { metode: 'instagram', konten_id: id }); return; }
+      const st = ev.target.closest('[data-salin-teks]');
+      if (st) { try { await navigator.clipboard.writeText(cap); st.textContent = '✓ Teks disalin'; } catch (er) { const ta = isi.querySelector('.kb-sos-teks'); ta.select(); document.execCommand && document.execCommand('copy'); st.textContent = '✓ Teks dipilih — tekan salin'; } lacak('bagikan', { metode: 'salin_teks', konten_id: id }); return; }
+      if (ev.target.closest('[data-sos-lain]')) { try { await navigator.share({ title: judul, text: teks, url }); lacak('bagikan', { metode: 'aplikasi_lain', konten_id: id }); } catch (er) { } }
+    };
     l.classList.add('buka');
   }
   document.addEventListener('keydown', e => { if (e.key === 'Escape') document.getElementById('kb-lembar').classList.remove('buka'); });
