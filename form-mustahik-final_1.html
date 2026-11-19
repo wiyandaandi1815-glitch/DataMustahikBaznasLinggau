@@ -6006,7 +6006,7 @@ function usDetail(id) {
     </tbody></table></div>
     ${usSkHtml(b)}${usSerahHtml(b)}
     <div class="us-aksi">${b.boleh.filter(a => US_AKSI[a]).map(a => `<button type="button" class="btn ${['setuju', 'kirim', 'verifikasi', 'anggaran', 'spp', 'otorisasi', 'bayar'].includes(a) ? 'btn-primary' : 'btn-outline'}" onclick="usAksi('${a}')">${US_AKSI[a]}</button>`).join('')}
-      <button type="button" class="btn btn-outline" onclick="usDokPilih('${usE(b.id)}')">🖨 Dokumen (ND · SPP · Kuitansi · BAST)</button>
+      <button type="button" class="btn btn-outline" onclick="usDokPilih('${usE(b.id)}')">🖨 Dokumen (Formulir · Ceklis · Anggaran · ND · SPP · Kuitansi · BAST · SK)</button>
       ${b.status === 'Selesai' && usData.boleh_buat ? `<button type="button" class="btn btn-outline" onclick="usEditor(null,'${usE(b.id)}')">Buat usulan koreksi</button>` : ''}</div>
     <div class="rk-h" style="font-weight:700;margin:6px 0">Riwayat</div>
     <div class="us-wrap"><table class="us-tbl"><tbody>${b.riwayat.slice().reverse().map(h => `<tr><td style="white-space:nowrap">${usTgl(h.waktu)} ${new Date(h.waktu).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</td><td><b>${usE(h.oleh)}</b> <span class="us-k">${usE(h.jabatan)}</span></td><td>${usE(h.aksi)}${h.dari !== h.ke ? ' · ' + usE(h.dari) + ' → <b>' + usE(h.ke) + '</b>' : ''}${h.catatan ? '<div class="us-k">' + usE(h.catatan) + '</div>' : ''}</td></tr>`).join('')}</tbody></table></div>`;
@@ -6264,6 +6264,9 @@ function usCetak(id) {
 // Memakai kop, gaya, terbilang & Nota Dinas yang sudah ada (cetak-dokumen-block, nota-dinas-block).
 // ════════════════════════════════════════════
 const USD_JENIS = [
+  ['formulir', 'Formulir Usulan Penyaluran', 'Penyusun · diketahui Wakil Ketua II'],   // v56
+  ['ceklis', 'Lembar Ceklis Verifikasi Sekretaris', 'kelengkapan data & berkas per penerima'],   // v56
+  ['konfang', 'Lembar Konfirmasi Anggaran Wakil Ketua III', 'pos RKAT · pagu · realisasi · sisa'],   // v56
   ['nominatif', 'Daftar nominatif & jejak persetujuan', 'Lampiran SPP / arsip'],
   ['nd1', 'Nota Dinas ND-1 — Petugas → Wakil Ketua II', '+ lampiran + lembar disposisi'],
   ['nd2', 'Nota Dinas ND-2 — Wakil Ketua II → Wakil Ketua III', '+ lampiran + lembar disposisi'],
@@ -6402,6 +6405,69 @@ function usDokCetakJenis(id, jenis) {
   w.document.open(); w.document.write(skHtml(list, { judul: b.judul + ' (' + usdProg(b) + ')', tahun: String(b.tahun), sumber })); w.document.close();
   setTimeout(() => { try { w.focus(); w.print(); } catch (e) { } }, 700);
 }
+// ── v56: Formulir Usulan, Ceklis Verifikasi Sekretaris, Konfirmasi Anggaran WK III ──
+const usdTglId = t => t ? new Date(String(t).slice(0, 10) + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '..............................';
+const usdF = n => Math.round(+n || 0).toLocaleString('id-ID');
+function usdFormulir(b, list, tgl) {
+  const tot = list.reduce((s, d) => s + (+d.nilaiModal || 0), 0), r = (l, v) => `<tr><td class="lbl">${l}</td><td class="sep">:</td><td>${v}</td></tr>`;
+  return usdHal(`${dKop()}<div class="judul" style="margin-bottom:0">FORMULIR USULAN PENYALURAN</div><div style="text-align:center;margin-bottom:3mm">No. Usulan: <b>${usE(b.id)}</b></div>
+    <table class="data">${r('Judul usulan', '<b>' + usE(b.judul) + '</b>')}${r('Program', usE(usdProg(b)))}${r('Bidang', usE(b.bidang))}${r('Tahun anggaran', usE(b.tahun))}
+      ${r('Jumlah penerima', list.length + ' orang')}${r('Total usulan (bruto)', '<b>' + dRp(tot) + '</b> (<i>' + terbilang(tot) + '</i>)')}${r('Dibayar dari', usE(b.rek_sumber || '..............................'))}
+      ${b.koreksi_dari ? r('Koreksi atas', usE(b.koreksi_dari)) : ''}${r('Dasar / alasan usulan', b.catatan ? usE(b.catatan) : '<span class="isi"></span>')}</table>
+    <div style="font-weight:700;margin:3mm 0 1mm">Daftar calon penerima</div>
+    <table class="ttdl"><thead><tr><th>No</th><th>Nama</th><th>ID Mustahik</th><th>Kelurahan</th><th>Asnaf</th><th>Bentuk</th><th>Nilai (Rp)</th><th>Keterangan</th></tr></thead><tbody>
+    ${list.map((d, i) => `<tr><td class="c">${i + 1}</td><td>${dE(d.nama)}</td><td>${dE(d.mustahikId)}</td><td>${dE(d.kelurahan || '')}</td><td>${dE(d.asnaf || '')}</td><td>${dE(d._item.bentuk)}</td><td class="n">${usdF(d.nilaiModal)}</td><td>${dE(d._item.keterangan || '')}</td></tr>`).join('')}
+    <tr><td colspan="6" style="text-align:right"><b>JUMLAH</b></td><td class="n"><b>${usdF(tot)}</b></td><td></td></tr></tbody></table>
+    <p class="isi-surat" style="margin-top:3mm">Dengan ini kami mengusulkan penyaluran bantuan tersebut di atas. Calon penerima telah terdaftar dalam Data Mustahik BAZNAS Kota Lubuklinggau dan data yang disampaikan adalah benar.</p>
+    ${dTtd([{ atas: 'Mengetahui,', jabatan: DOK_PIMPINAN.waka2.jabatan, nama: DOK_PIMPINAN.waka2.nama }, { atas: 'Lubuklinggau, ' + usdTglId(b.diusulkan_pada || tgl), jabatan: 'Pengusul', nama: b.diusulkan_oleh || b.dibuat_oleh || '' }])}`);
+}
+function usdCeklis(b, list) {
+  const pool = typeof usPool !== 'undefined' && Array.isArray(usPool) ? usPool : [];
+  const v = ok => ok ? '<b>✓</b>' : '<span style="color:#b42318">✗</span>';
+  const rows = list.map((d, i) => {
+    const nik = String(d.nik || ''), p = pool.find(x => x.mustahikId === d.mustahikId) || {}, trf = d._item.bentuk === 'Transfer';
+    const rek = trf ? !!(d.noRekening || (d._item.bank_tujuan && /•/.test(d._item.bank_tujuan)) || (p.rekening && p.rekening.bank)) : null;
+    const c = [/^\d{16}$/.test(nik) || !!d.mustahikId, !!d.noKK, d.statusVerifikasi === 'terverifikasi', !!(d.tanggalSurvey || p.survei), rek];
+    return `<tr><td class="c">${i + 1}</td><td>${dE(d.nama)}<div style="font-size:8.5pt">${dE(d.mustahikId)}</div></td><td class="c">${v(c[0])}</td><td class="c">${v(c[1])}</td><td class="c">${v(c[2])}</td><td class="c">${v(c[3])}</td><td class="c">${c[4] === null ? '–' : v(c[4])}</td>
+      <td class="c">☐</td><td class="c">☐</td><td class="c">☐</td><td class="c" style="white-space:nowrap">☐ L &nbsp;☐ TL</td></tr>`;
+  }).join('');
+  return usdHal(`${dKop()}<div class="judul" style="margin-bottom:0">LEMBAR CEKLIS VERIFIKASI USULAN PENYALURAN</div><div style="text-align:center;margin-bottom:3mm">No. Usulan <b>${usE(b.id)}</b> · ${usE(b.judul)} · ${usE(usdProg(b))} · TA ${usE(b.tahun)}</div>
+    <table class="ttdl" style="font-size:9pt"><thead><tr><th rowspan="2">No</th><th rowspan="2">Nama / ID Mustahik</th><th colspan="5">Data aplikasi (otomatis)</th><th colspan="3">Berkas fisik (dicentang Sekretaris)</th><th rowspan="2">Hasil</th></tr>
+      <tr><th>NIK</th><th>No. KK</th><th>Terverifikasi</th><th>Disurvei</th><th>Rekening</th><th>KTP</th><th>KK</th><th>Surat Pernyataan</th></tr></thead><tbody>${rows}</tbody></table>
+    <div style="font-size:9pt;margin-top:1mm">✓ ada/sesuai · ✗ belum ada · – tidak diperlukan (bukan transfer) · L = lengkap · TL = tidak lengkap.</div>
+    <table class="data" style="margin-top:3mm"><tr><td class="lbl">Kesimpulan</td><td class="sep">:</td><td>☐ Lengkap, diteruskan ke Wakil Ketua II &nbsp;&nbsp; ☐ Dikembalikan ke pengusul untuk dilengkapi</td></tr>
+      <tr><td class="lbl">Catatan</td><td class="sep">:</td><td><span class="isi"></span><br><span class="isi"></span></td></tr></table>
+    ${dTtd([{ spacer: true }, { atas: 'Lubuklinggau, ' + usdTglId(b.verif_pada), jabatan: 'Sekretaris BAZNAS Kota Lubuklinggau', nama: b.verif_oleh || '' }])}`);
+}
+async function usdKonfCetak(b) {
+  const w = window.open('', '_blank'); if (!w) return alert('Izinkan pop-up untuk mencetak.');
+  w.document.write('<p style="font-family:sans-serif">Memuat data anggaran…</p>');
+  let pos = null;
+  if (b.kode_pos) { try { const r = await dbApi('rkat_daftar', { tahun: String(b.tahun) }); if (r && r.ok !== false && r.pos) pos = r.pos.find(p => p.kode_pos === b.kode_pos) || null; } catch (e) { } }
+  const list = usdList(b), p = usdPos(b), tot = b.total || list.reduce((s, d) => s + (+d.nilaiModal || 0), 0);
+  const cadIni = ['Proses SPP', 'Menunggu Otorisasi', 'Siap Bayar'].includes(b.status) ? Math.max(0, tot - (b.dibayar || 0)) : 0;
+  const isi = n => n == null ? '<span class="nk" style="width:40mm"></span>' : 'Rp ' + usdF(n);
+  let pg = null, real = null, cad = null, sisa0 = null, sisa1 = null;
+  if (pos) { pg = +pos.pagu || 0; real = (+pos.realisasi || 0) - (b.dibayar || 0); cad = (+pos.cadangan || 0) - cadIni; sisa0 = pg - real - cad; sisa1 = sisa0 - tot; }
+  const r = (l, v) => `<tr><td class="lbl">${l}</td><td class="sep">:</td><td>${v}</td></tr>`;
+  const html = usdHal(`${dKop()}<div class="judul" style="margin-bottom:0">LEMBAR KONFIRMASI KETERSEDIAAN ANGGARAN</div><div style="text-align:center;margin-bottom:3mm">No. Usulan <b>${usE(b.id)}</b></div>
+    <table class="data">${r('Usulan', usE(b.judul) + ' — ' + usE(usdProg(b)))}${r('Bidang / tahun anggaran', usE(b.bidang) + ' / ' + usE(b.tahun))}${r('Jumlah penerima', list.length + ' orang')}
+      ${r('Nilai usulan (bruto)', '<b>' + dRp(tot) + '</b>')}${r('Pos RKAT', p.nama ? usE(p.nama) : '<span class="isi"></span>')}${r('Kode kegiatan / akun', p.kode ? usE(p.kode) : '<span class="isi"></span>')}
+      ${r('Sumber dana / asnaf', p.sumber ? usE(p.sumber) : '<span class="isi"></span>')}${p.pilar ? r('Pilar', usE(p.pilar)) : ''}</table>
+    <table class="ttdl" style="margin-top:3mm"><tbody>
+      <tr><td>1. Pagu pos RKAT tahun ${usE(b.tahun)}</td><td class="n">${isi(pg)}</td></tr>
+      <tr><td>2. Realisasi pos (di luar usulan ini)</td><td class="n">${isi(real)}</td></tr>
+      <tr><td>3. Dicadangkan untuk usulan lain (proses SPP s.d. siap bayar)</td><td class="n">${isi(cad)}</td></tr>
+      <tr><td><b>4. Sisa anggaran sebelum usulan ini (1 − 2 − 3)</b></td><td class="n"><b>${isi(sisa0)}</b></td></tr>
+      <tr><td>5. Nilai usulan ini</td><td class="n">Rp ${usdF(tot)}</td></tr>
+      <tr><td><b>6. Sisa anggaran setelah usulan ini (4 − 5)</b></td><td class="n"><b>${isi(sisa1)}</b></td></tr></tbody></table>
+    ${pos ? `<div style="font-size:9pt;margin-top:1mm">Data dari menu RKAT & Anggaran per ${usdTglId(new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10))}.</div>` : '<div style="font-size:9pt;margin-top:1mm">Pos RKAT belum ditetapkan / data tidak dapat dimuat — isi dengan tulisan tangan.</div>'}
+    <table class="data" style="margin-top:3mm"><tr><td class="lbl">Kesimpulan</td><td class="sep">:</td><td>${sisa1 == null ? '☐ Anggaran tersedia &nbsp;&nbsp; ☐ Anggaran tidak mencukupi' : sisa1 >= 0 ? '<b>☑ Anggaran tersedia</b> &nbsp;&nbsp; ☐ Anggaran tidak mencukupi' : '☐ Anggaran tersedia &nbsp;&nbsp; <b>☑ Anggaran tidak mencukupi</b>'}</td></tr>
+      <tr><td class="lbl">Catatan</td><td class="sep">:</td><td><span class="isi"></span></td></tr></table>
+    ${dTtd([{ spacer: true }, { atas: 'Lubuklinggau, ' + usdTglId(b.anggaran_pada), jabatan: ND_WAKA3.jabatan + ' BAZNAS Kota Lubuklinggau', nama: ND_WAKA3.nama }])}`);
+  w.document.open(); w.document.write(`<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>${usE(b.id)} — Konfirmasi Anggaran</title><style>${DOK_CSS}${typeof ND_CSS !== 'undefined' ? ND_CSS : ''}${USD_CSS}</style></head><body>${html}</body></html>`); w.document.close();
+  setTimeout(() => { try { w.focus(); w.print(); } catch (e) { } }, 700);
+}
 function usDokHtml(b, jenis, tgl, wakil) {
   const list = usdList(b), p = usdPos(b);
   if (!list.length) return '';
@@ -6410,7 +6476,9 @@ function usDokHtml(b, jenis, tgl, wakil) {
     return ndHtml(jenis, list, o).replace('</style>', USD_CSS + '</style>');
   }
   let isi = '';
-  if (jenis === 'spp') isi = usdSpp(b, list, tgl) + usdLampTtd(b, list, 'Surat Perintah Pembayaran');
+  if (jenis === 'formulir') isi = usdFormulir(b, list, tgl);
+  else if (jenis === 'ceklis') isi = usdCeklis(b, list);
+  else if (jenis === 'spp') isi = usdSpp(b, list, tgl) + usdLampTtd(b, list, 'Surat Perintah Pembayaran');
   else if (jenis === 'kw1') {
     const kw = list.map(d => usdKw(b, { ringkas: true, nilai: +d.nilaiModal, penerima: d.nama, noBukti: d._item.no_bukti, untuk: 'a.n. <b>' + dE(d.nama) + '</b> (ID Mustahik ' + dE(d.mustahikId) + ').' + usdRinciTeks(d) }));
     for (let i = 0; i < kw.length; i += 2) isi += usdHal(kw.slice(i, i + 2).join(''), 'kw2');
@@ -6426,6 +6494,7 @@ function usDokCetak(id) {
   closeModal('modal-us');
   if (jenis === 'nominatif') return usCetak(id);
   if (jenis === 'sk') return usDokCetakJenis(id, 'sk');
+  if (jenis === 'konfang') return usdKonfCetak(b);
   const html = usDokHtml(b, jenis, tgl, wakil); if (!html) return alert('Tidak ada penerima aktif pada usulan ini.');
   const w = window.open('', '_blank'); if (!w) return alert('Izinkan pop-up untuk mencetak.');
   w.document.open(); w.document.write(html); w.document.close(); setTimeout(() => { try { w.focus(); w.print(); } catch (e) { } }, 700);
@@ -8829,7 +8898,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='55 · 19 Nov 2026';
+const APP_VERSI='56 · 19 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
