@@ -512,6 +512,7 @@
         <div><span>Atas nama</span><b>${esc(d.anonim ? 'Hamba Allah (nama disembunyikan)' : d.nama)}</b></div><div><span>WhatsApp</span><b>${esc(wa.slice(0, 4) + '••••' + wa.slice(-3))}</b></div>
         <div class="tot"><span>Total dibayar</span><b>${rp(d.nilai)}</b></div></div>
       <p class="kb-ol-ket">Metode (QRIS, Virtual Account, e-wallet) dipilih pada langkah berikutnya. Tagihan berlaku 24 jam.</p>
+      <p class="kb-ol-ket" style="background:#fff8e1;border:1px solid #f3dd97;border-radius:10px;padding:8px 10px;color:#5c4a00;text-align:left">💡 Pilih Virtual Account sesuai bank Anda (BNI, BRI, Mandiri, Permata). <b>Nasabah BCA/BSI/Bank Sumsel Babel: pilih QRIS</b> — pindai dengan aplikasi m-banking Anda.</p>
       <p class="kb-ol-galat" id="ol-galat"></p>
       <button class="kb-btn utama" type="button" style="width:100%" data-ol-bayar>Bayar sekarang ${rp(d.nilai)}</button>
       <button class="kb-btn garis" type="button" style="width:100%;margin-top:8px" data-ol-kembali>← Ubah data</button>`;
