@@ -5908,7 +5908,7 @@ function usSkHtml(b) {
   const ada = !!b.no_sk, boleh = b.boleh.includes('sk');
   return `<div class="us-blok"><div class="us-blok-h">📜 SK Penetapan Penerima ${b.wajib_sk ? '<span class="us-tag kuning">wajib</span>' : ''}</div>
     ${ada ? `<div>Nomor <b>${usE(b.no_sk)}</b> · tanggal ${usTgl(b.tgl_sk)} <span class="us-k">dicatat ${usE(b.sk_oleh)}</span></div>` : '<div class="us-k">Wajib karena total ≥ Rp5 juta, kolektif, atau bedah rumah. SPP tidak dapat dicatat sebelum nomor SK dicatat.</div>'}
-    <div class="us-aksi" style="margin-top:6px"><button type="button" class="btn btn-outline btn-sm" onclick="usDokCetakJenis('${usE(b.id)}','sk')">🖨 Cetak draf SK + lampiran</button>
+    <div class="us-aksi" style="margin-top:6px"><button type="button" class="btn btn-outline btn-sm" onclick="usDokPilih('${usE(b.id)}','sk')">🖨 Cetak draf SK + lampiran</button>
       ${boleh ? `<button type="button" class="btn ${ada ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="usSkCatat('${usE(b.id)}')">${ada ? 'Ubah nomor SK' : 'Catat nomor SK'}</button>` : ''}</div></div>`;
 }
 function usSkCatat(id) {
@@ -6057,7 +6057,7 @@ function usDetail(id) {
     </tbody></table></div>
     ${usSkHtml(b)}${usSerahHtml(b)}
     <div class="us-aksi">${b.boleh.filter(a => US_AKSI[a]).map(a => `<button type="button" class="btn ${['setuju', 'kirim', 'verifikasi', 'anggaran', 'spp', 'otorisasi', 'bayar'].includes(a) ? 'btn-primary' : 'btn-outline'}" onclick="usAksi('${a}')">${US_AKSI[a]}</button>`).join('')}
-      <button type="button" class="btn btn-outline" onclick="usDokPilih('${usE(b.id)}')">🖨 Dokumen (Formulir · Ceklis · Anggaran · ND · SPP · Kuitansi · BAST · SK)</button>
+      <button type="button" class="btn btn-outline" onclick="usDokPilih('${usE(b.id)}')">🖨 Dokumen (Formulir · Ceklis · Anggaran · SK · SPP · SPM · Nominatif · Kwitansi · BAST)</button>
       ${b.status === 'Selesai' && usData.boleh_buat ? `<button type="button" class="btn btn-outline" onclick="usEditor(null,'${usE(b.id)}')">Buat usulan koreksi</button>` : ''}</div>
     <div class="rk-h" style="font-weight:700;margin:6px 0">Riwayat</div>
     <div class="us-wrap"><table class="us-tbl"><tbody>${b.riwayat.slice().reverse().map(h => `<tr><td style="white-space:nowrap">${usTgl(h.waktu)} ${new Date(h.waktu).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</td><td><b>${usE(h.oleh)}</b> <span class="us-k">${usE(h.jabatan)}</span></td><td>${usE(h.aksi)}${h.dari !== h.ke ? ' · ' + usE(h.dari) + ' → <b>' + usE(h.ke) + '</b>' : ''}${h.catatan ? '<div class="us-k">' + usE(h.catatan) + '</div>' : ''}</td></tr>`).join('')}</tbody></table></div>`;
@@ -6323,20 +6323,40 @@ const USD_JENIS = [
   ['nd2', 'Nota Dinas ND-2 — Wakil Ketua II → Wakil Ketua III', '+ lampiran + lembar disposisi'],
   ['nd3', 'Nota Dinas ND-3 — Wakil Ketua III → Bendahara (disetujui Ketua)', '+ lampiran + lembar disposisi'],
   ['ndall', 'Paket Nota Dinas ND-1, ND-2, ND-3', 'sekaligus'],
-  ['spp', 'Surat Perintah Pembayaran (SPP)', 'Bendahara · otorisasi WK III · persetujuan Ketua'],
-  ['kw1', 'Kuitansi per penerima', '2 kuitansi per halaman A4'],
-  ['kwk', 'Kuitansi kolektif + lampiran tanda tangan', '1 kuitansi untuk seluruh penerima'],
+  ['sppm', 'Surat Permintaan Pembayaran (SPP)', 'Pemohon: petugas penyusun · Mengetahui: Wakil Ketua II · kepada WK III'],   // v58
+  ['spp', 'Surat Perintah Membayar (SPM) + lampiran nominatif', 'Diterbitkan WK III · disetujui Ketua · kepada Bendahara'],   // v58 (dulu "Surat Perintah Pembayaran")
+  ['nomi', 'Lampiran Daftar Nominatif (NIK & rekening lengkap)', 'Diketahui WK II · Lunas dibayar Bendahara · Setuju dibayar Ketua'],   // v58
+  ['kw1', 'Kwitansi per penerima (format kantor)', '2 kwitansi per halaman A4'],
+  ['kwk', 'Kwitansi kolektif (format kantor) + lampiran tanda tangan', '1 kwitansi untuk seluruh penerima'],
   ['bast', 'Berita Acara Serah Terima (kolektif) + lampiran', 'Pihak I: Wakil Ketua II · Pihak II: perwakilan penerima'],
   ['sk', 'SK Penetapan Penerima + lampiran', 'Keputusan Ketua · wajib ≥ Rp5 juta / kolektif / bedah rumah']];   // v55
-function usDokPilih(id) {
+function usDokPilih(id, pilih) {
   const b = usData && usData.data.find(x => x.id === id); if (!b) return;
   const t = new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10);
   usModal('Cetak dokumen ' + b.id, `<div class="hint" style="margin-bottom:8px">Semua dokumen keluar dari nomor usulan ini. Nomor surat, tanggal tanda tangan & catatan disposisi dikosongkan untuk ditulis tangan.</div>
     <div style="display:flex;flex-direction:column;gap:6px">${USD_JENIS.map((j, i) => `<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="radio" name="usd-j" value="${j[0]}"${i === 0 ? ' checked' : ''} style="width:auto;margin-top:3px"><span><b>${j[1]}</b><br><span class="us-k">${j[2]}</span></span></label>`).join('')}</div>
-    <div class="us-form" style="margin-top:10px"><div class="field"><label>Tanggal surat (Nota Dinas / SPP)</label><input id="usd-tgl" type="date" value="${b.tgl_spp || t}"></div>
+    <div class="us-form" style="margin-top:10px"><div class="field"><label>Tanggal surat (Nota Dinas / SPP / SPM)</label><input id="usd-tgl" type="date" value="${b.tgl_spp || t}"></div>
+    <div class="field"><label>Sumber dana (SK · SPP · SPM · nominatif) *</label><select id="usd-sumber"><option value="">— pilih sumber dana —</option>${usdSumberOpsi().map(x => `<option${x === usdSumberAwal(b) ? ' selected' : ''}>${usE(x)}</option>`).join('')}</select></div>
+    <div class="field"><label>Nomor SPP (permintaan)</label><input id="usd-nospp" value="${usE(usdNoSaran('spp', t))}" placeholder="kosong = ditulis tangan"></div>
+    <div class="field"><label>Nomor SPM (perintah membayar)</label><input id="usd-nospm" value="${usE(b.no_spp || usdNoSaran('spm', t))}" placeholder="kosong = ditulis tangan"></div>
+    <div class="field"><label>Nomor kwitansi awal</label><input id="usd-nokw" value="${usE(usdNoSaran('kw', t))}" placeholder="kosong = ditulis tangan"></div>
     <div class="field"><label>Perwakilan penerima (kuitansi kolektif & BAST)</label><select id="usd-wakil">${b.items.filter(i => i.status !== 'dicoret').map(i => `<option value="${usE(i.mustahikId)}">${usE(i.nama)}</option>`).join('')}<option value="">— dikosongkan (ditulis tangan) —</option></select></div></div>`,
     `<button class="btn btn-primary" type="button" onclick="usDokCetak('${usE(b.id)}')">🖨 Cetak</button>`);
+  if (pilih) { const r = document.querySelector(`input[name=usd-j][value=${pilih}]`); if (r) r.checked = true; }
 }
+// ── v58: penomoran (saran nomor lanjutan disimpan di perangkat), sumber dana pilihan ──
+const USD_NO_POLA = { spp: 'SPP-PEND-LLG', spm: 'SPM-KEU-LLG', kw: 'KW' };
+function usdNoBaca() { try { return JSON.parse(localStorage.getItem('usdNomor') || '{}'); } catch (e) { return {}; } }
+function usdNoSaran(j, tgl) { const d = new Date((tgl || new Date().toISOString().slice(0, 10)) + 'T00:00:00'), th = d.getFullYear(), o = usdNoBaca(), n = (o[j + th] || 0) + 1;
+  return String(n).padStart(3, '0') + '/' + USD_NO_POLA[j] + '/' + ND_ROMAWI[d.getMonth()] + '/' + th; }
+function usdNoSimpan(j, no, tgl) { const m = /^(\d+)\//.exec(String(no || '').trim()); if (!m) return; const th = (tgl || '').slice(0, 4) || String(new Date().getFullYear()), o = usdNoBaca();
+  o[j + th] = Math.max(o[j + th] || 0, parseInt(m[1], 10)); try { localStorage.setItem('usdNomor', JSON.stringify(o)); } catch (e) { } }
+function usdKwNo(awal, i) { const m = /^(\d+)(\/.*)$/.exec(String(awal || '').trim()); if (!m) return ''; return String(parseInt(m[1], 10) + i).padStart(m[1].length, '0') + m[2]; }
+function usdSumberOpsi() { return typeof SK_SUMBER !== 'undefined' ? SK_SUMBER : ['Zakat', 'Infak/Sedekah', 'Dana Sosial Keagamaan Lainnya']; }
+function usdSumberAwal(b) { const sd = String((b.pos_info && b.pos_info.sumber_dana) || '').toLowerCase(); return sd ? (usdSumberOpsi().find(x => sd.includes(x.toLowerCase().split('/')[0])) || '') : ''; }
+const usdBolehLengkap = () => ['WK3', 'KETUA', 'BENDAHARA'].includes(usData && usData.jabatan);
+const usdSamar = (s, n) => { s = String(s || ''); return s.length > n ? s.slice(0, s.length - n).replace(/./g, '•') + s.slice(-n) : s; };
+function usdHeaderNo(no) { return no ? usE(no) : '<span class="nk" style="width:16mm"></span>/...../' + usdRomawi() ; }
 function usdProg(b) { return /^bantuan\b/i.test(b.program) ? b.program : 'Bantuan ' + b.program; }
 function usdRomawi(tgl) { const d = tgl ? new Date(tgl + 'T00:00:00') : new Date(); return ND_ROMAWI[d.getMonth()] + '/' + d.getFullYear(); }
 function usdPos(b) { const p = b.pos_info || {}; return { kode: [p.kkeg, p.kkeu].filter(Boolean).join(' / '), nama: b.nama_pos || '', sumber: [p.sumber_dana, p.asnaf].filter(Boolean).join(' — '), pilar: p.pilar || '' }; }
@@ -6367,7 +6387,15 @@ const USD_CSS = `
   table.ttdl{width:100%;border-collapse:collapse;font-size:9.5pt}table.ttdl th,table.ttdl td{border:1px solid #000;padding:1.2mm 2mm;height:9mm;vertical-align:middle}
   table.ttdl th{background:#eee}table.ttdl td.n{text-align:right;white-space:nowrap}table.ttdl td.t1{text-align:left}table.ttdl td.t2{text-align:right}
   .pasal{text-align:center;font-weight:bold;margin:3mm 0 1mm}
-  .spp-kotak{border:1px solid #000;padding:3mm 4mm;margin:3mm 0}`;
+  .spp-kotak{border:1px solid #000;padding:3mm 4mm;margin:3mm 0}
+  .spm-kotak{border:1px solid #000;padding:2mm 4mm;margin:2mm 0 3mm;line-height:1.5}.spm-t{margin:3mm 0 2mm}.spm-t th{text-align:center}
+  table.ttdl td.c{text-align:center}
+  .kk{page-break-inside:avoid}table.kk-t{width:100%;border-collapse:collapse;margin-top:2mm}.kk-kiri{width:38%;border-right:1.5px solid #000;vertical-align:top;padding:2mm 4mm 2mm 0;font-size:10.5pt}
+  .kk-kanan{vertical-align:top;padding:0 0 0 5mm}.kk-judul{text-align:center;font-weight:bold;font-size:20pt;letter-spacing:4px;text-decoration:underline}
+  .kk-ruang{height:18mm;position:relative}.kk-ruang .kw-meterai{position:absolute;left:-27mm;top:0}table.kk-isi{width:100%;font-size:11pt}table.kk-isi td{padding:1mm;vertical-align:top}table.kk-isi td:first-child{width:36mm}table.kk-isi td:nth-child(2){width:3mm}
+  .kk-rp{border:1px solid #000;padding:5mm;text-align:center;font-size:14pt;margin:5mm 0}.kk-ttd{margin-left:45%;font-size:11pt}
+  .kk2 .kk{height:132mm;overflow:hidden}.kk2 .kk-ruang{height:13mm}.kk2 .kk-rp{padding:3mm;margin:3mm 0}.kk-pisah{border-top:1px dashed #999;margin:2mm 0}
+  .hal.lanskap{width:297mm;min-height:210mm}@media print{.hal.lanskap{page:lanskap}}@page lanskap{size:A4 landscape}`;
 // v49: rincian potongan per penerima (BPJS TK, biaya transfer) & nominal bersih
 const usdBp = d => Number(d._item && d._item.potongan_bpjs) || 0, usdTr = d => Number(d._item && d._item.biaya_transfer) || 0;
 const usdTgP = d => d._item && d._item.biaya_ditanggung === 'Penerima';
@@ -6446,12 +6474,12 @@ function usdBast(b, list, wakil) {
     ${dTtd([{ spacer: true }, { atas: 'Mengetahui,', jabatan: DOK_PIMPINAN.ketua.jabatan + ' BAZNAS Kota Lubuklinggau', nama: DOK_PIMPINAN.ketua.nama }, { spacer: true }])}`) + usdLampTtd(b, list, 'Berita Acara Serah Terima');
 }
 // v55: SK Penetapan Penerima dari usulan — memakai templat SK Penetapan (sk-block), nilai = bruto usulan.
-function usDokCetakJenis(id, jenis) {
+function usDokCetakJenis(id, jenis, sumberPilih) {
   const b = usData.data.find(x => x.id === id); if (!b || jenis !== 'sk') return;
   const list = usdList(b).map(d => ({ d, nilai: +d.nilaiModal || 0 }));
   if (!list.length) return alert('Tidak ada penerima aktif pada usulan ini.');
   list.sort((a, c) => String(a.d.kecamatan || '').localeCompare(String(c.d.kecamatan || '')) || String(a.d.nama || '').localeCompare(String(c.d.nama || '')));
-  const sd = (b.pos_info && b.pos_info.sumber_dana) || '', sumber = (typeof SK_SUMBER !== 'undefined' && SK_SUMBER.find(x => sd && sd.toLowerCase().includes(x.toLowerCase().split('/')[0]))) || 'Zakat';
+  const sumber = sumberPilih || usdSumberAwal(b); if (!sumber) return usDokPilih(id, 'sk');
   const w = window.open('', '_blank'); if (!w) return alert('Izinkan pop-up untuk mencetak.');
   w.document.open(); w.document.write(skHtml(list, { judul: b.judul + ' (' + usdProg(b) + ')', tahun: String(b.tahun), sumber })); w.document.close();
   setTimeout(() => { try { w.focus(); w.print(); } catch (e) { } }, 700);
@@ -6519,6 +6547,65 @@ async function usdKonfCetak(b) {
   w.document.open(); w.document.write(`<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>${usE(b.id)} — Konfirmasi Anggaran</title><style>${DOK_CSS}${typeof ND_CSS !== 'undefined' ? ND_CSS : ''}${USD_CSS}</style></head><body>${html}</body></html>`); w.document.close();
   setTimeout(() => { try { w.focus(); w.print(); } catch (e) { } }, 700);
 }
+// ── v58: SPP (permintaan) · SPM (perintah membayar) · Daftar Nominatif · Kwitansi format kantor ──
+const usdRinciPolos = d => (usdBp(d) || usdTr(d)) ? ' (bruto ' + dRp(+d.nilaiModal) + (usdBp(d) ? ', iuran BPJS TK ' + dRp(usdBp(d)) : '') + (usdTgP(d) && usdTr(d) ? ', biaya transfer ' + dRp(usdTr(d)) : '') + ', diterima ' + dRp(usdBersih(d)) + ')' : '';
+function usdSifat(list) { const b = [...new Set(list.map(d => d._item.bentuk))]; return (b.length === 1 && b[0] === 'Barang' ? 'Pengadaan barang bantuan' : 'Pembayaran Langsung (LS)') + (list.length > 1 ? ' Kolektif' : ''); }
+function usdBankRingkas(list) { return [...new Set(list.filter(d => d._item.bentuk === 'Transfer').map(d => d.namaBank || String(d._item.bank_tujuan || '').split('·')[0].trim()).filter(Boolean))].join(' / ') || '-'; }
+function usdDasarSk(b) { return b.no_sk ? 'SK Ketua BAZNAS Kota Lubuklinggau Nomor ' + usE(b.no_sk) + (b.tgl_sk ? ' tanggal ' + dTgl(b.tgl_sk) : '') : 'SK Ketua BAZNAS Kota Lubuklinggau Nomor <span class="isi in"></span>'; }
+function usdSppMinta(b, list, tgl, o) {
+  const p = usdPos(b), tot = list.reduce((s, d) => s + (+d.nilaiModal || 0), 0), r = (l, v) => `<tr><td class="lbl">${l}</td><td class="sep">:</td><td>${v}</td></tr>`;
+  const ada = list.length && list.every(d => d.tanggalSurvey), rek = list.every(d => d._item.bentuk !== 'Transfer' || d.noRekening);
+  return usdHal(`${dKop()}<div class="judul" style="margin-bottom:0">SURAT PERMINTAAN PEMBAYARAN (SPP)</div>
+    <div style="text-align:center">Nomor : ${usdHeaderNo(o.nospp)}</div><div style="text-align:center;margin-bottom:4mm">Tanggal : ${tgl ? dTgl(tgl) : '..............................'}</div>
+    <table class="data">${r('Kepada Yth.', ND_WAKA3.jabatan + ' Bidang Perencanaan, Keuangan dan Pelaporan BAZNAS Kota Lubuklinggau')}${r('Dari', 'Bidang ' + usE(b.bidang))}
+      ${r('Sumber Dana', 'Dana ' + usE(o.sumber))}${r('Program / Kegiatan', usE(usdProg(b)) + (p.pilar ? ' — Pilar ' + usE(p.pilar) : '') + (p.nama ? '<br>Pos RKAT: ' + usE(p.nama) : ''))}
+      ${r('Dasar Pengajuan', usdDasarSk(b))}${r('No. Usulan', usE(b.id) + ' — ' + usE(b.judul))}${r('Sifat Pembayaran', usdSifat(list))}</table>
+    <table class="ttdl" style="margin-top:3mm"><thead><tr><th style="width:9mm">No.</th><th>Kode Akun RKAT</th><th>Uraian Pengajuan Pembayaran</th><th>Jumlah (Rp)</th></tr></thead><tbody>
+      <tr><td class="c">1.</td><td class="c">${usE(p.kode) || '<span class="nk"></span>'}</td><td>${usE(usdProg(b))} untuk ${list.length} mustahik (Daftar Nominatif terlampir)</td><td class="n">${usdF(tot)},-</td></tr>
+      <tr><td colspan="3" style="text-align:center"><b>Jumlah Permintaan Pembayaran</b></td><td class="n"><b>${usdF(tot)},-</b></td></tr>
+      <tr><td colspan="4"><i>Terbilang : ${terbilang(tot)}</i></td></tr></tbody></table>
+    <div class="spp-kotak"><b>Kelengkapan Lampiran Pengajuan:</b><br>☐ Proposal / Permohonan Mustahik<br>${ada ? '☑' : '☐'} Berita Acara Asesmen &amp; Survei Lapangan<br>☑ Daftar Nominatif Penerima (${list.length} mustahik)<br>${rek ? '☑' : '☐'} Fotokopi KTP, KK &amp; Buku Rekening Penerima<br>${b.no_sk ? '☑' : '☐'} SK Penetapan Penerima</div>
+    ${dTtd([{ atas: 'Mengetahui,', jabatan: DOK_PIMPINAN.waka2.jabatan + ' Bidang Pendistribusian dan Pendayagunaan', nama: DOK_PIMPINAN.waka2.nama }, { atas: 'Lubuklinggau, ' + (tgl ? dTgl(tgl) : '..............................'), jabatan: 'Pemohon / Petugas Penyusun', nama: b.diusulkan_oleh || b.dibuat_oleh || '' }])}`);
+}
+function usdSpm(b, list, tgl, o) {
+  const p = usdPos(b), tot = list.reduce((s, d) => s + (+d.nilaiModal || 0), 0), bp = list.reduce((s, d) => s + usdBp(d), 0), trP = list.reduce((s, d) => s + (usdTgP(d) ? usdTr(d) : 0), 0), trB = list.reduce((s, d) => s + (usdTgP(d) ? 0 : usdTr(d)), 0), net = tot - bp - trP;
+  const r = (l, v) => `<tr><td class="lbl">${l}</td><td class="sep">:</td><td>${v}</td></tr>`, cara = [...new Set(list.map(d => d._item.bentuk))].join(' / ');
+  const pot = [bp ? ['Iuran BPJS Ketenagakerjaan (a.n. penerima)', bp] : null, trP ? ['Biaya transfer ditanggung penerima', trP] : null].filter(Boolean);
+  return usdHal(`<div class="spm">${dKop()}<div class="judul" style="margin-bottom:0">SURAT PERINTAH MEMBAYAR (SPM)</div>
+    <div style="text-align:center;margin-bottom:3mm">Tanggal : ${tgl ? dTgl(tgl) : '..............................'} &nbsp;&nbsp; Nomor : ${usdHeaderNo(o.nospm)}</div>
+    <div class="spm-kotak">Kepada Bendahara Pengeluaran BAZNAS Kota Lubuklinggau<br>agar melakukan pembayaran sejumlah <b>${dRp(tot)},-</b><br><b>*** ${terbilang(tot).toUpperCase()} ***</b><span style="float:right">Tahun Anggaran : ${usE(b.tahun)}</span></div>
+    <table class="data">${r('Cara Bayar', usE(cara) + (b.rek_sumber ? ' dari rekening ' + usE(b.rek_sumber) : ''))}${r('Sumber Dana', 'Dana ' + usE(o.sumber))}
+      ${r('Dasar Pembayaran', usdDasarSk(b) + '<br>SPP Nomor ' + (o.nospp ? usE(o.nospp) : '<span class="isi in"></span>'))}${r('Program / Kegiatan', usE(usdProg(b)) + (p.pilar ? ' — Pilar ' + usE(p.pilar) : ''))}${r('Sifat Pembayaran', usdSifat(list))}</table>
+    <table class="ttdl spm-t"><thead><tr><th colspan="3">PENGELUARAN</th><th colspan="2">POTONGAN</th></tr><tr><th>Kode Akun</th><th>Uraian</th><th>Jumlah (Rp)</th><th>Uraian</th><th>Jumlah (Rp)</th></tr></thead><tbody>
+      <tr style="height:30mm;vertical-align:top"><td>${usE(p.kode) || ''}</td><td>${usE(p.nama || usdProg(b))}</td><td class="n">${usdF(tot)},-</td><td>${pot.length ? pot.map(x => usE(x[0])).join('<br>') : 'Potongan pajak (mustahik)'}</td><td class="n">${pot.length ? pot.map(x => usdF(x[1]) + ',-').join('<br>') : '0,-'}</td></tr>
+      <tr><td colspan="2">Jumlah Pengeluaran</td><td class="n"><b>${usdF(tot)},-</b></td><td>Jumlah Potongan</td><td class="n"><b>${usdF(bp + trP)},-</b></td></tr>
+      <tr><td colspan="4" style="text-align:right"><b>Jumlah dibayarkan / ditransfer ke penerima</b></td><td class="n"><b>Rp ${usdF(net)},-</b></td></tr></tbody></table>
+    ${trB ? `<div style="font-size:9pt">Biaya transfer ditanggung BAZNAS Rp ${usdF(trB)},- dibebankan pada Dana Amil (di luar jumlah di atas).</div>` : ''}
+    <table class="data" style="margin-top:2mm">${r('Kepada', 'Terlampir (Daftar Nominatif — ' + list.length + ' mustahik)')}${r('No. Rekening', list.length > 1 ? 'Kolektif (terlampir)' : (usdBolehLengkap() ? usE(list[0].noRekening || '') : usE(usdSamar(list[0].noRekening, 4))) || '-')}
+      ${r('Bank', usE(usdBankRingkas(list)))}${r('Untuk Keperluan', 'Penyaluran ' + usE(usdProg(b)) + ' — ' + usE(b.judul) + ' untuk ' + list.length + ' mustahik')}</table>
+    ${dTtd([{ atas: 'Diterbitkan oleh,', jabatan: ND_WAKA3.jabatan + ' Bidang Perencanaan, Keuangan dan Pelaporan', nama: ND_WAKA3.nama }, { atas: 'Lubuklinggau, ' + (tgl ? dTgl(tgl) : '..............................') + '<br>Menyetujui,', jabatan: DOK_PIMPINAN.ketua.jabatan + ' BAZNAS Kota Lubuklinggau', nama: DOK_PIMPINAN.ketua.nama }])}</div>`);
+}
+function usdNominatif(b, list, tgl, o) {
+  const L = usdBolehLengkap(), R = usdAdaRinci(list), tot = list.reduce((s, d) => s + (+d.nilaiModal || 0), 0), bend = usData && usData.ada_bendahara ? '' : ND_WAKA3.nama;
+  const nik = d => L ? (d.nik || '—') : usdSamar(d.nik, 4), rek = d => d._item.bentuk !== 'Transfer' ? usE(d._item.bentuk) : ((d.namaBank ? usE(d.namaBank) + ' /<br>' : '') + (L ? usE(d.noRekening || '—') : usE(usdSamar(d.noRekening, 4) || '—')) + (d.namaPemilikRek && d.namaPemilikRek !== d.nama ? '<br><small>a.n. ' + usE(d.namaPemilikRek) + '</small>' : ''));
+  return usdHal(`${dKop()}<div class="judul" style="margin-bottom:0">LAMPIRAN DAFTAR NOMINATIF PENERIMA ${usE(usdProg(b).toUpperCase())}</div>
+    <div style="text-align:center;font-size:10pt">Lampiran SPP Nomor : ${o.nospp ? usE(o.nospp) : '<span class="nk"></span>'} &amp; SPM Nomor : ${o.nospm ? usE(o.nospm) : '<span class="nk"></span>'}</div>
+    <div style="text-align:center;margin-bottom:3mm;font-size:10pt">${usE(b.judul)} · No. Usulan ${usE(b.id)} · Dana ${usE(o.sumber || '')} · TA ${usE(b.tahun)}</div>
+    <table class="ttdl" style="font-size:9pt"><thead><tr><th>No.</th><th>Nama Mustahik</th><th>NIK</th><th>Asnaf</th><th>Jenis Usaha</th><th>Bank &amp; No. Rekening</th><th>Nominal (Rp)</th>${R ? '<th>Diterima (Rp)</th>' : ''}<th>Tanda Tangan / Ket.</th></tr></thead><tbody>
+    ${list.map((d, i) => `<tr><td class="c">${i + 1}.</td><td>${dE(d.nama)}</td><td class="c" style="white-space:nowrap">${dE(nik(d))}</td><td class="c">${dE(d.asnaf || '')}</td><td>${dE(d.pekerjaan || d._item.keterangan || '')}</td><td class="c">${rek(d)}</td><td class="n">${usdF(d.nilaiModal)},-</td>${R ? `<td class="n">${usdF(usdBersih(d))},-</td>` : ''}<td class="t${i % 2 ? '2' : '1'}" style="width:24mm">${i + 1}. ...........</td></tr>`).join('')}
+    <tr><td colspan="6" style="text-align:center"><b>JUMLAH TOTAL (${list.length} MUSTAHIK)</b></td><td class="n"><b>${usdF(tot)},-</b></td>${R ? `<td class="n"><b>${usdF(list.reduce((s, d) => s + usdBersih(d), 0))},-</b></td>` : ''}<td></td></tr></tbody></table>
+    ${L ? '' : '<div style="font-size:8.5pt">NIK & nomor rekening disamarkan — cetakan lengkap hanya dari akun WK III, Bendahara, atau Ketua.</div>'}
+    ${dTtd([{ atas: 'Mengetahui,', jabatan: DOK_PIMPINAN.waka2.jabatan + ' Bidang Pendistribusian', nama: DOK_PIMPINAN.waka2.nama }, { atas: 'Lunas Dibayar,', jabatan: 'a.n. Bendahara', nama: bend }, { atas: 'Lubuklinggau, ' + (tgl ? dTgl(tgl) : '..............................') + '<br>Setuju Dibayar,', jabatan: DOK_PIMPINAN.ketua.jabatan + ' BAZNAS Kota Lubuklinggau', nama: DOK_PIMPINAN.ketua.nama }])}`, 'lanskap');
+}
+function usdKwKantor(b, o) {
+  const bend = usData && usData.ada_bendahara ? '' : ND_WAKA3.nama, meterai = o.nilai >= 5000000;
+  return `<div class="kk">${dKop()}<table class="kk-t"><tr><td class="kk-kiri">SETUJU DIBAYAR<br>BAZNAS KOTA LUBUKLINGGAU<br>KETUA,<div class="kk-ruang"></div><b><u>${dE(DOK_PIMPINAN.ketua.nama.toUpperCase())}</u></b>
+      <div style="margin-top:6mm">LUNAS DIBAYAR<br>A.N. BENDAHARA,</div><div class="kk-ruang"></div><b><u>${dE(String(bend || '..............................').toUpperCase())}</u></b></td>
+    <td class="kk-kanan"><div class="kk-judul">K W I T A N S I</div><div style="text-align:center;margin-bottom:4mm"><b>Nomor : ${o.no ? usE(o.no) : '<span class="nk" style="width:18mm"></span>/' + usdRomawi(o.tgl)}</b></div>
+      <table class="kk-isi"><tr><td>Sudah diterima dari</td><td>:</td><td><b><i>BENDAHARA BAZNAS KOTA LUBUKLINGGAU</i></b></td></tr><tr><td>Uang Banyaknya</td><td>:</td><td><i>${terbilang(o.nilai)}</i></td></tr><tr><td>Untuk Keperluan</td><td>:</td><td>${usE(o.untuk)}</td></tr></table>
+      <div class="kk-rp">: Rp. ${usdF(o.nilai)} ;</div>
+      <div class="kk-ttd">Lubuklinggau, ${o.tgl ? dTgl(o.tgl) : '..............................'}<br>Yang menerima,<div class="kk-ruang">${meterai ? '<span class="kw-meterai">Meterai Rp10.000</span>' : ''}</div>${o.penerima ? '<b><u>' + dE(o.penerima) + '</u></b>' : '..........................................'}</div></td></tr></table></div>`;
+}
 function usDokHtml(b, jenis, tgl, wakil) {
   const list = usdList(b), p = usdPos(b);
   if (!list.length) return '';
@@ -6529,11 +6616,17 @@ function usDokHtml(b, jenis, tgl, wakil) {
   let isi = '';
   if (jenis === 'formulir') isi = usdFormulir(b, list, tgl);
   else if (jenis === 'ceklis') isi = usdCeklis(b, list);
-  else if (jenis === 'spp') isi = usdSpp(b, list, tgl) + usdLampTtd(b, list, 'Surat Perintah Pembayaran');
-  else if (jenis === 'kw1') {
+  else if (jenis === 'sppm') isi = usdSppMinta(b, list, tgl, window._usdO || {});
+  else if (jenis === 'spp') isi = usdSpm(b, list, tgl, window._usdO || {}) + usdNominatif(b, list, tgl, window._usdO || {});
+  else if (jenis === 'nomi') isi = usdNominatif(b, list, tgl, window._usdO || {});
+  else if (jenis === 'kw1') { const o = window._usdO || {}, kw = list.map((d, i) => usdKwKantor(b, { nilai: +d.nilaiModal, penerima: d.nama, no: usdKwNo(o.nokw, i), tgl, untuk: usdProg(b) + ' — ' + b.judul + ', a.n. ' + d.nama + ' (ID ' + d.mustahikId + ')' + usdRinciPolos(d) }));
+    for (let i = 0; i < kw.length; i += 2) isi += usdHal(kw.slice(i, i + 2).join('<div class="kk-pisah"></div>'), 'kk2');
+  } else if (jenis === 'kwk') { const o = window._usdO || {}, w = list.find(d => d.mustahikId === wakil), tot = list.reduce((s, d) => s + (+d.nilaiModal || 0), 0);
+    isi = usdHal(usdKwKantor(b, { nilai: tot, penerima: w ? w.nama : '', no: o.nokw, tgl, untuk: usdProg(b) + ' — ' + b.judul + ', untuk ' + list.length + ' penerima (rincian & tanda tangan terlampir)' })) + usdLampTtd(b, list, 'Kwitansi');
+  } else if (jenis === 'kw1_lama') {
     const kw = list.map(d => usdKw(b, { ringkas: true, nilai: +d.nilaiModal, penerima: d.nama, noBukti: d._item.no_bukti, untuk: 'a.n. <b>' + dE(d.nama) + '</b> (ID Mustahik ' + dE(d.mustahikId) + ').' + usdRinciTeks(d) }));
     for (let i = 0; i < kw.length; i += 2) isi += usdHal(kw.slice(i, i + 2).join(''), 'kw2');
-  } else if (jenis === 'kwk') {
+  } else if (jenis === 'kwk_lama') {
     const w = list.find(d => d.mustahikId === wakil), tot = list.reduce((s, d) => s + (+d.nilaiModal || 0), 0);
     isi = usdHal(usdKw(b, { nilai: tot, penerima: w ? w.nama : '', untuk: 'a.n. <b>' + dE(w ? w.nama : list[0].nama) + '</b> dkk untuk ' + list.length + ' orang, rincian dan tanda tangan penerima terlampir.' })) + usdLampTtd(b, list, 'Kuitansi');
   } else if (jenis === 'bast') isi = usdBast(b, list, wakil);
@@ -6542,9 +6635,15 @@ function usDokHtml(b, jenis, tgl, wakil) {
 function usDokCetak(id) {
   const b = usData.data.find(x => x.id === id); if (!b) return;
   const jenis = (document.querySelector('input[name=usd-j]:checked') || {}).value || 'nominatif', tgl = document.getElementById('usd-tgl').value, wakil = document.getElementById('usd-wakil').value;
+  const o = { sumber: document.getElementById('usd-sumber').value, nospp: document.getElementById('usd-nospp').value.trim(), nospm: document.getElementById('usd-nospm').value.trim(), nokw: document.getElementById('usd-nokw').value.trim() };
+  if (['sk', 'sppm', 'spp', 'nomi'].includes(jenis) && !o.sumber) { alert('Pilih sumber dana terlebih dahulu.'); return; }
   closeModal('modal-us');
+  if (jenis === 'sppm') usdNoSimpan('spp', o.nospp, tgl);
+  if (jenis === 'spp') usdNoSimpan('spm', o.nospm, tgl);
+  if (jenis === 'kw1' || jenis === 'kwk') usdNoSimpan('kw', jenis === 'kw1' ? usdKwNo(o.nokw, usdList(b).length - 1) : o.nokw, tgl);
+  window._usdO = o;
   if (jenis === 'nominatif') return usCetak(id);
-  if (jenis === 'sk') return usDokCetakJenis(id, 'sk');
+  if (jenis === 'sk') return usDokCetakJenis(id, 'sk', o.sumber);
   if (jenis === 'konfang') return usdKonfCetak(b);
   const html = usDokHtml(b, jenis, tgl, wakil); if (!html) return alert('Tidak ada penerima aktif pada usulan ini.');
   const w = window.open('', '_blank'); if (!w) return alert('Izinkan pop-up untuk mencetak.');
@@ -8949,7 +9048,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='57 · 19 Nov 2026';
+const APP_VERSI='58 · 20 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
