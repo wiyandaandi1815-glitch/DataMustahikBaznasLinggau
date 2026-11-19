@@ -5843,7 +5843,14 @@ table.us-tbl.us-ed tr.us-baru td{animation:usSorot 2.4s ease-out}@keyframes usSo
 .us-laci-kepala{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:15px}.us-laci #us-cari{width:100%;padding:9px 11px}
 .us-laci-alat{padding:4px 0 6px;border-bottom:1px solid var(--g100)}.us-laci .us-hasil{flex:1;max-height:none;overflow:auto;margin:6px 0}
 .us-laci-kaki{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--g100);padding-top:10px}.us-laci-kaki .btn{width:100%}
-.us-hasil-nm{display:flex;gap:8px;align-items:flex-start;cursor:pointer;flex:1}.us-hasil-nm input{margin-top:3px}
+.us-laci input[type=checkbox]{width:16px!important;height:16px!important;min-width:16px!important;flex:0 0 16px!important;margin:0!important;padding:0!important;appearance:auto!important;-webkit-appearance:checkbox!important;box-shadow:none!important;border:0!important;background:none!important;accent-color:var(--teal)}
+.us-laci label{display:flex!important;flex-direction:row!important;align-items:center;gap:8px;margin:0;font-weight:400;text-align:left;width:auto}
+.us-laci-alat{display:flex;justify-content:space-between;align-items:center}.us-laci label.hint{color:var(--g600,#4b5563);font-size:12.5px}
+.us-laci .us-hasil>div{display:grid!important;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:9px 10px!important;border-bottom:1px solid var(--g100)}
+.us-laci .us-hasil>div:hover{background:var(--g50,#f7f8f8)}
+.us-hasil-nm{display:flex!important;gap:10px!important;align-items:flex-start!important;cursor:pointer;min-width:0}.us-hasil-nm input{margin-top:2px!important}
+.us-hasil-nm .tx{display:flex;flex-direction:column;min-width:0;line-height:1.35}.us-hasil-nm .tx b{font-size:13px}.us-hasil-nm .tx .mono{font-size:11px}
+.us-laci .us-hasil .btn{white-space:nowrap}
 .us-massal{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 10px;align-items:end;background:var(--g50,#f7f8f8);border:1px solid var(--g200);border-radius:10px;padding:10px 12px;margin-bottom:8px}
 .us-massal .jd{grid-column:1/-1;font-size:12px;font-weight:700;color:var(--g600,#4b5563)}
 .us-massal label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--g500);font-weight:600}.us-massal input,.us-massal select{width:100%;padding:7px 9px;font-size:13px}
@@ -6019,8 +6026,8 @@ async function usEditor(id, koreksi) {
     <div class="field" style="margin-bottom:12px"><label>Catatan untuk pimpinan</label><textarea id="us-catatan" rows="2" placeholder="mis. hasil survei kelayakan usaha terlampir">${usE(b ? b.catatan : '')}</textarea></div>
     <div id="us-laci" class="us-laci" aria-hidden="true"><div class="us-laci-kepala"><b>Tambah mustahik</b><button type="button" class="btn btn-ghost btn-sm" id="us-laci-tutup" aria-label="Tutup panel">✕</button></div>
       <input id="us-cari" type="search" placeholder="Cari nama, ID Mustahik, kelurahan, jenis bantuan…">
-      <label class="hint" style="display:flex;gap:6px;align-items:center;margin:6px 0"><input type="checkbox" id="us-sv"> hanya yang sudah disurvei</label>
-      <div class="us-laci-alat"><label class="hint" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="us-cek-semua"> Pilih semua hasil (<span id="us-n-hasil">0</span>)</label></div>
+      <label class="hint" style="margin:8px 0 4px"><input type="checkbox" id="us-sv"> <span>hanya yang sudah disurvei</span></label>
+      <div class="us-laci-alat"><label class="hint"><input type="checkbox" id="us-cek-semua"> <span>Pilih semua hasil (<span id="us-n-hasil">0</span>)</span></label><span class="hint" id="us-n-pilih"></span></div>
       <div class="us-hasil" id="us-hasil"><div class="hint">Memuat daftar mustahik…</div></div>
       <div class="us-laci-kaki"><button type="button" class="btn btn-primary" id="us-tambah-pilih" disabled>Tambahkan terpilih</button><span class="hint">Tombol “+ Tambah” menambah satu nama tanpa menutup panel.</span></div></div>
     <div id="us-laci-latar" class="us-laci-latar"></div>
@@ -6057,13 +6064,13 @@ async function usEditor(id, koreksi) {
     usAutoTrf(it); usEdit.items.push(it); };
   let hasil = [];
   const bisa = p => !usEdit.items.some(i => i.mustahikId === p.mustahikId) && !(p.sedang && p.sedang !== usEdit.id);
-  const tombolPilih = () => { const b = document.getElementById('us-tambah-pilih'); b.disabled = !pilih.size; b.textContent = pilih.size ? 'Tambahkan ' + pilih.size + ' terpilih' : 'Tambahkan terpilih';
+  const tombolPilih = () => { const b = document.getElementById('us-tambah-pilih'); b.disabled = !pilih.size; b.textContent = pilih.size ? 'Tambahkan ' + pilih.size + ' terpilih' : 'Tambahkan terpilih'; const np = document.getElementById('us-n-pilih'); if (np) np.textContent = pilih.size ? pilih.size + ' dicentang' : '';
     const sb = hasil.filter(bisa); document.getElementById('us-cek-semua').checked = sb.length > 0 && sb.every(p => pilih.has(p.mustahikId)); };
   const cari = () => { const q = document.getElementById('us-cari').value.toLowerCase().trim(), sv = document.getElementById('us-sv').checked, ada = new Set(usEdit.items.map(i => i.mustahikId));
     hasil = usPool.filter(p => (!sv || p.survei) && (!q || (p.nama + ' ' + p.mustahikId + ' ' + p.kelurahan + ' ' + p.kecamatan + ' ' + p.kategori + ' ' + p.asnaf).toLowerCase().includes(q))).slice(0, 200);
     [...pilih].forEach(id => { if (ada.has(id)) pilih.delete(id); });
     document.getElementById('us-n-hasil').textContent = hasil.filter(bisa).length;
-    document.getElementById('us-hasil').innerHTML = hasil.map(p => `<div><label class="us-hasil-nm">${bisa(p) ? `<input type="checkbox" data-us-cek="${usE(p.mustahikId)}"${pilih.has(p.mustahikId) ? ' checked' : ''}>` : '<span style="width:16px"></span>'}<span><b>${usE(p.nama)}</b> <span class="mono us-k">${usE(p.mustahikId)}</span><br><span class="us-k">${usE(p.kelurahan)} · ${usE(p.kategori || p.asnaf)}${p.survei ? ' · ✅ disurvei' : ''}${p.verifikasi !== 'terverifikasi' ? ' · ' + usE(p.verifikasi || 'belum verifikasi') : ''}${p.rekening && p.rekening.bank ? ' · 🏦 ' + usE(p.rekening.bank) : ''}</span></span></label>
+    document.getElementById('us-hasil').innerHTML = hasil.map(p => `<div><label class="us-hasil-nm">${bisa(p) ? `<input type="checkbox" data-us-cek="${usE(p.mustahikId)}"${pilih.has(p.mustahikId) ? ' checked' : ''} aria-label="Pilih ${usE(p.nama)}">` : '<span style="width:16px;flex:0 0 16px"></span>'}<span class="tx"><b>${usE(p.nama)}</b><span class="mono us-k">${usE(p.mustahikId)}</span><span class="us-k">${usE(p.kelurahan)} · ${usE(p.kategori || p.asnaf)}${p.survei ? ' · ✅ disurvei' : ''}${p.verifikasi !== 'terverifikasi' ? ' · ' + usE(p.verifikasi || 'belum verifikasi') : ''}${p.rekening && p.rekening.bank ? ' · 🏦 ' + usE(p.rekening.bank) : ''}</span></span></label>
       ${ada.has(p.mustahikId) ? '<span class="us-k">✓ dipilih</span>' : p.sedang && p.sedang !== usEdit.id ? '<span class="us-k">di ' + usE(p.sedang) + '</span>' : `<button class="btn btn-outline btn-sm" type="button" data-us-tambah="${usE(p.mustahikId)}">+ Tambah</button>`}</div>`).join('') || '<div class="hint">Tidak ada yang cocok.</div>';
     document.querySelectorAll('[data-us-cek]').forEach(c => c.onchange = () => { c.checked ? pilih.add(c.dataset.usCek) : pilih.delete(c.dataset.usCek); tombolPilih(); });
     document.querySelectorAll('[data-us-tambah]').forEach(t => t.onclick = () => { baru(usPool.find(x => x.mustahikId === t.dataset.usTambah)); usGambarPilih(true); cari(); });
@@ -8490,7 +8497,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='51 · 19 Nov 2026';
+const APP_VERSI='51.1 · 19 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
