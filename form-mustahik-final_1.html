@@ -6782,6 +6782,251 @@ async function rkKirimImpor() {
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mulai);else mulai();
 })();
 
+// ════════════════════════════════════════════
+// v52 — DAFTAR MUSTAHIK RAPI: tombol dikelompokkan (menu Cetak & Dokumen, Lainnya), bilah "n dipilih", kartu ringkasan
+// (filter cepat), filter grid, tabel ringkas (NIK disamarkan), aksi ringkas (Lihat · WA · Edit · ⋯), kartu di HP,
+// dan detail 👁 dengan RIWAYAT BANTUAN lengkap dari server (penyaluran, per program/tahun, barang, usulan, pengajuan, monitoring).
+// Semua tombol lama tetap dipakai (dipindahkan, bukan dibuat ulang) sehingga aturan peran (CSS onclick) tetap berlaku.
+// ════════════════════════════════════════════
+const dmE = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const dmRp = n => 'Rp' + Math.round(+n || 0).toLocaleString('id-ID');
+const dmTgl = s => { const d = new Date(String(s || '').slice(0, 10) + 'T00:00:00'); return isNaN(d) ? (s || '—') : d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }); };
+const dmNik = n => { n = String(n || ''); return n.length >= 10 ? n.slice(0, 6) + '••••••' + n.slice(-4) : (n || '—'); };
+let dmCepat = '';   // filter cepat dari kartu ringkasan
+(function () {
+  const st = document.createElement('style'); st.textContent = `
+#t-daftar .action-bar{gap:8px;align-items:center}
+#t-daftar .action-bar>.btn,#t-daftar .dm-dd>.btn{height:38px}
+.dm-dd{position:relative;display:inline-block}
+.dm-dd-isi{position:absolute;top:calc(100% + 4px);left:0;min-width:250px;background:#fff;border:1px solid var(--g200);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.14);padding:6px;z-index:400;display:none}
+.dm-dd.kanan .dm-dd-isi{left:auto;right:0}.dm-dd.buka .dm-dd-isi{display:block}
+.dm-dd-isi>button,.dm-dd-isi>.btn{display:flex!important;width:100%;justify-content:flex-start;gap:8px;background:none!important;color:var(--g700)!important;border:0!important;box-shadow:none!important;padding:8px 10px!important;border-radius:7px;font-weight:600;font-size:13px;height:auto!important;margin:0!important;text-align:left}
+.dm-dd-isi>button:hover{background:var(--g50,#f5f7f7)!important}.dm-dd-isi>button.btn-danger,.dm-dd-isi>button[onclick^="konfHapusSemua"]{color:var(--red)!important}
+.dm-dd-isi hr{border:0;border-top:1px solid var(--g100);margin:4px 2px}.dm-dd-isi .dm-ket{font-size:11px;color:var(--g500);padding:4px 10px}
+#t-daftar #cetak-info{display:none!important}
+.dm-pilih{display:none;align-items:center;gap:8px;flex-wrap:wrap;background:#e9f6f2;border:1px solid #a7dccb;border-radius:10px;padding:8px 12px;margin-bottom:12px;position:sticky;top:var(--sb-top,64px);z-index:30}
+.dm-pilih.ada{display:flex}.dm-pilih b{color:var(--teal-dark)}.dm-pilih .btn{height:32px}
+.dm-ring{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.dm-ring button{text-align:left;background:#fff;border:1px solid var(--g200);border-radius:12px;padding:10px 14px;cursor:pointer;font:inherit;transition:border-color .15s,box-shadow .15s}
+.dm-ring button:hover{border-color:var(--teal)}.dm-ring button.on{border-color:var(--teal);box-shadow:0 0 0 2px rgba(13,124,102,.18);background:#f2faf7}
+.dm-ring span{display:block;font-size:11.5px;color:var(--g500)}.dm-ring b{font-size:20px;color:var(--g800,#1f2937)}
+.dm-ring .k-hijau b{color:#0b7a5a}.dm-ring .k-kuning b{color:#a16207}.dm-ring .k-abu b{color:var(--g500)}.dm-ring .k-oranye b{color:#c2410c}
+#t-daftar .filter-bar{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:8px 10px;align-items:center}
+#t-daftar .filter-bar .search-wrap{grid-column:1/-1;width:100%!important;max-width:none!important}
+#t-daftar .filter-bar .search-wrap input{width:100%!important;height:40px;font-size:13.5px}
+#t-daftar .filter-bar select{width:100%!important;height:38px;max-width:none!important}
+#t-daftar .filter-bar .dm-hitung{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--g500);border-top:1px solid var(--g100);padding-top:8px}
+/* tabel ringkas */
+#main-table.dm{min-width:0;width:100%}
+#main-table.dm td{vertical-align:middle}
+#main-table.dm thead th:nth-child(3),#main-table.dm tbody td:nth-child(3){font-family:inherit!important;letter-spacing:normal!important;min-width:230px!important;max-width:280px;color:inherit;font-weight:400;border-right:2px solid var(--g200)}
+#main-table.dm thead th:nth-child(4),#main-table.dm tbody td:nth-child(4){position:static!important;min-width:0!important;max-width:none!important;border-right:0!important;font-weight:400}
+#main-table.dm thead th:nth-child(4)::after,#main-table.dm tbody td:nth-child(4)::after{display:none!important}
+#main-table.dm thead th:last-child,#main-table.dm tbody td:last-child{min-width:150px}
+.dm-nm{font-weight:700;font-size:13px;color:var(--g800,#1f2937);line-height:1.3}.dm-id{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--teal-dark);font-weight:700;letter-spacing:.3px}
+.dm-sub{font-size:11px;color:var(--g500);margin-top:2px}.dm-lbl{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.dm-lbl .badge{font-size:10px!important}
+.dm-aksi{display:flex;gap:4px;justify-content:center;align-items:center}
+.dm-aksi .btn-icon{width:30px;height:30px;padding:0!important;display:inline-flex;align-items:center;justify-content:center}
+.dm-pop{position:fixed;z-index:1200;background:#fff;border:1px solid var(--g200);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.16);padding:6px;min-width:190px;display:none}
+.dm-pop.buka{display:block}.dm-pop button{display:flex;width:100%;gap:8px;background:none;border:0;padding:8px 10px;border-radius:7px;font:inherit;font-size:13px;font-weight:600;color:var(--g700);cursor:pointer;text-align:left}
+.dm-pop button:hover{background:var(--g50,#f5f7f7)}.dm-pop button.merah{color:var(--red)}
+/* detail riwayat */
+.dm-rw{border:1.5px solid #9fd5c4;border-radius:12px;padding:12px 14px;margin-bottom:14px;background:#fbfefd}
+.dm-rw h4{margin:0 0 8px;font-size:13px;color:var(--teal-dark);display:flex;justify-content:space-between;align-items:center}
+.dm-rw-ring{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px}
+.dm-rw-ring div{background:#fff;border:1px solid var(--g200);border-radius:9px;padding:7px 10px}.dm-rw-ring span{display:block;font-size:10.5px;color:var(--g500)}.dm-rw-ring b{font-size:14px}
+.dm-rw-prog{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.dm-rw-prog span{background:#e9f6f2;color:#0b6b52;border-radius:99px;padding:3px 10px;font-size:11.5px;font-weight:600}
+.dm-rw table{width:100%;border-collapse:collapse;font-size:12px}.dm-rw th{background:var(--g50,#f5f7f7)!important;color:var(--g600,#4b5563)!important;font-size:11px!important;text-align:left;padding:6px 8px!important;position:static!important}
+.dm-rw td{padding:6px 8px;border-top:1px solid var(--g100);vertical-align:top;position:static!important;background:none!important;min-width:0!important;max-width:none!important;font-family:inherit!important;color:inherit!important;font-weight:400!important;letter-spacing:normal!important}
+.dm-rw th,.dm-rw td{position:static!important;left:auto!important;right:auto!important;min-width:0!important;max-width:none!important;width:auto!important;text-align:left!important;white-space:normal;z-index:auto!important;border-right:0!important;border-left:0!important;font-family:inherit!important;letter-spacing:normal!important}
+.dm-rw th::after,.dm-rw td::after{display:none!important}.dm-rw table{table-layout:auto;min-width:0!important}.dm-rw td{white-space:normal!important}.dm-rw td.n{white-space:nowrap!important}
+.dm-rw td.n,.dm-rw th.n{text-align:right!important;white-space:nowrap}.dm-rw .sub{font-size:12px;font-weight:700;color:var(--g700);margin:10px 0 4px}
+.dm-rw .kosong{font-size:12px;color:var(--g500);font-style:italic}
+#modal-detail .modal{max-width:860px}
+.dm-prof{grid-template-columns:repeat(auto-fit,minmax(175px,1fr))!important}
+@media(max-width:760px){
+  #main-table.dm{min-width:0}#main-table.dm thead{display:none}
+  #main-table.dm tbody tr{display:grid;grid-template-columns:28px 1fr auto;gap:4px 8px;padding:10px;border-bottom:1px solid var(--g200);position:relative}
+  #main-table.dm tbody td{position:static!important;border:0!important;padding:0!important;min-width:0!important;max-width:none!important;background:none!important;text-align:left}
+  #main-table.dm tbody td:nth-child(1){grid-row:1/span 3}#main-table.dm tbody td:nth-child(2){display:none}
+  #main-table.dm tbody td:nth-child(3){grid-column:2/4}#main-table.dm tbody td:nth-child(n+4):not(:last-child){grid-column:2/4;font-size:12px}
+  #main-table.dm tbody td:nth-child(4)::before{content:'NIK ';color:var(--g500)}
+  #main-table.dm tbody td:last-child{grid-column:2/4;justify-content:flex-start}.dm-aksi{justify-content:flex-start}
+  .dm-ring b{font-size:17px}
+  #t-daftar .filter-bar{grid-template-columns:1fr 1fr}#t-daftar .filter-bar select{font-size:12.5px}
+}`;
+  document.head.appendChild(st);
+})();
+
+function dmDropdown(id, label, kelas) {
+  const w = document.createElement('div'); w.className = 'dm-dd' + (kelas ? ' ' + kelas : ''); w.id = id;
+  w.innerHTML = `<button type="button" class="btn btn-outline">${label} ▾</button><div class="dm-dd-isi" role="menu"></div>`;
+  w.firstElementChild.onclick = e => { e.stopPropagation(); document.querySelectorAll('.dm-dd.buka').forEach(x => x !== w && x.classList.remove('buka')); w.classList.toggle('buka'); };
+  return w;
+}
+function dmSusun() {
+  const bar = document.querySelector('#t-daftar .action-bar'); if (!bar || bar.dataset.dm) return; bar.dataset.dm = '1';
+  const cari = sel => bar.querySelector(sel);
+  const tambah = cari('[onclick="bukaFormBaru()"]'), ex = cari('[onclick^="exDialog"]');
+  const cetak = ['[onclick^="exportPdfSelectedData"]', '[onclick^="printSelectedData"]', '[onclick^="skBuka"]', '[onclick^="bukaCetakDokumen"]', '[onclick^="lblDialog"]'].map(cari).filter(Boolean);
+  const lain = ['[onclick*="t-import"]', '#btn-acuan'].map(cari).filter(Boolean), hapus = cari('[onclick^="konfHapusSemua"]');
+  const dC = dmDropdown('dm-dd-cetak', '🖨 Cetak & Dokumen'), dL = dmDropdown('dm-dd-lain', '⋯ Lainnya', 'kanan');
+  const iC = dC.lastElementChild, iL = dL.lastElementChild;
+  iC.innerHTML = '<div class="dm-ket">Untuk data yang dicentang di tabel</div>';
+  cetak.forEach((b, k) => { b.className = 'btn'; b.removeAttribute('style'); if (k === 3) iC.appendChild(document.createElement('hr')); iC.appendChild(b); });
+  lain.forEach(b => { const disp = b.style.display; b.className = 'btn'; b.removeAttribute('style'); if (disp === 'none') b.style.display = 'none'; iL.appendChild(b); });
+  if (hapus) { iL.appendChild(document.createElement('hr')); hapus.className = 'btn btn-danger'; hapus.removeAttribute('style'); iL.appendChild(hapus); }
+  if (ex) { ex.className = 'btn btn-outline'; }
+  bar.innerHTML = ''; [tambah, ex, dC].filter(Boolean).forEach(x => bar.appendChild(x));
+  const sp = document.createElement('span'); sp.style.flex = '1'; bar.appendChild(sp); bar.appendChild(dL);
+  const info = document.createElement('span'); info.id = 'cetak-info'; bar.appendChild(info);
+  // tombol "Usulan Kontak" (dibuat belakangan oleh blok lain) → masuk menu Lainnya
+  const pindahUk = () => { const uk = document.getElementById('uk-btn'); if (uk && uk.parentElement !== iL) { uk.className = 'btn'; iL.insertBefore(uk, iL.firstChild); } };
+  new MutationObserver(pindahUk).observe(document.getElementById('t-daftar'), { childList: true, subtree: true }); pindahUk();
+  document.addEventListener('click', () => document.querySelectorAll('.dm-dd.buka').forEach(x => x.classList.remove('buka')));
+  // bilah pilihan
+  const pl = document.createElement('div'); pl.className = 'dm-pilih'; pl.id = 'dm-pilih';
+  pl.innerHTML = `<span>✔ <b id="dm-n-pilih">0</b> mustahik dipilih</span><span style="flex:1"></span>
+    <button class="btn btn-outline btn-sm" type="button" onclick="exportPdfSelectedData()">PDF</button>
+    <button class="btn btn-outline btn-sm" type="button" onclick="printSelectedData()">Cetak A4</button>
+    <button class="btn btn-outline btn-sm" type="button" onclick="skBuka()">SK Penetapan</button>
+    <button class="btn btn-outline btn-sm" type="button" onclick="lblDialog()">Label Map</button>
+    <button class="btn btn-ghost btn-sm" type="button" onclick="dmBatalPilih()">✕ Batal pilih</button>`;
+  bar.after(pl);
+  const ring = document.createElement('div'); ring.className = 'dm-ring'; ring.id = 'dm-ring'; pl.after(ring);
+  const fb = document.querySelector('#t-daftar .filter-bar');
+  if (fb && !document.getElementById('dm-hitung')) { const h = document.createElement('div'); h.className = 'dm-hitung'; h.id = 'dm-hitung'; fb.appendChild(h); }
+  const sub = document.querySelector('#t-daftar .pg-sub'); if (sub) sub.textContent = 'Cari, saring, dan kelola data mustahik. Klik 👁 untuk melihat profil lengkap dan riwayat bantuan yang pernah diterima.';
+  const q = document.getElementById('q-search'); if (q) q.placeholder = 'Cari nama, ID Mustahik, NIK, kelurahan, kecamatan, asnaf…';
+  // tabel ringkas
+  const tbl = document.getElementById('main-table');
+  if (tbl) { tbl.classList.add('dm'); tbl.tHead.innerHTML = `<tr><th class="chk-col"><input type="checkbox" id="chk-all" title="Pilih semua di halaman ini" onchange="toggleAllCheckbox(this)"/></th>
+    <th>No</th><th>Mustahik</th><th>NIK</th><th>Asnaf &amp; Bantuan</th><th>Wilayah</th><th>Ekonomi &amp; Rekomendasi</th><th>Aksi</th></tr>`; }
+  const pop = document.createElement('div'); pop.className = 'dm-pop'; pop.id = 'dm-pop'; document.body.appendChild(pop);
+  document.addEventListener('click', e => { if (!e.target.closest('#dm-pop,[data-dm-lain]')) pop.classList.remove('buka'); });
+  window.addEventListener('scroll', () => pop.classList.remove('buka'), true);
+}
+function dmBatalPilih() { (dataList || []).forEach(d => d._selected = false); renderTable(); }
+function dmCepatSet(k) { dmCepat = dmCepat === k ? '' : k; applyFilter(); }
+function dmRingkasan() {
+  const el = document.getElementById('dm-ring'); if (!el || typeof dataList === 'undefined') return;
+  const L = dataList, kurang = typeof mhKurang === 'function' ? L.filter(d => mhKurang(d).length).length : 0;
+  const K = [['', 'Total mustahik', L.length, ''], ['verif', 'Terverifikasi', L.filter(d => d.statusVerifikasi === 'terverifikasi').length, 'k-hijau'],
+    ['belum', 'Belum diverifikasi', L.filter(d => !d.statusVerifikasi || d.statusVerifikasi === 'belum_verifikasi').length, 'k-kuning'],
+    ['nonaktif', 'Nonaktif', L.filter(d => d.isActive === 'false').length, 'k-abu'], ['kurang', 'Data belum lengkap', kurang, 'k-oranye']];
+  el.innerHTML = K.map(([k, l, n, c]) => `<button type="button" class="${c}${dmCepat === k && k ? ' on' : ''}" onclick="dmCepatSet('${k}')" title="${k ? 'Klik untuk menyaring' : 'Tampilkan semua'}"><span>${l}</span><b>${n.toLocaleString('id-ID')}</b></button>`).join('');
+}
+// filter cepat ikut applyFilter
+(function () {
+  const asli = applyFilter;
+  applyFilter = function () {
+    asli.apply(this, arguments);
+    if (dmCepat) {
+      filteredData = filteredData.filter(d => dmCepat === 'verif' ? d.statusVerifikasi === 'terverifikasi' : dmCepat === 'belum' ? (!d.statusVerifikasi || d.statusVerifikasi === 'belum_verifikasi')
+        : dmCepat === 'nonaktif' ? d.isActive === 'false' : dmCepat === 'kurang' ? (typeof mhKurang === 'function' && mhKurang(d).length > 0) : true);
+      currentPage = 1; renderTable();
+    }
+  };
+  const rs = resetFilter; resetFilter = function () { dmCepat = ''; return rs.apply(this, arguments); };
+})();
+renderTable = function () {
+  const psEl = document.getElementById('page-size'), ps = psEl ? parseInt(psEl.value) || 25 : 25, total = filteredData.length;
+  const pages = ps >= 9999 ? 1 : Math.ceil(total / ps) || 1; if (currentPage > pages) currentPage = pages;
+  const start = (currentPage - 1) * ps, end = Math.min(start + ps, total), slice = ps >= 9999 ? filteredData : filteredData.slice(start, end);
+  setText('showing-count', total > 0 ? `${start + 1}–${end}` : '0'); setText('total-count', total); setText('pag-info', `Halaman ${currentPage} / ${pages}`);
+  updateHeader(); dmRingkasan();
+  const hc = document.getElementById('dm-hitung');
+  if (hc) hc.innerHTML = `<span>Menampilkan <b>${total.toLocaleString('id-ID')}</b> dari ${dataList.length.toLocaleString('id-ID')} mustahik${dmCepat ? ' · filter cepat aktif' : ''}</span><span>NIK disamarkan · lengkap di 👁 / Edit</span>`;
+  const tbody = document.getElementById('tbl-body'); if (!tbody) return;
+  if (!slice.length) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty-st"><div class="e-icon">📋</div><h4>Tidak Ada Data</h4><p>${dataList.length ? 'Coba ubah filter pencarian.' : 'Belum ada mustahik terdaftar. Klik "Tambah Mustahik" untuk mulai.'}</p></div></td></tr>`; renderPagination(0, 1); updateCetakInfo(); return; }
+  const ikon = { mata: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+    edit: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' };
+  tbody.innerHTML = slice.map((d, i) => {
+    const ang = d.anggotaKeluarga && d.anggotaKeluarga.length;
+    const lbl = [d.alasan_input_langsung ? `<span class="badge b-gold" title="${dmE(d.alasan_input_langsung)}">✋ input langsung</span>` : '', ang ? `<span class="badge b-teal">👪 ${ang} anggota</span>` : '',
+      d.prioritasBantuan === 'Ya' ? '<span class="badge b-red">⭐ Prioritas</span>' : ''].join('');
+    return `<tr id="tr-${d.id}" class="${d._selected ? 'row-selected' : ''}">
+      <td class="chk-col"><input type="checkbox" class="row-chk" data-id="${d.id}" ${d._selected ? 'checked' : ''} onchange="onRowCheck(this,${d.id})" aria-label="Pilih ${dmE(d.nama)}"/></td>
+      <td>${start + i + 1}</td>
+      <td><div class="dm-nm">${dmE(d.nama)}</div><div class="dm-id">${dmE(d.mustahikId || (d._pending ? '⏳ menunggu ID' : '—'))}</div>
+        <div class="dm-lbl">${verifBadge(d.statusVerifikasi)}${d.isActive === 'true' ? '' : '<span class="badge b-gray">Nonaktif</span>'}${lbl}${typeof mhKurangHtml === 'function' ? mhKurangHtml(d) : ''}</div></td>
+      <td class="mono" style="font-size:11.5px;white-space:nowrap">${dmE(dmNik(d.nik))}</td>
+      <td>${d.asnaf ? `<span class="badge b-teal">${dmE(d.asnaf)}</span>` : '—'}<div class="dm-sub">${dmE(d.kategoriBantuan || '—')}</div></td>
+      <td><div style="font-size:12.5px">${dmE(d.kelurahan || '—')}</div><div class="dm-sub">${dmE(d.kecamatan || '')}</div></td>
+      <td style="font-size:12px;white-space:nowrap">${d.desil ? `<span class="badge b-blue">Desil ${dmE(d.desil)}</span>` : '<span class="dm-sub">Desil —</span>'}
+        ${d.desilBaznas ? `<div class="dm-sub">BAZNAS <b>D${dmE(d.desilBaznas)}</b> · J${dmE(d.jaringBaznas || '-')}</div>${typeof badgeProgram === 'function' ? '<div style="margin-top:2px">' + badgeProgram(d) + '</div>' : ''}` : ''}
+        ${typeof rekBadgeHtml === 'function' ? '<div style="margin-top:4px;white-space:normal;max-width:190px">' + rekBadgeHtml(d) + '</div>' : ''}</td>
+      <td><div class="dm-aksi">
+        <button class="btn btn-outline btn-sm btn-icon" title="Lihat profil & riwayat bantuan" aria-label="Lihat ${dmE(d.nama)}" onclick="lihatDetail(${d.id})">${ikon.mata}</button>
+        ${typeof mhWaTombol === 'function' ? mhWaTombol(d) : ''}
+        <button class="btn btn-primary btn-sm btn-icon" title="Edit" aria-label="Edit ${dmE(d.nama)}" onclick="editData(${d.id})">${ikon.edit}</button>
+        <button class="btn btn-outline btn-sm btn-icon" title="Lainnya" aria-label="Aksi lain ${dmE(d.nama)}" data-dm-lain="${d.id}" onclick="dmMenu(event,${d.id})">⋯</button></div></td>
+    </tr>`; }).join('');
+  renderPagination(pages, currentPage); updateCetakInfo();
+};
+function dmMenu(ev, id) {
+  ev.stopPropagation(); const d = dataList.find(x => x.id == id), pop = document.getElementById('dm-pop'); if (!d || !pop) return;
+  pop.innerHTML = `<button type="button" onclick="dmTutupPop();lihatDetail(${d.id})">👁 Profil & riwayat bantuan</button>
+    <button type="button" onclick="dmTutupPop();editData(${d.id})">✏️ Edit data</button>
+    <button type="button" onclick="toggleAktif(${d.id});dmTutupPop()">${d.isActive === 'true' ? '⏻ Nonaktifkan' : '⏻ Aktifkan kembali'}</button>
+    <button type="button" class="merah" onclick="hapusBaris(${d.id});dmTutupPop()">🗑 Hapus</button>`;
+  const r = ev.currentTarget.getBoundingClientRect(); pop.classList.add('buka');
+  const w = pop.offsetWidth, h = pop.offsetHeight; pop.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.right - w)) + 'px';
+  pop.style.top = (r.bottom + h + 8 > innerHeight ? r.top - h - 4 : r.bottom + 4) + 'px';
+}
+function dmTutupPop() { const p = document.getElementById('dm-pop'); if (p) p.classList.remove('buka'); }
+(function () {
+  const asli = updateCetakInfo;
+  updateCetakInfo = function () {
+    const r = asli.apply(this, arguments); const n = (dataList || []).filter(d => d._selected).length, b = document.getElementById('dm-pilih');
+    if (b) { b.classList.toggle('ada', n > 0); const s = document.getElementById('dm-n-pilih'); if (s) s.textContent = n; } return r;
+  };
+})();
+// ── Detail 👁: profil ringkas + riwayat bantuan dari server
+(function () {
+  const asli = lihatDetail;
+  lihatDetail = function (id) {
+    asli.apply(this, arguments);
+    const d = dataList.find(x => x.id == id), body = document.getElementById('modal-detail-body'); if (!d || !body) return;
+    const kotak = document.createElement('div'); kotak.className = 'dm-rw'; kotak.id = 'dm-rw';
+    kotak.innerHTML = `<h4><span>🎁 Riwayat bantuan yang pernah diterima</span><span class="dm-sub" id="dm-rw-st">memuat…</span></h4><div id="dm-rw-isi"><div class="kosong">Mengambil data penyaluran dari server…</div></div>`;
+    const kartu = body.firstElementChild; if (kartu && kartu.nextSibling) body.insertBefore(kotak, kartu.nextSibling); else body.prepend(kotak);
+    const prof = document.createElement('div'); prof.className = 'dm-rw-ring dm-prof'; prof.style.marginBottom = '12px';
+    prof.innerHTML = [['Nama', d.nama], ['NIK', d.nik || '—'], ['Asnaf', d.asnaf || '—'], ['Jenis bantuan', d.kategoriBantuan || '—'], ['Kelurahan / Kecamatan', [d.kelurahan, d.kecamatan].filter(Boolean).join(' / ') || '—'],
+      ['HP / WA', d.telepon || '—'], ['Desil', d.desil ? 'Desil ' + d.desil + (d.desilBaznas ? ' · BAZNAS D' + d.desilBaznas : '') : '—'], ['Status', (d.statusVerifikasi || 'belum_verifikasi').replace('_', ' ') + ' · ' + (d.isActive === 'true' ? 'Aktif' : 'Nonaktif')]]
+      .map(([l, v]) => `<div><span>${l}</span><b style="font-size:12.5px">${dmE(v)}</b></div>`).join('');
+    body.insertBefore(prof, kotak);
+    dmMuatRiwayat(d);
+  };
+})();
+async function dmMuatRiwayat(d) {
+  const isi = () => document.getElementById('dm-rw-isi'), st = document.getElementById('dm-rw-st');
+  if (!d.mustahikId && !d.nik) { isi().innerHTML = '<div class="kosong">Mustahik belum memiliki ID — riwayat belum tersedia.</div>'; if (st) st.textContent = ''; return; }
+  let r; try { r = await dbApi('riwayat_mustahik', { mustahikId: d.mustahikId || '', nik: d.nik || '' }); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server.' }; }
+  if (!isi()) return;
+  if (!r || !r.ok) { isi().innerHTML = `<div class="kosong">${dmE((r && r.pesan) || 'Riwayat tidak dapat dimuat.')}</div>`; if (st) st.textContent = ''; return; }
+  if (st) st.textContent = 'sumber: buku penyaluran BAZNAS';
+  const tbl = (head, rows) => rows.length ? `<div style="overflow-x:auto"><table><thead><tr>${head.map(h => `<th${/Nilai|Diterima/.test(h) ? ' class="n"' : ''}>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>` : '<div class="kosong">Tidak ada.</div>';
+  const usulanAktif = r.usulan.filter(u => u.status_item === 'aktif' && !/Selesai|Dibatalkan/.test(u.status_usulan));
+  isi().innerHTML = `
+    <div class="dm-rw-ring"><div><span>Total diterima</span><b style="color:var(--teal-dark)">${dmRp(r.total)}</b></div><div><span>Jumlah penyaluran</span><b>${r.jumlah}×</b></div>
+      <div><span>Terakhir menerima</span><b>${r.terakhir ? dmTgl(r.terakhir) : '—'}</b></div><div><span>Jenis program</span><b>${r.per_program.length}</b></div>
+      <div><span>Barang/aset dipakai</span><b>${r.barang.length}</b></div><div><span>Usulan berjalan</span><b style="${usulanAktif.length ? 'color:#a16207' : ''}">${usulanAktif.length}</b></div></div>
+    ${r.per_program.length ? `<div class="dm-rw-prog">${r.per_program.map(p => `<span title="terakhir ${dmE(dmTgl(p.terakhir))}">${dmE(p.program)} · ${p.kali}× · ${dmRp(p.nilai)}</span>`).join('')}</div>` : ''}
+    ${r.per_tahun.length > 1 ? `<div class="dm-sub" style="margin-bottom:6px">Per tahun: ${r.per_tahun.map(t => `<b>${t.tahun}</b> ${dmRp(t.nilai)}`).join(' · ')}</div>` : ''}
+    ${usulanAktif.length ? `<div class="sub">⏳ Sedang diusulkan</div>${tbl(['Usulan', 'Program', 'Tahap', 'Nilai'], usulanAktif.map(u => `<tr><td class="mono">${dmE(u.id)}</td><td>${dmE(u.program)}<div class="dm-sub">${dmE(u.judul)}</div></td><td>${dmE(u.status_usulan)}</td><td class="n">${dmRp(u.nilai)}</td></tr>`))}` : ''}
+    <div class="sub">📜 Riwayat penyaluran</div>
+    ${r.penyaluran.length ? tbl(['Tanggal', 'Program / bidang', 'Bentuk', 'No. bukti', 'Nilai'], r.penyaluran.map(p => `<tr><td style="white-space:nowrap">${dmE(dmTgl(p.tanggal))}</td>
+      <td><b>${dmE(p.program || '—')}</b><div class="dm-sub">${dmE(p.bidang || '')}${p.lembaga ? ' · ' + dmE(p.lembaga) + (p.jenjang ? ' (' + dmE(p.jenjang) + ')' : '') : ''}${p.keterangan ? ' · ' + dmE(String(p.keterangan).slice(0, 90)) : ''}</div></td>
+      <td>${dmE(p.bentuk || '—')}</td><td class="mono" style="font-size:11px">${dmE(p.no_bukti || '—')}</td><td class="n">${dmRp(p.nilai)}</td></tr>`)) : '<div class="kosong">Belum pernah menerima penyaluran yang tercatat.</div>'}
+    ${r.barang.length ? `<div class="sub">📦 Barang / aset bantuan</div>${tbl(['Jenis', 'Kelompok', 'Sejak', 'Status'], r.barang.map(b => `<tr><td>${dmE(b.jenis)}</td><td>${dmE(b.kelompok || '—')}</td><td>${dmE(dmTgl(b.sejak))}</td><td>${dmE(b.status)}</td></tr>`))}` : ''}
+    ${r.monitoring.length ? `<div class="sub">🔎 Monitoring pascabantuan</div>${tbl(['Tahap', 'Jenis bantuan', 'Jatuh tempo', 'Status'], r.monitoring.map(m => `<tr><td>${dmE(m.tahap)}</td><td>${dmE(m.jenis)}</td><td>${dmE(dmTgl(m.jatuh_tempo))}</td><td>${dmE(m.status)}${m.kesimpulan ? '<div class="dm-sub">' + dmE(m.kesimpulan) + '</div>' : ''}</td></tr>`))}` : ''}
+    ${r.usulan.filter(u => u.status_item !== 'aktif' || /Selesai|Dibatalkan/.test(u.status_usulan)).length ? `<div class="sub">🗂 Riwayat usulan</div>${tbl(['Usulan', 'Program', 'Hasil', 'Nilai'], r.usulan.filter(u => !usulanAktif.includes(u)).map(u => `<tr><td class="mono">${dmE(u.id)}</td><td>${dmE(u.program)}</td><td>${u.status_item === 'dibayar' ? '✅ Dibayar ' + dmE(dmTgl(u.tgl_bayar)) : u.status_item === 'dicoret' ? '✖ Dicoret' + (u.alasan_coret ? ': ' + dmE(u.alasan_coret) : '') : dmE(u.status_usulan)}</td><td class="n">${dmRp(u.nilai)}</td></tr>`))}` : ''}
+    ${r.pengajuan.length ? `<div class="sub">📨 Pengajuan bantuan</div>${tbl(['No.', 'Tanggal', 'Bantuan diminta', 'Status'], r.pengajuan.map(p => `<tr><td class="mono" style="font-size:11px">${dmE(p.no)}</td><td>${dmE(dmTgl(p.waktu))}</td><td>${dmE(p.bantuan || p.kebutuhan || '—')}</td><td>${dmE(p.status)}</td></tr>`))}` : ''}`;
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', dmSusun); else dmSusun();
+
 document.querySelectorAll('input[name=dok-jenis]').forEach(r=>r.addEventListener('change',ndOpsiToggle));
 
 // ── Data pendidikan (beasiswa) ──
@@ -8497,7 +8742,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='51.1 · 19 Nov 2026';
+const APP_VERSI='52 · 19 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
