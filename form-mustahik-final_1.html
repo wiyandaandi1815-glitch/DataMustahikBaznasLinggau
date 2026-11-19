@@ -5828,6 +5828,22 @@ table.us-tbl input,table.us-tbl select{padding:4px 6px;font-size:12px;width:100%
 .us-k{font-size:11px;color:var(--g500)}
 #us-sv{width:auto!important;margin:0}
 .us-form{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:12px}
+.us-ring{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:16px 0 10px}
+.us-ring>div{background:#fff;border:1px solid var(--g200);border-radius:10px;padding:8px 12px}.us-ring span{display:block;font-size:11px;color:var(--g500)}.us-ring b{font-size:16px;color:var(--g800,#1f2937)}
+.us-ring .hijau{border-color:#9fd5c4;background:#effaf6}.us-ring .hijau b{color:var(--teal)}
+.us-massal{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 10px;align-items:end;background:var(--g50,#f7f8f8);border:1px solid var(--g200);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.us-massal .jd{grid-column:1/-1;font-size:12px;font-weight:700;color:var(--g600,#4b5563)}
+.us-massal label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--g500);font-weight:600}.us-massal input,.us-massal select{width:100%;padding:7px 9px;font-size:13px}
+table.us-tbl.us-ed{table-layout:fixed;min-width:1160px;width:100%}
+table.us-tbl.us-ed th{vertical-align:bottom!important;line-height:1.25;white-space:normal!important}
+.us-massal .btn{justify-self:start;width:auto;height:34px}
+table.us-tbl.us-ed td{vertical-align:middle!important}
+table.us-tbl.us-ed input,table.us-tbl.us-ed select{height:34px;padding:5px 8px;font-size:12.5px;border:1px solid var(--g200);border-radius:7px;box-sizing:border-box}
+table.us-tbl.us-ed .us-num{text-align:right;font-variant-numeric:tabular-nums}
+table.us-tbl.us-ed input:disabled,table.us-tbl.us-ed select:disabled{background:var(--g50,#f5f5f5);color:var(--g400,#9ca3af)}
+table.us-tbl.us-ed .us-terima{font-size:13px;font-variant-numeric:tabular-nums}.us-no{color:var(--g500)}
+.us-rek{font-size:11.5px;margin-top:4px;color:var(--g700)}.us-rek.abu{color:var(--g500)}.us-rek.merah{color:var(--red);font-weight:600}
+.us-tag{display:inline-block;margin-top:3px;font-size:10.5px;font-weight:700;border-radius:99px;padding:1px 8px}.us-tag.hijau{background:#e3f6ef;color:#0b7a5a}.us-tag.kuning{background:#fff4d6;color:#8a5a00}
 @media(max-width:700px){.us-lang{grid-template-columns:repeat(5,1fr);row-gap:10px}}`;
     document.head.appendChild(st);
   };
@@ -5885,12 +5901,13 @@ function usDetail(id) {
     ${b.status === 'Dibatalkan' ? '' : usLangkah(b)}
     ${b.catatan_terakhir ? '<div class="us-catat">📝 ' + usE(b.catatan_terakhir) + '</div>' : ''}
     <div class="us-info"><div>Mustahik<b>${b.jumlah}</b></div><div>Total usulan (bruto)<b>${usRp(b.total)}</b></div><div>Diterima mustahik<b>${usRp(usJumlah(aktif.concat(b.items.filter(i => i.status === 'dibayar')), 'terima'))}</b></div><div>Sudah dibayar<b>${usRp(b.dibayar)}</b></div>
+      ${b.rek_sumber ? '<div>Dibayar dari<b style="font-size:12.5px">' + usE(b.rek_sumber) + '</b></div>' : ''}
       <div>Pos RKAT<b style="font-size:12.5px">${usE(b.nama_pos || b.kode_pos || '— ditetapkan WK III —')}</b></div>${b.no_spp ? '<div>SPP<b style="font-size:12.5px">' + usE(b.no_spp) + ' · ' + usTgl(b.tgl_spp) + '</b></div>' : ''}</div>
     ${b.catatan ? '<div class="hint" style="margin-bottom:10px">Catatan penyusun: ' + usE(b.catatan) + '</div>' : ''}
     ${pilih && aktif.length ? '<div class="hint" style="margin-bottom:6px">Centang mustahik untuk ' + (b.boleh.includes('bayar') ? 'dicatat pembayarannya atau dicoret' : 'dicoret (tidak dilanjutkan)') + '.</div>' : ''}
     <div class="us-wrap"><table class="us-tbl"><thead><tr>${pilih ? '<th><input type="checkbox" id="us-semua"></th>' : ''}<th>#</th><th>Mustahik</th><th>Kelurahan</th><th class="n">Bruto</th><th class="n">BPJS TK</th><th class="n">Biaya trf</th><th class="n">Diterima</th><th>Bentuk</th><th>Status</th></tr></thead><tbody>
     ${b.items.map((i, k) => `<tr class="${i.status === 'dicoret' ? 'coret' : ''}">${pilih ? `<td>${i.status === 'aktif' ? `<input type="checkbox" class="us-cek" value="${usE(i.mustahikId)}">` : ''}</td>` : ''}<td>${k + 1}</td>
-      <td><b>${usE(i.nama)}</b><div class="us-k mono">${usE(i.mustahikId)}</div>${i.keterangan ? '<div class="us-k">' + usE(i.keterangan) + '</div>' : ''}</td><td>${usE(i.kelurahan)}</td><td class="n">${usRp(i.nilai)}</td><td class="n">${i.potongan_bpjs ? usRp(i.potongan_bpjs) : '-'}</td>
+      <td><b>${usE(i.nama)}</b><div class="us-k mono">${usE(i.mustahikId)}</div>${i.bank_tujuan && i.bentuk === 'Transfer' ? '<div class="us-k">🏦 ' + usE(i.bank_tujuan) + '</div>' : ''}${i.keterangan ? '<div class="us-k">' + usE(i.keterangan) + '</div>' : ''}</td><td>${usE(i.kelurahan)}</td><td class="n">${usRp(i.nilai)}</td><td class="n">${i.potongan_bpjs ? usRp(i.potongan_bpjs) : '-'}</td>
       <td class="n">${i.biaya_transfer ? usRp(i.biaya_transfer) + '<div class="us-k">' + usE(i.biaya_ditanggung) + '</div>' : '-'}</td><td class="n"><b>${usRp(usTerima(i))}</b></td><td>${usE(i.bentuk)}</td>
       <td>${i.status === 'dibayar' ? '<span class="badge b-green">Dibayar</span><div class="us-k">' + usTgl(i.tgl_bayar) + ' · ' + usE(i.cara_bayar) + (i.no_bukti ? ' · ' + usE(i.no_bukti) : '') + '</div>' + (i.file_bukti ? `<a href="#" class="us-k" onclick="usLihatBukti('${usE(b.id)}','${usE(i.mustahikId)}');return false">lihat bukti</a>` : '')
         : i.status === 'dicoret' ? '<span class="badge b-red">Dicoret</span><div class="us-k">' + usE(i.alasan_coret) + ' — ' + usE(i.dicoret_oleh) + '</div>' : '<span class="badge b-gray">Aktif</span>'}</td></tr>`).join('')}
@@ -5974,7 +5991,8 @@ async function usLihatBukti(id, mid) {
 async function usEditor(id, koreksi) {
   const b = id ? usData.data.find(x => x.id === id) : null; usBuka = null;
   usEdit = { id: b ? b.id : '', koreksi_dari: b ? b.koreksi_dari : (koreksi || ''), items: b ? b.items.filter(i => i.status === 'aktif').map(i => ({ mustahikId: i.mustahikId, nama: i.nama, kelurahan: i.kelurahan, nilai: i.nilai, bentuk: i.bentuk, keterangan: i.keterangan,
-    potongan_bpjs: i.potongan_bpjs || '', biaya_transfer: i.biaya_transfer || '', biaya_ditanggung: i.biaya_ditanggung || 'BAZNAS' })) : [] };
+    potongan_bpjs: i.potongan_bpjs || '', biaya_transfer: i.biaya_transfer || '', biaya_ditanggung: i.biaya_ditanggung || 'BAZNAS', bank_tujuan: i.bank_tujuan || '', trf_manual: true })) : [],
+    rek_sumber: b ? b.rek_sumber || 'BSI' : 'BSI' };
   const asal = koreksi ? usData.data.find(x => x.id === koreksi) : null;
   const progs = [...new Set(usData.data.map(x => x.program))];
   document.getElementById('us-main').innerHTML = `<button class="btn btn-outline btn-sm" type="button" onclick="usDaftar()">← Batal</button>
@@ -5983,55 +6001,93 @@ async function usEditor(id, koreksi) {
       <div class="field"><label>Judul usulan *</label><input id="us-judul" maxlength="120" placeholder="mis. UMKM Gelombang I" value="${usE(b ? b.judul : asal ? 'Koreksi ' + asal.judul : '')}"></div>
       <div class="field"><label>Program *</label><input id="us-prog" maxlength="120" list="us-progs" placeholder="mis. Bantuan Modal Usaha UMKM" value="${usE(b ? b.program : asal ? asal.program : '')}"><datalist id="us-progs">${progs.map(p => '<option value="' + usE(p) + '">').join('')}</datalist></div>
       <div class="field"><label>Bidang</label><select id="us-bid">${usData.bidang.map(x => `<option${(b ? b.bidang : asal ? asal.bidang : '') === x ? ' selected' : ''}>${x}</option>`).join('')}</select></div>
-      <div class="field"><label>Tahun anggaran</label><input id="us-th" type="number" min="2020" max="2099" value="${usE(b ? b.tahun : asal ? asal.tahun : new Date().getFullYear())}"></div></div>
+      <div class="field"><label>Tahun anggaran</label><input id="us-th" type="number" min="2020" max="2099" value="${usE(b ? b.tahun : asal ? asal.tahun : new Date().getFullYear())}"></div>
+      <div class="field"><label>Dibayar dari rekening BAZNAS</label><select id="us-rek">${(usData.rek_sumber || ['BSI', 'Bank Sumsel Babel Syariah']).map(x => `<option${x === usEdit.rek_sumber ? ' selected' : ''}>${x}</option>`).join('')}</select></div></div>
     <div class="field" style="margin-bottom:12px"><label>Catatan untuk pimpinan</label><textarea id="us-catatan" rows="2" placeholder="mis. hasil survei kelayakan usaha terlampir">${usE(b ? b.catatan : '')}</textarea></div>
     <div class="rk-h" style="font-weight:700">Tambah mustahik</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0"><input id="us-cari" type="search" placeholder="Cari nama, ID Mustahik, kelurahan, jenis bantuan…" style="flex:1;min-width:220px"><label class="hint" style="display:flex;gap:4px;align-items:center"><input type="checkbox" id="us-sv"> hanya yang sudah disurvei</label></div>
     <div class="us-hasil" id="us-hasil"><div class="hint">Memuat daftar mustahik…</div></div>
-    <div style="margin:14px 0 6px"><b>Mustahik diusulkan (<span id="us-n">0</span>) · bruto <span id="us-tot">Rp0</span> · diterima <span id="us-tot-terima">Rp0</span></b>
-      <div class="us-k" id="us-tot-rinci"></div></div>
-    <div class="hint" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--g50,#f7f8f8);border-radius:8px;padding:8px;margin-bottom:6px">Isi sama untuk semua:
-      <label>Bruto <input id="us-rata" type="number" min="0" step="50000" style="width:120px"></label>
-      <label>BPJS TK <input id="us-rata-bpjs" type="number" min="0" step="100" style="width:100px"></label>
-      <label>Biaya trf <input id="us-rata-trf" type="number" min="0" step="500" style="width:90px"></label>
-      <label>Ditanggung <select id="us-rata-tg"><option value="">—</option><option>Penerima</option><option>BAZNAS</option></select></label>
+    <div class="us-ring" id="us-ring">
+      <div><span>Mustahik</span><b id="us-n">0</b></div><div><span>Total bruto</span><b id="us-tot">Rp0</b></div>
+      <div><span>Potongan BPJS TK</span><b id="us-tot-bpjs">Rp0</b></div><div><span>Biaya transfer (Dana Amil)</span><b id="us-tot-trf">Rp0</b></div>
+      <div class="hijau"><span>Diterima mustahik</span><b id="us-tot-terima">Rp0</b></div></div>
+    <div class="us-k" id="us-tot-rinci" style="display:none"></div>
+    <div class="us-massal"><div class="jd">Isi sama untuk semua</div>
+      <label>Nilai bruto (Rp)<input id="us-rata" class="us-num" inputmode="numeric" placeholder="0"></label>
+      <label>Potongan BPJS TK (Rp)<input id="us-rata-bpjs" class="us-num" inputmode="numeric" placeholder="0"></label>
+      <label>Biaya transfer (Rp)<input id="us-rata-trf" class="us-num" inputmode="numeric" placeholder="otomatis"></label>
+      <label>Biaya ditanggung<select id="us-rata-tg"><option value="">— tetap —</option><option>Penerima</option><option>BAZNAS</option></select></label>
       <button class="btn btn-outline btn-sm" type="button" onclick="usRata()">Terapkan</button></div>
-    <div class="us-wrap"><table class="us-tbl"><thead><tr><th>#</th><th>Mustahik</th><th class="n" style="width:120px">Nilai bruto (Rp) *</th><th class="n" style="width:105px">Potongan iuran BPJS TK (Rp)</th><th class="n" style="width:95px">Biaya transfer (Rp)</th><th style="width:110px">Biaya ditanggung</th><th class="n" style="width:120px">Nominal yang diterima</th><th style="width:120px">Bentuk</th><th>Keterangan</th><th></th></tr></thead><tbody id="us-pilih"></tbody></table></div>
-    <div class="us-k" style="margin-top:4px">Nilai bruto = penyaluran & realisasi RKAT. Biaya transfer yang ditanggung BAZNAS dibebankan ke Dana Amil (bukan dana program).</div>
+    <div class="us-wrap"><table class="us-tbl us-ed"><colgroup><col style="width:34px"><col style="width:250px"><col style="width:105px"><col style="width:120px"><col style="width:110px"><col style="width:105px"><col style="width:105px"><col style="width:120px"><col style="width:170px"><col style="width:38px"></colgroup>
+      <thead><tr><th>#</th><th>Penerima &amp; rekening tujuan</th><th>Bentuk</th><th class="n">Nilai bruto (Rp) *</th><th class="n">Potongan iuran BPJS TK (Rp)</th><th class="n">Biaya transfer (Rp)</th><th>Biaya ditanggung</th><th class="n">Nominal yang diterima</th><th>Keterangan</th><th></th></tr></thead><tbody id="us-pilih"></tbody></table></div>
+    <div class="us-k" style="margin-top:6px">ℹ️ Biaya transfer terisi otomatis: <b>Rp0</b> bila bank mustahik sama dengan rekening pembayar, <b>Rp2.500 (BI-FAST)</b> bila beda bank, <b>Rp0</b> untuk tunai/barang — tetap bisa diubah. Nilai bruto = penyaluran &amp; realisasi RKAT; biaya transfer yang ditanggung BAZNAS dibebankan ke Dana Amil.</div>
     <div class="us-aksi"><button class="btn btn-outline" type="button" onclick="usSimpan(false,this)">Simpan draf</button><button class="btn btn-primary" type="button" onclick="usSimpan(true,this)">Simpan &amp; kirim</button><span id="us-epesan" class="hint" style="color:var(--red)"></span></div>`;
+  document.querySelectorAll('.us-massal .us-num').forEach(el => el.oninput = () => { const d = el.value.replace(/\D/g, ''); el.value = d ? Number(d).toLocaleString('id-ID') : ''; });
+  document.getElementById('us-rek').onchange = e => { usEdit.rek_sumber = e.target.value; usEdit.items.forEach(usAutoTrf); usGambarPilih(); };
   usGambarPilih();
   if (!usPool) { const r = await dbApi('usulan_pool', {}).catch(() => ({ ok: false })); usPool = r.ok ? r.data : []; }
+  usEdit.items.forEach(i => { const p = usPool.find(x => x.mustahikId === i.mustahikId); if (p) i.rek = p.rekening; }); usGambarPilih();
   const cari = () => { const q = document.getElementById('us-cari').value.toLowerCase().trim(), sv = document.getElementById('us-sv').checked, ada = new Set(usEdit.items.map(i => i.mustahikId));
     const h = usPool.filter(p => (!sv || p.survei) && (!q || (p.nama + ' ' + p.mustahikId + ' ' + p.kelurahan + ' ' + p.kecamatan + ' ' + p.kategori + ' ' + p.asnaf).toLowerCase().includes(q))).slice(0, 60);
     document.getElementById('us-hasil').innerHTML = h.map(p => `<div><span><b>${usE(p.nama)}</b> <span class="mono us-k">${usE(p.mustahikId)}</span><br><span class="us-k">${usE(p.kelurahan)} · ${usE(p.kategori || p.asnaf)}${p.survei ? ' · ✅ disurvei' : ''}${p.verifikasi !== 'terverifikasi' ? ' · ' + usE(p.verifikasi || 'belum verifikasi') : ''}</span></span>
       ${ada.has(p.mustahikId) ? '<span class="us-k">✓ dipilih</span>' : p.sedang && p.sedang !== usEdit.id ? '<span class="us-k">di ' + usE(p.sedang) + '</span>' : `<button class="btn btn-outline btn-sm" type="button" data-us-tambah="${usE(p.mustahikId)}">+ Tambah</button>`}</div>`).join('') || '<div class="hint">Tidak ada yang cocok.</div>';
-    document.querySelectorAll('[data-us-tambah]').forEach(t => t.onclick = () => { const p = usPool.find(x => x.mustahikId === t.dataset.usTambah); const rata = Number(document.getElementById('us-rata').value) || '';
+    document.querySelectorAll('[data-us-tambah]').forEach(t => t.onclick = () => { const p = usPool.find(x => x.mustahikId === t.dataset.usTambah); const rata = usAngka(document.getElementById('us-rata').value) || '';
       const g = id => document.getElementById(id).value;
-      usEdit.items.push({ mustahikId: p.mustahikId, nama: p.nama, kelurahan: p.kelurahan, nilai: rata, bentuk: 'Transfer', keterangan: '', potongan_bpjs: Number(g('us-rata-bpjs')) || '', biaya_transfer: Number(g('us-rata-trf')) || '', biaya_ditanggung: g('us-rata-tg') || 'BAZNAS' }); usGambarPilih(); cari(); }); };
+      const trf = g('us-rata-trf').trim(), it = { mustahikId: p.mustahikId, nama: p.nama, kelurahan: p.kelurahan, nilai: rata, bentuk: 'Transfer', keterangan: '', potongan_bpjs: usAngka(g('us-rata-bpjs')) || '',
+        biaya_transfer: trf ? usAngka(trf) : '', trf_manual: !!trf, biaya_ditanggung: g('us-rata-tg') || 'BAZNAS', rek: p.rekening };
+      usAutoTrf(it); usEdit.items.push(it); usGambarPilih(); cari(); }); };
   document.getElementById('us-cari').oninput = cari; document.getElementById('us-sv').onchange = cari; cari();
+}
+// v50: angka dengan pemisah ribuan, info rekening tujuan & biaya transfer otomatis
+const usAngka = v => Number(String(v ?? '').replace(/\D/g, '')) || 0;
+const usFmt = v => v === '' || v == null ? '' : Number(v).toLocaleString('id-ID');
+const usKodeBank = n => /bsi|syariah indonesia/i.test(n || '') ? 'BSI' : /sumsel|sumatera selatan/i.test(n || '') ? 'SUMSEL' : String(n || '').trim().toUpperCase();
+const US_TRF_ANTAR = 2500;
+function usAutoTrf(i) {
+  if (i.trf_manual) return;
+  if (i.bentuk !== 'Transfer') { i.biaya_transfer = 0; return; }
+  const bk = i.rek && i.rek.bank; if (!bk) { i.biaya_transfer = ''; return; }
+  i.biaya_transfer = usKodeBank(bk) === usKodeBank(usEdit.rek_sumber) ? 0 : US_TRF_ANTAR;
+}
+function usRekHtml(i) {
+  if (i.bentuk !== 'Transfer') return `<div class="us-rek abu">${i.bentuk === 'Tunai' ? '💵 Tunai' : '📦 Barang'} — tanpa biaya transfer</div>`;
+  const r = i.rek, bk = r && r.bank;
+  if (!bk) return i.bank_tujuan ? `<div class="us-rek">🏦 ${usE(i.bank_tujuan)}</div>` : '<div class="us-rek merah">⚠️ Rekening belum ada di Data Mustahik</div>';
+  const sama = usKodeBank(bk) === usKodeBank(usEdit.rek_sumber);
+  return `<div class="us-rek">🏦 <b>${usE(bk)}</b> ${usE(r.rek)}${r.pemilik ? ' · a.n. ' + usE(r.pemilik) : ''}</div>
+    <span class="us-tag ${sama ? 'hijau' : 'kuning'}">${sama ? 'Sesama bank · tanpa biaya' : 'Antarbank · BI-FAST Rp2.500'}</span>`;
 }
 function usGambarPilih() {
   const tb = document.getElementById('us-pilih'); if (!tb) return;
-  tb.innerHTML = usEdit.items.map((i, k) => `<tr><td>${k + 1}</td><td><b>${usE(i.nama)}</b><div class="us-k mono">${usE(i.mustahikId)} · ${usE(i.kelurahan)}</div></td>
-    <td><input type="number" min="0" step="50000" value="${i.nilai}" data-k="${k}" data-f="nilai"></td>
-    <td><input type="number" min="0" step="100" value="${i.potongan_bpjs}" data-k="${k}" data-f="potongan_bpjs"></td><td><input type="number" min="0" step="500" value="${i.biaya_transfer}" data-k="${k}" data-f="biaya_transfer"></td>
-    <td><select data-k="${k}" data-f="biaya_ditanggung">${['BAZNAS', 'Penerima'].map(x => `<option${x === i.biaya_ditanggung ? ' selected' : ''}>${x}</option>`).join('')}</select></td>
-    <td class="n"><b id="us-terima-${k}" style="${usTerima(i) <= 0 && i.nilai ? 'color:var(--red)' : ''}">${usRp(usTerima(i))}</b></td><td><select data-k="${k}" data-f="bentuk">${usData.bentuk.map(x => `<option${x === i.bentuk ? ' selected' : ''}>${x}</option>`).join('')}</select></td>
-    <td><input maxlength="150" value="${usE(i.keterangan)}" data-k="${k}" data-f="keterangan" placeholder="mis. warung sembako"></td><td><button class="btn btn-ghost btn-sm" type="button" data-hapus="${k}" title="Keluarkan">✕</button></td></tr>`).join('') || '<tr><td colspan="10" class="hint">Belum ada mustahik. Cari lalu klik “+ Tambah”.</td></tr>';
-  tb.querySelectorAll('[data-f]').forEach(el => el.oninput = el.onchange = () => { const i = usEdit.items[+el.dataset.k]; i[el.dataset.f] = ['nilai', 'potongan_bpjs', 'biaya_transfer'].includes(el.dataset.f) ? Number(el.value) || '' : el.value;
-    const t = document.getElementById('us-terima-' + el.dataset.k); if (t) { t.textContent = usRp(usTerima(i)); t.style.color = usTerima(i) <= 0 && i.nilai ? 'var(--red)' : ''; } usTotal(); });
+  tb.innerHTML = usEdit.items.map((i, k) => `<tr><td class="us-no">${k + 1}</td>
+    <td><b>${usE(i.nama)}</b><div class="us-k mono">${usE(i.mustahikId)} · ${usE(i.kelurahan)}</div>${usRekHtml(i)}</td>
+    <td><select data-k="${k}" data-f="bentuk">${usData.bentuk.map(x => `<option${x === i.bentuk ? ' selected' : ''}>${x}</option>`).join('')}</select></td>
+    <td><input class="us-num" inputmode="numeric" value="${usFmt(i.nilai)}" data-k="${k}" data-f="nilai" placeholder="0"></td>
+    <td><input class="us-num" inputmode="numeric" value="${usFmt(i.potongan_bpjs)}" data-k="${k}" data-f="potongan_bpjs" placeholder="0"></td>
+    <td><input class="us-num" inputmode="numeric" value="${usFmt(i.biaya_transfer)}" data-k="${k}" data-f="biaya_transfer" placeholder="0"${i.bentuk !== 'Transfer' ? ' disabled' : ''}></td>
+    <td><select data-k="${k}" data-f="biaya_ditanggung"${i.bentuk !== 'Transfer' ? ' disabled' : ''}>${['BAZNAS', 'Penerima'].map(x => `<option${x === i.biaya_ditanggung ? ' selected' : ''}>${x}</option>`).join('')}</select></td>
+    <td class="n"><b class="us-terima" id="us-terima-${k}" style="${usTerima(i) <= 0 && i.nilai ? 'color:var(--red)' : ''}">${usRp(usTerima(i))}</b></td>
+    <td><input maxlength="150" value="${usE(i.keterangan)}" data-k="${k}" data-f="keterangan" placeholder="mis. warung sembako"></td>
+    <td><button class="btn btn-ghost btn-sm" type="button" data-hapus="${k}" title="Keluarkan" aria-label="Keluarkan ${usE(i.nama)}">✕</button></td></tr>`).join('') || '<tr><td colspan="10" class="hint" style="text-align:center;padding:18px!important">Belum ada mustahik. Cari lalu klik “+ Tambah”.</td></tr>';
+  tb.querySelectorAll('[data-f]').forEach(el => el.oninput = el.onchange = (ev) => {
+    const k = +el.dataset.k, i = usEdit.items[k], f = el.dataset.f;
+    if (el.classList.contains('us-num')) { const n = usAngka(el.value); i[f] = el.value.replace(/\D/g, '') === '' ? '' : n; if (ev.type === 'input') { el.value = usFmt(i[f]); } if (f === 'biaya_transfer') i.trf_manual = true; }
+    else i[f] = el.value;
+    if (f === 'bentuk') { i.trf_manual = false; usAutoTrf(i); if (i.bentuk !== 'Transfer') i.biaya_ditanggung = 'BAZNAS'; usGambarPilih(); return; }
+    const t = document.getElementById('us-terima-' + k); if (t) { t.textContent = usRp(usTerima(i)); t.style.color = usTerima(i) <= 0 && i.nilai ? 'var(--red)' : ''; } usTotal(); });
   tb.querySelectorAll('[data-hapus]').forEach(el => el.onclick = () => { usEdit.items.splice(+el.dataset.hapus, 1); usGambarPilih(); const c = document.getElementById('us-cari'); if (c) c.oninput(); });
   usTotal();
 }
 function usTotal() {
   const L = usEdit.items; document.getElementById('us-n').textContent = L.length; document.getElementById('us-tot').textContent = usRp(usJumlah(L, 'nilai'));
   document.getElementById('us-tot-terima').textContent = usRp(usJumlah(L, 'terima'));
+  document.getElementById('us-tot-bpjs').textContent = usRp(usJumlah(L, 'potongan_bpjs')); document.getElementById('us-tot-trf').textContent = usRp(usJumlah(L, 'trf_baznas'));
   document.getElementById('us-tot-rinci').textContent = 'BPJS TK ' + usRp(usJumlah(L, 'potongan_bpjs')) + ' · biaya transfer ditanggung BAZNAS (Dana Amil) ' + usRp(usJumlah(L, 'trf_baznas'));
 }
 function usRata() {
-  const g = id => document.getElementById(id).value, v = Number(g('us-rata')) || 0, bp = g('us-rata-bpjs'), tr = g('us-rata-trf'), tg = g('us-rata-tg');
+  const g = id => document.getElementById(id).value.trim(), v = usAngka(g('us-rata')), bp = g('us-rata-bpjs'), tr = g('us-rata-trf'), tg = g('us-rata-tg');
   if (!v && bp === '' && tr === '' && !tg) return;
-  usEdit.items.forEach(i => { if (v) i.nilai = v; if (bp !== '') i.potongan_bpjs = Number(bp) || ''; if (tr !== '') i.biaya_transfer = Number(tr) || ''; if (tg) i.biaya_ditanggung = tg; }); usGambarPilih();
+  usEdit.items.forEach(i => { if (v) i.nilai = v; if (bp !== '') i.potongan_bpjs = usAngka(bp) || ''; if (tr !== '' && i.bentuk === 'Transfer') { i.biaya_transfer = usAngka(tr); i.trf_manual = true; } if (tg && i.bentuk === 'Transfer') i.biaya_ditanggung = tg; }); usGambarPilih();
 }
 async function usSimpan(kirim, btn) {
   const ps = document.getElementById('us-epesan'); ps.textContent = '';
@@ -6040,7 +6096,7 @@ async function usSimpan(kirim, btn) {
   if (kirim && !usEdit.items.length) { ps.textContent = 'Tambahkan minimal satu mustahik.'; return; }
   btn.disabled = true;
   const d = { id: usEdit.id, judul: document.getElementById('us-judul').value, program: document.getElementById('us-prog').value, bidang: document.getElementById('us-bid').value, tahun: document.getElementById('us-th').value,
-    catatan: document.getElementById('us-catatan').value, koreksi_dari: usEdit.koreksi_dari, items: usEdit.items.map(i => ({ mustahikId: i.mustahikId, nilai: i.nilai, bentuk: i.bentuk, keterangan: i.keterangan, potongan_bpjs: i.potongan_bpjs || 0, biaya_transfer: i.biaya_transfer || 0, biaya_ditanggung: i.biaya_ditanggung || 'BAZNAS' })) };
+    catatan: document.getElementById('us-catatan').value, koreksi_dari: usEdit.koreksi_dari, rek_sumber: usEdit.rek_sumber, items: usEdit.items.map(i => ({ mustahikId: i.mustahikId, nilai: i.nilai, bentuk: i.bentuk, keterangan: i.keterangan, potongan_bpjs: i.potongan_bpjs || 0, biaya_transfer: i.biaya_transfer || 0, biaya_ditanggung: i.biaya_ditanggung || 'BAZNAS' })) };
   const r = await dbApi('usulan_simpan', d).catch(() => ({ ok: false, pesan: 'Gagal terhubung.' }));
   if (!r.ok) { ps.textContent = r.pesan; btn.disabled = false; return; }
   if (kirim) { const k = await dbApi('usulan_proses', { id: r.id, aksi: 'kirim' }).catch(() => ({ ok: false, pesan: 'Gagal terhubung.' })); if (!k.ok) alert('Draf tersimpan, tetapi belum terkirim: ' + k.pesan); }
@@ -8386,7 +8442,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='49 · 19 Nov 2026';
+const APP_VERSI='50 · 19 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
