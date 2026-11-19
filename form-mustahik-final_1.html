@@ -5790,7 +5790,7 @@ const US_AKSI = { verifikasi: 'Verifikasi lengkap', kirim: 'Kirim usulan', setuj
     const bar = document.querySelector('.tab-bar'); if (!bar || document.getElementById('tab-us-btn')) return;
     const b = document.createElement('button'); b.className = 'tab-btn'; b.id = 'tab-us-btn'; b.type = 'button';
     b.innerHTML = '📦 Usulan Penyaluran <span id="us-count" class="badge b-red" style="display:none">0</span>';
-    b.onclick = function () { switchTab('t-usulan', this); usBuka = null; usMuat(); };
+    b.onclick = function () { switchTab('t-usulan', this); usBuka = null; if (usData) usDaftar(); usMuat(); };   // v49: tampilkan data terakhir langsung, segarkan di belakang
     bar.appendChild(b);
     const p = document.createElement('div'); p.id = 't-usulan'; p.className = 'tab-pane';
     p.innerHTML = '<div class="main" id="us-main"><div class="hint">Memuat…</div></div>';
@@ -5833,13 +5833,18 @@ table.us-tbl input,table.us-tbl select{padding:4px 6px;font-size:12px;width:100%
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pasang); else pasang();
 })();
+// v49: rincian per penerima — bruto, potongan BPJS TK, biaya transfer (ditanggung Penerima/BAZNAS), nominal diterima
+const usTerima = i => (Number(i.nilai) || 0) - (Number(i.potongan_bpjs) || 0) - (i.biaya_ditanggung === 'Penerima' ? Number(i.biaya_transfer) || 0 : 0);
+const usJumlah = (list, f) => list.reduce((s, i) => s + (f === 'terima' ? usTerima(i) : f === 'trf_baznas' ? (i.biaya_ditanggung === 'Penerima' ? 0 : Number(i.biaya_transfer) || 0) : Number(i[f]) || 0), 0);
 function usBadge() {
   const n = usData ? usData.data.filter(usPerlu).length : 0;
   const el = document.getElementById('us-count'); if (el) { el.textContent = n; el.style.display = n ? '' : 'none'; } return n;
 }
 async function usMuat() {
   const m = document.getElementById('us-main'); if (!m) return;
-  let r; try { r = await dbApi('usulan_daftar', {}); } catch (e) { m.innerHTML = '<div class="hint" style="color:var(--red)">Gagal terhubung ke server.</div>'; return; }
+  if (!usData) m.innerHTML = '<div class="pg-title">Usulan Penyaluran</div><div class="hint">⏳ Memuat daftar usulan…</div>';
+  let r; for (let c = 0; c < 2 && !(r && r.ok); c++) { try { r = await dbApi('usulan_daftar', {}); } catch (e) { r = null; } }   // v49: coba ulang otomatis sekali
+  if (!r) { if (!usData) m.innerHTML = '<div class="hint" style="color:var(--red)">Gagal terhubung ke server. <button class="btn btn-outline btn-sm" type="button" onclick="usMuat()">Coba lagi</button></div>'; return; }
   if (!r.ok) { m.innerHTML = '<div class="hint" style="color:var(--red)">' + usE(r.pesan) + '</div>'; return; }
   usData = r; const n = usBadge();
   if (!usFilter) usFilter = n ? 'saya' : 'jalan';
@@ -5879,13 +5884,14 @@ function usDetail(id) {
     <div class="pg-sub"><span class="mono">${usE(b.id)}</span> · ${usE(b.program)} · ${usE(b.bidang)} · tahun anggaran ${usE(b.tahun)}${b.koreksi_dari ? ' · koreksi atas ' + usE(b.koreksi_dari) : ''}</div>
     ${b.status === 'Dibatalkan' ? '' : usLangkah(b)}
     ${b.catatan_terakhir ? '<div class="us-catat">📝 ' + usE(b.catatan_terakhir) + '</div>' : ''}
-    <div class="us-info"><div>Mustahik<b>${b.jumlah}</b></div><div>Total usulan<b>${usRp(b.total)}</b></div><div>Sudah dibayar<b>${usRp(b.dibayar)}</b></div>
+    <div class="us-info"><div>Mustahik<b>${b.jumlah}</b></div><div>Total usulan (bruto)<b>${usRp(b.total)}</b></div><div>Diterima mustahik<b>${usRp(usJumlah(aktif.concat(b.items.filter(i => i.status === 'dibayar')), 'terima'))}</b></div><div>Sudah dibayar<b>${usRp(b.dibayar)}</b></div>
       <div>Pos RKAT<b style="font-size:12.5px">${usE(b.nama_pos || b.kode_pos || '— ditetapkan WK III —')}</b></div>${b.no_spp ? '<div>SPP<b style="font-size:12.5px">' + usE(b.no_spp) + ' · ' + usTgl(b.tgl_spp) + '</b></div>' : ''}</div>
     ${b.catatan ? '<div class="hint" style="margin-bottom:10px">Catatan penyusun: ' + usE(b.catatan) + '</div>' : ''}
     ${pilih && aktif.length ? '<div class="hint" style="margin-bottom:6px">Centang mustahik untuk ' + (b.boleh.includes('bayar') ? 'dicatat pembayarannya atau dicoret' : 'dicoret (tidak dilanjutkan)') + '.</div>' : ''}
-    <div class="us-wrap"><table class="us-tbl"><thead><tr>${pilih ? '<th><input type="checkbox" id="us-semua"></th>' : ''}<th>#</th><th>Mustahik</th><th>Kelurahan</th><th class="n">Nilai</th><th>Bentuk</th><th>Status</th></tr></thead><tbody>
+    <div class="us-wrap"><table class="us-tbl"><thead><tr>${pilih ? '<th><input type="checkbox" id="us-semua"></th>' : ''}<th>#</th><th>Mustahik</th><th>Kelurahan</th><th class="n">Bruto</th><th class="n">BPJS TK</th><th class="n">Biaya trf</th><th class="n">Diterima</th><th>Bentuk</th><th>Status</th></tr></thead><tbody>
     ${b.items.map((i, k) => `<tr class="${i.status === 'dicoret' ? 'coret' : ''}">${pilih ? `<td>${i.status === 'aktif' ? `<input type="checkbox" class="us-cek" value="${usE(i.mustahikId)}">` : ''}</td>` : ''}<td>${k + 1}</td>
-      <td><b>${usE(i.nama)}</b><div class="us-k mono">${usE(i.mustahikId)}</div>${i.keterangan ? '<div class="us-k">' + usE(i.keterangan) + '</div>' : ''}</td><td>${usE(i.kelurahan)}</td><td class="n">${usRp(i.nilai)}</td><td>${usE(i.bentuk)}</td>
+      <td><b>${usE(i.nama)}</b><div class="us-k mono">${usE(i.mustahikId)}</div>${i.keterangan ? '<div class="us-k">' + usE(i.keterangan) + '</div>' : ''}</td><td>${usE(i.kelurahan)}</td><td class="n">${usRp(i.nilai)}</td><td class="n">${i.potongan_bpjs ? usRp(i.potongan_bpjs) : '-'}</td>
+      <td class="n">${i.biaya_transfer ? usRp(i.biaya_transfer) + '<div class="us-k">' + usE(i.biaya_ditanggung) + '</div>' : '-'}</td><td class="n"><b>${usRp(usTerima(i))}</b></td><td>${usE(i.bentuk)}</td>
       <td>${i.status === 'dibayar' ? '<span class="badge b-green">Dibayar</span><div class="us-k">' + usTgl(i.tgl_bayar) + ' · ' + usE(i.cara_bayar) + (i.no_bukti ? ' · ' + usE(i.no_bukti) : '') + '</div>' + (i.file_bukti ? `<a href="#" class="us-k" onclick="usLihatBukti('${usE(b.id)}','${usE(i.mustahikId)}');return false">lihat bukti</a>` : '')
         : i.status === 'dicoret' ? '<span class="badge b-red">Dicoret</span><div class="us-k">' + usE(i.alasan_coret) + ' — ' + usE(i.dicoret_oleh) + '</div>' : '<span class="badge b-gray">Aktif</span>'}</td></tr>`).join('')}
     </tbody></table></div>
@@ -5944,7 +5950,7 @@ async function usAksi(a) {
     `<button class="btn btn-primary" type="button" onclick="usKirim('usulan_proses',{id:'${b.id}',aksi:'otorisasi'},this)">Otorisasi</button>`);
   if (a === 'bayar') { if (!pil.length) return alert('Centang mustahik yang sudah dibayar.');
     const nilai = b.items.filter(i => pil.includes(i.mustahikId)).reduce((s, i) => s + i.nilai, 0);
-    return usModal('Catat pembayaran', `<p><b>${pil.length} mustahik · ${usRp(nilai)}</b></p><div class="us-form">
+    return usModal('Catat pembayaran', `<p><b>${pil.length} mustahik · bruto ${usRp(nilai)} · ditransfer ke penerima ${usRp(usJumlah(b.items.filter(i => pil.includes(i.mustahikId)), 'terima'))}</b></p><div class="us-form">
       <div class="field"><label>Tanggal bayar *</label><input id="us-tb" type="date" value="${new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10)}"></div>
       <div class="field"><label>Cara *</label><select id="us-cara">${usData.bentuk.map(x => '<option>' + x + '</option>').join('')}</select></div>
       <div class="field"><label>No. bukti / kwitansi</label><input id="us-nb" maxlength="60"></div>
@@ -5967,7 +5973,8 @@ async function usLihatBukti(id, mid) {
 // ── Penyusunan / ubah draf
 async function usEditor(id, koreksi) {
   const b = id ? usData.data.find(x => x.id === id) : null; usBuka = null;
-  usEdit = { id: b ? b.id : '', koreksi_dari: b ? b.koreksi_dari : (koreksi || ''), items: b ? b.items.filter(i => i.status === 'aktif').map(i => ({ mustahikId: i.mustahikId, nama: i.nama, kelurahan: i.kelurahan, nilai: i.nilai, bentuk: i.bentuk, keterangan: i.keterangan })) : [] };
+  usEdit = { id: b ? b.id : '', koreksi_dari: b ? b.koreksi_dari : (koreksi || ''), items: b ? b.items.filter(i => i.status === 'aktif').map(i => ({ mustahikId: i.mustahikId, nama: i.nama, kelurahan: i.kelurahan, nilai: i.nilai, bentuk: i.bentuk, keterangan: i.keterangan,
+    potongan_bpjs: i.potongan_bpjs || '', biaya_transfer: i.biaya_transfer || '', biaya_ditanggung: i.biaya_ditanggung || 'BAZNAS' })) : [] };
   const asal = koreksi ? usData.data.find(x => x.id === koreksi) : null;
   const progs = [...new Set(usData.data.map(x => x.program))];
   document.getElementById('us-main').innerHTML = `<button class="btn btn-outline btn-sm" type="button" onclick="usDaftar()">← Batal</button>
@@ -5981,9 +5988,16 @@ async function usEditor(id, koreksi) {
     <div class="rk-h" style="font-weight:700">Tambah mustahik</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0"><input id="us-cari" type="search" placeholder="Cari nama, ID Mustahik, kelurahan, jenis bantuan…" style="flex:1;min-width:220px"><label class="hint" style="display:flex;gap:4px;align-items:center"><input type="checkbox" id="us-sv"> hanya yang sudah disurvei</label></div>
     <div class="us-hasil" id="us-hasil"><div class="hint">Memuat daftar mustahik…</div></div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 6px;flex-wrap:wrap;gap:8px"><b>Mustahik diusulkan (<span id="us-n">0</span>) · <span id="us-tot">Rp0</span></b>
-      <span class="hint">Isi nilai sama untuk semua: <input id="us-rata" type="number" min="0" step="50000" style="width:130px"> <button class="btn btn-outline btn-sm" type="button" onclick="usRata()">Terapkan</button></span></div>
-    <div class="us-wrap"><table class="us-tbl"><thead><tr><th>#</th><th>Mustahik</th><th class="n" style="width:140px">Nilai (Rp) *</th><th style="width:110px">Bentuk</th><th>Keterangan</th><th></th></tr></thead><tbody id="us-pilih"></tbody></table></div>
+    <div style="margin:14px 0 6px"><b>Mustahik diusulkan (<span id="us-n">0</span>) · bruto <span id="us-tot">Rp0</span> · diterima <span id="us-tot-terima">Rp0</span></b>
+      <div class="us-k" id="us-tot-rinci"></div></div>
+    <div class="hint" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--g50,#f7f8f8);border-radius:8px;padding:8px;margin-bottom:6px">Isi sama untuk semua:
+      <label>Bruto <input id="us-rata" type="number" min="0" step="50000" style="width:120px"></label>
+      <label>BPJS TK <input id="us-rata-bpjs" type="number" min="0" step="100" style="width:100px"></label>
+      <label>Biaya trf <input id="us-rata-trf" type="number" min="0" step="500" style="width:90px"></label>
+      <label>Ditanggung <select id="us-rata-tg"><option value="">—</option><option>Penerima</option><option>BAZNAS</option></select></label>
+      <button class="btn btn-outline btn-sm" type="button" onclick="usRata()">Terapkan</button></div>
+    <div class="us-wrap"><table class="us-tbl"><thead><tr><th>#</th><th>Mustahik</th><th class="n" style="width:120px">Nilai bruto (Rp) *</th><th class="n" style="width:105px">Potongan iuran BPJS TK (Rp)</th><th class="n" style="width:95px">Biaya transfer (Rp)</th><th style="width:110px">Biaya ditanggung</th><th class="n" style="width:120px">Nominal yang diterima</th><th style="width:120px">Bentuk</th><th>Keterangan</th><th></th></tr></thead><tbody id="us-pilih"></tbody></table></div>
+    <div class="us-k" style="margin-top:4px">Nilai bruto = penyaluran & realisasi RKAT. Biaya transfer yang ditanggung BAZNAS dibebankan ke Dana Amil (bukan dana program).</div>
     <div class="us-aksi"><button class="btn btn-outline" type="button" onclick="usSimpan(false,this)">Simpan draf</button><button class="btn btn-primary" type="button" onclick="usSimpan(true,this)">Simpan &amp; kirim</button><span id="us-epesan" class="hint" style="color:var(--red)"></span></div>`;
   usGambarPilih();
   if (!usPool) { const r = await dbApi('usulan_pool', {}).catch(() => ({ ok: false })); usPool = r.ok ? r.data : []; }
@@ -5992,27 +6006,41 @@ async function usEditor(id, koreksi) {
     document.getElementById('us-hasil').innerHTML = h.map(p => `<div><span><b>${usE(p.nama)}</b> <span class="mono us-k">${usE(p.mustahikId)}</span><br><span class="us-k">${usE(p.kelurahan)} · ${usE(p.kategori || p.asnaf)}${p.survei ? ' · ✅ disurvei' : ''}${p.verifikasi !== 'terverifikasi' ? ' · ' + usE(p.verifikasi || 'belum verifikasi') : ''}</span></span>
       ${ada.has(p.mustahikId) ? '<span class="us-k">✓ dipilih</span>' : p.sedang && p.sedang !== usEdit.id ? '<span class="us-k">di ' + usE(p.sedang) + '</span>' : `<button class="btn btn-outline btn-sm" type="button" data-us-tambah="${usE(p.mustahikId)}">+ Tambah</button>`}</div>`).join('') || '<div class="hint">Tidak ada yang cocok.</div>';
     document.querySelectorAll('[data-us-tambah]').forEach(t => t.onclick = () => { const p = usPool.find(x => x.mustahikId === t.dataset.usTambah); const rata = Number(document.getElementById('us-rata').value) || '';
-      usEdit.items.push({ mustahikId: p.mustahikId, nama: p.nama, kelurahan: p.kelurahan, nilai: rata, bentuk: 'Transfer', keterangan: '' }); usGambarPilih(); cari(); }); };
+      const g = id => document.getElementById(id).value;
+      usEdit.items.push({ mustahikId: p.mustahikId, nama: p.nama, kelurahan: p.kelurahan, nilai: rata, bentuk: 'Transfer', keterangan: '', potongan_bpjs: Number(g('us-rata-bpjs')) || '', biaya_transfer: Number(g('us-rata-trf')) || '', biaya_ditanggung: g('us-rata-tg') || 'BAZNAS' }); usGambarPilih(); cari(); }); };
   document.getElementById('us-cari').oninput = cari; document.getElementById('us-sv').onchange = cari; cari();
 }
 function usGambarPilih() {
   const tb = document.getElementById('us-pilih'); if (!tb) return;
   tb.innerHTML = usEdit.items.map((i, k) => `<tr><td>${k + 1}</td><td><b>${usE(i.nama)}</b><div class="us-k mono">${usE(i.mustahikId)} · ${usE(i.kelurahan)}</div></td>
-    <td><input type="number" min="0" step="50000" value="${i.nilai}" data-k="${k}" data-f="nilai"></td><td><select data-k="${k}" data-f="bentuk">${usData.bentuk.map(x => `<option${x === i.bentuk ? ' selected' : ''}>${x}</option>`).join('')}</select></td>
-    <td><input maxlength="150" value="${usE(i.keterangan)}" data-k="${k}" data-f="keterangan" placeholder="mis. warung sembako"></td><td><button class="btn btn-ghost btn-sm" type="button" data-hapus="${k}" title="Keluarkan">✕</button></td></tr>`).join('') || '<tr><td colspan="6" class="hint">Belum ada mustahik. Cari lalu klik “+ Tambah”.</td></tr>';
-  tb.querySelectorAll('[data-f]').forEach(el => el.oninput = el.onchange = () => { const i = usEdit.items[+el.dataset.k]; i[el.dataset.f] = el.dataset.f === 'nilai' ? Number(el.value) || '' : el.value; usTotal(); });
+    <td><input type="number" min="0" step="50000" value="${i.nilai}" data-k="${k}" data-f="nilai"></td>
+    <td><input type="number" min="0" step="100" value="${i.potongan_bpjs}" data-k="${k}" data-f="potongan_bpjs"></td><td><input type="number" min="0" step="500" value="${i.biaya_transfer}" data-k="${k}" data-f="biaya_transfer"></td>
+    <td><select data-k="${k}" data-f="biaya_ditanggung">${['BAZNAS', 'Penerima'].map(x => `<option${x === i.biaya_ditanggung ? ' selected' : ''}>${x}</option>`).join('')}</select></td>
+    <td class="n"><b id="us-terima-${k}" style="${usTerima(i) <= 0 && i.nilai ? 'color:var(--red)' : ''}">${usRp(usTerima(i))}</b></td><td><select data-k="${k}" data-f="bentuk">${usData.bentuk.map(x => `<option${x === i.bentuk ? ' selected' : ''}>${x}</option>`).join('')}</select></td>
+    <td><input maxlength="150" value="${usE(i.keterangan)}" data-k="${k}" data-f="keterangan" placeholder="mis. warung sembako"></td><td><button class="btn btn-ghost btn-sm" type="button" data-hapus="${k}" title="Keluarkan">✕</button></td></tr>`).join('') || '<tr><td colspan="10" class="hint">Belum ada mustahik. Cari lalu klik “+ Tambah”.</td></tr>';
+  tb.querySelectorAll('[data-f]').forEach(el => el.oninput = el.onchange = () => { const i = usEdit.items[+el.dataset.k]; i[el.dataset.f] = ['nilai', 'potongan_bpjs', 'biaya_transfer'].includes(el.dataset.f) ? Number(el.value) || '' : el.value;
+    const t = document.getElementById('us-terima-' + el.dataset.k); if (t) { t.textContent = usRp(usTerima(i)); t.style.color = usTerima(i) <= 0 && i.nilai ? 'var(--red)' : ''; } usTotal(); });
   tb.querySelectorAll('[data-hapus]').forEach(el => el.onclick = () => { usEdit.items.splice(+el.dataset.hapus, 1); usGambarPilih(); const c = document.getElementById('us-cari'); if (c) c.oninput(); });
   usTotal();
 }
-function usTotal() { document.getElementById('us-n').textContent = usEdit.items.length; document.getElementById('us-tot').textContent = usRp(usEdit.items.reduce((s, i) => s + (Number(i.nilai) || 0), 0)); }
-function usRata() { const v = Number(document.getElementById('us-rata').value) || 0; if (!v) return; usEdit.items.forEach(i => i.nilai = v); usGambarPilih(); }
+function usTotal() {
+  const L = usEdit.items; document.getElementById('us-n').textContent = L.length; document.getElementById('us-tot').textContent = usRp(usJumlah(L, 'nilai'));
+  document.getElementById('us-tot-terima').textContent = usRp(usJumlah(L, 'terima'));
+  document.getElementById('us-tot-rinci').textContent = 'BPJS TK ' + usRp(usJumlah(L, 'potongan_bpjs')) + ' · biaya transfer ditanggung BAZNAS (Dana Amil) ' + usRp(usJumlah(L, 'trf_baznas'));
+}
+function usRata() {
+  const g = id => document.getElementById(id).value, v = Number(g('us-rata')) || 0, bp = g('us-rata-bpjs'), tr = g('us-rata-trf'), tg = g('us-rata-tg');
+  if (!v && bp === '' && tr === '' && !tg) return;
+  usEdit.items.forEach(i => { if (v) i.nilai = v; if (bp !== '') i.potongan_bpjs = Number(bp) || ''; if (tr !== '') i.biaya_transfer = Number(tr) || ''; if (tg) i.biaya_ditanggung = tg; }); usGambarPilih();
+}
 async function usSimpan(kirim, btn) {
   const ps = document.getElementById('us-epesan'); ps.textContent = '';
   const kosong = usEdit.items.filter(i => !(Number(i.nilai) > 0)); if (kosong.length) { ps.textContent = 'Nilai bantuan belum diisi untuk ' + kosong.length + ' mustahik.'; return; }
+  const minus = usEdit.items.filter(i => usTerima(i) <= 0); if (minus.length) { ps.textContent = 'Potongan & biaya melebihi nilai bruto untuk ' + minus.length + ' mustahik.'; return; }
   if (kirim && !usEdit.items.length) { ps.textContent = 'Tambahkan minimal satu mustahik.'; return; }
   btn.disabled = true;
   const d = { id: usEdit.id, judul: document.getElementById('us-judul').value, program: document.getElementById('us-prog').value, bidang: document.getElementById('us-bid').value, tahun: document.getElementById('us-th').value,
-    catatan: document.getElementById('us-catatan').value, koreksi_dari: usEdit.koreksi_dari, items: usEdit.items.map(i => ({ mustahikId: i.mustahikId, nilai: i.nilai, bentuk: i.bentuk, keterangan: i.keterangan })) };
+    catatan: document.getElementById('us-catatan').value, koreksi_dari: usEdit.koreksi_dari, items: usEdit.items.map(i => ({ mustahikId: i.mustahikId, nilai: i.nilai, bentuk: i.bentuk, keterangan: i.keterangan, potongan_bpjs: i.potongan_bpjs || 0, biaya_transfer: i.biaya_transfer || 0, biaya_ditanggung: i.biaya_ditanggung || 'BAZNAS' })) };
   const r = await dbApi('usulan_simpan', d).catch(() => ({ ok: false, pesan: 'Gagal terhubung.' }));
   if (!r.ok) { ps.textContent = r.pesan; btn.disabled = false; return; }
   if (kirim) { const k = await dbApi('usulan_proses', { id: r.id, aksi: 'kirim' }).catch(() => ({ ok: false, pesan: 'Gagal terhubung.' })); if (!k.ok) alert('Draf tersimpan, tetapi belum terkirim: ' + k.pesan); }
@@ -6034,9 +6062,11 @@ function usCetak(id) {
     <table style="width:auto;border:0"><tr><td style="border:0">Nomor usulan</td><td style="border:0">: <b>${usE(b.id)}</b></td></tr><tr><td style="border:0">Judul / program</td><td style="border:0">: ${usE(b.judul)} — ${usE(b.program)}</td></tr>
     <tr><td style="border:0">Bidang / tahun</td><td style="border:0">: ${usE(b.bidang)} / ${usE(b.tahun)}</td></tr><tr><td style="border:0">Pos RKAT</td><td style="border:0">: ${usE(b.nama_pos || b.kode_pos || '-')}</td></tr>
     <tr><td style="border:0">SPP</td><td style="border:0">: ${usE(b.no_spp || '-')} ${b.tgl_spp ? '(' + usTgl(b.tgl_spp) + ')' : ''}</td></tr><tr><td style="border:0">Status</td><td style="border:0">: ${usE(b.status)}</td></tr></table>
-    <table><thead><tr><th>No</th><th>Nama</th><th>ID Mustahik</th><th>Kelurahan</th><th>Bentuk</th><th class="n">Nilai (Rp)</th><th>Dibayar</th><th style="width:90px">Tanda tangan</th></tr></thead><tbody>
-    ${it.map((i, k) => `<tr><td>${k + 1}</td><td>${usE(i.nama)}</td><td>${usE(i.mustahikId)}</td><td>${usE(i.kelurahan)}</td><td>${usE(i.bentuk)}</td><td class="n">${Math.round(i.nilai).toLocaleString('id-ID')}</td><td>${i.status === 'dibayar' ? usTgl(i.tgl_bayar) : ''}</td><td></td></tr>`).join('')}
-    <tr><td colspan="5"><b>Jumlah ${it.length} mustahik</b></td><td class="n"><b>${Math.round(it.reduce((s, i) => s + i.nilai, 0)).toLocaleString('id-ID')}</b></td><td colspan="2"></td></tr></tbody></table>
+    <table><thead><tr><th>No</th><th>Nama</th><th>ID Mustahik</th><th>Kelurahan</th><th>Bentuk</th><th class="n">Bruto (Rp)</th><th class="n">BPJS TK</th><th class="n">Biaya trf</th><th class="n">Diterima (Rp)</th><th>Dibayar</th><th style="width:90px">Tanda tangan</th></tr></thead><tbody>
+    ${it.map((i, k) => `<tr><td>${k + 1}</td><td>${usE(i.nama)}</td><td>${usE(i.mustahikId)}</td><td>${usE(i.kelurahan)}</td><td>${usE(i.bentuk)}</td><td class="n">${Math.round(i.nilai).toLocaleString('id-ID')}</td>
+      <td class="n">${i.potongan_bpjs ? Math.round(i.potongan_bpjs).toLocaleString('id-ID') : '-'}</td><td class="n">${i.biaya_transfer ? Math.round(i.biaya_transfer).toLocaleString('id-ID') + (i.biaya_ditanggung === 'Penerima' ? '' : '*') : '-'}</td><td class="n">${Math.round(usTerima(i)).toLocaleString('id-ID')}</td><td>${i.status === 'dibayar' ? usTgl(i.tgl_bayar) : ''}</td><td></td></tr>`).join('')}
+    <tr><td colspan="5"><b>Jumlah ${it.length} mustahik</b></td><td class="n"><b>${Math.round(it.reduce((s, i) => s + i.nilai, 0)).toLocaleString('id-ID')}</b></td><td class="n"><b>${Math.round(usJumlah(it, 'potongan_bpjs')).toLocaleString('id-ID')}</b></td><td class="n"><b>${Math.round(usJumlah(it, 'biaya_transfer')).toLocaleString('id-ID')}</b></td><td class="n"><b>${Math.round(usJumlah(it, 'terima')).toLocaleString('id-ID')}</b></td><td colspan="2"></td></tr></tbody></table>
+    <p style="font-size:10px">* biaya transfer ditanggung BAZNAS (Dana Amil). Nilai bruto = penyaluran & realisasi RKAT.</p>
     <div class="ttd">${ttd.map(t => `<div><div style="font-size:11px;color:#555">${t[0]}</div><b>${usE(t[1] || '')}</b><div style="font-size:11px">${t[2] ? 'disetujui di aplikasi ' + usTgl(t[2]) : ''}</div></div>`).join('')}</div>
     <p style="font-size:10px;color:#666;margin-top:12px">Dicetak dari aplikasi Data Mustahik BAZNAS Kota Lubuklinggau, ${new Date().toLocaleString('id-ID')}.</p>
     <button onclick="print()">Cetak</button></body></html>`);
@@ -6098,6 +6128,13 @@ const USD_CSS = `
   table.ttdl th{background:#eee}table.ttdl td.n{text-align:right;white-space:nowrap}table.ttdl td.t1{text-align:left}table.ttdl td.t2{text-align:right}
   .pasal{text-align:center;font-weight:bold;margin:3mm 0 1mm}
   .spp-kotak{border:1px solid #000;padding:3mm 4mm;margin:3mm 0}`;
+// v49: rincian potongan per penerima (BPJS TK, biaya transfer) & nominal bersih
+const usdBp = d => Number(d._item && d._item.potongan_bpjs) || 0, usdTr = d => Number(d._item && d._item.biaya_transfer) || 0;
+const usdTgP = d => d._item && d._item.biaya_ditanggung === 'Penerima';
+const usdBersih = d => (+d.nilaiModal || 0) - usdBp(d) - (usdTgP(d) ? usdTr(d) : 0);
+const usdAdaRinci = list => list.some(d => usdBp(d) || usdTr(d));
+const usdRinciTeks = d => (usdBp(d) || usdTr(d)) ? '<br>Rincian: nilai bruto ' + dRp(+d.nilaiModal) + (usdBp(d) ? ', dikurangi iuran BPJS Ketenagakerjaan ' + dRp(usdBp(d)) : '') +
+  (usdTr(d) ? (usdTgP(d) ? ', dikurangi biaya transfer ' + dRp(usdTr(d)) : ', biaya transfer ' + dRp(usdTr(d)) + ' ditanggung BAZNAS') : '') + '; <b>diterima bersih ' + dRp(usdBersih(d)) + '</b>.' : '';
 function usdKw(b, o) {
   const p = usdPos(b), meterai = o.nilai >= 5000000;
   const r = (l, v) => `<tr><td class="l">${l}</td><td class="s">:</td><td>${v}</td></tr>`;
@@ -6120,10 +6157,13 @@ function usdLampTtd(b, list, judul) {
   const tot = list.reduce((s, d) => s + (+d.nilaiModal || 0), 0);
   return usdHal(`${dKop()}<div style="text-align:right;font-size:9.5pt">Lampiran ${judul} · No. Usulan ${usE(b.id)}</div>
     <div class="judul" style="text-decoration:none">DAFTAR PENERIMA BANTUAN ${usE(String(b.program).toUpperCase())}</div><div class="subjudul">${usE(b.judul)} — Tahun Anggaran ${usE(b.tahun)}</div>
-    <table class="ttdl"><thead><tr><th>No</th><th>Nama Penerima</th><th>ID Mustahik</th><th>Kelurahan</th><th>Bentuk</th><th>Nilai (Rp)</th><th colspan="2" style="width:48mm">Tanda Tangan / Cap Jempol</th></tr></thead><tbody>
-    ${list.map((d, i) => `<tr><td class="c">${i + 1}</td><td>${dE(d.nama)}</td><td>${dE(d.mustahikId)}</td><td>${dE(d.kelurahan || '')}</td><td>${dE(d._item.bentuk)}</td><td class="n">${(+d.nilaiModal).toLocaleString('id-ID')}</td>
+    ${(() => { const R = usdAdaRinci(list), f = n => Math.round(n).toLocaleString('id-ID');
+      return `<table class="ttdl"><thead><tr><th>No</th><th>Nama Penerima</th><th>ID Mustahik</th><th>Kelurahan</th><th>Bentuk</th><th>${R ? 'Bruto' : 'Nilai'} (Rp)</th>${R ? '<th>BPJS TK</th><th>Biaya Trf</th><th>Diterima (Rp)</th>' : ''}<th colspan="2" style="width:48mm">Tanda Tangan / Cap Jempol</th></tr></thead><tbody>
+    ${list.map((d, i) => `<tr><td class="c">${i + 1}</td><td>${dE(d.nama)}</td><td>${dE(d.mustahikId)}</td><td>${dE(d.kelurahan || '')}</td><td>${dE(d._item.bentuk)}</td><td class="n">${f(+d.nilaiModal)}</td>
+      ${R ? `<td class="n">${usdBp(d) ? f(usdBp(d)) : '-'}</td><td class="n">${usdTr(d) ? f(usdTr(d)) + (usdTgP(d) ? '' : '*') : '-'}</td><td class="n"><b>${f(usdBersih(d))}</b></td>` : ''}
       <td class="t1" style="width:24mm">${i % 2 === 0 ? (i + 1) + '. ...........' : ''}</td><td class="t2" style="width:24mm">${i % 2 === 1 ? (i + 1) + '. ...........' : ''}</td></tr>`).join('')}
-    <tr><td colspan="5" style="text-align:right"><b>JUMLAH (${list.length} penerima)</b></td><td class="n"><b>${tot.toLocaleString('id-ID')}</b></td><td colspan="2"></td></tr></tbody></table>
+    <tr><td colspan="5" style="text-align:right"><b>JUMLAH (${list.length} penerima)</b></td><td class="n"><b>${f(tot)}</b></td>${R ? `<td class="n"><b>${f(list.reduce((s, d) => s + usdBp(d), 0))}</b></td><td class="n"><b>${f(list.reduce((s, d) => s + usdTr(d), 0))}</b></td><td class="n"><b>${f(list.reduce((s, d) => s + usdBersih(d), 0))}</b></td>` : ''}<td colspan="2"></td></tr></tbody></table>
+    ${R ? '<div style="font-size:9pt">* biaya transfer ditanggung BAZNAS (Dana Amil), tidak mengurangi nilai yang diterima.</div>' : ''}`; })()}
     <div style="margin-top:2mm">Terbilang: <i>${terbilang(tot)}</i></div>
     ${dTtd([{ atas: 'Mengetahui,', jabatan: DOK_PIMPINAN.waka2.jabatan + ' BAZNAS Kota Lubuklinggau', nama: DOK_PIMPINAN.waka2.nama }, { atas: 'Lubuklinggau, ..............................', jabatan: 'Petugas Penyerah', nama: '' }])}`);
 }
@@ -6137,7 +6177,10 @@ function usdSpp(b, list, tgl) {
     <div class="spp-kotak"><table class="data">${r('Nomor Usulan', '<b>' + usE(b.id) + '</b> — ' + usE(b.judul))}${r('Program / Bidang', usE(b.program) + ' / ' + usE(b.bidang))}
       ${r('Pos RKAT', (usE(p.nama) || '<span class="isi in"></span>') + (p.kode ? ' (' + usE(p.kode) + ')' : ''))}${r('Sumber Dana', usE(p.sumber) || '<span class="isi in"></span>')}${p.pilar ? r('Pilar', usE(p.pilar)) : ''}
       ${r('Jumlah Penerima', list.length + ' orang (daftar terlampir)')}${r('Cara Pembayaran', usE(cara))}
-      ${r('Jumlah Dibayarkan', '<b>' + dRp(tot) + '</b>')}${r('Terbilang', '<i>' + terbilang(tot) + '</i>')}</table></div>
+      ${r('Jumlah Dibayarkan (bruto)', '<b>' + dRp(tot) + '</b>')}${r('Terbilang', '<i>' + terbilang(tot) + '</i>')}
+      ${usdAdaRinci(list) ? (() => { const bp = list.reduce((s, d) => s + usdBp(d), 0), trP = list.reduce((s, d) => s + (usdTgP(d) ? usdTr(d) : 0), 0), trB = list.reduce((s, d) => s + (usdTgP(d) ? 0 : usdTr(d)), 0), net = list.reduce((s, d) => s + usdBersih(d), 0);
+        return (bp ? r('Disetor ke BPJS Ketenagakerjaan', dRp(bp) + ' (iuran atas nama penerima)') : '') + (trP ? r('Biaya transfer ditanggung penerima', dRp(trP)) : '') +
+          r('Ditransfer/diserahkan ke penerima', '<b>' + dRp(net) + '</b>') + (trB ? r('Biaya transfer ditanggung BAZNAS', dRp(trB) + ' — dibebankan ke Dana Amil (di luar jumlah di atas)') : ''); })() : ''}</table></div>
     <p class="isi-surat">Dasar: persetujuan Wakil Ketua II${b.wk2_pada ? ' (' + dTgl(String(b.wk2_pada).slice(0, 10)) + ')' : ''}, persetujuan Ketua${b.ketua_pada ? ' (' + dTgl(String(b.ketua_pada).slice(0, 10)) + ')' : ''}, dan konfirmasi ketersediaan anggaran Wakil Ketua III${b.anggaran_pada ? ' (' + dTgl(String(b.anggaran_pada).slice(0, 10)) + ')' : ''} sebagaimana tercatat pada aplikasi Data Mustahik.</p>
     <div class="tgl-ttd">Lubuklinggau, ${tgl ? dTgl(tgl) : '..............................'}</div>
     ${dTtd([{ atas: 'Disetujui untuk dibayar,', jabatan: DOK_PIMPINAN.ketua.jabatan + ' BAZNAS Kota Lubuklinggau', nama: DOK_PIMPINAN.ketua.nama }, { atas: 'Diotorisasi (ordonator),', jabatan: ND_WAKA3.jabatan, nama: ND_WAKA3.nama }, { atas: 'Disusun oleh,', jabatan: 'Bendahara Pelaksana', nama: '' }])}`);
@@ -6172,7 +6215,7 @@ function usDokHtml(b, jenis, tgl, wakil) {
   let isi = '';
   if (jenis === 'spp') isi = usdSpp(b, list, tgl) + usdLampTtd(b, list, 'Surat Perintah Pembayaran');
   else if (jenis === 'kw1') {
-    const kw = list.map(d => usdKw(b, { ringkas: true, nilai: +d.nilaiModal, penerima: d.nama, noBukti: d._item.no_bukti, untuk: 'a.n. <b>' + dE(d.nama) + '</b> (ID Mustahik ' + dE(d.mustahikId) + ').' }));
+    const kw = list.map(d => usdKw(b, { ringkas: true, nilai: +d.nilaiModal, penerima: d.nama, noBukti: d._item.no_bukti, untuk: 'a.n. <b>' + dE(d.nama) + '</b> (ID Mustahik ' + dE(d.mustahikId) + ').' + usdRinciTeks(d) }));
     for (let i = 0; i < kw.length; i += 2) isi += usdHal(kw.slice(i, i + 2).join(''), 'kw2');
   } else if (jenis === 'kwk') {
     const w = list.find(d => d.mustahikId === wakil), tot = list.reduce((s, d) => s + (+d.nilaiModal || 0), 0);
@@ -8343,7 +8386,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='48.1 · 19 Nov 2026';
+const APP_VERSI='49 · 19 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
