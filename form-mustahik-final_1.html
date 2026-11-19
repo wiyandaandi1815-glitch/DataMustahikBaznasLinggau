@@ -5831,6 +5831,10 @@ table.us-tbl input,table.us-tbl select{padding:4px 6px;font-size:12px;width:100%
 .us-tenggat{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px}.us-tenggat.kuning{background:#fff7e0;color:#92600a;border:1px solid #f3d27a}.us-tenggat.merah{background:#fde8e8;color:#b42318;border:1px solid #f5b5b5}
 .us-blok{border:1px solid var(--g200);border-radius:10px;padding:10px 12px;margin:10px 0;background:#fff}.us-blok-h{font-weight:700;margin-bottom:4px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .us-serah{margin:6px 0 0;padding-left:18px;font-size:13px}.us-serah li{margin:2px 0}
+.us-rekap{border:1px solid var(--g200);border-radius:12px;padding:10px 14px;margin:0 0 12px;background:#fbfdfc}.us-rekap summary{cursor:pointer;font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.us-rekap ul{margin:4px 0 8px;padding-left:18px;font-size:13px}.us-rekap li{margin:3px 0}.us-rekap-h{font-weight:700;font-size:13px;margin-top:8px}
+.us-rekap-tahap{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:6px}.us-rekap-tahap>div{border:1px solid var(--g200);border-radius:8px;padding:6px 8px;background:#fff}.us-rekap-tahap>div.ada{border-color:#f3d27a;background:#fffaf0}
+.us-rekap-tahap span{display:block;font-size:11px;color:var(--g500)}.us-rekap-tahap b{font-size:16px}.us-rekap-tahap small{display:block;font-size:10.5px;color:var(--g500)}
 .us-ring{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:16px 0 10px}
 .us-ring>div{background:#fff;border:1px solid var(--g200);border-radius:10px;padding:8px 12px}.us-ring span{display:block;font-size:11px;color:var(--g500)}.us-ring b{font-size:16px;color:var(--g800,#1f2937)}
 .us-ring .hijau{border-color:#9fd5c4;background:#effaf6}.us-ring .hijau b{color:var(--teal)}
@@ -5960,6 +5964,52 @@ function usTenggat(b) {
   const n = usHariKerja(usSejakTahap(b)); if (n < 8) return '';
   return `<span class="us-tenggat ${n > 11 ? 'merah' : 'kuning'}" title="Batas 11 hari kerja per tahap">${n > 11 ? '⛔ Terlambat' : '⏱'} ${n} hari kerja di tahap ini</span>`;
 }
+// v57: rekap mingguan usulan untuk pimpinan (tahap, terlambat, belum SK, belum Tersalurkan, realisasi 7 hari)
+const US_PIMPINAN = ['WK2', 'WK3', 'KETUA', 'SEKRETARIS', 'BENDAHARA'];
+function usRekap() {
+  const D = (usData && usData.data) || [], now = new Date(Date.now() + 7 * 36e5), hr = now.toISOString().slice(0, 10), awal = new Date(now - 6 * 864e5).toISOString().slice(0, 10);
+  const jalan = D.filter(b => !['Selesai', 'Dibatalkan'].includes(b.status));
+  const tahap = US_LANGKAH.filter(l => l.st !== 'Selesai').map(l => ({ nama: l.nama, st: l.st, n: jalan.filter(b => b.status === l.st).length, nilai: jalan.filter(b => b.status === l.st).reduce((s, b) => s + (b.total || 0), 0) }));
+  const telat = jalan.filter(b => b.status !== 'Draf').map(b => ({ b, n: usHariKerja(usSejakTahap(b)) })).filter(x => x.n > 11).sort((a, c) => c.n - a.n);
+  const tanpaSk = D.filter(b => b.wajib_sk && !b.no_sk && ['Menunggu Anggaran', 'Proses SPP'].includes(b.status));
+  const belumSalur = D.filter(b => b.dibayar > 0 && !b.tersalur).map(b => ({ b, n: usHariKerja(b.bayar_terakhir) })).sort((a, c) => c.n - a.n);
+  let bayar7 = 0, org7 = 0; D.forEach(b => (b.items || []).forEach(i => { if (i.status === 'dibayar' && String(i.tgl_bayar) >= awal && String(i.tgl_bayar) <= hr) { bayar7 += i.nilai || 0; org7++; } }));
+  const selesai7 = D.filter(b => b.status === 'Selesai' && String(b.selesai_pada || '').slice(0, 10) >= awal).length;
+  return { awal, hr, jalan, tahap, telat, tanpaSk, belumSalur, bayar7, org7, selesai7 };
+}
+function usRekapHtml() {
+  if (!US_PIMPINAN.includes(usData.jabatan)) return '';
+  const r = usRekap(), it = (b, ket) => `<li><a href="#" onclick="usDetail('${usE(b.id)}');return false"><b>${usE(b.judul)}</b></a> <span class="us-k mono">${usE(b.id)}</span> · ${usE(b.status)}${ket ? ' · ' + ket : ''}</li>`;
+  return `<details class="us-rekap"${r.telat.length || r.tanpaSk.length || r.belumSalur.some(x => x.n > 3) ? ' open' : ''}><summary>📊 Rekap mingguan pimpinan <span class="us-k">${usTgl(r.awal)} – ${usTgl(r.hr)}</span>
+      ${r.telat.length ? `<span class="us-tenggat merah">⛔ ${r.telat.length} terlambat</span>` : ''}${r.tanpaSk.length ? `<span class="us-tenggat kuning">📜 ${r.tanpaSk.length} belum SK</span>` : ''}${r.belumSalur.length ? `<span class="us-tenggat ${r.belumSalur.some(x => x.n > 3) ? 'merah' : 'kuning'}">📷 ${r.belumSalur.length} belum Tersalurkan</span>` : ''}</summary>
+    <div class="us-ring" style="margin:10px 0">
+      <div><span>Usulan berjalan</span><b>${r.jalan.length}</b></div><div><span>Nilai berjalan</span><b>${usRp(r.jalan.reduce((s, b) => s + (b.total || 0), 0))}</b></div>
+      <div class="hijau"><span>Dibayar 7 hari terakhir</span><b>${usRp(r.bayar7)}</b><span>${r.org7} penerima</span></div><div><span>Usulan selesai 7 hari</span><b>${r.selesai7}</b></div></div>
+    <div class="us-rekap-tahap">${r.tahap.map(t => `<div class="${t.n ? 'ada' : ''}"><span>${usE(t.nama)}</span><b>${t.n}</b>${t.n ? '<small>' + usRp(t.nilai) + '</small>' : ''}</div>`).join('')}</div>
+    ${r.telat.length ? '<div class="us-rekap-h">⛔ Terlambat > 11 hari kerja di tahapnya</div><ul>' + r.telat.map(x => it(x.b, x.n + ' hari kerja · menunggu ' + usE((US_LANGKAH.find(l => l.st === x.b.status) || {}).siapa || ''))).join('') + '</ul>' : ''}
+    ${r.tanpaSk.length ? '<div class="us-rekap-h">📜 Wajib SK Penetapan, nomor belum dicatat</div><ul>' + r.tanpaSk.map(b => it(b, usRp(b.total))).join('') + '</ul>' : ''}
+    ${r.belumSalur.length ? '<div class="us-rekap-h">📷 Sudah dibayar, BAST/foto belum lengkap</div><ul>' + r.belumSalur.map(x => it(x.b, 'dibayar ' + usTgl(x.b.bayar_terakhir) + ' · ' + x.n + ' hari kerja' + (x.n > 3 ? ' <b style="color:#b42318">(lewat batas 3 hari)</b>' : ''))).join('') + '</ul>' : ''}
+    ${!r.telat.length && !r.tanpaSk.length && !r.belumSalur.length ? '<div class="hint">✅ Tidak ada usulan terlambat, tanpa SK, atau belum Tersalurkan.</div>' : ''}
+    <button type="button" class="btn btn-outline btn-sm" style="margin-top:8px" onclick="usRekapCetak()">🖨 Cetak rekap (1 halaman)</button></details>`;
+}
+function usRekapCetak() {
+  const r = usRekap(), w = window.open('', '_blank'); if (!w) return alert('Izinkan pop-up untuk mencetak.');
+  const kop = typeof dKop === 'function' ? dKop() : '<h3>BAZNAS Kota Lubuklinggau</h3>';
+  const baris = (l, f) => l.length ? l.map((x, i) => '<tr><td>' + (i + 1) + '</td>' + f(x) + '</tr>').join('') : '<tr><td colspan="5" style="text-align:center">— tidak ada —</td></tr>';
+  const tb = (h, isi) => `<table class="t"><thead><tr><th>No</th>${h.map(x => '<th>' + x + '</th>').join('')}</tr></thead><tbody>${isi}</tbody></table>`;
+  w.document.write(`<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Rekap Mingguan Usulan ${r.hr}</title><style>${typeof DOK_CSS !== 'undefined' ? DOK_CSS : ''}
+    body{font-family:'Times New Roman',serif;font-size:10.5pt}.t{width:100%;border-collapse:collapse;margin:1mm 0 3mm}.t th,.t td{border:1px solid #000;padding:2px 5px;vertical-align:top}.t th{background:#eee}.n{text-align:right}h4{margin:3mm 0 1mm}</style></head><body><div class="hal">${kop}
+    <div class="judul" style="margin-bottom:0">REKAP MINGGUAN USULAN PENYALURAN</div><div style="text-align:center;margin-bottom:3mm">Periode ${usTgl(r.awal)} s.d. ${usTgl(r.hr)}</div>
+    <table class="t"><tr><td>Usulan berjalan</td><td class="n"><b>${r.jalan.length}</b></td><td>Nilai berjalan</td><td class="n"><b>${usRp(r.jalan.reduce((s, b) => s + (b.total || 0), 0))}</b></td></tr>
+      <tr><td>Dibayar 7 hari terakhir</td><td class="n"><b>${usRp(r.bayar7)}</b> (${r.org7} penerima)</td><td>Usulan selesai 7 hari</td><td class="n"><b>${r.selesai7}</b></td></tr></table>
+    <h4>Posisi per tahap</h4>${tb(['Tahap', 'Menunggu', 'Jumlah usulan', 'Nilai (Rp)'], r.tahap.map((t, i) => `<tr><td>${i + 1}</td><td>${usE(t.nama)}</td><td>${usE((US_LANGKAH.find(l => l.st === t.st) || {}).siapa || '')}</td><td class="n">${t.n}</td><td class="n">${usRp(t.nilai)}</td></tr>`).join(''))}
+    <h4>⛔ Terlambat lebih dari 11 hari kerja</h4>${tb(['Usulan', 'Tahap', 'Hari kerja', 'Nilai (Rp)'], baris(r.telat, x => `<td>${usE(x.b.judul)}<br><small>${usE(x.b.id)}</small></td><td>${usE(x.b.status)}</td><td class="n">${x.n}</td><td class="n">${usRp(x.b.total)}</td>`))}
+    <h4>📜 Wajib SK Penetapan, nomor belum dicatat</h4>${tb(['Usulan', 'Tahap', 'Penerima', 'Nilai (Rp)'], baris(r.tanpaSk, b => `<td>${usE(b.judul)}<br><small>${usE(b.id)}</small></td><td>${usE(b.status)}</td><td class="n">${b.jumlah}</td><td class="n">${usRp(b.total)}</td>`))}
+    <h4>📷 Dibayar, BAST/foto belum lengkap (batas 3 hari kerja)</h4>${tb(['Usulan', 'Dibayar terakhir', 'Hari kerja', 'Dibayar (Rp)'], baris(r.belumSalur, x => `<td>${usE(x.b.judul)}<br><small>${usE(x.b.id)}</small></td><td>${usTgl(x.b.bayar_terakhir)}</td><td class="n">${x.n}${x.n > 3 ? ' ⛔' : ''}</td><td class="n">${usRp(x.b.dibayar)}</td>`))}
+    <div style="font-size:9pt">Hari kerja: Senin–Jumat, di luar tanggal libur yang ditetapkan. Dicetak dari aplikasi Data Mustahik oleh ${usE(usData.nama || '')}.</div>
+    ${typeof dTtd === 'function' ? dTtd([{ spacer: true }, { atas: 'Lubuklinggau, ' + usTgl(r.hr), jabatan: 'Wakil Ketua III', nama: typeof ND_WAKA3 !== 'undefined' ? ND_WAKA3.nama : '' }]) : ''}</div></body></html>`);
+  w.document.close(); setTimeout(() => { try { w.focus(); w.print(); } catch (e) { } }, 700);
+}
 function usDaftar() {
   const r = usData, n = usBadge();
   const F = { saya: ['Perlu tindakan saya', b => usPerlu(b)], jalan: ['Berjalan', b => b.status !== 'Selesai' && b.status !== 'Dibatalkan'], selesai: ['Selesai', b => b.status === 'Selesai'], batal: ['Dibatalkan', b => b.status === 'Dibatalkan'], semua: ['Semua', () => true] };
@@ -5971,6 +6021,7 @@ function usDaftar() {
       ${r.boleh_buat ? '<button class="btn btn-primary" type="button" onclick="usEditor()">+ Usulan baru</button>' : ''}
       ${Object.keys(F).map(k => `<button type="button" class="us-chip${k === usFilter ? ' on' : ''}" onclick="usFilter='${k}';usDaftar()">${F[k][0]}${k === 'saya' && n ? ' (' + n + ')' : ''}</button>`).join('')}
       <button class="btn btn-outline btn-sm" type="button" onclick="usMuat()">↻</button></div>
+    ${usRekapHtml()}
     ${list.map(b => { const i = usIdx(b.status); return `<div class="us-kartu${usPerlu(b) ? ' aksi' : ''}" onclick="usDetail('${usE(b.id)}')">
       <div class="t"><div><b>${usE(b.judul)}</b> <span class="mono us-k">${usE(b.id)}</span><div class="s">${usE(b.program)} · ${usE(b.bidang)} · ${b.jumlah} mustahik · <b>${usRp(b.total)}</b></div></div>
       <div style="text-align:right"><span class="badge ${US_BADGE[b.status] || 'b-gold'}">${usE(b.status)}</span>${usTenggat(b) ? '<div style="margin-top:4px">' + usTenggat(b) + '</div>' : ''}${b.wajib_sk && !b.no_sk && ['Menunggu Anggaran', 'Proses SPP'].includes(b.status) ? '<div style="margin-top:4px"><span class="us-tenggat kuning">📜 SK Penetapan belum dicatat</span></div>' : ''}${b.tersalur ? '<div style="margin-top:4px"><span class="badge b-green">✅ Tersalurkan</span></div>' : usSerahTenggat(b) ? '<div style="margin-top:4px">' + usSerahTenggat(b) + '</div>' : ''}${usPerlu(b) ? '<div class="us-k" style="color:var(--red);font-weight:700;margin-top:3px">● perlu tindakan Anda</div>' : i > 0 && i < 8 ? '<div class="us-k" style="margin-top:3px">menunggu ' + usE(US_LANGKAH[i].siapa) + '</div>' : ''}</div></div>
@@ -8898,7 +8949,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='56 · 19 Nov 2026';
+const APP_VERSI='57 · 19 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
