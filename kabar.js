@@ -399,7 +399,7 @@
       else { bagikan(f.dataset.bagi, f.dataset.judul, f); return; }
       isiKabar(); return;
     }
-    const ol = e.target.closest('[data-online],[data-ol-nom],[data-ol-lanjut],[data-ol-kembali],[data-ol-bayar],[data-ol-umum],[data-ol-jenis],[data-ebsz],[data-ol-kelas],[data-ol-tambah-jiwa],[data-ol-hapus-jiwa]');
+    const ol = e.target.closest('[data-online],[data-ol-nom],[data-ol-lanjut],[data-ol-kembali],[data-ol-bayar],[data-ol-umum],[data-ol-jenis],[data-ebsz],[data-ol-kelas],[data-ol-tambah-jiwa],[data-ol-hapus-jiwa],[data-ol-lanjutkan],[data-ol-ulang]');
     if (ol) { olKlik(ol); return; }
     const t = e.target.closest('[data-tab],[data-donasi],[data-salin],[data-tutup]');
     if (!t) { if (e.target.id === 'kb-lembar') e.target.classList.remove('buka'); return; }
@@ -580,26 +580,63 @@
     const ke = () => olStatus(r.order_id);
     window.snap.pay(r.token, { onSuccess: ke, onPending: ke, onError: ke, onClose: ke });
   }
-  async function olStatus(order, n) {
-    n = n || 0; const isi = lembar();
+  // v62: Lanjutkan Pembayaran (tagihan Snap yang sama) / Donasi Ulang (kampanye & nominal terisi)
+  const OLS = {}, OLTOLAK = {}; let OLGEN = 0;
+  async function olStatus(order, n, g) {
+    n = n || 0; if (!n) g = ++OLGEN; const isi = lembar();
     if (!n) isi.innerHTML = '<div class="kb-skel" style="height:120px"></div>';
     let s; try { s = await api('bayar_status', { order_id: order }); } catch (e) { s = { ok: false }; }
     const ulang = s.ok && s.status === 'Menunggu pembayaran' && n < 40;
+    if (s.ok) OLS[order] = s;
+    const tunggu = s.ok && s.status === 'Menunggu pembayaran', lanjut = tunggu && s.bisa_lanjut && !OLTOLAK[order];
+    const donUlang = s.ok && ((tunggu && !lanjut) || !/^(Lunas|Menunggu pembayaran|Refund)$/.test(s.status)) && (s.kode_kampanye || UMUM[s.layanan]);
     const ikon = !s.ok ? '⚠️' : s.status === 'Lunas' ? '✅' : s.status === 'Menunggu pembayaran' ? '⏳' : '✖️';
     const teks = !s.ok ? 'Status belum dapat dimuat. Simpan nomor transaksi di bawah dan cek kembali nanti.'
       : s.status === 'Lunas' && (s.layanan === 'zakat' || s.layanan === 'fitrah') ? `Ājarakallāhu fīmā a'ṭaita, wa bāraka laka fīmā abqaita. ${s.layanan === 'fitrah' ? 'Zakat fitrah' : 'Zakat mal'} <b>${rp(s.nilai)}</b> telah kami terima dan tercatat.`
       : s.status === 'Lunas' && s.layanan === 'fidyah' ? `Jazakumullahu khairan. Fidyah <b>${rp(s.nilai)}</b> telah kami terima dan akan disalurkan kepada fakir miskin.`
       : s.status === 'Lunas' ? `Jazakumullahu khairan. Donasi <b>${rp(s.nilai)}</b> untuk <b>${esc(s.judul)}</b> telah kami terima dan tercatat.`
-      : s.status === 'Menunggu pembayaran' ? 'Menunggu pembayaran. Selesaikan pembayaran di aplikasi bank/e-wallet Anda — halaman ini diperbarui otomatis.'
+      : lanjut ? 'Pembayaran belum selesai. Tekan <b>Lanjutkan Pembayaran</b> untuk membuka kembali tagihan Anda — halaman ini diperbarui otomatis setelah Anda membayar.'
+      : tunggu ? 'Pembayaran belum selesai dan tagihan ini tidak dapat dibuka kembali dari halaman ini. Silakan <b>donasi ulang</b>; tagihan lama batal otomatis bila tidak dibayar.'
       : 'Transaksi ' + esc(String(s.status).toLowerCase()) + '. Silakan mulai donasi baru bila ingin melanjutkan.';
     if (s.ok && s.status === 'Lunas' && !n) lacak('donasi_online_lunas', { konten_id: s.kode_kampanye || s.layanan, value: s.nilai, currency: 'IDR' });
     isi.innerHTML = `<div class="kb-ol-status"><div class="ik">${ikon}</div><p>${teks}</p><div class="kb-ol-no">No. transaksi<br><b>${esc(order)}</b></div></div>
       ${s.ok && s.ada_bsz ? `<div class="kb-ol-ring" style="margin-bottom:10px"><div style="display:block"><b>📄 Bukti Setor Zakat elektronik (e-BSZ)</b><span style="display:block;font-size:13px;margin-top:4px">Untuk keamanan, masukkan 4 digit terakhir nomor WhatsApp yang Anda isi.</span></div>
         <div style="display:flex;gap:8px"><input id="ol-wa4" inputmode="numeric" maxlength="4" placeholder="4 digit" style="flex:1;padding:10px;border:1px solid #ccc;border-radius:10px;font-size:16px"><button class="kb-btn utama" type="button" data-ebsz="${esc(order)}">Unduh e-BSZ</button></div><p class="kb-ol-galat" id="ol-galat-bsz"></p></div>` : ''}
       ${s.ok && s.status === 'Lunas' && s.kode_kampanye ? `<a class="kb-btn wa" style="width:100%" href="${waLink('Saya baru berdonasi untuk ' + s.judul + '. Yuk ikut menebar manfaat', s.kode_kampanye)}" target="_blank" rel="noopener">${svgWa} Ajak teman lewat WhatsApp</a>` : ''}
-      <button class="kb-btn utama" type="button" style="width:100%;margin-top:8px" data-tutup>Tutup</button>`;
-    if (ulang && document.getElementById('kb-lembar').classList.contains('buka')) setTimeout(() => { if (document.querySelector('.kb-ol-no b') && document.querySelector('.kb-ol-no b').textContent === order) olStatus(order, n + 1); }, 4000);
+      ${tunggu && s.batas ? `<p class="kb-ol-ket">Bayar sebelum <b>${esc(s.batas)} WIB</b></p>` : ''}
+      ${lanjut ? `<button class="kb-btn utama" type="button" style="width:100%" data-ol-lanjutkan="${esc(order)}">💳 Lanjutkan Pembayaran ${rp(s.nilai)}</button>
+        <p class="kb-ol-galat" id="ol-galat-lanjut"></p>
+        <p class="kb-ol-ket" style="background:#fff8e1;border:1px solid #f3dd97;border-radius:10px;padding:8px 10px;color:#5c4a00;text-align:left">💡 Cara termudah: pilih <b>QRIS</b>, simpan/screenshot kode QR-nya, lalu pindai dari aplikasi m-banking atau e-wallet Anda.</p>` : ''}
+      ${donUlang ? `<button class="kb-btn utama" type="button" style="width:100%" data-ol-ulang="${esc(order)}">🔁 Donasi Ulang${s.kode_kampanye || /^(zakat|infak)$/.test(s.layanan) ? ' ' + rp(s.nilai) : ''}</button>` : ''}
+      <button class="kb-btn ${lanjut || donUlang ? 'garis' : 'utama'}" type="button" style="width:100%;margin-top:8px" data-tutup>Tutup</button>`;
+    if (ulang && document.getElementById('kb-lembar').classList.contains('buka')) setTimeout(() => { if (g === OLGEN && document.querySelector('.kb-ol-no b') && document.querySelector('.kb-ol-no b').textContent === order) olStatus(order, n + 1, g); }, 4000);
     if (s.ok && s.status === 'Lunas') { delete cacheDetail[s.kode_kampanye]; }
+  }
+  async function olLanjutkan(btn) {
+    const order = btn.dataset.olLanjutkan, gal = document.getElementById('ol-galat-lanjut');
+    btn.disabled = true; btn.textContent = 'Membuka tagihan…';
+    let r; try { r = await (await fetch('/api/lanjut', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: order }) })).json(); }
+    catch (e) { r = { ok: false, pesan: 'Gagal terhubung. Periksa koneksi internet.' }; }
+    if (!r.ok && r.kode === 'ULANG') { OLTOLAK[order] = 1; return olStatus(order); }
+    if (!r.ok) { if (gal) gal.textContent = r.pesan; btn.disabled = false; btn.textContent = 'Coba lagi'; return; }
+    try { await olSnapJs(r.snap_js, r.client_key); } catch (e) { if (gal) gal.textContent = 'Halaman pembayaran gagal dimuat. Coba lagi.'; btn.disabled = false; btn.textContent = 'Coba lagi'; return; }
+    lacak('donasi_online_lanjut', { konten_id: (OLS[order] || {}).kode_kampanye || (OLS[order] || {}).layanan || '' });
+    const ke = () => olStatus(order);
+    window.snap.pay(r.token, { onSuccess: ke, onPending: ke, onError: ke, onClose: ke });
+  }
+  async function olUlang(order) {
+    const s = OLS[order] || {}, isi = lembar();
+    if (s.kode_kampanye) {
+      let x = cacheDetail[s.kode_kampanye];
+      if (!x) { isi.innerHTML = '<div class="kb-skel" style="height:120px"></div>'; try { x = await api('detail_publik', { id: s.kode_kampanye }); } catch (e) { x = null; } if (x && x.ok) cacheDetail[s.kode_kampanye] = x; }
+      if (!x || !x.ok || !x.online) { isi.innerHTML = `<div class="kb-ol-status"><div class="ik">ℹ️</div><p>Kampanye ini tidak lagi menerima donasi online. Silakan pilih kampanye lain atau tunaikan zakat/infak umum.</p></div><button class="kb-btn utama" type="button" style="width:100%" data-tutup>Tutup</button>`; return; }
+      OL.x = x; OL.d = { x: x.id, nilai: s.nilai };
+    } else if (UMUM[s.layanan]) {
+      const j = s.layanan, grup = /^(fitrah|fidyah)$/.test(j) ? 'khusus-' + j : 'umum';
+      OL.x = { id: '', umum: j, judul: UMUM[j].judul }; OL.d = grup === 'umum' ? { x: grup, nilai: s.nilai } : { x: grup };
+    } else return;
+    lacak('donasi_online_ulang', { konten_id: s.kode_kampanye || s.layanan });
+    olForm();
   }
   // v47: e-BSZ — data diminta lewat POST (nomor transaksi + 4 digit WA), dicetak di jendela baru.
   const terbilang = n => { n = Math.floor(Math.abs(+n || 0)); const s = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
@@ -647,6 +684,8 @@
     else if (t.hasAttribute('data-ol-lanjut')) { if (olBaca()) olPeriksa(); }
     else if (t.hasAttribute('data-ol-kembali')) olForm();
     else if (t.hasAttribute('data-ol-bayar')) olBayar(t);
+    else if (t.dataset.olLanjutkan) olLanjutkan(t);   // v62
+    else if (t.dataset.olUlang) olUlang(t.dataset.olUlang);
     else if (t.dataset.olUmum) {   // v47: zakat mal / infak tidak terikat tanpa kampanye
       const j = t.dataset.olUmum, grup = /^(fitrah|fidyah)$/.test(j) ? 'khusus-' + j : 'umum';
       OL.x = { id: '', umum: j, judul: UMUM[j].judul }; OL.d = OL.d.x === grup ? OL.d : { x: grup };

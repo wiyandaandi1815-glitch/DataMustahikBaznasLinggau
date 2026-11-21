@@ -6760,7 +6760,7 @@ async function olIngat(order, btn) {
   let r; try { r = await dbApi('online_pengingat', { order_id: order }); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server.' }; }
   if (btn) btn.disabled = false;
   if (!r.ok) { alert(r.pesan); return; }
-  const teks = `Assalamu'alaikum${r.nama ? ' Bapak/Ibu ' + r.nama : ''},\n\nTerima kasih telah berdonasi melalui BAZNAS Kota Lubuklinggau. Donasi *${r.judul}* sebesar *Rp${Number(r.nilai).toLocaleString('id-ID')}* (No. ${r.order_id}) belum selesai dibayar.\n\nBatas pembayaran: *${r.batas} WIB*.\nCek status atau lanjutkan pembayaran: ${r.tautan}\n\nBila sudah membayar, mohon abaikan pesan ini. Jazakumullah khairan.\n— BAZNAS Kota Lubuklinggau`;
+  const teks = `Assalamu'alaikum${r.nama ? ' Bapak/Ibu ' + r.nama : ''},\n\nTerima kasih telah berdonasi melalui BAZNAS Kota Lubuklinggau. Donasi *${r.judul}* sebesar *Rp${Number(r.nilai).toLocaleString('id-ID')}* (No. ${r.order_id}) belum selesai dibayar.\n\nBatas pembayaran: *${r.batas} WIB*.\nUntuk melanjutkan, ketuk tautan berikut lalu tekan *Lanjutkan Pembayaran*:\n${r.tautan}\n\nCara termudah: pilih *QRIS*, simpan/screenshot kode QR-nya, lalu pindai dari aplikasi m-banking atau e-wallet Anda.\n\nBila sudah membayar, mohon abaikan pesan ini. Jazakumullah khairan.\n— BAZNAS Kota Lubuklinggau`;
   window.open('https://wa.me/' + r.wa + '?text=' + encodeURIComponent(teks), '_blank', 'noopener');
 }
 
@@ -9085,7 +9085,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='61 · 21 Nov 2026';
+const APP_VERSI='62 · 21 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
