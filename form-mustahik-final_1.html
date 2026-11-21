@@ -6701,8 +6701,14 @@ async function olMuat() {
   olData = r; olTampil();
 }
 function olTampil() {
-  const r = olData, st = ['Semua', 'Lunas', 'Menunggu pembayaran', 'Kedaluwarsa', 'Batal', 'Refund'];
-  const list = r.data.filter(t => olFilter === 'Semua' || t.status === olFilter);
+  const r = olData, st = ['Semua', 'Perlu diingatkan', 'Lunas', 'Menunggu pembayaran', 'Kedaluwarsa', 'Batal', 'Refund'];
+  const list = r.data.filter(t => olFilter === 'Semua' || (olFilter === 'Perlu diingatkan' ? t.perlu_ingat : t.status === olFilter));
+  // v63: rekap harian (tanggal WIB)
+  const wib = v => { const d = new Date(v); return isNaN(d) ? String(v || '').slice(0, 16).replace('T', ' ') : new Date(d.getTime() + 7 * 3600000).toISOString().slice(0, 16).replace('T', ' '); };
+  const hari = wib(new Date().toISOString()).slice(0, 10), tunggu = r.data.filter(t => t.status === 'Menunggu pembayaran');
+  const lunasHari = r.data.filter(t => t.status === 'Lunas' && wib(t.waktu_settlement || t.diubah_pada || t.dibuat_pada).slice(0, 10) === hari);
+  const tutupHari = r.data.filter(t => /^(Batal|Kedaluwarsa)$/.test(t.status) && wib(t.diubah_pada || t.dibuat_pada).slice(0, 10) === hari);
+  const perlu = tunggu.filter(t => t.perlu_ingat).length, lewat = tunggu.filter(t => t.lewat_batas).length;
   const lunas = r.data.filter(t => t.status === 'Lunas'), tot = lunas.reduce((s, t) => s + t.nilai, 0);
   const rp = n => 'Rp' + Math.round(n || 0).toLocaleString('id-ID');
   document.getElementById('ol-isi').innerHTML = `
@@ -6710,15 +6716,43 @@ function olTampil() {
     ${olTarifHtml(r)}
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
       <div style="background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:10px 14px"><small style="color:var(--g500)">Lunas (tercatat)</small><b style="display:block;font-size:18px">${rp(tot)}</b><small>${lunas.length} transaksi</small></div>
-      <div style="background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:10px 14px"><small style="color:var(--g500)">Menunggu pembayaran</small><b style="display:block;font-size:18px">${r.data.filter(t => t.status === 'Menunggu pembayaran').length}</b></div></div>
+      <div style="background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:10px 14px"><small style="color:var(--g500)">Menunggu pembayaran</small><b style="display:block;font-size:18px">${tunggu.length}</b><small>${lewat ? lewat + ' lewat 24 jam' : '&nbsp;'}</small></div>
+      <div id="ol-rekap-perlu" style="background:${perlu ? '#fff8e1' : '#fff'};border-radius:12px;box-shadow:var(--shadow);padding:10px 14px;cursor:pointer" onclick="olFilter='Perlu diingatkan';olTampil()"><small style="color:var(--g500)">Perlu diingatkan</small><b style="display:block;font-size:18px">${perlu}</b><small>menunggu ≥ 2 jam, belum diingatkan</small></div>
+      <div style="background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:10px 14px"><small style="color:var(--g500)">Hari ini (${hari.split('-').reverse().join('/')})</small><b style="display:block;font-size:18px">${rp(lunasHari.reduce((a, t) => a + t.nilai, 0))}</b><small>${lunasHari.length} lunas · ${tutupHari.length} batal/kedaluwarsa</small></div></div>
+    ${r.boleh_wa ? `<div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="btn btn-outline btn-sm" id="ol-sinkron" onclick="olSinkron(this)" ${tunggu.length ? '' : 'disabled'}>🔄 Sinkronkan ${tunggu.length} transaksi Menunggu dengan Midtrans</button><span class="us-k" id="ol-sinkron-hasil">Cocokkan status bila ada notifikasi yang terlewat. Rekonsiliasi saldo tetap lewat laporan settlement Midtrans tiap Jumat.</span></div>` : ''}
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${st.map(s => `<button type="button" class="us-chip${s === olFilter ? ' on' : ''}" onclick="olFilter='${s}';olTampil()">${s}</button>`).join('')}<button class="btn btn-outline btn-sm" type="button" onclick="olMuat()">↻</button></div>
     <div class="us-wrap"><table class="us-tbl"><thead><tr><th>Waktu / No. transaksi</th><th>Donatur</th><th>Kampanye</th><th class="n">Nilai</th><th>Metode</th><th>Status</th></tr></thead><tbody>
-    ${list.map(t => `<tr><td>${olE(String(t.dibuat_pada).slice(0, 16).replace('T', ' '))}<div class="us-k mono">${olE(t.order_id)}</div></td>
+    ${list.map(t => `<tr><td>${olE(wib(t.dibuat_pada))}<div class="us-k mono">${olE(t.order_id)}</div></td>
       <td>${olE(t.nama)}${t.anonim === 'TRUE' ? ' <span class="badge b-gray">Hamba Allah</span>' : ''}<div class="us-k">${olE(t.wa)}${t.muzakiId ? ' · ' + olE(t.muzakiId) : ''}</div></td>
       <td>${olE(t.judul)}${t.jumlah ? ' <span class="badge b-gray">' + olE(t.jumlah) + (t.layanan === 'fitrah' ? ' jiwa' : ' hari') + '</span>' : ''}<div class="us-k">${olE(t.kode_kampanye || ({ zakat: 'Zakat Mal', fitrah: 'Zakat Fitrah ' + (t.tahun_hijriah || '') + ' H', fidyah: 'Fidyah ' + (t.tahun_hijriah || '') + ' H — tanpa hak amil' }[t.layanan] || 'Infak umum'))} · ${olE(t.jenis_dana)}${t.sifat_dana ? ' · ' + olE(t.sifat_dana) : ''}</div></td><td class="n">${rp(t.nilai)}</td>
       <td>${olE(t.payment_type || '-')}${t.bank_va ? '<div class="us-k">' + olE(t.bank_va) + '</div>' : ''}</td>
-      <td><span class="badge ${t.status === 'Lunas' ? 'b-green' : t.status === 'Menunggu pembayaran' ? 'b-gold' : 'b-gray'}">${olE(t.status)}</span>${t.status === 'Menunggu pembayaran' && r.boleh_wa ? `<div><button type="button" class="btn btn-outline btn-sm" style="margin-top:4px" onclick="olIngat('${olE(t.order_id)}',this)">💬 Ingatkan via WA</button></div>` : ''}${t.posisi_kas ? '<div class="us-k">' + olE(t.posisi_kas) + '</div>' : ''}${t.nomor_bsz ? '<div class="us-k mono">e-BSZ ' + olE(t.nomor_bsz) + '</div>' : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="hint">Belum ada transaksi.</td></tr>'}
+      <td><span class="badge ${t.status === 'Lunas' ? 'b-green' : t.status === 'Menunggu pembayaran' ? 'b-gold' : 'b-gray'}">${olE(t.status)}</span>${olPenanda(t, r, wib)}${t.posisi_kas ? '<div class="us-k">' + olE(t.posisi_kas) + '</div>' : ''}${t.nomor_bsz ? '<div class="us-k mono">e-BSZ ' + olE(t.nomor_bsz) + '</div>' : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="hint">Belum ada transaksi.</td></tr>'}
     </tbody></table></div>`;
+}
+
+// v63: penanda bantu WK III di kolom status
+function olPenanda(t, r, wib) {
+  let h = '';
+  if (t.status === 'Menunggu pembayaran') {
+    if (t.lunas_lain) h += `<div class="us-k" style="color:var(--green,#1b7a3d)">✅ Sudah lunas di ${olE(t.lunas_lain)} — tidak perlu diingatkan</div>`;
+    else if (t.lewat_batas) h += '<div class="us-k">⌛ Lewat 24 jam — tekan Sinkronkan</div>';
+    else {
+      if (t.batas) h += `<div class="us-k">Batas ${olE(t.batas)} WIB</div>`;
+      if (t.diingatkan_pada) h += `<div class="us-k">💬 Diingatkan ${olE(wib(t.diingatkan_pada))} oleh ${olE(t.diingatkan_oleh)}${+t.diingatkan_kali > 1 ? ' (' + olE(t.diingatkan_kali) + '×)' : ''}</div>`;
+      if (r.boleh_wa) h += `<div><button type="button" class="btn btn-outline btn-sm" style="margin-top:4px" onclick="olIngat('${olE(t.order_id)}',this)">💬 ${t.diingatkan_pada ? 'Ingatkan lagi' : 'Ingatkan via WA'}</button></div>`;
+    }
+  }
+  if (t.catatan && /^(Batal|Kedaluwarsa)$/.test(t.status)) h += `<div class="us-k">${olE(t.catatan)}</div>`;
+  return h;
+}
+async function olSinkron(btn) {
+  const ids = olData.data.filter(t => t.status === 'Menunggu pembayaran').map(t => t.order_id), out = document.getElementById('ol-sinkron-hasil');
+  if (!ids.length) return; btn.disabled = true; btn.textContent = 'Menyinkronkan…';
+  let r; try { r = await (await fetch('/api/sinkron', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_ids: ids }) })).json(); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server pembayaran.' }; }
+  if (!r.ok) { out.textContent = r.pesan || 'Gagal.'; btn.disabled = false; btn.textContent = '🔄 Coba lagi'; return; }
+  const ubah = r.hasil.filter(h => h.status && h.status !== 'Menunggu pembayaran');
+  await olMuat();
+  const o2 = document.getElementById('ol-sinkron-hasil'); if (o2) o2.textContent = `Selesai: ${r.hasil.length} dicek, ${ubah.length} berubah status${ubah.length ? ' (' + ubah.map(h => h.order_id + ' → ' + h.status).join(', ') + ')' : ''}.`;
 }
 
 // v48: tarif zakat fitrah & fidyah (per tahun Hijriah, sesuai SK) — diatur WK III, dilihat WK I/Ketua/Bendahara
@@ -6762,6 +6796,7 @@ async function olIngat(order, btn) {
   if (!r.ok) { alert(r.pesan); return; }
   const teks = `Assalamu'alaikum${r.nama ? ' Bapak/Ibu ' + r.nama : ''},\n\nTerima kasih telah berdonasi melalui BAZNAS Kota Lubuklinggau. Donasi *${r.judul}* sebesar *Rp${Number(r.nilai).toLocaleString('id-ID')}* (No. ${r.order_id}) belum selesai dibayar.\n\nBatas pembayaran: *${r.batas} WIB*.\nUntuk melanjutkan, ketuk tautan berikut lalu tekan *Lanjutkan Pembayaran*:\n${r.tautan}\n\nCara termudah: pilih *QRIS*, simpan/screenshot kode QR-nya, lalu pindai dari aplikasi m-banking atau e-wallet Anda.\n\nBila sudah membayar, mohon abaikan pesan ini. Jazakumullah khairan.\n— BAZNAS Kota Lubuklinggau`;
   window.open('https://wa.me/' + r.wa + '?text=' + encodeURIComponent(teks), '_blank', 'noopener');
+  olMuat();   // v63: tampilkan jejak 'Diingatkan …'
 }
 
 // ════════════════════════════════════════════
@@ -9085,7 +9120,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='62 · 21 Nov 2026';
+const APP_VERSI='63 · 21 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
