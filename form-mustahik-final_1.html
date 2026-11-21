@@ -6717,7 +6717,7 @@ function olTampil() {
       <td>${olE(t.nama)}${t.anonim === 'TRUE' ? ' <span class="badge b-gray">Hamba Allah</span>' : ''}<div class="us-k">${olE(t.wa)}${t.muzakiId ? ' · ' + olE(t.muzakiId) : ''}</div></td>
       <td>${olE(t.judul)}${t.jumlah ? ' <span class="badge b-gray">' + olE(t.jumlah) + (t.layanan === 'fitrah' ? ' jiwa' : ' hari') + '</span>' : ''}<div class="us-k">${olE(t.kode_kampanye || ({ zakat: 'Zakat Mal', fitrah: 'Zakat Fitrah ' + (t.tahun_hijriah || '') + ' H', fidyah: 'Fidyah ' + (t.tahun_hijriah || '') + ' H — tanpa hak amil' }[t.layanan] || 'Infak umum'))} · ${olE(t.jenis_dana)}${t.sifat_dana ? ' · ' + olE(t.sifat_dana) : ''}</div></td><td class="n">${rp(t.nilai)}</td>
       <td>${olE(t.payment_type || '-')}${t.bank_va ? '<div class="us-k">' + olE(t.bank_va) + '</div>' : ''}</td>
-      <td><span class="badge ${t.status === 'Lunas' ? 'b-green' : t.status === 'Menunggu pembayaran' ? 'b-gold' : 'b-gray'}">${olE(t.status)}</span>${t.posisi_kas ? '<div class="us-k">' + olE(t.posisi_kas) + '</div>' : ''}${t.nomor_bsz ? '<div class="us-k mono">e-BSZ ' + olE(t.nomor_bsz) + '</div>' : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="hint">Belum ada transaksi.</td></tr>'}
+      <td><span class="badge ${t.status === 'Lunas' ? 'b-green' : t.status === 'Menunggu pembayaran' ? 'b-gold' : 'b-gray'}">${olE(t.status)}</span>${t.status === 'Menunggu pembayaran' && r.boleh_wa ? `<div><button type="button" class="btn btn-outline btn-sm" style="margin-top:4px" onclick="olIngat('${olE(t.order_id)}',this)">💬 Ingatkan via WA</button></div>` : ''}${t.posisi_kas ? '<div class="us-k">' + olE(t.posisi_kas) + '</div>' : ''}${t.nomor_bsz ? '<div class="us-k mono">e-BSZ ' + olE(t.nomor_bsz) + '</div>' : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="hint">Belum ada transaksi.</td></tr>'}
     </tbody></table></div>`;
 }
 
@@ -6752,6 +6752,16 @@ async function olTarifSimpan(j, btn) {
   btn.disabled = true;
   let r; try { r = await dbApi('tarif_online_simpan', { jenis: j, tahun_hijriah: g('olt-th'), sk: g('olt-sk'), berlaku_mulai: g('olt-m'), berlaku_sampai: g('olt-s'), kelas }); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server.' }; }
   btn.disabled = false; toast(r.pesan, !r.ok); if (r.ok) olMuat();
+}
+
+// v60: pengingat WhatsApp (khusus WK III) untuk transaksi yang masih menunggu pembayaran
+async function olIngat(order, btn) {
+  if (btn) btn.disabled = true;
+  let r; try { r = await dbApi('online_pengingat', { order_id: order }); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server.' }; }
+  if (btn) btn.disabled = false;
+  if (!r.ok) { alert(r.pesan); return; }
+  const teks = `Assalamu'alaikum${r.nama ? ' Bapak/Ibu ' + r.nama : ''},\n\nTerima kasih telah berdonasi melalui BAZNAS Kota Lubuklinggau. Donasi *${r.judul}* sebesar *Rp${Number(r.nilai).toLocaleString('id-ID')}* (No. ${r.order_id}) belum selesai dibayar.\n\nBatas pembayaran: *${r.batas} WIB*.\nCek status atau lanjutkan pembayaran: ${r.tautan}\n\nBila sudah membayar, mohon abaikan pesan ini. Jazakumullah khairan.\n— BAZNAS Kota Lubuklinggau`;
+  window.open('https://wa.me/' + r.wa + '?text=' + encodeURIComponent(teks), '_blank', 'noopener');
 }
 
 // ════════════════════════════════════════════
@@ -9075,7 +9085,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='59 · 20 Nov 2026';
+const APP_VERSI='60 · 21 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
