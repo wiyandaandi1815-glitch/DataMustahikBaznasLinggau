@@ -268,11 +268,12 @@
     const bln = new Date(data.bulan_ini.bulan + '-01T00:00:00').toLocaleDateString('id-ID', { month: 'long' });
     document.body.classList.remove('kb-mode-detail');
     app.innerHTML = `${slider(tayang) || hero(tayang)}
-      <section class="kb-dampak kb-dampak4" aria-label="Ringkasan penyaluran">
+      <section class="kb-dampak kb-dampak4${data.himpun_bulan_ini ? ' kb-dampak5' : ''}" aria-label="Ringkasan penghimpunan & penyaluran">
         <div><small>Penerima manfaat ${esc(data.dampak.tahun)}</small><strong data-hitung="${data.dampak.penerima}">${data.dampak.penerima.toLocaleString('id-ID')}</strong></div>
         <div class="emas"><small>Dana tersalurkan ${esc(data.dampak.tahun)}</small><strong>${rpRingkas(data.dampak.tersalurkan)}</strong></div>
         <div><small>Penerima bulan ${esc(bln)}</small><strong>${(+data.bulan_ini.penerima || 0).toLocaleString('id-ID')}</strong></div>
         <div><small>Kampanye berjalan</small><strong>${tayang.length}</strong></div>
+        ${data.himpun_bulan_ini ? `<div class="kb-himpun"><small>Donasi online ${esc(bln)}</small><strong>${rpRingkas(+data.himpun_bulan_ini.nilai || 0)}</strong><span>${(+data.himpun_bulan_ini.transaksi || 0).toLocaleString('id-ID')} transaksi</span></div>` : ''}
         <div class="kb-cap">Data langsung dari pembukuan BAZNAS Kota Lubuklinggau · diperbarui otomatis</div>
       </section>
       <div class="kb-tata">
