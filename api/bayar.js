@@ -17,6 +17,8 @@ module.exports = async (req, res) => {
     const situs = process.env.SITE_URL || ('https://' + (req.headers['x-forwarded-host'] || req.headers.host));
     const s = await M.buatSnap(o, situs + '/kabar.html#bayar-' + o.order_id);
     // v62: simpan token agar tagihan yang sama bisa dibuka lagi (tombol Lanjutkan Pembayaran); gagal simpan tidak menghentikan pembayaran
+    // v63: tagihan lama yang diganti → batalkan juga di Midtrans (gagal diabaikan; kalau ternyata sudah dibayar, notifikasi tetap mencatat Lunas)
+    if (Array.isArray(o.batal) && o.batal.length) await Promise.all(o.batal.slice(0, 5).map(id => M.batalkan(id).catch(e => console.error('batal', id, e.message))));
     try { await panggil('bayar_token', { kunci_internal: process.env.GATEWAY_INTERNAL_KEY, order_id: o.order_id, token: s.token }); } catch (e) { console.error('bayar_token', e.message); }
     res.status(200).send(JSON.stringify({ ok: true, order_id: o.order_id, token: s.token, client_key: process.env.MIDTRANS_CLIENT_KEY,
       snap_js: M.BASE.snap + '/snap/snap.js', sandbox: !M.PROD }));

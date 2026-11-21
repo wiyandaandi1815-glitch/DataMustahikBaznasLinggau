@@ -34,10 +34,15 @@ async function cekStatus(orderId) {
   const r = await fetch(BASE.api + '/v2/' + encodeURIComponent(orderId) + '/status', { headers: { Accept: 'application/json', Authorization: auth() } });
   return r.json();
 }
+// v63: batalkan transaksi pending di Midtrans (tagihan lama yang diganti donasi ulang). 404 = donatur belum memilih metode (cukup dibatalkan di buku).
+async function batalkan(orderId) {
+  const r = await fetch(BASE.api + '/v2/' + encodeURIComponent(orderId) + '/cancel', { method: 'POST', headers: { Accept: 'application/json', Authorization: auth() } });
+  return r.json().catch(() => ({}));
+}
 function tandaTanganSah(n) {
   if (!n || !n.signature_key) return false;
   const h = crypto.createHash('sha512').update(String(n.order_id) + String(n.status_code) + String(n.gross_amount) + SK()).digest('hex');
   const a = Buffer.from(h), b = Buffer.from(String(n.signature_key));
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
-module.exports = { PROD, BASE, siap, bacaBody, buatSnap, cekStatus, tandaTanganSah };
+module.exports = { PROD, BASE, siap, bacaBody, buatSnap, cekStatus, tandaTanganSah, batalkan };
