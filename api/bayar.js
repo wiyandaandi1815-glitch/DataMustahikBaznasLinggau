@@ -16,6 +16,8 @@ module.exports = async (req, res) => {
     if (!o.ok) { res.status(200).send(JSON.stringify({ ok: false, pesan: o.pesan })); return; }
     const situs = process.env.SITE_URL || ('https://' + (req.headers['x-forwarded-host'] || req.headers.host));
     const s = await M.buatSnap(o, situs + '/kabar.html#bayar-' + o.order_id);
+    // v62: simpan token agar tagihan yang sama bisa dibuka lagi (tombol Lanjutkan Pembayaran); gagal simpan tidak menghentikan pembayaran
+    try { await panggil('bayar_token', { kunci_internal: process.env.GATEWAY_INTERNAL_KEY, order_id: o.order_id, token: s.token }); } catch (e) { console.error('bayar_token', e.message); }
     res.status(200).send(JSON.stringify({ ok: true, order_id: o.order_id, token: s.token, client_key: process.env.MIDTRANS_CLIENT_KEY,
       snap_js: M.BASE.snap + '/snap/snap.js', sandbox: !M.PROD }));
   } catch (e) { console.error('bayar', e.message); res.status(200).send(JSON.stringify({ ok: false, pesan: 'Gagal membuat transaksi. Coba lagi beberapa saat.' })); }
