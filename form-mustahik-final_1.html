@@ -6720,6 +6720,7 @@ function olTampil() {
       <div id="ol-rekap-perlu" style="background:${perlu ? '#fff8e1' : '#fff'};border-radius:12px;box-shadow:var(--shadow);padding:10px 14px;cursor:pointer" onclick="olFilter='Perlu diingatkan';olTampil()"><small style="color:var(--g500)">Perlu diingatkan</small><b style="display:block;font-size:18px">${perlu}</b><small>menunggu ≥ 2 jam, belum diingatkan</small></div>
       <div style="background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:10px 14px"><small style="color:var(--g500)">Hari ini (${hari.split('-').reverse().join('/')})</small><b style="display:block;font-size:18px">${rp(lunasHari.reduce((a, t) => a + t.nilai, 0))}</b><small>${lunasHari.length} lunas · ${tutupHari.length} batal/kedaluwarsa</small></div></div>
     ${r.boleh_wa ? `<div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="btn btn-outline btn-sm" id="ol-sinkron" onclick="olSinkron(this)" ${tunggu.length ? '' : 'disabled'}>🔄 Sinkronkan ${tunggu.length} transaksi Menunggu dengan Midtrans</button><span class="us-k" id="ol-sinkron-hasil">Cocokkan status bila ada notifikasi yang terlewat. Rekonsiliasi saldo tetap lewat laporan settlement Midtrans tiap Jumat.</span></div>` : ''}
+    ${r.boleh_wa ? `<div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-outline btn-sm" id="ol-cair-btn" onclick="olCairBuka()">🏦 Catat dana masuk rekening (${r.data.filter(t => t.status === 'Lunas' && t.posisi_kas === 'Kas di Payment Gateway').length})</button><button type="button" class="btn btn-outline btn-sm" id="ol-ekspor-btn" onclick="olEkspor()">⬇️ Ekspor ke Excel (CSV)</button></div><div id="ol-cair"></div>` : ''}
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${st.map(s => `<button type="button" class="us-chip${s === olFilter ? ' on' : ''}" onclick="olFilter='${s}';olTampil()">${s}</button>`).join('')}<button class="btn btn-outline btn-sm" type="button" onclick="olMuat()">↻</button></div>
     <div class="us-wrap"><table class="us-tbl"><thead><tr><th>Waktu / No. transaksi</th><th>Donatur</th><th>Kampanye</th><th class="n">Nilai</th><th>Metode</th><th>Status</th></tr></thead><tbody>
     ${list.map(t => `<tr><td>${olE(wib(t.dibuat_pada))}<div class="us-k mono">${olE(t.order_id)}</div></td>
@@ -6730,6 +6731,44 @@ function olTampil() {
     </tbody></table></div>`;
 }
 
+// v64: A1 pencairan Midtrans → rekening (MDR dibagi proporsional, dibebankan ke Dana Amil) · A2 ekspor jurnal/Buku Bukti Kas
+const OL_AMIL = { zakat: 12.5, fitrah: 10, fidyah: 0, infak: 20, kampanye: 20 };
+function olCairBuka() {
+  const rp = n => 'Rp' + Math.round(n || 0).toLocaleString('id-ID'), L = olData.data.filter(t => t.status === 'Lunas' && t.posisi_kas === 'Kas di Payment Gateway');
+  const el = document.getElementById('ol-cair');
+  if (!L.length) { el.innerHTML = '<div class="hint">Tidak ada transaksi Lunas yang masih di Payment Gateway.</div>'; return; }
+  el.innerHTML = `<div style="background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:12px 14px;margin-bottom:10px">
+    <b>Catat dana masuk rekening</b><div class="us-k">Centang transaksi sesuai rincian pencairan (settlement) di dashboard Midtrans, lalu isi nominal yang masuk di rekening koran. Selisih = biaya MDR, dibebankan ke Dana Amil.</div>
+    <div class="us-wrap" style="max-height:260px;overflow:auto;margin:8px 0"><table class="us-tbl"><tbody>${L.map(t => `<tr><td><input type="checkbox" class="ol-cair-c" value="${olE(t.order_id)}" data-n="${t.nilai}" onchange="olCairHitung()" checked></td><td class="mono">${olE(t.order_id)}</td><td>${olE(String(t.waktu_settlement || '').slice(0, 10))}</td><td>${olE(t.payment_type || '')}</td><td class="n">${rp(t.nilai)}</td></tr>`).join('')}</tbody></table></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">
+      <label>Tanggal masuk rekening<br><input type="date" id="ol-cair-tgl" value="${new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10)}"></label>
+      <label>Rekening<br><select id="ol-cair-rek"><option>BSI</option><option>Bank Sumsel Babel Syariah</option></select></label>
+      <label>Nominal diterima (rekening koran)<br><input id="ol-cair-nil" inputmode="numeric" oninput="olCairHitung()" placeholder="contoh 993000"></label>
+      <button type="button" class="btn btn-primary btn-sm" id="ol-cair-simpan" onclick="olCairSimpan(this)">Simpan</button></div>
+    <div class="us-k" id="ol-cair-info" style="margin-top:6px"></div></div>`;
+  olCairHitung();
+}
+function olCairHitung() {
+  const c = [...document.querySelectorAll('.ol-cair-c:checked')], b = c.reduce((a, x) => a + +x.dataset.n, 0), d = +(document.getElementById('ol-cair-nil').value || '').replace(/\D/g, '') || 0;
+  document.getElementById('ol-cair-info').textContent = `${c.length} transaksi · bruto Rp${b.toLocaleString('id-ID')}` + (d ? ` · diterima Rp${d.toLocaleString('id-ID')} · MDR Rp${(b - d).toLocaleString('id-ID')} (${b ? ((b - d) / b * 100).toFixed(2) : 0}%)` : '');
+}
+async function olCairSimpan(btn) {
+  const ids = [...document.querySelectorAll('.ol-cair-c:checked')].map(x => x.value), info = document.getElementById('ol-cair-info');
+  btn.disabled = true;
+  let r; try { r = await dbApi('online_cair', { order_ids: ids, tanggal: document.getElementById('ol-cair-tgl').value, rekening: document.getElementById('ol-cair-rek').value, diterima: +(document.getElementById('ol-cair-nil').value || '').replace(/\D/g, '') }); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server.' }; }
+  btn.disabled = false;
+  if (!r.ok) { info.textContent = '❌ ' + r.pesan; return; }
+  await olMuat(); const el = document.getElementById('ol-cair'); if (el) el.innerHTML = `<div class="hint">✅ ${olE(r.kode)}: ${r.jumlah} transaksi, bruto Rp${r.bruto.toLocaleString('id-ID')}, diterima Rp${r.diterima.toLocaleString('id-ID')}, MDR Rp${r.mdr.toLocaleString('id-ID')} (Dana Amil).</div>`;
+}
+function olEkspor() {
+  const L = olData.data.filter(t => /^(Lunas|Refund)$/.test(t.status)), q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const H = ['Tanggal lunas', 'No. transaksi', 'Donatur', 'Muzaki ID', 'Layanan', 'Kampanye', 'Program', 'Jenis dana', 'Sifat dana', 'Metode', 'Bruto', '% Hak amil', 'Hak amil', 'Bagian penyaluran', 'Biaya MDR (Dana Amil)', 'Neto diterima', 'Posisi kas', 'Tgl masuk bank', 'Status', 'e-BSZ', 'Catatan'];
+  const B = L.map(t => { const n = t.status === 'Refund' ? -t.nilai : t.nilai, p = OL_AMIL[t.layanan] ?? 20, a = Math.round(n * p / 100);
+    return [String(t.waktu_settlement || t.dibuat_pada).slice(0, 10), t.order_id, t.anonim === 'TRUE' ? 'Hamba Allah (' + t.nama + ')' : t.nama, t.muzakiId, t.layanan, t.kode_kampanye, t.program, t.jenis_dana, t.sifat_dana, t.payment_type,
+      n, p, a, n - a, t.biaya_mdr || '', t.nilai_neto || '', t.posisi_kas, t.tgl_masuk_bank, t.status, t.nomor_bsz, t.catatan].map(q).join(';'); });
+  const blob = new Blob(['\ufeff' + [H.map(q).join(';')].concat(B).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'transaksi-online-' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
+}
 // v63: penanda bantu WK III di kolom status
 function olPenanda(t, r, wib) {
   let h = '';
@@ -9120,7 +9159,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='63 · 21 Nov 2026';
+const APP_VERSI='64 · 21 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
