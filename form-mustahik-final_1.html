@@ -5440,8 +5440,10 @@ if(typeof LS_PETA==='object'){SF_BARU.forEach(k=>{LS_PETA[k]='f-'+k;});
     alamatPemilikRek:'f-alamatPemilikRek',telpPemilikRek:'f-telpPemilikRek'});}
 // anggota keluarga dari survei → tabel anggota (bila tabel masih kosong & tidak ada draf petugas)
 if(typeof lsTerapkanSurvei==='function'){const _lt=lsTerapkanSurvei;lsTerapkanSurvei=async function(no){const r=await _lt.apply(this,arguments);
-  try{if(!lsDraf&&pjAktif===no&&!akReadAll().some(a=>a.nama)){const h=await dbApi('survei_hasil',{no});let a=h&&h.ok&&h.ada&&h.isian?h.isian.anggotaKeluarga:null;
-    if(typeof a==='string')a=JSON.parse(a);if(Array.isArray(a)&&a.length&&pjAktif===no){akFillAll(a);toast('✓ '+a.length+' anggota keluarga diisi dari hasil survei');}}}catch(e){}
+  // v67: susunan keluarga hasil survei (sesuai KK, dicek petugas) MENGGANTIKAN isian pengajuan; hanya draf petugas yang sudah berisi anggota yang dipertahankan
+  try{const adaAk=akReadAll().some(a=>a.nama);if(pjAktif===no&&!(lsDraf&&adaAk)){const h=await dbApi('survei_hasil',{no});let a=h&&h.ok&&h.ada&&h.isian?h.isian.anggotaKeluarga:null;
+    if(typeof a==='string')a=JSON.parse(a);a=Array.isArray(a)?a.filter(x=>x&&String(x.nama||'').trim()):[];
+    if(a.length&&pjAktif===no){const lama=akReadAll().filter(x=>x.nama).length;akFillAll(a);toast('✓ '+a.length+' anggota keluarga diisi dari hasil survei'+(lama?' (menggantikan '+lama+' dari pengajuan)':''));}}}catch(e){}
   return r;};}
 // C kosong (penerima ≥ 18 th & bukan bantuan pendidikan) → petunjuk
 function sfPetunjukC(){const c=document.getElementById('sf-kartu-c');if(!c)return;const tampak=['wali-wrap','pend-wrap'].some(i=>{const e=document.getElementById(i);return e&&e.offsetParent!==null;});
@@ -9159,7 +9161,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='66 · 23 Nov 2026';
+const APP_VERSI='67 · 23 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
