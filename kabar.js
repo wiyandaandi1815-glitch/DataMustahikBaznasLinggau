@@ -65,7 +65,7 @@
         ${akhir ? `<div class="kb-hasil">✅ Terkumpul ${rp(k.terkumpul)} dari ${k.donatur} donatur. Jazakumullah khairan.</div>
           <button class="kb-btn garis" type="button" style="width:100%;margin-top:8px" data-bagi="${esc(k.id)}" data-judul="${esc(k.judul)}">${svgBagi} Bagikan kabar baik ini</button>` :
         `<div class="kb-aksi"><button class="kb-btn utama" type="button" data-donasi="${esc(k.id)}">Cara berdonasi</button>
-          <a class="kb-btn wa" href="${waLink(k.judul, k.id, k.persen + '% tercapai')}" target="_blank" rel="noopener" aria-label="Bagikan lewat WhatsApp">${svgWa}</a>
+          <a class="kb-btn wa" href="${waLink(k.judul, k.id, k.persen + '% tercapai')}" target="_blank" rel="noopener noreferrer" aria-label="Bagikan lewat WhatsApp">${svgWa}</a>
           <button class="kb-btn garis" type="button" data-bagi="${esc(k.id)}" data-judul="${esc(k.judul)}" aria-label="Bagikan ke Facebook, Instagram, X, dan lainnya">${svgBagi}</button></div>`}
       </div></article>`;
   }
@@ -113,7 +113,7 @@
           <div class="kb-rp">${rp(x.total_nilai)} tersalurkan · ${x.jumlah_penerima} penerima</div>
           <span class="kb-baca">Baca selengkapnya →</span>
         </div></a>
-      <a class="kb-bagi" href="${waLink(x.judul, x.id, rp(x.total_nilai) + ' tersalurkan')}" target="_blank" rel="noopener" aria-label="Bagikan lewat WhatsApp">${svgWa}</a>
+      <a class="kb-bagi" href="${waLink(x.judul, x.id, rp(x.total_nilai) + ' tersalurkan')}" target="_blank" rel="noopener noreferrer" aria-label="Bagikan lewat WhatsApp">${svgWa}</a>
     </article>`;
   }
   function filterKabar() {
@@ -150,7 +150,7 @@
           <div class="kb-kumpul"><span><b>${rp(k.terkumpul)}</b> terkumpul dari ${rpRingkas(k.target)}</span><span>${k.persen}%</span></div>
           <div class="kb-hangka"><div><b>${k.donatur.toLocaleString('id-ID')}</b><small>donatur</small></div><div><b>${k.sisa_hari}</b><small>hari lagi</small></div><div><b>${esc(k.program)}</b><small>tujuan dana</small></div></div>
           <div class="kb-aksi"><button class="kb-btn utama" type="button" data-donasi="${esc(k.id)}">Cara berdonasi</button>
-            <a class="kb-btn wa" href="${waLink(k.judul, k.id, k.persen + '% tercapai')}" target="_blank" rel="noopener" aria-label="Bagikan lewat WhatsApp">${svgWa}<span class="kb-hp-sembunyi">WhatsApp</span></a>
+            <a class="kb-btn wa" href="${waLink(k.judul, k.id, k.persen + '% tercapai')}" target="_blank" rel="noopener noreferrer" aria-label="Bagikan lewat WhatsApp">${svgWa}<span class="kb-hp-sembunyi">WhatsApp</span></a>
             <button class="kb-btn garis" type="button" data-bagi="${esc(k.id)}" data-judul="${esc(k.judul)}" aria-label="Bagikan ke media sosial lain">${svgBagi}</button></div>
         </div></section>`;
     }
@@ -165,7 +165,7 @@
         ${x.ringkas ? `<p>${esc(x.ringkas)}</p>` : ''}
         <div class="kb-hangka"><div><b>${x.jumlah_penerima}</b><small>penerima</small></div><div><b>${rpRingkas(x.total_nilai)}</b><small>tersalurkan</small></div><div><b>${esc(x.kecamatan || 'Kota Lubuklinggau')}</b><small>lokasi</small></div></div>
         <div class="kb-aksi"><a class="kb-btn utama" href="#${esc(x.id)}">Baca selengkapnya</a>
-          <a class="kb-btn wa" href="${waLink(x.judul, x.id, rp(x.total_nilai) + ' tersalurkan')}" target="_blank" rel="noopener" aria-label="Bagikan lewat WhatsApp">${svgWa}<span class="kb-hp-sembunyi">WhatsApp</span></a>
+          <a class="kb-btn wa" href="${waLink(x.judul, x.id, rp(x.total_nilai) + ' tersalurkan')}" target="_blank" rel="noopener noreferrer" aria-label="Bagikan lewat WhatsApp">${svgWa}<span class="kb-hp-sembunyi">WhatsApp</span></a>
           <button class="kb-btn garis" type="button" data-bagi="${esc(x.id)}" data-judul="${esc(x.judul)}" aria-label="Bagikan ke media sosial lain">${svgBagi}</button></div>
       </div></section>`;
   }
@@ -183,7 +183,7 @@
       if (x.jenis === 'kmp') return `<button class="kb-sbtn" type="button" data-donasi="${esc(x.id)}" data-hl="${esc(x.id)}">Cara berdonasi →</button><a class="kb-sbtn garis" href="#${esc(x.id)}" data-hl="${esc(x.id)}">Lihat detail</a><button class="kb-sbtn garis kb-sbagi" type="button" data-bagi="${esc(x.id)}" data-judul="${esc(x.judul)}" aria-label="Bagikan">${svgBagi}</button>`;
       if (!x.url) return '';
       const luar = /^https:/.test(x.url);
-      return `<a class="kb-sbtn" href="${esc(x.url)}" data-hl="${esc(x.id)}"${luar ? ' target="_blank" rel="noopener"' : ''}>${esc(x.tt || 'Selengkapnya')} →</a>`;
+      return `<a class="kb-sbtn" href="${esc(x.url)}" data-hl="${esc(x.id)}"${luar ? ' target="_blank" rel="noopener noreferrer"' : ''}>${esc(x.tt || 'Selengkapnya')} →</a>`;
     };
     return `<section class="kb-slider" aria-roledescription="carousel" aria-label="Highlight BAZNAS Kota Lubuklinggau" data-n="${S.length}">
       <div class="kb-slides">${S.map((x, i) => `<article class="kb-slide${i ? '' : ' aktif'}" role="group" aria-roledescription="slide" aria-label="${i + 1} dari ${S.length}"${i ? ' aria-hidden="true"' : ''}>
@@ -237,7 +237,7 @@
         <p class="kb-aman">${svgPerisai}<span>Transfer hanya ke rekening atas nama <b>BAZNAS Kota Lubuklinggau</b>. Bukti Setor Zakat (BSZ) dapat menjadi pengurang penghasilan kena pajak.</span></p>
       </div>
       <nav class="kb-transparan" aria-label="Transparansi"><b>Transparansi</b>
-        <a href="${esc(C.laporanKeuangan)}" rel="noopener">Laporan keuangan →</a>
+        <a href="${esc(C.laporanKeuangan)}" rel="noopener noreferrer">Laporan keuangan →</a>
         <a href="${esc(C.cekSetoran)}">Cek setoran &amp; verifikasi BSZ →</a>
         <a href="pengajuan.html">Ajukan bantuan →</a>
         <a href="${esc(C.muzaki)}">Daftar muzaki / donatur →</a></nav>
@@ -339,7 +339,7 @@
         ${kmp ? '' : ctaSerupa(kls, x.id)}
         <div class="kb-aksi" style="margin-top:12px">
           ${kmp && !akhir ? `<button class="kb-btn utama" type="button" data-donasi="${esc(x.id)}">Cara berdonasi</button>` : `<a class="kb-btn utama" href="#">Lihat kabar lainnya</a>`}
-          <a class="kb-btn wa" href="${waLink(x.judul, x.id, kmp ? x.persen + '% tercapai' : rp(x.total_nilai) + ' tersalurkan')}" target="_blank" rel="noopener" aria-label="Bagikan lewat WhatsApp">${svgWa}</a>
+          <a class="kb-btn wa" href="${waLink(x.judul, x.id, kmp ? x.persen + '% tercapai' : rp(x.total_nilai) + ' tersalurkan')}" target="_blank" rel="noopener noreferrer" aria-label="Bagikan lewat WhatsApp">${svgWa}</a>
           <button class="kb-btn garis" type="button" data-bagi="${esc(x.id)}" data-judul="${esc(x.judul)}" aria-label="Bagikan ke media sosial lain">${svgBagi}</button></div>
         ${kmp ? donaturHtml(x) : ''}
       </div></article>${samping()}`;
@@ -427,7 +427,7 @@
       th: 'https://www.threads.net/intent/post?text=' + e(teks + '\n' + url),
       li: 'https://www.linkedin.com/sharing/share-offsite/?url=' + e(url),
       em: 'mailto:?subject=' + e(judul) + '&body=' + e(teks + '\n\n' + url) };
-    const btn = (k, kelas, ikon, nama) => `<a class="kb-sos ${kelas}" href="${L[k]}" target="_blank" rel="noopener" data-sos="${k}"><span class="ik">${ikon}</span>${nama}</a>`;
+    const btn = (k, kelas, ikon, nama) => `<a class="kb-sos ${kelas}" href="${L[k]}" target="_blank" rel="noopener noreferrer" data-sos="${k}"><span class="ik">${ikon}</span>${nama}</a>`;
     const l = document.getElementById('kb-lembar'), isi = l.querySelector('.kb-lembar-isi');
     isi.innerHTML = `<h3 style="margin:0 0 4px">Bagikan ${kmp ? 'kampanye' : 'kabar'} ini</h3><p style="margin:0 0 12px;color:var(--kb-redup);font-size:14px">${esc(judul)}</p>
       <div class="kb-sos-grid">${btn('wa', 'wa', svgWa, 'WhatsApp')}${btn('fb', 'fb', '<b>f</b>', 'Facebook')}${btn('x', 'xx', '<b>𝕏</b>', 'X')}${btn('tg', 'tg', '<b>✈</b>', 'Telegram')}
@@ -602,7 +602,7 @@
     isi.innerHTML = `<div class="kb-ol-status"><div class="ik">${ikon}</div><p>${teks}</p><div class="kb-ol-no">No. transaksi<br><b>${esc(order)}</b></div></div>
       ${s.ok && s.ada_bsz ? `<div class="kb-ol-ring" style="margin-bottom:10px"><div style="display:block"><b>📄 Bukti Setor Zakat elektronik (e-BSZ)</b><span style="display:block;font-size:13px;margin-top:4px">Untuk keamanan, masukkan 4 digit terakhir nomor WhatsApp yang Anda isi.</span></div>
         <div style="display:flex;gap:8px"><input id="ol-wa4" inputmode="numeric" maxlength="4" placeholder="4 digit" style="flex:1;padding:10px;border:1px solid #ccc;border-radius:10px;font-size:16px"><button class="kb-btn utama" type="button" data-ebsz="${esc(order)}">Unduh e-BSZ</button></div><p class="kb-ol-galat" id="ol-galat-bsz"></p></div>` : ''}
-      ${s.ok && s.status === 'Lunas' && s.kode_kampanye ? `<a class="kb-btn wa" style="width:100%" href="${waLink('Saya baru berdonasi untuk ' + s.judul + '. Yuk ikut menebar manfaat', s.kode_kampanye)}" target="_blank" rel="noopener">${svgWa} Ajak teman lewat WhatsApp</a>` : ''}
+      ${s.ok && s.status === 'Lunas' && s.kode_kampanye ? `<a class="kb-btn wa" style="width:100%" href="${waLink('Saya baru berdonasi untuk ' + s.judul + '. Yuk ikut menebar manfaat', s.kode_kampanye)}" target="_blank" rel="noopener noreferrer">${svgWa} Ajak teman lewat WhatsApp</a>` : ''}
       ${tunggu && s.batas ? `<p class="kb-ol-ket">Bayar sebelum <b>${esc(s.batas)} WIB</b></p>` : ''}
       ${lanjut ? `<button class="kb-btn utama" type="button" style="width:100%" data-ol-lanjutkan="${esc(order)}">💳 Lanjutkan Pembayaran ${rp(s.nilai)}</button>
         <p class="kb-ol-galat" id="ol-galat-lanjut"></p>

@@ -22,13 +22,13 @@
       ${ada ? `<div class="pp-redup" style="margin:8px 0 0;font-size:12.5px">Ditetapkan dengan ${esc(p.sk)}</div>` : '<div class="pp-tunggu">Struktur PPID menunggu penetapan SK Ketua BAZNAS Kota Lubuklinggau; sementara ditampilkan berdasarkan jabatan.</div>'}`;
     const wa = String(p.wa || '').replace(/\D/g, '').replace(/^0/, '62');
     $('pp-kontak').innerHTML = `<p style="margin:0;color:var(--kb-redup)"><b style="color:var(--kb-teks)">Alamat:</b> ${esc(p.alamat)}<br>
-      <b style="color:var(--kb-teks)">WhatsApp/Telepon:</b> ${wa ? `<a href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">${esc(p.wa)}</a>` : esc(p.wa)} · <b style="color:var(--kb-teks)">Email:</b> <a href="mailto:${esc(p.email)}">${esc(p.email)}</a><br>
+      <b style="color:var(--kb-teks)">WhatsApp/Telepon:</b> ${wa ? `<a href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener noreferrer">${esc(p.wa)}</a>` : esc(p.wa)} · <b style="color:var(--kb-teks)">Email:</b> <a href="mailto:${esc(p.email)}">${esc(p.email)}</a><br>
       <b style="color:var(--kb-teks)">Jam layanan:</b> ${esc(p.jam)}</p>`;
   }
   function tombolAkses(d) {
     if (d.status !== 'Terbuka') return '<small>Tidak dibuka untuk umum</small>';
-    if (d.ada_file) return `<a class="pp-unduh" href="${esc(C.dok)}?id=${encodeURIComponent(d.id)}" target="_blank" rel="noopener" data-dok="${esc(d.id)}">⬇ Unduh PDF${d.ukuran ? ' · ' + ukuran(d.ukuran) : ''}</a>`;
-    if (d.tautan) return `<a class="pp-unduh" href="${esc(d.tautan)}" target="_blank" rel="noopener" data-dok="${esc(d.id)}">Buka tautan ↗</a>`;
+    if (d.ada_file) return `<a class="pp-unduh" href="${esc(C.dok)}?id=${encodeURIComponent(d.id)}" target="_blank" rel="noopener noreferrer" data-dok="${esc(d.id)}">⬇ Unduh PDF${d.ukuran ? ' · ' + ukuran(d.ukuran) : ''}</a>`;
+    if (d.tautan) return `<a class="pp-unduh" href="${esc(d.tautan)}" target="_blank" rel="noopener noreferrer" data-dok="${esc(d.id)}">Buka tautan ↗</a>`;
     return '<small>Hubungi desk PPID</small>';
   }
   const item = d => `<div class="pp-item"><div><b>${esc(d.judul)}</b><small>${[d.kelompok, d.periode ? 'Periode ' + d.periode : '', d.diperbarui ? 'Diperbarui ' + tgl(d.diperbarui) : ''].filter(Boolean).map(esc).join(' · ')}</small>

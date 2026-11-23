@@ -510,7 +510,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
     </svg>
     <div>
       <div>BAZNAS Kota Lubuklinggau</div>
-      <div class="logo-sub">Manajemen Data Mustahik · IZN 2024</div>
+      <div class="logo-sub">Manajemen Data Mustahik</div>
     </div>
   </div>
   <div class="hdr-right">
@@ -675,8 +675,8 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
             <th>Kondisi Kesehatan</th>
             <th>Penyakit Diderita</th>
             <th>JKN/BPJS</th>
-            <th>Skor IZN Kes.</th>
-            <th>Kategori IZN</th>
+            <th>Skor Kes. (IZN 2024)</th>
+            <th>Kategori Kes.</th>
             <th>Rekomendasi Bantuan</th>
             <th>Detail Rekomendasi</th>
             <th>Nilai Bantuan</th>
@@ -948,9 +948,9 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
 
   <!-- Sec 7: Kesehatan IZN -->
   <div class="card">
-    <div class="card-header izn-hdr"><div class="sec-num" style="background:rgba(255,255,255,.2)">8</div><h2>KESEHATAN & PENYAKIT</h2><span class="izn-badge">IZN</span></div>
+    <div class="card-header izn-hdr"><div class="sec-num" style="background:rgba(255,255,255,.2)">8</div><h2>KESEHATAN & PENYAKIT</h2><span class="izn-badge">Kes. 2024</span></div>
     <div class="card-body">
-      <div class="izn-info"><strong>Indeks Zakat Nasional (IZN)</strong> — Dimensi Kesehatan. Data ini mengukur kemiskinan multidimensi dan menentukan prioritas bantuan kesehatan mustahik.</div>
+      <div class="izn-info"><strong>Skor Kesehatan (format IZN 2024)</strong> — dimensi kesehatan, bukan IZN 2026/CIBEST. Data ini mengukur kemiskinan multidimensi dan menentukan prioritas bantuan kesehatan mustahik.</div>
       <div class="grid g2" style="margin-bottom:14px">
         <div class="field"><label>Status JKN/BPJS Kesehatan</label>
           <select id="f-jkn"><option value="">— Pilih —</option><option value="Memiliki BPJS PBI">BPJS PBI (dibayar pemerintah)</option><option value="Memiliki BPJS Mandiri">BPJS Mandiri</option><option value="Memiliki Asuransi Swasta">Asuransi Swasta</option><option value="Tidak Memiliki">Tidak Memiliki Jaminan</option></select>
@@ -986,7 +986,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
         <textarea id="f-riwayatMedis" rows="2" placeholder="Riwayat operasi, rawat inap, alergi obat, dll."></textarea>
       </div>
 
-      <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Skor IZN Dimensi Kesehatan (estimasi otomatis)</div>
+      <div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Skor Kesehatan — format IZN 2024 (estimasi otomatis)</div>
       <div class="izn-score-box">
         <div><div class="si-label">Skor Dimensi</div><div class="si-value" id="izn-skor">—</div><div class="si-sub">dari 100</div></div>
         <div><div class="si-label">Kategori</div><div class="si-value" id="izn-kat" style="font-size:15px">—</div><div class="si-sub">tingkat keparahan</div></div>
@@ -1014,7 +1014,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
             <div class="rek-preview-kuadran" id="rpv-kuadran">—</div>
             <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--g500);margin-bottom:8px;">
               <span>Desil Ekonomi: <strong id="rpv-desil" style="color:var(--teal)">—</strong></span>
-              <span>Skor IZN Kes.: <strong id="rpv-izn" style="color:var(--gold)">—</strong></span>
+              <span>Skor Kes.: <strong id="rpv-izn" style="color:var(--gold)">—</strong></span>
               <span>Level Prioritas: <strong id="rpv-level" style="color:var(--red)">—</strong>/5</span>
             </div>
             <div class="rek-preview-detail" id="rpv-detail">—</div>
@@ -1075,9 +1075,9 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
 <div id="t-pengajuan" class="tab-pane">
 <div class="main">
   <div class="pg-title">Pengajuan Masuk</div>
-  <div class="pg-sub">Pengajuan mandiri dari calon mustahik melalui formulir publik <a href="pengajuan.html" target="_blank" rel="noopener"><strong>pengajuan.html</strong></a>. Alur: pemohon menyerahkan berkas di kantor → <strong>centang berkas &amp; cetak Tanda Terima</strong> → jadwalkan kunjungan &amp; <strong>cetak Formulir Survei</strong> → <strong>Lengkapi &amp; Terima</strong>. Berkas tidak diserahkan dalam 14 hari → otomatis <em>Berkas tidak diserahkan</em>.</div>
-  <div style="margin:0 0 10px"><a class="btn btn-primary btn-sm" href="survei.html" target="_blank" rel="noopener" style="text-decoration:none">📋 Kunjungan Survei — penugasan surveyor, form survei di HP &amp; cetak hasil</a>
-  <a class="btn btn-primary btn-sm" href="survei.html#monitoring" target="_blank" rel="noopener" style="text-decoration:none;margin-left:6px">📈 Monitoring Pascabantuan (bulan ke-3 &amp; ke-6) <span id="mn-count" class="badge b-red" style="display:none;margin-left:4px">0</span></a></div>
+  <div class="pg-sub">Pengajuan mandiri dari calon mustahik melalui formulir publik <a href="pengajuan.html" target="_blank" rel="noopener noreferrer"><strong>pengajuan.html</strong></a>. Alur: pemohon menyerahkan berkas di kantor → <strong>centang berkas &amp; cetak Tanda Terima</strong> → jadwalkan kunjungan &amp; <strong>cetak Formulir Survei</strong> → <strong>Lengkapi &amp; Terima</strong>. Berkas tidak diserahkan dalam 14 hari → otomatis <em>Berkas tidak diserahkan</em>.</div>
+  <div style="margin:0 0 10px"><a class="btn btn-primary btn-sm" href="survei.html" target="_blank" rel="noopener noreferrer" style="text-decoration:none">📋 Kunjungan Survei — penugasan surveyor, form survei di HP &amp; cetak hasil</a>
+  <a class="btn btn-primary btn-sm" href="survei.html#monitoring" target="_blank" rel="noopener noreferrer" style="text-decoration:none;margin-left:6px">📈 Monitoring Pascabantuan (bulan ke-3 &amp; ke-6) <span id="mn-count" class="badge b-red" style="display:none;margin-left:4px">0</span></a></div>
   <div class="card"><div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
     <select id="pj-filter" onchange="pjRender()" style="max-width:220px">
       <option value="aktif">Perlu tindak lanjut</option><option value="siap">Berkas lengkap (siap diterima)</option><option value="Menunggu verifikasi">Menunggu verifikasi</option>
@@ -1117,7 +1117,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
 <div id="t-konten" class="tab-pane">
 <div class="main">
   <div class="pg-title">Publikasi &amp; Kampanye</div>
-  <div class="pg-sub">Laporan "Hari Ini Kami Menyalurkan" dan kampanye terjadwal. Alur: Draf → Wakil Ketua → Ketua → terjadwal → tayang di <a href="kabar.html" target="_blank" rel="noopener"><strong>kabar.html</strong></a>. Angka selalu dari database, tidak diketik manual.</div>
+  <div class="pg-sub">Laporan "Hari Ini Kami Menyalurkan" dan kampanye terjadwal. Alur: Draf → Wakil Ketua → Ketua → terjadwal → tayang di <a href="kabar.html" target="_blank" rel="noopener noreferrer"><strong>kabar.html</strong></a>. Angka selalu dari database, tidak diketik manual.</div>
   <div class="card"><div class="card-body" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
     <button class="btn btn-primary kt-mode" type="button" onclick="ktPilihMode('kampanye',this)">Kampanye</button>
     <button class="btn btn-outline kt-mode" type="button" onclick="ktPilihMode('laporan',this)">Laporan Penyaluran</button>
@@ -1155,7 +1155,7 @@ table.pj-tbl tr:hover td{background:var(--teal-light)!important;}
 <div id="t-penggalang" class="tab-pane">
 <div class="main">
   <div class="pg-title">Penggalang (UPZ &amp; Perorangan)</div>
-  <div class="pg-sub">Pendaftaran online dari <a href="penggalang.html" target="_blank" rel="noopener"><strong>penggalang.html</strong></a>. Periksa berkas, lalu <strong>Setujui</strong> (kode akses penggalang dibuat dan ditampilkan sekali) atau <strong>Tolak</strong> dengan alasan. Akun penggalang hanya untuk pengajuan kampanye — tidak bisa melihat data mustahik.</div>
+  <div class="pg-sub">Pendaftaran online dari <a href="penggalang.html" target="_blank" rel="noopener noreferrer"><strong>penggalang.html</strong></a>. Periksa berkas, lalu <strong>Setujui</strong> (kode akses penggalang dibuat dan ditampilkan sekali) atau <strong>Tolak</strong> dengan alasan. Akun penggalang hanya untuk pengajuan kampanye — tidak bisa melihat data mustahik.</div>
   <div class="card" style="margin-bottom:14px"><div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
     <select id="pg-filter" onchange="pgRender()" style="max-width:220px"><option value="Menunggu verifikasi">Menunggu verifikasi</option><option value="">Semua</option><option value="Disetujui">Disetujui</option><option value="Ditolak">Ditolak</option></select>
     <button class="btn btn-outline btn-sm" onclick="pgMuat()">Muat ulang</button><span id="pg-status" style="font-size:12px;color:var(--g500);margin-left:auto"></span></div></div>
@@ -1558,8 +1558,8 @@ function getRekomendasiBantuan(desil,iznSkor){
       detail:'Data desil ekonomi belum diisi. Lengkapi pengeluaran & jumlah anggota keluarga.'};
   }
   if(s===null){
-    return{teks:'⚠️ Data IZN kosong',warna:'rek-hitam',levelPrioritas:0,
-      detail:'Data IZN Kesehatan belum diisi. Lengkapi seksi Kesehatan & Penyakit.'};
+    return{teks:'⚠️ Data kesehatan kosong',warna:'rek-hitam',levelPrioritas:0,
+      detail:'Data kesehatan belum diisi. Lengkapi seksi Kesehatan & Penyakit.'};
   }
 
   // Aturan eskalasi: jika skor IZN < 25, naikkan 1 tingkat prioritas
@@ -1568,54 +1568,54 @@ function getRekomendasiBantuan(desil,iznSkor){
   // Kuadran I: Miskin + Sakit Parah → PRIORITAS UTAMA
   if(d<=4&&s<=49){
     return{teks:'🔴 PRIORITAS UTAMA',warna:'rek-merah',levelPrioritas:5,
-      detail:'Kuadran I — Kronis Prioritas. Desil '+d+' + IZN '+s+'. Rekomendasi: Bantuan darurat kesehatan + pangan + modal usaha adaptif.'};
+      detail:'Kuadran I — Kronis Prioritas. Desil '+d+' + Skor Kes. '+s+'. Rekomendasi: Bantuan darurat kesehatan + pangan + modal usaha adaptif.'};
   }
   // Kuadran II: Miskin tapi Sehat — naik ke I jika IZN sangat rendah (eskalasi sudah tercover di atas)
   if(d<=4&&s>=50){
     // Eskalasi: jika IZN 50-74 dan desil 1-2, naikkan ke prioritas utama
     if(escalate||( d<=2&&s<75)){
       return{teks:'🔴 PRIORITAS UTAMA',warna:'rek-merah',levelPrioritas:5,
-        detail:'Eskalasi: Desil '+d+' + IZN '+s+' (< 25). Ditingkatkan ke Prioritas Utama.'};
+        detail:'Eskalasi: Desil '+d+' + Skor Kes. '+s+' (< 25). Ditingkatkan ke Prioritas Utama.'};
     }
     return{teks:'🟠 Bantuan Pangan & Ekonomi',warna:'rek-oranye',levelPrioritas:4,
-      detail:'Kuadran II — Miskin Sehat. Desil '+d+' + IZN '+s+'. Rekomendasi: Sembako reguler + bantuan tunai bersyarat + pelatihan UMKM.'};
+      detail:'Kuadran II — Miskin Sehat. Desil '+d+' + Skor Kes. '+s+'. Rekomendasi: Sembako reguler + bantuan tunai bersyarat + pelatihan UMKM.'};
   }
   // Kuadran III: Ekonomi menengah tapi Sakit
   if(d>=5&&d<=7&&s<=49){
     if(escalate){
       // Eskalasi ke Kuadran II level
       return{teks:'🟠 Bantuan Pangan & Ekonomi',warna:'rek-oranye',levelPrioritas:4,
-        detail:'Eskalasi: Kuadran III + IZN '+s+' (< 25). Ditingkatkan satu level. Rekomendasi: Tambahkan bantuan pangan & ekonomi.'};
+        detail:'Eskalasi: Kuadran III + Skor Kes. '+s+' (< 25). Ditingkatkan satu level. Rekomendasi: Tambahkan bantuan pangan & ekonomi.'};
     }
     return{teks:'🟡 Bantuan Kesehatan',warna:'rek-kuning',levelPrioritas:3,
-      detail:'Kuadran III — Rentan Sakit. Desil '+d+' + IZN '+s+'. Rekomendasi: BPJS PBI + obat kronis + alat bantu kesehatan.'};
+      detail:'Kuadran III — Rentan Sakit. Desil '+d+' + Skor Kes. '+s+'. Rekomendasi: BPJS PBI + obat kronis + alat bantu kesehatan.'};
   }
   // Desil 5-7 tapi sehat
   if(d>=5&&d<=7&&s>=50){
     if(escalate){
       return{teks:'🟡 Bantuan Kesehatan',warna:'rek-kuning',levelPrioritas:3,
-        detail:'Eskalasi: Desil menengah + IZN '+s+' (< 25). Perlu pantauan kesehatan lebih ketat.'};
+        detail:'Eskalasi: Desil menengah + Skor Kes. '+s+' (< 25). Perlu pantauan kesehatan lebih ketat.'};
     }
     return{teks:'⚪ Non-Prioritas',warna:'rek-abu',levelPrioritas:1,
-      detail:'Desil '+d+' + IZN '+s+'. Kondisi menengah dan sehat. Cukup pemantauan berkala.'};
+      detail:'Desil '+d+' + Skor Kes. '+s+'. Kondisi menengah dan sehat. Cukup pemantauan berkala.'};
   }
   // Kuadran IV: Tidak miskin + Sehat
   if(d>=8&&s>=75){
     return{teks:'⚪ Non-Prioritas',warna:'rek-abu',levelPrioritas:1,
-      detail:'Kuadran IV — Stabil. Desil '+d+' + IZN '+s+'. Tidak perlu bantuan reguler, cukup pemantauan.'};
+      detail:'Kuadran IV — Stabil. Desil '+d+' + Skor Kes. '+s+'. Tidak perlu bantuan reguler, cukup pemantauan.'};
   }
   // Kuadran V: Tidak miskin tapi Sakit (Kasus Khusus)
   if(d>=8&&s<=74){
     if(escalate){
       return{teks:'🟡 Bantuan Kesehatan',warna:'rek-kuning',levelPrioritas:3,
-        detail:'Eskalasi: Desil '+d+' (tidak miskin) + IZN '+s+' (< 25). Kondisi kritis, perlu intervensi kesehatan segera.'};
+        detail:'Eskalasi: Desil '+d+' (tidak miskin) + Skor Kes. '+s+' (< 25). Kondisi kritis, perlu intervensi kesehatan segera.'};
     }
     return{teks:'🟢 Bantuan Terbatas',warna:'rek-hijau',levelPrioritas:2,
-      detail:'Kuadran V — Kasus Khusus. Desil '+d+' + IZN '+s+'. Rekomendasi: Pendampingan ringan / bantuan sekali waktu (misal musibah).'};
+      detail:'Kuadran V — Kasus Khusus. Desil '+d+' + Skor Kes. '+s+'. Rekomendasi: Pendampingan ringan / bantuan sekali waktu (misal musibah).'};
   }
   // Fallback
   return{teks:'⚪ Perlu Evaluasi',warna:'rek-abu',levelPrioritas:1,
-    detail:'Desil '+d+' + IZN '+s+'. Silakan evaluasi kembali data ekonomi dan kesehatan.'};
+    detail:'Desil '+d+' + Skor Kes. '+s+'. Silakan evaluasi kembali data ekonomi dan kesehatan.'};
 }
 
 // Tooltip rekomendasi
@@ -1672,7 +1672,7 @@ function getDetailRekomendasi(desil,iznSkor){
     return{
       kuadran:'I',namaKuadran:'Kronis Prioritas Utama',
       detail:'Bantuan darurat kesehatan + rujukan faskes gratis + paket gizi khusus + bantuan modal usaha adaptif + pendampingan intensif 6 bulan.',
-      teks:'Kuadran I — Kronis Prioritas Utama. Desil '+d+' + IZN '+s+'. Rekomendasi: Bantuan darurat kesehatan + rujukan faskes gratis + paket gizi khusus + bantuan modal usaha adaptif + pendampingan intensif 6 bulan.'
+      teks:'Kuadran I — Kronis Prioritas Utama. Desil '+d+' + Skor Kes. '+s+'. Rekomendasi: Bantuan darurat kesehatan + rujukan faskes gratis + paket gizi khusus + bantuan modal usaha adaptif + pendampingan intensif 6 bulan.'
     };
   }
 
@@ -1682,13 +1682,13 @@ function getDetailRekomendasi(desil,iznSkor){
       return{
         kuadran:'I',namaKuadran:'Kronis Prioritas Utama (Eskalasi)',
         detail:'Data ini dieskalasi ke Kuadran I karena Desil '+d+' (sangat miskin). Bantuan darurat kesehatan + rujukan faskes gratis + paket gizi khusus + pendampingan intensif.',
-        teks:'Kuadran I — Eskalasi dari Kuadran II. Desil '+d+' + IZN '+s+'. Rekomendasi: Bantuan darurat kesehatan + rujukan faskes gratis + paket gizi khusus.'
+        teks:'Kuadran I — Eskalasi dari Kuadran II. Desil '+d+' + Skor Kes. '+s+'. Rekomendasi: Bantuan darurat kesehatan + rujukan faskes gratis + paket gizi khusus.'
       };
     }
     return{
       kuadran:'II',namaKuadran:'Miskin Sehat',
       detail:'Sembako reguler 3 bulan + bantuan tunai bersyarat (BLT) + pelatihan UMKM + bantuan peralatan usaha ringan.',
-      teks:'Kuadran II — Miskin Sehat. Desil '+d+' + IZN '+s+'. Rekomendasi: Sembako reguler 3 bulan + bantuan tunai bersyarat (BLT) + pelatihan UMKM + bantuan peralatan usaha ringan.'
+      teks:'Kuadran II — Miskin Sehat. Desil '+d+' + Skor Kes. '+s+'. Rekomendasi: Sembako reguler 3 bulan + bantuan tunai bersyarat (BLT) + pelatihan UMKM + bantuan peralatan usaha ringan.'
     };
   }
 
@@ -1697,14 +1697,14 @@ function getDetailRekomendasi(desil,iznSkor){
     if(escalate){
       return{
         kuadran:'III',namaKuadran:'Rentan Sakit (Eskalasi Kritis)',
-        detail:'IZN sangat rendah (< 25). Eskalasi: BPJS PBI segera + obat kronis prioritas + kunjungan rumah petugas kesehatan + tambahan bantuan pangan darurat.',
-        teks:'Kuadran III (Eskalasi) — Rentan Sakit Kritis. Desil '+d+' + IZN '+s+'. Rekomendasi: BPJS PBI segera + obat kronis + kunjungan rumah + bantuan pangan darurat.'
+        detail:'Skor kesehatan sangat rendah (< 25). Eskalasi: BPJS PBI segera + obat kronis prioritas + kunjungan rumah petugas kesehatan + tambahan bantuan pangan darurat.',
+        teks:'Kuadran III (Eskalasi) — Rentan Sakit Kritis. Desil '+d+' + Skor Kes. '+s+'. Rekomendasi: BPJS PBI segera + obat kronis + kunjungan rumah + bantuan pangan darurat.'
       };
     }
     return{
       kuadran:'III',namaKuadran:'Rentan Sakit',
       detail:'BPJS PBI (iuran ditanggung negara) + obat kronis rutin + alat bantu kesehatan (jika perlu) + pendampingan pengobatan.',
-      teks:'Kuadran III — Rentan Sakit. Desil '+d+' + IZN '+s+'. Rekomendasi: BPJS PBI + obat kronis rutin + alat bantu kesehatan + pendampingan pengobatan.'
+      teks:'Kuadran III — Rentan Sakit. Desil '+d+' + Skor Kes. '+s+'. Rekomendasi: BPJS PBI + obat kronis rutin + alat bantu kesehatan + pendampingan pengobatan.'
     };
   }
 
@@ -1713,14 +1713,14 @@ function getDetailRekomendasi(desil,iznSkor){
     if(escalate){
       return{
         kuadran:'III',namaKuadran:'Rentan Sakit (Pantau Ketat)',
-        detail:'Kondisi ekonomi menengah namun IZN rendah. Pantau kondisi kesehatan secara berkala. BPJS PBI preventif + edukasi gaya hidup sehat.',
-        teks:'Kuadran III — Pantau Ketat. Desil '+d+' + IZN '+s+'. Rekomendasi: Pantau berkala + BPJS PBI preventif + edukasi kesehatan.'
+        detail:'Kondisi ekonomi menengah namun skor kesehatan rendah. Pantau kondisi kesehatan secara berkala. BPJS PBI preventif + edukasi gaya hidup sehat.',
+        teks:'Kuadran III — Pantau Ketat. Desil '+d+' + Skor Kes. '+s+'. Rekomendasi: Pantau berkala + BPJS PBI preventif + edukasi kesehatan.'
       };
     }
     return{
       kuadran:'IV',namaKuadran:'Stabil Non-Prioritas',
       detail:'Tidak perlu bantuan reguler. Cukup pemantauan berkala setiap 6 bulan. Potensi sebagai muzaki.',
-      teks:'Kuadran IV — Stabil Non-Prioritas. Desil '+d+' + IZN '+s+'. Rekomendasi: Pemantauan berkala setiap 6 bulan. Potensi dikembangkan sebagai muzaki.'
+      teks:'Kuadran IV — Stabil Non-Prioritas. Desil '+d+' + Skor Kes. '+s+'. Rekomendasi: Pemantauan berkala setiap 6 bulan. Potensi dikembangkan sebagai muzaki.'
     };
   }
 
@@ -1729,7 +1729,7 @@ function getDetailRekomendasi(desil,iznSkor){
     return{
       kuadran:'IV',namaKuadran:'Stabil Non-Prioritas',
       detail:'Tidak perlu bantuan reguler. Cukup pemantauan berkala setiap 6 bulan. Potensi sebagai muzaki.',
-      teks:'Kuadran IV — Stabil Non-Prioritas. Desil '+d+' + IZN '+s+'. Rekomendasi: Tidak perlu bantuan reguler. Pemantauan berkala. Potensi muzaki.'
+      teks:'Kuadran IV — Stabil Non-Prioritas. Desil '+d+' + Skor Kes. '+s+'. Rekomendasi: Tidak perlu bantuan reguler. Pemantauan berkala. Potensi muzaki.'
     };
   }
 
@@ -1739,21 +1739,21 @@ function getDetailRekomendasi(desil,iznSkor){
       return{
         kuadran:'V',namaKuadran:'Bantuan Terbatas (Perlu Perhatian Kesehatan)',
         detail:'Kondisi ekonomi baik namun kesehatan sangat rendah. Intervensi kesehatan segera: BPJS Mandiri dibantu + konsultasi spesialis + pemantauan rutin bulanan.',
-        teks:'Kuadran V (Eskalasi) — Ekonomi Baik, Sakit Berat. Desil '+d+' + IZN '+s+'. Rekomendasi: Bantuan BPJS Mandiri + konsultasi spesialis + pemantauan rutin.'
+        teks:'Kuadran V (Eskalasi) — Ekonomi Baik, Sakit Berat. Desil '+d+' + Skor Kes. '+s+'. Rekomendasi: Bantuan BPJS Mandiri + konsultasi spesialis + pemantauan rutin.'
       };
     }
     return{
       kuadran:'V',namaKuadran:'Bantuan Terbatas',
       detail:'Bantuan insidental (musibah/kebakaran/bencana) + pendampingan ringan. Tidak masuk program bantuan reguler.',
-      teks:'Kuadran V — Bantuan Terbatas. Desil '+d+' + IZN '+s+'. Rekomendasi: Bantuan insidental (musibah) + pendampingan ringan. Tidak masuk program reguler.'
+      teks:'Kuadran V — Bantuan Terbatas. Desil '+d+' + Skor Kes. '+s+'. Rekomendasi: Bantuan insidental (musibah) + pendampingan ringan. Tidak masuk program reguler.'
     };
   }
 
   // Fallback
   return{
     kuadran:'—',namaKuadran:'Perlu Evaluasi',
-    detail:'Data desil dan IZN sudah tersedia namun tidak cocok dengan kuadran manapun. Silakan periksa kembali data ekonomi dan kesehatan.',
-    teks:'Perlu Evaluasi. Desil '+d+' + IZN '+s+'. Silakan periksa kembali data ekonomi dan kesehatan.'
+    detail:'Data desil dan skor kesehatan sudah tersedia namun tidak cocok dengan kuadran manapun. Silakan periksa kembali data ekonomi dan kesehatan.',
+    teks:'Perlu Evaluasi. Desil '+d+' + Skor Kes. '+s+'. Silakan periksa kembali data ekonomi dan kesehatan.'
   };
 }
 
@@ -2465,7 +2465,7 @@ function lihatDetail(id){
       <div style="font-size:14px;font-weight:800;color:var(--g900);margin-bottom:6px">Kuadran ${detRek.kuadran} — ${detRek.namaKuadran}</div>
       <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--g500);margin-bottom:10px;">
         <span>Desil Ekonomi: <strong style="color:var(--teal)">${d.desil?'Desil '+d.desil:'—'}</strong></span>
-        <span>Skor IZN Kes.: <strong style="color:var(--gold)">${d.iznSkor!==''&&d.iznSkor!==undefined?d.iznSkor:'—'}</strong></span>
+        <span>Skor Kes.: <strong style="color:var(--gold)">${d.iznSkor!==''&&d.iznSkor!==undefined?d.iznSkor:'—'}</strong></span>
         <span>Level Prioritas: <strong style="color:var(--red)">${rek.levelPrioritas}/5</strong></span>
       </div>
       <div style="font-size:13px;color:#374151;line-height:1.7;border-top:1px dashed #e8d7a3;padding-top:10px;">
@@ -2500,8 +2500,8 @@ function lihatDetail(id){
       ${row('Desil BAZNAS',d.desilBaznas?'Desil '+d.desilBaznas+' · '+d.kelompokPendapatan:'')}${row('Jaring BAZNAS',d.jaringBaznas?JARING_LABEL[d.jaringBaznas]:'')}
       ${row('Had Kifayah / UMP',d.statusHadKifayah?d.statusHadKifayah+' · '+d.statusUMP:'')}${row('Kelayakan Program',d.desilBaznas?(badgeProgram(d)||'—')+(d.layakZAuto==='Tidak (usia)'?' <small>(Z-Auto: usia)</small>':''):'')}
     </div></div>
-    <div class="det-sec"><h4>Kesehatan (IZN)</h4>
-      ${sc!==''?`<div class="izn-big"><div class="izn-num">${sc}</div><div><div style="font-size:13px;font-weight:700;color:var(--gold)">${bk}</div><div style="font-size:11px;color:var(--g500)">Skor IZN Kesehatan / 100</div></div></div>`:''}
+    <div class="det-sec"><h4>Kesehatan (format IZN 2024)</h4>
+      ${sc!==''?`<div class="izn-big"><div class="izn-num">${sc}</div><div><div style="font-size:13px;font-weight:700;color:var(--gold)">${bk}</div><div style="font-size:11px;color:var(--g500)">Skor Kesehatan / 100</div></div></div>`:''}
       <div class="det-grid">
         ${row('Status JKN/BPJS',d.statusJkn)}${row('Akses Faskes',d.aksesFaskes)}
         ${row('Kondisi Kesehatan',d.kondisiKesehatan)}${row('Anggota Sakit',d.anggotaSakit)}
@@ -2827,8 +2827,8 @@ function exportExcel(){
 
     // ── Sheet 3: Panduan IZN & Rekomendasi
     var ws3rows=[
-      ['PANDUAN SKOR IZN DIMENSI KESEHATAN — BAZNAS Kota Lubuklinggau'],[''],
-      ['TABEL SKOR IZN'],
+      ['PANDUAN SKOR KESEHATAN (FORMAT IZN 2024) — BAZNAS Kota Lubuklinggau'],[''],
+      ['TABEL SKOR KESEHATAN'],
       ['Skor','Kategori','Rekomendasi'],
       ['75-100','Baik','Pantau berkala'],
       ['50-74','Sedang','Bantu biaya kesehatan rutin'],
@@ -2836,7 +2836,7 @@ function exportExcel(){
       ['0-24','Kritis','Segera tangani dan rujuk faskes'],
       [''],
       ['MATRIKS REKOMENDASI BANTUAN (2 DIMENSI) — DETAIL'],
-      ['Kuadran','Nama Kuadran','Desil Ekonomi','Skor IZN','Level Prioritas','Detail Intervensi'],
+      ['Kuadran','Nama Kuadran','Desil Ekonomi','Skor Kes.','Level Prioritas','Detail Intervensi'],
       ['I','Kronis Prioritas Utama','1–4','0–49','5 (Tertinggi)','Bantuan darurat kesehatan + rujukan faskes gratis + paket gizi khusus + bantuan modal usaha adaptif + pendampingan intensif 6 bulan'],
       ['II','Miskin Sehat','1–4','50–100','4','Sembako reguler 3 bulan + bantuan tunai bersyarat (BLT) + pelatihan UMKM + bantuan peralatan usaha ringan'],
       ['III','Rentan Sakit','5–7','0–49','3','BPJS PBI (iuran ditanggung negara) + obat kronis rutin + alat bantu kesehatan (jika perlu) + pendampingan pengobatan'],
@@ -2846,18 +2846,18 @@ function exportExcel(){
       [''],
       ['ATURAN ESKALASI'],
       ['- Jika Desil ≤ 3: otomatis Kuadran I atau II (prioritas tinggi)'],
-      ['- Jika Skor IZN < 25: naikkan 1 tingkat prioritas dari kuadran semula'],
+      ['- Jika Skor Kesehatan < 25: naikkan 1 tingkat prioritas dari kuadran semula'],
       [''],
       ['FORMAT ID MUSTAHIK: 1674-YYMM-XXXXX'],
       ['1674 = Kode BAZNAS Kota Lubuklinggau'],
       ['YYMM = Tahun 2 digit + Bulan 2 digit saat data disimpan'],
       ['XXXXX = Nomor urut 5 digit per periode (reset setiap bulan baru)'],
       [''],
-      ['Daftar Penyakit IZN:']
+      ['Daftar Penyakit:']
     ];
     PENYAKIT.forEach(function(p,i){ ws3rows.push([i+1,p]); });
     ws3rows.push(['']);
-    ws3rows.push(['Sumber: Indeks Zakat Nasional (IZN) — BAZNAS RI']);
+    ws3rows.push(['Sumber: Indeks Zakat Nasional 2024 dimensi kesehatan (BAZNAS RI) — bukan IZN 2026/CIBEST']);
     ws3rows.push(['© 2026 — BAZNAS Kota Lubuk Linggau — Data Mustahik — By Andi Wiyanda']);
     var ws3=XLSX.utils.aoa_to_sheet(ws3rows);
 
@@ -2902,7 +2902,7 @@ function exportExcel(){
     var wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws1,'Data Mustahik');
     XLSX.utils.book_append_sheet(wb,ws2,'Anggota Keluarga');
-    XLSX.utils.book_append_sheet(wb,ws3,'Panduan IZN');
+    XLSX.utils.book_append_sheet(wb,ws3,'Panduan Kesehatan IZN2024');
     XLSX.utils.book_append_sheet(wb,ws4,'Ringkasan SROI');
     if(window._exHanyaData)wb.SheetNames=['Data Mustahik'];
 
@@ -3274,13 +3274,13 @@ function generateKartuMustahikHTML(d, nomor, total){
 
     <!-- D. KESEHATAN -->
     <div class="kc-sec">
-      <span class="kc-sec-title">D. Data Kesehatan (IZN)</span>
+      <span class="kc-sec-title">D. Data Kesehatan</span>
       <div style="margin-bottom:6px">
         <div class="kc-izn-box">
           <div class="kc-izn-num">${iznSkorVal}</div>
           <div>
             <div class="kc-izn-kat">${iznKatVal}</div>
-            <div style="font-size:9px;color:#999">Skor IZN Kesehatan / 100</div>
+            <div style="font-size:9px;color:#999">Skor Kesehatan / 100</div>
           </div>
         </div>
       </div>
@@ -3312,7 +3312,7 @@ function generateKartuMustahikHTML(d, nomor, total){
           ${rek.teks}
         </span>
         <div style="font-size:10px;color:#555;margin:5px 0;"><strong>Kuadran ${detRek.kuadran} — ${detRek.namaKuadran}</strong>
-          &nbsp;|&nbsp; Desil: ${d.desil||'—'} &nbsp;|&nbsp; IZN: ${iznSkorVal} &nbsp;|&nbsp; Level Prioritas: ${rek.levelPrioritas}/5
+          &nbsp;|&nbsp; Desil: ${d.desil||'—'} &nbsp;|&nbsp; Skor Kes.: ${iznSkorVal} &nbsp;|&nbsp; Level Prioritas: ${rek.levelPrioritas}/5
         </div>
         <div class="kc-rek-detail"><strong>Intervensi yang Direkomendasikan:</strong><br/>${detRek.detail}</div>
       </div>
@@ -3383,7 +3383,7 @@ function generateKartuMustahikHTML(d, nomor, total){
 
     <!-- FOOTER KARTU -->
     <div class="kc-footer">
-      Dokumen Resmi BAZNAS Kota Lubuklinggau — Sistem Informasi Mustahik Terpadu IZN<br/>
+      Dokumen Resmi BAZNAS Kota Lubuklinggau — Sistem Informasi Mustahik Terpadu<br/>
       Dicetak pada: ${tglCetak}${d.surveyor?' oleh: '+d.surveyor:''} &nbsp;|&nbsp; ID: ${d.mustahikId||'—'} &nbsp;|&nbsp; Total data dicetak: ${total}
     </div>
   </div>`;
@@ -3848,7 +3848,7 @@ function pjDetail(no){
     <div style="font-size:13px">
       ${baris('Nama',pjEsc(p.nama))}${baris('NIK',`<span class="mono">${pjEsc(p.nik)}</span>`)}${baris('No KK',`<span class="mono">${pjEsc(p.noKK)}</span>`)}
       ${baris('Jenis kelamin',pjEsc(p.jenisKelamin))}${baris('Tempat, tgl lahir',pjEsc(p.tempatLahir)+', '+pjEsc(tglLahirTampil(p.tanggalLahir)))}${baris('Status keluarga',pjEsc(p.statusKeluarga))}
-      ${baris('Alamat',pjEsc(p.alamat)+'<br>'+pjEsc(p.kelurahan)+', '+pjEsc(p.kecamatan))}${baris('HP/WA',`<a href="https://wa.me/${pjEsc(p.telepon.replace(/^0/,'62').replace(/\D/g,''))}" target="_blank" rel="noopener">${pjEsc(p.telepon)}</a>`)}
+      ${baris('Alamat',pjEsc(p.alamat)+'<br>'+pjEsc(p.kelurahan)+', '+pjEsc(p.kecamatan))}${baris('HP/WA',`<a href="https://wa.me/${pjEsc(p.telepon.replace(/^0/,'62').replace(/\D/g,''))}" target="_blank" rel="noopener noreferrer">${pjEsc(p.telepon)}</a>`)}
       ${baris('Pekerjaan',pjEsc(p.pekerjaan))}${baris('Penghasilan / bulan',fRpPj(p.penghasilan))}${baris('Pengeluaran / bulan',fRpPj(p.totalPengeluaran))}
       ${baris('Anggota serumah / ditanggung',pjEsc(p.jumlahAnggota||'—')+' orang / '+pjEsc(p.jumlahTanggungan||'—')+' jiwa'+((p.jumlahTanggungan&&!(/^\d{1,2}$/.test(String(p.jumlahTanggungan))&&+p.jumlahTanggungan<=30))||(+p.jumlahTanggungan>+p.jumlahAnggota&&+p.jumlahAnggota>0)?' <b style="color:#c0392b">⚠ perlu dicek saat kunjungan</b>':''))}${baris('Kondisi rumah',pjEsc(p.kondisiRumah))}
       ${baris('Bantuan diajukan',pjEsc(p.kategoriBantuan))}${p.lembagaPendidikan||p.jenjangPendidikan?baris('Pendidikan',[p.lembagaPendidikan,p.jenjangPendidikan,p.prodiKelas,p.semester?'Semester '+p.semester:''].filter(Boolean).map(pjEsc).join(' · ')):''}${baris('Kebutuhan mendesak',pjEsc(p.kebutuhanUtama))}${baris('Alasan',pjEsc(p.alasan))}
@@ -3899,8 +3899,8 @@ async function pjLihatDok(no,jenis){
     const bin=atob(r.base64),u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
     const url=URL.createObjectURL(new Blob([u8],{type:r.mime}));
     box.innerHTML=r.mime==='application/pdf'
-      ?`<a class="btn btn-outline btn-sm" href="${url}" target="_blank" rel="noopener">Buka PDF</a>`
-      :`<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="${jenis}" style="max-width:100%;max-height:220px;border-radius:6px"/></a>`;
+      ?`<a class="btn btn-outline btn-sm" href="${url}" target="_blank" rel="noopener noreferrer">Buka PDF</a>`
+      :`<a href="${url}" target="_blank" rel="noopener noreferrer"><img src="${url}" alt="${jenis}" style="max-width:100%;max-height:220px;border-radius:6px"/></a>`;
   }catch(err){box.textContent='Offline — tidak dapat memuat dokumen.';}
 }
 
@@ -3949,7 +3949,7 @@ function pjLengkapi(no){
   pjAktif=no;
   if(typeof aturWali==='function'){aturWali();kkPanelForm();}
   const bn=document.getElementById('pj-banner');
-  if(bn){bn.style.display='block';bn.innerHTML='📥 Melengkapi pengajuan mandiri <strong>'+pjEsc(no)+'</strong> — lengkapi Asnaf, kesehatan/IZN, rekening, dan hasil verifikasi lapangan, lalu <strong>Simpan Data</strong>. Pengajuan otomatis berstatus <em>Diterima</em>.';}
+  if(bn){bn.style.display='block';bn.innerHTML='📥 Melengkapi pengajuan mandiri <strong>'+pjEsc(no)+'</strong> — lengkapi Asnaf, kesehatan, rekening, dan hasil verifikasi lapangan, lalu <strong>Simpan Data</strong>. Pengajuan otomatis berstatus <em>Diterima</em>.';}
 }
 
 // ════════════════════════════════════════════
@@ -4476,7 +4476,7 @@ function ndBody(tahap,list,o){
         <li>Undang-Undang Nomor 23 Tahun 2011 tentang Pengelolaan Zakat;</li>
         <li>Peraturan Daerah Kota Lubuklinggau Nomor 3 Tahun 2016 tentang Pengelolaan Zakat, Infak dan Sedekah;</li>
         <li>Hasil survei dan verifikasi lapangan calon mustahik pada tanggal ${tglSurvei}.</li></ol></li>
-      <li>Telah dilakukan survei dan verifikasi terhadap <b>${n}</b> calon mustahik di wilayah ${wilayah}, meliputi identitas, kondisi ekonomi (desil), kondisi kesehatan (skor IZN), dan kebutuhan bantuan, dengan hasil sebagaimana tercantum dalam lampiran.</li>
+      <li>Telah dilakukan survei dan verifikasi terhadap <b>${n}</b> calon mustahik di wilayah ${wilayah}, meliputi identitas, kondisi ekonomi (desil), kondisi kesehatan (skor kesehatan), dan kebutuhan bantuan, dengan hasil sebagaimana tercantum dalam lampiran.</li>
       <li>Berdasarkan hasil survei tersebut, diusulkan <b>${n}</b> mustahik untuk ditetapkan sebagai penerima bantuan dengan total usulan sebesar ${tot}.</li>
       <li>Berkas pendukung (Formulir Pendaftaran Mustahik, fotokopi KTP/KK, dan dokumentasi survei) tersedia dan dapat diperiksa.</li>
     </ol>${pemohonan}
@@ -4487,7 +4487,7 @@ function ndBody(tahap,list,o){
     return ndKepala({tgl:o.tgl,kepada:ND_WAKA3.jabatan+' BAZNAS Kota Lubuklinggau',dari:DOK_PIMPINAN.waka2.jabatan+' BAZNAS Kota Lubuklinggau',hal:'Usulan Penyaluran Bantuan Mustahik'})+
     `<ol class="nd-isi">
       <li>Menindaklanjuti Nota Dinas Petugas Survei Nomor <span class="isi in"></span> tanggal <span class="isi in"></span> perihal Laporan Hasil Survei dan Usulan Penyaluran Bantuan Mustahik.</li>
-      <li>Setelah dilakukan penelaahan atas hasil survei, desil, skor IZN, dan rekomendasi bantuan, kami mengusulkan penyaluran bantuan kepada <b>${n}</b> mustahik dengan total sebesar ${tot}, dengan rincian sebagaimana tercantum dalam lampiran.</li>
+      <li>Setelah dilakukan penelaahan atas hasil survei, desil, skor kesehatan, dan rekomendasi bantuan, kami mengusulkan penyaluran bantuan kepada <b>${n}</b> mustahik dengan total sebesar ${tot}, dengan rincian sebagaimana tercantum dalam lampiran.</li>
       <li>Sehubungan dengan hal tersebut, mohon kiranya dapat diproses penganggaran dan pembayarannya sesuai Rencana Kerja dan Anggaran Tahunan (RKAT) tahun berjalan.</li>
     </ol>${pemohonan}
     <div class="tgl-ttd">Lubuklinggau, ${ndTglPanjang(o.tgl)}</div>
@@ -4513,7 +4513,7 @@ function ndLampiran(tahap,list,o){
   const rows=kosong?Array(12).fill(null):list;
   let head,cell;
   if(tahap==='nd1'){
-    head=['No','ID Mustahik','Nama','NIK','Kelurahan / Kecamatan','Asnaf','Desil','Desil BAZNAS','Skor IZN','Rekomendasi','Jenis Bantuan','Usulan (Rp)'];
+    head=['No','ID Mustahik','Nama','NIK','Kelurahan / Kecamatan','Asnaf','Desil','Desil BAZNAS','Skor Kes.','Rekomendasi','Jenis Bantuan','Usulan (Rp)'];
     cell=(d,i)=>d?[i+1,d.mustahikId,d.nama,d.nik,[d.kelurahan,d.kecamatan].filter(Boolean).join(' / '),d.asnaf,d.desil,d.desilBaznas?d.desilBaznas+' (J'+d.jaringBaznas+')':'',d.iznSkor!==''&&d.iznSkor!=null?d.iznSkor+(d.iznKategori?' ('+d.iznKategori+')':''):'',d.rekomendasiSingkat,d.program||d.kategoriBantuan,d.nilaiModal?(+d.nilaiModal).toLocaleString('id-ID'):'']:[i+1,'','','','','','','','','','',''];
   }else if(tahap==='nd2'){
     head=['No','ID Mustahik','Nama','Kelurahan / Kecamatan','Asnaf','Jenis Bantuan / Program','Metode Penyaluran','Usulan (Rp)'];
@@ -4962,8 +4962,8 @@ async function pgDok(no,jenis){
     if(!r.ok){box.textContent=r.pesan||'Gagal memuat.';return;}
     const bin=atob(r.base64),u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
     const url=URL.createObjectURL(new Blob([u8],{type:r.mime}));
-    box.innerHTML=r.mime==='application/pdf'?`<a class="btn btn-outline btn-sm" href="${url}" target="_blank" rel="noopener">Buka PDF</a>`
-      :`<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="${pgE(jenis)}" style="max-width:100%;max-height:220px;border-radius:6px"/></a>`;
+    box.innerHTML=r.mime==='application/pdf'?`<a class="btn btn-outline btn-sm" href="${url}" target="_blank" rel="noopener noreferrer">Buka PDF</a>`
+      :`<a href="${url}" target="_blank" rel="noopener noreferrer"><img src="${url}" alt="${pgE(jenis)}" style="max-width:100%;max-height:220px;border-radius:6px"/></a>`;
   }catch(e){box.textContent='Gagal terhubung — dokumen tidak dapat dimuat.';}
 }
 function pgTampilKode(r){
@@ -5549,7 +5549,7 @@ const hlE=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
     const ref=document.getElementById('tab-kt-btn');if(ref)ref.after(b);else bar.appendChild(b);
     const p=document.createElement('div');p.id='t-highlight';p.className='tab-pane';
     p.innerHTML=`<div class="main"><div class="pg-title">Highlight Kabar</div>
-      <div class="pg-sub">Banner geser di bagian atas <a href="kabar.html" target="_blank" rel="noopener"><b>kabar.html</b></a>. Tayang maks. 5 slide: slide di sini (urut) lalu kampanye berjalan otomatis. Foto mendatar, minimal 1600×700 px; bagian kiri foto tertutup teks.</div>
+      <div class="pg-sub">Banner geser di bagian atas <a href="kabar.html" target="_blank" rel="noopener noreferrer"><b>kabar.html</b></a>. Tayang maks. 5 slide: slide di sini (urut) lalu kampanye berjalan otomatis. Foto mendatar, minimal 1600×700 px; bagian kiri foto tertutup teks.</div>
       <div id="hl-atas" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px"></div>
       <div id="hl-daftar" class="hl-grid"><div class="hint">Memuat…</div></div></div>`;
     const imp=document.getElementById('t-import');(imp?imp.parentNode:document.body).insertBefore(p,imp||null);
@@ -5640,7 +5640,7 @@ const ppTgl=s=>{if(!s)return '—';const d=new Date(String(s).slice(0,10)+'T00:0
     const imp=document.getElementById('tab-import-btn');if(imp)imp.before(b);else bar.appendChild(b);
     const p=document.createElement('div');p.id='t-ppid';p.className='tab-pane';
     p.innerHTML=`<div class="main"><div class="pg-title">PPID — Layanan Informasi Publik</div>
-      <div class="pg-sub">Halaman publik: <a href="ppid.html" target="_blank" rel="noopener"><b>ppid.html</b></a>. Jawab permohonan paling lambat <b>10 hari kerja</b> (+7 bila diperpanjang); keberatan diputus Atasan PPID paling lambat <b>30 hari kerja</b>. Tidak ada hapus — dokumen cukup dinonaktifkan.</div>
+      <div class="pg-sub">Halaman publik: <a href="ppid.html" target="_blank" rel="noopener noreferrer"><b>ppid.html</b></a>. Jawab permohonan paling lambat <b>10 hari kerja</b> (+7 bila diperpanjang); keberatan diputus Atasan PPID paling lambat <b>30 hari kerja</b>. Tidak ada hapus — dokumen cukup dinonaktifkan.</div>
       <div class="pp-sub" id="pp-sub" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div>
       <div id="pp-panel"><div class="hint">Memuat…</div></div></div>`;
     const t=document.getElementById('t-import');(t?t.parentNode:document.body).insertBefore(p,t||null);
@@ -5685,7 +5685,7 @@ function ppRender(){
     box.innerHTML=(r.boleh_ubah?'<div style="margin-bottom:10px"><button class="btn btn-primary" onclick="ppDokForm()">+ Dokumen baru</button> <span class="hint">PDF maks. 4 MB, atau tautan https. Dokumen Dikecualikan wajib alasan uji konsekuensi.</span></div>':'')+
       `<div class="card"><div class="tbl-scroll"><table class="pj-tbl"><thead><tr><th>Kode</th><th>Judul</th><th>Kategori</th><th>Status</th><th>Berkas</th><th></th></tr></thead><tbody>${
       r.dokumen.length?r.dokumen.map(d=>`<tr${d.aktif==='TRUE'?'':' style="opacity:.55"'}><td class="mono">${ppE(d.id)}</td><td><b>${ppE(d.judul)}</b><div class="hint">${[d.kelompok,d.periode].filter(Boolean).map(ppE).join(' · ')}${d.aktif==='TRUE'?'':' · NONAKTIF'}</div></td>
-        <td>${ppE(d.kategori)}</td><td>${stB(d.status)}</td><td>${d.file_id?`<button class="btn btn-outline btn-sm" onclick="ppLihat('dok','${ppE(d.id)}')">PDF</button>`:''}${d.tautan?` <a href="${ppE(d.tautan)}" target="_blank" rel="noopener">tautan ↗</a>`:''}</td>
+        <td>${ppE(d.kategori)}</td><td>${stB(d.status)}</td><td>${d.file_id?`<button class="btn btn-outline btn-sm" onclick="ppLihat('dok','${ppE(d.id)}')">PDF</button>`:''}${d.tautan?` <a href="${ppE(d.tautan)}" target="_blank" rel="noopener noreferrer">tautan ↗</a>`:''}</td>
         <td>${r.boleh_ubah?`<button class="btn btn-outline btn-sm" onclick="ppDokForm('${ppE(d.id)}')">Ubah</button>`:''}</td></tr>`).join('')
       :'<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--g500)">Belum ada dokumen. Mulai dari laporan keuangan & laporan kinerja (Informasi Berkala).</td></tr>'}</tbody></table></div></div>`;
   }else{
@@ -7148,7 +7148,7 @@ async function rkKirimImpor() {
     const ambil=new Set();
     const buat=sel=>{
       if(sel==='@survei'||sel==='@monitoring'){
-        const a=document.createElement('a');a.className='tab-btn';a.target='_blank';a.rel='noopener';
+        const a=document.createElement('a');a.className='tab-btn';a.target='_blank';a.rel='noopener noreferrer';
         if(sel==='@survei'){a.href='survei.html';a.innerHTML='📋 Kunjungan Survei <span style="font-size:10px;opacity:.6">↗</span>';}
         else{a.href='survei.html#monitoring';a.innerHTML='📈 Monitoring Pascabantuan <span id="sb-mn-count" class="badge b-red" style="display:none">0</span>';}
         return a;}
@@ -8329,15 +8329,15 @@ function mzolRender(){
   const n=mzDaftar.filter(x=>x.status==='Menunggu verifikasi').length;
   const b=document.getElementById('mzol-count');if(b){b.textContent=n;b.style.display=n?'inline-block':'none';}
   const box=document.getElementById('mzol-body');if(!box)return;
-  if(!mzDaftar.length){box.innerHTML='<div style="text-align:center;color:var(--g500);padding:20px">Belum ada pendaftaran online. Tautan publik: <a href="muzaki.html" target="_blank" rel="noopener"><strong>muzaki.html</strong></a></div>';return;}
+  if(!mzDaftar.length){box.innerHTML='<div style="text-align:center;color:var(--g500);padding:20px">Belum ada pendaftaran online. Tautan publik: <a href="muzaki.html" target="_blank" rel="noopener noreferrer"><strong>muzaki.html</strong></a></div>';return;}
   const urut=[...mzDaftar].sort((a,b)=>(a.status==='Menunggu verifikasi'?0:1)-(b.status==='Menunggu verifikasi'?0:1));
-  box.innerHTML=`<div style="font-size:12px;color:var(--g500);margin-bottom:8px">Tautan publik: <a href="muzaki.html" target="_blank" rel="noopener"><strong>muzaki.html</strong></a> · Periksa data, hubungi via WA, isi NPWZ dari SIMBA, lalu <strong>Terima</strong>.</div>
+  box.innerHTML=`<div style="font-size:12px;color:var(--g500);margin-bottom:8px">Tautan publik: <a href="muzaki.html" target="_blank" rel="noopener noreferrer"><strong>muzaki.html</strong></a> · Periksa data, hubungi via WA, isi NPWZ dari SIMBA, lalu <strong>Terima</strong>.</div>
   <div class="tbl-scroll"><table class="pj-tbl"><thead><tr><th>No</th><th>Tanggal</th><th>Nama</th><th>Jenis</th><th>Identitas</th><th>HP/WA</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${urut.slice(0,100).map(x=>`<tr>
     <td class="mono">${xE(x.no_daftar)}</td><td>${xTgl(x.waktu)}</td>
     <td><strong>${xE(x.nama)}</strong>${x.namaInstansi&&x.namaInstansi!==x.nama?'<br><span style="font-size:11px;color:var(--g500)">'+xE(x.namaInstansi)+'</span>':''}</td>
     <td>${xE(x.jenisDonatur)}<br><span style="font-size:11px;color:var(--g500)">${xE(x.bentukEntitas)}</span></td>
     <td class="mono">${xE(x.nomorIdentitas||x.npwp||'—')}</td>
-    <td><a href="https://wa.me/${xE(String(x.hp||'').replace(/^0/,'62').replace(/\D/g,''))}" target="_blank" rel="noopener">${xE(x.hp)}</a></td>
+    <td><a href="https://wa.me/${xE(String(x.hp||'').replace(/^0/,'62').replace(/\D/g,''))}" target="_blank" rel="noopener noreferrer">${xE(x.hp)}</a></td>
     <td><span class="badge ${x.status==='Diterima'?'b-teal':x.status==='Ditolak'?'b-red':'b-gold'}">${xE(x.status)}</span>${x.muzakiId?'<br><span class="mono" style="font-size:11px">'+xE(x.muzakiId)+'</span>':''}${x.alasan_tolak?'<br><span style="font-size:11px;color:var(--g500)">'+xE(x.alasan_tolak)+'</span>':''}</td>
     <td style="white-space:nowrap">${x.status==='Menunggu verifikasi'?`<button class="btn btn-primary btn-sm" type="button" onclick="mzolTerima('${xE(x.no_daftar)}')">Periksa &amp; Terima</button> <button class="btn btn-ghost btn-sm" type="button" onclick="mzolTolak('${xE(x.no_daftar)}')">Tolak</button>`:''}</td></tr>`).join('')}</tbody></table></div>`;
 }
@@ -8649,7 +8649,7 @@ function lbRender(){
     const rows=r.penerima.filter(p=>cocok(p)&&p.statusBeasiswa==='Aktif'&&p.laporan_lalu!=='Diterima'&&p.laporan_lalu!=='Menunggu');
     const wa=p=>{const d=dataList.find(x=>x.nik===p.nik)||{};const hp=String(d.telepon||'').replace(/\D/g,'').replace(/^0/,'62');
       const t=`Assalamu'alaikum. BAZNAS Kota Lubuklinggau mengingatkan laporan beasiswa ${r.periode.lalu} untuk ID ${p.mustahikId} (batas ${pjTgl(r.periode.batas_lalu)}). Kirim lewat menu Laporan Beasiswa: ${location.origin}/pengajuan.html#laporan — masuk dengan ID Mustahik + tanggal lahir. Terima kasih.`;
-      return hp?`<a class="btn btn-outline btn-sm" target="_blank" rel="noopener" href="https://wa.me/${hp}?text=${encodeURIComponent(t)}">WhatsApp</a>`:'<span style="font-size:11px;color:var(--g500)">HP kosong</span>';};
+      return hp?`<a class="btn btn-outline btn-sm" target="_blank" rel="noopener noreferrer" href="https://wa.me/${hp}?text=${encodeURIComponent(t)}">WhatsApp</a>`:'<span style="font-size:11px;color:var(--g500)">HP kosong</span>';};
     box.innerHTML=`<div class="card"><div class="card-body" style="font-size:12.5px">Penerima <strong>Aktif</strong> yang belum mengirim / perlu melengkapi laporan <strong>${v12E(r.periode.lalu)}</strong> (batas ${pjTgl(r.periode.batas_lalu)}). Pesan WhatsApp hanya berisi ID Mustahik, tanpa NIK.</div>
       <div class="tbl-scroll"><table class="pj-tbl"><thead><tr><th>Penerima</th><th>Jenjang</th><th>Status laporan</th><th>Pengingat</th></tr></thead><tbody>`+
       (rows.length?rows.map(p=>`<tr><td>${v12E(p.nama)}<div class="mono" style="font-size:11px;color:var(--g500)">${v12E(p.mustahikId)}</div></td><td>${v12E(p.jenjang||'—')}</td>
@@ -8729,7 +8729,7 @@ async function lbRapor(id){
   try{const r=await dbApi('lb_file',{id_laporan:id});if(!r.ok){box.textContent=r.pesan||'Gagal.';return;}
     const bin=atob(r.base64),u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
     const url=URL.createObjectURL(new Blob([u8],{type:r.mime}));
-    box.innerHTML=r.mime==='application/pdf'?`<a class="btn btn-outline btn-sm" href="${url}" target="_blank" rel="noopener">Buka PDF</a>`:`<a href="${url}" target="_blank" rel="noopener"><img src="${url}" style="max-width:100%;max-height:260px;border-radius:6px"/></a>`;
+    box.innerHTML=r.mime==='application/pdf'?`<a class="btn btn-outline btn-sm" href="${url}" target="_blank" rel="noopener noreferrer">Buka PDF</a>`:`<a href="${url}" target="_blank" rel="noopener noreferrer"><img src="${url}" style="max-width:100%;max-height:260px;border-radius:6px"/></a>`;
   }catch(e){box.textContent='Offline — tidak dapat memuat rapor.';}
 }
 async function lbVerif(id,st){
@@ -8870,7 +8870,7 @@ async function bmUnggah(mid,boxId){
 function bmTampil(r,el){
   const bin=atob(r.base64),u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
   const url=URL.createObjectURL(new Blob([u8],{type:r.mime}));const w=window.open(url,'_blank');
-  if(!w&&el){const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';a.textContent=' Buka';el.after(a);}
+  if(!w&&el){const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=' Buka';el.after(a);}
 }
 async function bmLihat(id,el){try{const r=await dbApi('bm_file',{idBerkas:id});if(!r.ok){toast(r.pesan,true);return;}bmTampil(r,el);}catch(e){toast('Offline — tidak dapat membuka berkas.',true);}}
 async function bmLihatPj(no,jenis,el){try{const r=await dbApi('pengajuan_file',{no,jenis});if(!r.ok){toast(r.pesan,true);return;}bmTampil(r,el);}catch(e){toast('Offline — tidak dapat membuka berkas.',true);}}
@@ -8940,7 +8940,7 @@ function exDialog(){
       <button class="btn btn-outline btn-sm" type="button" onclick="exSetKolom('kosong')">Kosongkan</button>
       <span id="ex-n" style="font-size:11.5px;color:var(--g500)"></span></div>
     <div class="ex-grid">${H.map(h=>`<label><input type="checkbox" class="ex-k" value="${v14E(h)}" ${pilih.has(h)?'checked':''} onchange="exHitung()"> ${v14E(h)}</label>`).join('')}</div>
-    <label style="display:flex;gap:6px;font-weight:400;font-size:12.5px;margin-top:8px"><input type="checkbox" id="ex-lain" checked style="width:auto"> Sertakan sheet Anggota Keluarga, Panduan IZN &amp; Ringkasan SROI</label>
+    <label style="display:flex;gap:6px;font-weight:400;font-size:12.5px;margin-top:8px"><input type="checkbox" id="ex-lain" checked style="width:auto"> Sertakan sheet Anggota Keluarga, Panduan Kesehatan &amp; Ringkasan SROI</label>
     <div style="font-size:11.5px;color:var(--g500);margin-top:6px">Urutan baris mengikuti ID Mustahik. Kolom "ID Mustahik" &amp; "NIK" disarankan tetap dicentang bila file akan di-Import kembali.</div>`;
   exHitung();openModal('modal-ex');
 }
@@ -9159,7 +9159,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='64 · 21 Nov 2026';
+const APP_VERSI='66 · 23 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
