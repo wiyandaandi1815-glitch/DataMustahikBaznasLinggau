@@ -1,10 +1,51 @@
 {
   "redirects": [
-    { "source": "/", "destination": "/kabar.html", "permanent": true },
-    { "source": "/admin", "destination": "/form-mustahik-final_1.html", "permanent": false }
+    {
+      "source": "/",
+      "destination": "/kabar.html",
+      "permanent": true
+    },
+    {
+      "source": "/admin",
+      "destination": "/form-mustahik-final_1.html",
+      "permanent": false
+    }
   ],
   "rewrites": [
-    { "source": "/k/:id", "destination": "/api/k?id=:id" },
-    { "source": "/logo-baznas.jpg", "destination": "/api/logo" }
+    {
+      "source": "/k/:id",
+      "destination": "/api/k?id=:id"
+    },
+    {
+      "source": "/logo-baznas.jpg",
+      "destination": "/api/logo"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(self), geolocation=(self), microphone=(), usb=(), serial=(), bluetooth=(), browsing-topics=()"
+        }
+      ]
+    }
   ]
 }
