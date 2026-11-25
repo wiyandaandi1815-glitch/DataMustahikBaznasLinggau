@@ -4654,7 +4654,7 @@ function ndOpsiBaca(){
 // Hanya cetakan dari halaman admin: tidak ada data yang diubah / dikirim ke server (RPD hanya dibaca).
 // Nomor SK & tanggal dikosongkan untuk ditulis tangan.
 // ════════════════════════════════════════════
-const SK_SUMBER=['Zakat','Infak/Sedekah','Dana Sosial Keagamaan Lainnya'];
+const SK_SUMBER=['Zakat','Infak/Sedekah Tidak Terikat','Infak/Sedekah Terikat','Dana Sosial Keagamaan Lainnya','Hibah APBD','CSR','Dana Non-Halal'];   // v72
 let skBaris=[];
 function skAngka(v){const n=Number(String(v??'').replace(/[^\d]/g,''));return isNaN(n)?0:n;}
 function skRibuan(v){const n=skAngka(v);return n?n.toLocaleString('id-ID'):'';}
@@ -4788,6 +4788,7 @@ function skCetak(){
   if(kosong.length){toast('Nilai bantuan '+kosong.length+' penerima masih kosong/0 ('+kosong.slice(0,3).map(b=>b.d.nama).join(', ')+(kosong.length>3?', …':'')+') — isi nilainya atau hilangkan centangnya.',true);return;}
   const tanpaId=list.filter(b=>!b.d.mustahikId||b.d.statusVerifikasi!=='terverifikasi');
   list.sort((a,b)=>String(a.d.kecamatan||'').localeCompare(String(b.d.kecamatan||''))||String(a.d.nama||'').localeCompare(String(b.d.nama||'')));
+  if(document.getElementById('sk-sumber').value==='Dana Non-Halal'){toast('Dana Non-Halal hanya untuk kegiatan kepentingan umum dan tidak dapat disalurkan ke mustahik perorangan.',true);return;}   // v72
   const w=window.open('','_blank','width=1000,height=750,scrollbars=yes');
   if(!w){toast('Popup diblokir browser. Izinkan popup untuk halaman ini.',true);return;}
   w.document.write(skHtml(list,{judul,tahun,sumber:document.getElementById('sk-sumber').value}));w.document.close();
@@ -6041,9 +6042,11 @@ function usRekapCetak() {
   w.document.close(); setTimeout(() => { try { w.focus(); w.print(); } catch (e) { } }, 700);
 }
 // v59: sumber dana per penerima
-const US_SUMBER = ['Zakat', 'Infak/Sedekah', 'Dana Sosial Keagamaan Lainnya'], US_ASNAF8 = ['fakir', 'miskin', 'amil', 'muallaf', 'mualaf', 'riqab', 'gharim', 'fisabilillah', 'ibnu sabil'];
+const US_SUMBER = ['Zakat', 'Infak/Sedekah Tidak Terikat', 'Infak/Sedekah Terikat', 'Dana Sosial Keagamaan Lainnya', 'Hibah APBD', 'CSR', 'Dana Non-Halal'],   // v72
+  US_NONHALAL = 'Dana Non-Halal', US_ASNAF8 = ['fakir', 'miskin', 'amil', 'muallaf', 'mualaf', 'riqab', 'gharim', 'fisabilillah', 'ibnu sabil'];
 function usSdAwal(asnaf) { return /fakir|miskin/i.test(String(asnaf || '')) ? 'Zakat' : ''; }
-function usSdPeringatan(i) { if (i.sumber_dana !== 'Zakat') return ''; const p = (usPool || []).find(x => x.mustahikId === i.mustahikId), a = String((p && p.asnaf) || '').toLowerCase();
+function usSdPeringatan(i) { if (i.sumber_dana === US_NONHALAL) return '<span class="us-sd-w">⛔ Non-Halal hanya utk kepentingan umum, tidak ke mustahik perorangan</span>';
+  if (i.sumber_dana !== 'Zakat') return ''; const p = (usPool || []).find(x => x.mustahikId === i.mustahikId), a = String((p && p.asnaf) || '').toLowerCase();
   return US_ASNAF8.some(x => a.includes(x)) ? '' : '<span class="us-sd-w">⚠️ asnaf ' + (a ? usE(a) : 'kosong') + ' — zakat hanya utk 8 asnaf</span>'; }
 function usDaftar() {
   const r = usData, n = usBadge();
@@ -6268,7 +6271,7 @@ function usGambarPilih(gulir) {
   tb.innerHTML = usEdit.items.map((i, k) => `<tr data-cari="${usE((i.nama + ' ' + i.mustahikId + ' ' + i.kelurahan).toLowerCase())}"${i.baru ? ' class="us-baru"' : ''}><td class="us-no">${k + 1}</td>
     <td><b>${usE(i.nama)}</b><div class="us-k mono">${usE(i.mustahikId)} · ${usE(i.kelurahan)}</div>${usRekHtml(i)}${usPeringatanHtml(usPernahEd(i))}</td>
     <td><select data-k="${k}" data-f="bentuk">${usData.bentuk.map(x => `<option${x === i.bentuk ? ' selected' : ''}>${x}</option>`).join('')}</select></td>
-    <td><select data-k="${k}" data-f="sumber_dana"><option value="">— pilih —</option>${US_SUMBER.map(x => `<option${x === i.sumber_dana ? ' selected' : ''}>${x}</option>`).join('')}</select>${usSdPeringatan(i)}</td>
+    <td><select data-k="${k}" data-f="sumber_dana"><option value="">— pilih —</option>${(i.sumber_dana && !US_SUMBER.includes(i.sumber_dana) ? [i.sumber_dana] : []).concat(US_SUMBER).map(x => `<option${x === i.sumber_dana ? ' selected' : ''}>${x}</option>`).join('')}</select>${usSdPeringatan(i)}</td>
     <td><input class="us-num" inputmode="numeric" value="${usFmt(i.nilai)}" data-k="${k}" data-f="nilai" placeholder="0"></td>
     <td><input class="us-num" inputmode="numeric" value="${usFmt(i.potongan_bpjs)}" data-k="${k}" data-f="potongan_bpjs" placeholder="0"></td>
     <td><input class="us-num" inputmode="numeric" value="${usFmt(i.biaya_transfer)}" data-k="${k}" data-f="biaya_transfer" placeholder="0"${i.bentuk !== 'Transfer' ? ' disabled' : ''}></td>
@@ -6403,7 +6406,7 @@ function usdGrup(b, list, o) {
 }
 function usdSumberKalimat(g) { if (g.length === 1) return g[0].sumber; const p = g.map((x, i) => (i ? 'dana ' : '') + x.sumber + ' sebesar ' + dRp(x.nilai)); return p.slice(0, -1).join(', ') + ' dan ' + p[p.length - 1]; }
 function usdSumberTeks(g) { return g.length === 1 ? 'Dana ' + usE(g[0].sumber) : g.map(x => 'Dana ' + usE(x.sumber) + ' ' + dRp(x.nilai)).join('; '); }
-function usdSumberOpsi() { return typeof SK_SUMBER !== 'undefined' ? SK_SUMBER : ['Zakat', 'Infak/Sedekah', 'Dana Sosial Keagamaan Lainnya']; }
+function usdSumberOpsi() { return typeof SK_SUMBER !== 'undefined' ? SK_SUMBER : ['Zakat', 'Infak/Sedekah Tidak Terikat', 'Infak/Sedekah Terikat', 'Dana Sosial Keagamaan Lainnya', 'Hibah APBD', 'CSR', 'Dana Non-Halal']; }
 function usdSumberAwal(b) { const sd = String((b.pos_info && b.pos_info.sumber_dana) || '').toLowerCase(); return sd ? (usdSumberOpsi().find(x => sd.includes(x.toLowerCase().split('/')[0])) || '') : ''; }
 const usdBolehLengkap = () => ['WK3', 'KETUA', 'BENDAHARA'].includes(usData && usData.jabatan);
 const usdSamar = (s, n) => { s = String(s || ''); return s.length > n ? s.slice(0, s.length - n).replace(/./g, '•') + s.slice(-n) : s; };
@@ -9123,7 +9126,7 @@ async function lblCetak(uji){
 
 // ── 5. Rencana Penggunaan Dana (RPD) ──
 let rpdData=null,_rpdEdit=null,_rpdMid='';
-const RPD_SUMBER=['Zakat','Infak/Sedekah','DSKL','CSR','Lainnya'];
+const RPD_SUMBER=['Zakat','Infak/Sedekah Tidak Terikat','Infak/Sedekah Terikat','DSKL','Hibah APBD','CSR','Dana Non-Halal','Lainnya'];   // v72 (Non-Halal ditolak server: bukan utk perorangan)
 async function rpdPanel(boxId,mid){
   const box=document.getElementById(boxId);if(!box)return;_rpdMid=mid;
   if(!mid){box.innerHTML='<div class="rpd-panel" style="font-size:12px;color:var(--g500)">🧾 Rencana Penggunaan Dana tersedia setelah data mendapat ID Mustahik.</div>';return;}
@@ -9157,7 +9160,7 @@ function rpdForm(){
   document.getElementById('rpd-body').innerHTML=`<div class="grid g2">
     <div class="field" style="grid-column:1/-1"><label>Judul / tujuan penggunaan</label><input id="rpd-judul" maxlength="120" value="${v14E(p.judul)}"/></div>
     <div class="field"><label>Jenis bantuan</label><input id="rpd-jenis" maxlength="60" value="${v14E(p.jenis_bantuan)}"/></div>
-    <div class="field"><label>Sumber dana</label><select id="rpd-sumber">${RPD_SUMBER.map(s=>o(p.sumber_dana,s)).join('')}</select></div>
+    <div class="field"><label>Sumber dana</label><select id="rpd-sumber">${(p.sumber_dana&&!RPD_SUMBER.includes(p.sumber_dana)?[p.sumber_dana]:[]).concat(RPD_SUMBER).map(s=>o(p.sumber_dana,s)).join('')}</select></div>
     <div class="field"><label>Nilai bantuan (Rp)</label><input id="rpd-nilai" inputmode="numeric" value="${p.nilai_bantuan?Math.round(p.nilai_bantuan).toLocaleString('id-ID'):''}" oninput="rpdRpInput(this);rpdTotal()"/></div>
     <div class="field"><label>Tanggal</label><input id="rpd-tgl" type="date" value="${v14E(p.tanggal)}"/></div>
     <div class="field"><label>Petugas pendamping</label><input id="rpd-petugas" maxlength="80" value="${v14E(p.petugas)}"/></div>
@@ -9244,7 +9247,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='69 · 25 Nov 2026';
+const APP_VERSI='2026.11.25-1607';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
