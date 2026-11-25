@@ -6176,7 +6176,7 @@ async function usEditor(id, koreksi) {
     potongan_bpjs: i.potongan_bpjs || '', biaya_transfer: i.biaya_transfer || '', biaya_ditanggung: i.biaya_ditanggung || 'BAZNAS', bank_tujuan: i.bank_tujuan || '', sumber_dana: i.sumber_dana || '', trf_manual: true })) : [],
     rek_sumber: b ? b.rek_sumber || 'BSI' : 'BSI' };
   const asal = koreksi ? usData.data.find(x => x.id === koreksi) : null;
-  const progs = [...new Set(usData.data.map(x => x.program))];
+  const progs = [...new Set((typeof PROG_BAKU !== 'undefined' ? PROG_BAKU : []).concat(usData.data.map(x => x.program)))];   // v73: program baku di urutan atas
   document.getElementById('us-main').innerHTML = `<button class="btn btn-outline btn-sm" type="button" onclick="usDaftar()">← Batal</button>
     <div class="pg-title" style="margin-top:8px">${b ? 'Ubah draf ' + usE(b.id) : asal ? 'Usulan koreksi atas ' + usE(asal.id) : 'Usulan penyaluran baru'}</div>
     <div class="us-form" style="margin-top:10px">
@@ -8634,6 +8634,18 @@ function v10Init(){
   aturWali();
 }
 
+// v73: isian Program BAZNAS dipilih dari daftar baku (server menyeragamkan juga saat simpan — gas/src/program.gs).
+const PROG_BAKU=['Bantuan Modal Usaha - Linggau Juara Makmur - Pendayagunaan Ekonomi','Bantuan Pendidikan - Linggau Juara Cerdas - Pendidikan Dasar dan Menengah','Bantuan Pendidikan - Linggau Juara Cerdas - Pendidikan Perguruan Tinggi','Bantuan Rumah Layak Huni - Linggau Juara Peduli'];
+function progSaranIsi(){
+  const inp=document.getElementById('f-program');if(!inp)return;
+  let dl=document.getElementById('dl-program');
+  if(!dl){dl=document.createElement('datalist');dl.id='dl-program';dl.innerHTML=PROG_BAKU.map(p=>'<option value="'+p+'">').join('');document.body.appendChild(dl);}
+  inp.setAttribute('list','dl-program');inp.setAttribute('autocomplete','off');inp.placeholder='Pilih dari daftar program baku';
+}
+function progRapikan(){const e=document.getElementById('f-program');if(!e)return;const v=e.value.trim().replace(/\s+/g,' ');const sama=PROG_BAKU.find(o=>o.toLowerCase()===v.toLowerCase());e.value=sama||v;}
+document.addEventListener('focusin',ev=>{if(ev.target&&ev.target.id==='f-program')progSaranIsi();});
+document.addEventListener('change',ev=>{if(ev.target&&ev.target.id==='f-program')progRapikan();},true);
+
 // ════════════════════════════════════════════
 // v12 — Beasiswa Binaan: daftar penerima per jenjang & status, laporan per semester + verifikasi,
 //        pengingat laporan, label "Belum boleh dicairkan", cerita pilihan (WK2 → Ketua),
@@ -9247,7 +9259,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='2026.11.25-1607';
+const APP_VERSI='2026.11.25-1630';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
