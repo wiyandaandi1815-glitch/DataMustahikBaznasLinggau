@@ -7052,17 +7052,73 @@ async function rkAturSimpan(kode) {
   if (!r.ok) { document.getElementById('rk-f-galat').textContent = r.pesan; b.disabled = false; return; }
   closeModal('modal-rk'); rkMuat();
 }
+// v71: pemetaan berpanduan — saran otomatis (⭐), saringan sumber dana & bidang, label lengkap (keterangan · sumber · pagu · sisa),
+//      ringkasan & peringatan sebelum simpan (melampaui pagu / sumber dana tidak cocok). Hanya halaman admin; server tetap rkat_peta.
+function rkJenisDana(s) { s = String(s || '').toLowerCase(); return /fitrah/.test(s) ? 'fitrah' : /zakat|asnaf/.test(s) ? 'zakat' : /infak|infaq|sedekah/.test(s) ? 'infak' : /dskl|sosial keagamaan|kurban|fidyah/.test(s) ? 'dskl' : /amil/.test(s) ? 'amil' : ''; }
+function rkJenisPos(p) { return rkJenisDana(p.sumber_dana) || (p.asnaf ? 'zakat' : ''); }
+function rkNorm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
+function rkSisa(p) { return (p.pagu || 0) - (p.realisasi || 0) - (p.cadangan || 0); }
+/** Kandidat pos untuk satu kelompok belum-dipetakan: {cocok:[{p,skor,alasan}], lain:[p], saran:p|null, kembar:bool}. Dipakai juga uji node. */
+function rkPetaSaran(b, posList) {
+  const jb = rkJenisDana(b.program), bid = rkNorm(b.bidang), nb = rkNorm(b.program), cocok = [], lain = [];
+  posList.filter(p => p.lembar === 'lk2').forEach(p => {
+    const jp = rkJenisPos(p), samaDana = !jb || !jp || jb === jp, samaBid = !bid || !p.bidang || rkNorm(p.bidang) === bid;
+    if (!samaDana || !samaBid) { lain.push(p); return; }
+    const np = rkNorm(p.nama); let skor = 0, alasan = [];
+    if (np && np === nb) { skor += 100; alasan.push('nama program sama'); }
+    else if (np && nb && (nb.includes(np) || np.includes(nb))) { skor += 60; alasan.push('nama program mirip'); }
+    if (jb && jb === jp) { skor += 10; alasan.push('sumber dana sama'); }
+    if (bid && p.bidang) { skor += 5; alasan.push('bidang sama'); }
+    cocok.push({ p, skor, alasan });
+  });
+  cocok.sort((x, y) => y.skor - x.skor || rkSisa(y.p) - rkSisa(x.p));
+  const top = cocok[0], kembar = !!(top && cocok[1] && cocok[1].skor === top.skor && top.skor >= 60);
+  return { cocok, lain, saran: top && top.skor >= 60 && !kembar ? top.p : null, kembar, jenis: jb };
+}
+function rkLabelPos(p) { return (p.nama + ' — ' + (p.keterangan || p.kode_pos) + ' · ' + (p.sumber_dana || (p.asnaf ? 'Zakat ' + p.asnaf : '-')) + ' · pagu ' + rkJt(p.pagu) + ' · sisa ' + rkJt(rkSisa(p))).slice(0, 160); }
 function rkPeta() {
-  const r = rkData, pilih = sel => `<option value="">— pilih pos —</option>` + r.pos.filter(p => p.lembar === 'lk2').map(p => `<option value="${rkE(p.kode_pos)}"${p.kode_pos === sel ? ' selected' : ''}>${rkE(p.nama + ' — ' + (p.keterangan || p.kode_pos)).slice(0, 110)}</option>`).join('');
-  const sudah = Object.keys(r.peta).filter(k => r.peta[k]);
-  document.getElementById('rk-isi').innerHTML = `<div class="hint" style="margin-bottom:8px">Penyaluran dari Excel dikelompokkan menurut <b>kode RKAT</b> (bila kosong: nama program). Petakan sekali per kode; berlaku untuk semua transaksi tahun ${rkE(r.tahun)}.${r.boleh_ubah ? '' : ' Pemetaan dilakukan Wakil Ketua III.'}</div>
-    <div class="rk-h">Belum dipetakan (${r.belum_dipetakan.length})</div><div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>Kode RKAT / program</th><th class="n">Transaksi</th><th class="n">Nilai</th>${r.boleh_ubah ? '<th>Pos anggaran</th>' : ''}</tr></thead><tbody>
+  const r = rkData, sudah = Object.keys(r.peta).filter(k => r.peta[k]);
+  const S = r.belum_dipetakan.map(b => rkPetaSaran(b, r.pos)), adaSaran = S.filter(x => x.saran).length;
+  const opsi = (x, semua) => `<option value="">— pilih pos —</option>` +
+    x.cocok.map(c => `<option value="${rkE(c.p.kode_pos)}"${x.saran === c.p ? ' selected' : ''}>${x.saran === c.p ? '⭐ ' : ''}${rkE(rkLabelPos(c.p))}</option>`).join('') +
+    (semua && x.lain.length ? `<optgroup label="Pos lain (sumber dana/bidang berbeda)">${x.lain.map(p => `<option value="${rkE(p.kode_pos)}">${rkE(rkLabelPos(p))}</option>`).join('')}</optgroup>` : '');
+  document.getElementById('rk-isi').innerHTML = `<div class="hint" style="margin-bottom:8px">Penyaluran dari Excel dikelompokkan menurut <b>kode RKAT</b> (bila kosong: nama program). Petakan sekali per kode; berlaku untuk semua transaksi tahun ${rkE(r.tahun)}. Pilihan sudah disaring menurut <b>sumber dana</b> dan <b>bidang</b>; ⭐ = saran otomatis.${r.boleh_ubah ? '' : ' Pemetaan dilakukan Wakil Ketua III.'}</div>
+    <div class="rk-h" style="display:flex;align-items:center;gap:10px">Belum dipetakan (${r.belum_dipetakan.length})${r.boleh_ubah && adaSaran ? `<button class="btn btn-primary btn-sm" type="button" id="rk-saran-semua">⭐ Terapkan ${adaSaran} saran</button>` : ''}</div>
+    <div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>Kode RKAT / program</th><th class="n">Transaksi</th><th class="n">Nilai</th>${r.boleh_ubah ? '<th>Pos anggaran</th>' : ''}</tr></thead><tbody>
     ${r.belum_dipetakan.map((b, i) => `<tr><td><b class="mono">${rkE(b.kunci)}</b><div class="rk-k">${rkE(b.program)}${b.bidang ? ' · ' + rkE(b.bidang) : ''}</div></td><td class="n">${b.transaksi}</td><td class="n">${rkRp(b.nilai)}</td>
-      ${r.boleh_ubah ? `<td><select data-rkpeta="${i}" style="max-width:340px">${pilih('')}</select></td>` : ''}</tr>`).join('') || '<tr><td colspan="4" class="hint">Semua penyaluran sudah terpetakan ✅</td></tr>'}</tbody></table></div>
+      ${r.boleh_ubah ? `<td style="min-width:360px"><select data-rkpeta="${i}" style="max-width:520px;width:100%">${opsi(S[i], false)}</select>
+        <div style="font-size:11.5px;margin-top:4px;display:flex;gap:10px;flex-wrap:wrap"><label style="font-weight:400"><input type="checkbox" data-rksemua="${i}"> tampilkan semua pos</label>
+        ${S[i].kembar ? '<span style="color:#8a4b00">Ada beberapa pos bernama sama — bedakan dari keterangannya.</span>' : ''}${!S[i].cocok.length ? '<span style="color:var(--red)">Tidak ada pos dengan sumber dana/bidang yang sama.</span>' : ''}</div>
+        <div data-rkpratinjau="${i}" style="font-size:12px;margin-top:6px"></div></td>` : ''}</tr>`).join('') || '<tr><td colspan="4" class="hint">Semua penyaluran sudah terpetakan ✅</td></tr>'}</tbody></table></div>
     <div class="rk-h">Sudah dipetakan (${sudah.length})</div><div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>Kode RKAT / program</th><th>Pos anggaran</th>${r.boleh_ubah ? '<th></th>' : ''}</tr></thead><tbody>
-    ${sudah.map(k => { const p = r.pos.find(x => x.kode_pos === r.peta[k]); return `<tr><td class="mono">${rkE(k)}</td><td>${p ? rkE(p.nama) + '<div class="rk-k">' + rkE(p.keterangan) + '</div>' : '<span class="badge b-gold">pos tidak ada di versi ini</span> <span class="mono">' + rkE(r.peta[k]) + '</span>'}</td>
+    ${sudah.map(k => { const p = r.pos.find(x => x.kode_pos === r.peta[k]); return `<tr><td class="mono">${rkE(k)}</td><td>${p ? rkE(p.nama) + '<div class="rk-k">' + rkE(p.keterangan) + ' · ' + rkE(p.sumber_dana || '') + ' · pagu ' + rkJt(p.pagu) + ' · realisasi ' + rkJt(p.realisasi) + (rkSisa(p) < 0 ? ' · <b style="color:var(--red)">melampaui ' + rkJt(-rkSisa(p)) + '</b>' : '') + '</div>' : '<span class="badge b-gold">pos tidak ada di versi ini</span> <span class="mono">' + rkE(r.peta[k]) + '</span>'}</td>
       ${r.boleh_ubah ? `<td><button class="btn btn-outline btn-sm" type="button" data-rklepas="${rkE(k)}">Lepas</button></td>` : ''}</tr>`; }).join('') || '<tr><td colspan="3" class="hint">Belum ada.</td></tr>'}</tbody></table></div>`;
-  document.querySelectorAll('[data-rkpeta]').forEach(s => s.onchange = () => rkPetaSimpan(r.belum_dipetakan[+s.dataset.rkpeta].kunci, s.value, s));
+  const pratinjau = i => {
+    const sel = document.querySelector(`[data-rkpeta="${i}"]`), box = document.querySelector(`[data-rkpratinjau="${i}"]`); if (!sel || !box) return;
+    const b = r.belum_dipetakan[i], p = r.pos.find(x => x.kode_pos === sel.value);
+    if (!p) { box.innerHTML = ''; return; }
+    const sisa = rkSisa(p) - b.nilai, jb = S[i].jenis, jp = rkJenisPos(p), salahDana = jb && jp && jb !== jp, lewat = sisa < 0;
+    box.innerHTML = `<div style="border:1px solid ${salahDana || lewat ? '#f5c6c0' : '#cfe8dc'};background:${salahDana || lewat ? '#fdecea' : '#eef8f3'};border-radius:6px;padding:6px 8px">
+      ${b.transaksi} transaksi ${rkRp(b.nilai)} → <b>${rkE(p.nama)}</b> (${rkE(p.keterangan || p.kode_pos)}). Sisa pagu menjadi <b style="color:${lewat ? 'var(--red)' : 'inherit'}">${rkRp(sisa)}${lewat ? ' (melampaui)' : ''}</b>.
+      ${salahDana ? '<div style="color:var(--red);font-weight:700">⚠ Sumber dana tidak cocok: transaksi ' + jb + ', pos ' + jp + '.</div>' : ''}
+      <div style="margin-top:6px"><button class="btn ${salahDana || lewat ? 'btn-danger' : 'btn-primary'} btn-sm" type="button" data-rksimpan="${i}">${salahDana || lewat ? 'Tetap simpan' : 'Simpan pemetaan'}</button></div></div>`;
+    box.querySelector('[data-rksimpan]').onclick = ev => {
+      const pesan = [salahDana ? 'Sumber dana transaksi (' + jb + ') berbeda dengan pos (' + jp + ').' : '', lewat ? 'Pos akan melampaui pagu ' + rkRp(-sisa) + '.' : ''].filter(Boolean).join(' ');
+      if (pesan && !confirm(pesan + ' Tetap simpan pemetaan ' + b.kunci + '?')) return;
+      rkPetaSimpan(b.kunci, p.kode_pos, ev.target);
+    };
+  };
+  document.querySelectorAll('[data-rkpeta]').forEach(s => { s.onchange = () => pratinjau(+s.dataset.rkpeta); pratinjau(+s.dataset.rkpeta); });
+  document.querySelectorAll('[data-rksemua]').forEach(c => c.onchange = () => { const i = +c.dataset.rksemua, s = document.querySelector(`[data-rkpeta="${i}"]`), v = s.value; s.innerHTML = opsi(S[i], c.checked); s.value = v; pratinjau(i); });
+  const tb = document.getElementById('rk-saran-semua');
+  if (tb) tb.onclick = async () => {
+    const daftar = r.belum_dipetakan.map((b, i) => ({ b, p: S[i].saran })).filter(x => x.p);
+    const lewat = daftar.filter(x => rkSisa(x.p) - x.b.nilai < 0);
+    if (!confirm('Terapkan ' + daftar.length + ' saran:\n' + daftar.map(x => '• ' + x.b.kunci + ' → ' + x.p.nama + ' (' + (x.p.keterangan || '') + ')').join('\n') + (lewat.length ? '\n\n⚠ ' + lewat.length + ' pos akan melampaui pagu.' : ''))) return;
+    tb.disabled = true;
+    for (const x of daftar) { const q = await dbApi('rkat_peta', { tahun: r.tahun, kunci: x.b.kunci, kode_pos: x.p.kode_pos }).catch(() => ({ ok: false, pesan: 'Gagal terhubung.' })); if (!q.ok) { alert(x.b.kunci + ': ' + q.pesan); break; } }
+    rkMuat();
+  };
   document.querySelectorAll('[data-rklepas]').forEach(b => b.onclick = () => { if (confirm('Lepas pemetaan ' + b.dataset.rklepas + '?')) rkPetaSimpan(b.dataset.rklepas, '', b); });
 }
 async function rkPetaSimpan(kunci, kode, el) {
@@ -9188,7 +9244,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='68 · 25 Nov 2026';
+const APP_VERSI='69 · 25 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
