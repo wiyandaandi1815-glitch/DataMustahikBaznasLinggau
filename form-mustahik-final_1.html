@@ -7265,21 +7265,64 @@ async function atSimpanItem() {
   if (!r.ok) { toast(r.pesan || 'Gagal menyimpan.', true); return; }
   toast(r.pesan); atEdit = null; await atMuat();
 }
+// v75: libur nasional & cuti bersama 2026 (SKB 3 Menteri No. 1497/2025, 2/2025, 5/2025) — sama dengan sheet PENGATURAN Buku Bukti Kas
+const AT_SKB_2026 = [['2026-01-01','Tahun Baru 2026 Masehi','L'],['2026-01-16','Isra Mikraj Nabi Muhammad saw.','L'],['2026-02-16','Tahun Baru Imlek 2577 Kongzili','C'],['2026-02-17','Tahun Baru Imlek 2577 Kongzili','L'],
+  ['2026-03-18','Hari Suci Nyepi','C'],['2026-03-19','Hari Suci Nyepi (Tahun Baru Saka 1948)','L'],['2026-03-20','Idulfitri 1447 H','C'],['2026-03-21','Idulfitri 1447 H','L'],['2026-03-22','Idulfitri 1447 H','L'],
+  ['2026-03-23','Idulfitri 1447 H','C'],['2026-03-24','Idulfitri 1447 H','C'],['2026-04-03','Wafat Yesus Kristus','L'],['2026-04-05','Kebangkitan Yesus Kristus (Paskah)','L'],['2026-05-01','Hari Buruh Internasional','L'],
+  ['2026-05-14','Kenaikan Yesus Kristus','L'],['2026-05-15','Kenaikan Yesus Kristus','C'],['2026-05-27','Iduladha 1447 H','L'],['2026-05-28','Iduladha 1447 H','C'],['2026-05-31','Hari Raya Waisak 2570 BE','L'],
+  ['2026-06-01','Hari Lahir Pancasila','L'],['2026-06-16','1 Muharam Tahun Baru Islam 1448 H','L'],['2026-08-17','Proklamasi Kemerdekaan','L'],['2026-08-25','Maulid Nabi Muhammad saw.','L'],
+  ['2026-12-24','Kelahiran Yesus Kristus','C'],['2026-12-25','Kelahiran Yesus Kristus','L']].map(x => x[0] + ' | ' + x[1] + ' | ' + (x[2] === 'L' ? 'Libur nasional' : 'Cuti bersama'));
+const atHari = t => ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'][new Date(t + 'T00:00:00Z').getUTCDay()];
+const AT_DASAR_SKB = 'SKB 3 Menteri No. 1497/2025, 2/2025, 5/2025';
+let atTahun = String(new Date().getFullYear()), atLbEdit = null, atLbHapus = false;
 function atFormLibur() {
-  const r = atData, ro = r.boleh_ubah ? '' : ' disabled', rw = (r.riwayat || {});
+  const r = atData, rw = (r.riwayat || {}), ubah = r.boleh_ubah, rin = r.libur_rinci || [];
   const ket = k => rw[k] ? `<div class="rk-k">Diubah ${atE(rw[k].oleh)} · ${atE(String(rw[k].pada).slice(0, 10))}</div>` : '';
-  return `<div class="at-kotak"><div class="rk-h">Hari libur</div>
-    <div class="hint" style="margin:0 0 6px">Satu tanggal per baris (format 2026-12-25). Dipakai menghitung hari kerja PPID & tenggat usulan. Sabtu–Minggu otomatis libur.</div>
-    <textarea id="at-libur" rows="8" style="width:100%;max-width:260px"${ro}>${atE(r.libur.join('\n'))}</textarea>${ket('LIBUR')}
-    <div class="rk-h" style="margin-top:12px">Batas waktu penyerahan berkas pengajuan</div>
-    <input id="at-batas" type="number" min="1" max="90" value="${r.hari_batas_berkas}" style="width:90px"${ro}> hari kalender sejak pengajuan ${ket('HARI_BATAS_BERKAS')}
-    ${r.boleh_ubah ? '<div style="margin-top:12px"><button class="btn btn-primary btn-sm" type="button" onclick="atSimpanLibur()">Simpan</button></div>' : ''}</div>`;
+  const th = [...new Set(rin.map(x => x.tanggal.slice(0, 4)).concat([String(new Date().getFullYear()), String(new Date().getFullYear() + 1)]))].sort();
+  const daftar = rin.filter(x => x.tanggal.slice(0, 4) === atTahun && (atLbHapus || !x.dihapus));
+  const aktif = rin.filter(x => x.tanggal.slice(0, 4) === atTahun && !x.dihapus).length;
+  const e = atLbEdit, opsi = (r.jenis_libur || []).map(j => `<option${e && e.jenis === j ? ' selected' : ''}>${j}</option>`).join('');
+  const form = ubah && e ? `<div class="at-kotak" style="background:var(--g50)"><div class="rk-h" style="font-size:13px">${e.tanggal_lama ? 'Ubah ' + atE(e.tanggal_lama) : 'Tambah hari libur'}</div>
+    <div class="at-f"><label>Tanggal *<input id="at-lt" type="date" value="${atE(e.tanggal || '')}"></label>
+      <label>Keterangan *<input id="at-lk" maxlength="100" value="${atE(e.ket || '')}" placeholder="mis. Idulfitri 1447 H"></label>
+      <label>Jenis *<select id="at-lj"><option value="">— pilih —</option>${opsi}</select></label>
+      <label>Dasar penetapan<input id="at-ld" maxlength="120" value="${atE(e.dasar || '')}" placeholder="mis. ${AT_DASAR_SKB}"></label></div>
+    <button class="btn btn-primary btn-sm" type="button" onclick="atSimpanSatuLibur()">Simpan</button> <button class="btn btn-outline btn-sm" type="button" onclick="atLbEdit=null;atGambar()">Batal</button></div>` : '';
+  return `<div class="at-kotak"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+      <b>Hari libur tahun</b><select onchange="atTahun=this.value;atLbEdit=null;atGambar()">${th.map(t => `<option${t === atTahun ? ' selected' : ''}>${t}</option>`).join('')}</select>
+      <span class="rk-k">${aktif} tanggal aktif · Sabtu–Minggu otomatis libur · dipakai hitung hari kerja PPID & tenggat usulan</span>
+      <label class="rk-k" style="margin-left:auto"><input type="checkbox" ${atLbHapus ? 'checked' : ''} onchange="atLbHapus=this.checked;atGambar()"> tampilkan yang dihapus</label></div>
+    ${ubah ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn btn-primary btn-sm" type="button" onclick="atLbEdit={tanggal:atTahun+'-01-01'};atGambar()">+ Tambah tanggal</button>
+      ${atTahun === '2026' ? '<button class="btn btn-outline btn-sm" type="button" onclick="atImporSkb()">Impor libur nasional & cuti bersama 2026 (SKB 3 Menteri)</button>' : ''}</div>` : ''}
+    ${form}
+    <div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Jenis</th><th>Dasar penetapan</th><th>Dicatat</th>${ubah ? '<th></th>' : ''}</tr></thead><tbody>
+    ${daftar.map(x => `<tr class="${x.dihapus ? 'at-off' : ''}"><td class="mono">${atHari(x.tanggal)}, ${atE(x.tanggal.split('-').reverse().join('/'))}</td>
+      <td>${atE(x.ket || '—')}${x.dihapus ? '<div class="rk-k">dihapus: ' + atE(x.alasan_hapus) + '</div>' : ''}</td><td>${atE(x.jenis || '—')}</td><td>${atE(x.dasar || '—')}</td>
+      <td class="rk-k">${atE(x.oleh || '')}<br>${atE(String(x.pada || '').slice(0, 10))}</td>
+      ${ubah ? `<td style="white-space:nowrap">${x.dihapus ? `<button class="btn btn-outline btn-sm" type="button" onclick="atLbEdit={tanggal:'${x.tanggal}',ket:${atE(JSON.stringify(x.ket))},jenis:'${atE(x.jenis)}',dasar:${atE(JSON.stringify(x.dasar))}};atGambar()">Aktifkan</button>`
+        : `<button class="btn btn-outline btn-sm" type="button" onclick="atLbEdit={tanggal:'${x.tanggal}',tanggal_lama:'${x.tanggal}',ket:${atE(JSON.stringify(x.ket))},jenis:'${atE(x.jenis)}',dasar:${atE(JSON.stringify(x.dasar))}};atGambar()">Ubah</button> <button class="btn btn-outline btn-sm" type="button" onclick="atHapusLibur('${x.tanggal}')">Hapus</button>`}</td>` : ''}</tr>`).join('') || `<tr><td colspan="6">Belum ada hari libur tahun ${atE(atTahun)}.</td></tr>`}</tbody></table></div></div>
+  <div class="at-kotak"><div class="rk-h">Batas waktu penyerahan berkas pengajuan</div>
+    <input id="at-batas" type="number" min="1" max="90" value="${r.hari_batas_berkas}" style="width:90px"${ubah ? '' : ' disabled'}> hari kalender sejak pengajuan ${ket('HARI_BATAS_BERKAS')}
+    ${ubah ? '<div style="margin-top:10px"><button class="btn btn-primary btn-sm" type="button" onclick="atSimpanBatas()">Simpan</button></div>' : ''}</div>`;
 }
-async function atSimpanLibur() {
-  const libur = atBaris('at-libur'), hari_batas_berkas = Number(document.getElementById('at-batas').value);
-  let r; try { r = await dbApi('pengaturan_simpan', { libur, hari_batas_berkas }); } catch (e) { toast('Gagal terhubung ke server.', true); return; }
-  if (!r.ok) { toast(r.pesan, true); return; } toast(r.pesan); atMuat();
+async function atKirim(aksi, data) {
+  let r; try { r = await dbApi(aksi, data); } catch (e) { toast('Gagal terhubung ke server.', true); return false; }
+  if (!r.ok) { toast(r.pesan || 'Gagal.', true); return false; } toast(r.pesan); return true;
 }
+async function atSimpanSatuLibur() {
+  const e = atLbEdit, t = document.getElementById('at-lt').value;
+  if (await atKirim('libur_simpan', { tanggal: t, tanggal_lama: e.tanggal_lama || '', ket: document.getElementById('at-lk').value, jenis: document.getElementById('at-lj').value, dasar: document.getElementById('at-ld').value })) {
+    atLbEdit = null; if (t) atTahun = t.slice(0, 4); atMuat(); }
+}
+async function atHapusLibur(t) {
+  const alasan = prompt('Alasan menghapus hari libur ' + t + ' (tetap tercatat di riwayat):'); if (alasan === null) return;
+  if (await atKirim('libur_hapus', { tanggal: t, alasan })) atMuat();
+}
+async function atImporSkb() {
+  if (!confirm('Impor ' + AT_SKB_2026.length + ' tanggal libur nasional & cuti bersama 2026 (' + AT_DASAR_SKB + ')? Tanggal yang sudah ada diperbarui, yang lain tidak berubah.')) return;
+  if (await atKirim('libur_impor', { dasar: AT_DASAR_SKB, baris: AT_SKB_2026 })) atMuat();
+}
+async function atSimpanBatas() { if (await atKirim('pengaturan_simpan', { hari_batas_berkas: Number(document.getElementById('at-batas').value) })) atMuat(); }
 function atFormKantor() {
   const r = atData, ro = r.boleh_ubah ? '' : ' disabled', k = r.kantor;
   return `<div class="at-kotak"><div class="hint" style="margin:0 0 8px">Tampil di halaman pengajuan, tanda terima, dan pendaftaran muzaki.</div>
@@ -9417,7 +9460,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='2026.11.25-1650';
+const APP_VERSI='2026.11.25-1714';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
