@@ -6176,7 +6176,7 @@ async function usEditor(id, koreksi) {
     potongan_bpjs: i.potongan_bpjs || '', biaya_transfer: i.biaya_transfer || '', biaya_ditanggung: i.biaya_ditanggung || 'BAZNAS', bank_tujuan: i.bank_tujuan || '', sumber_dana: i.sumber_dana || '', trf_manual: true })) : [],
     rek_sumber: b ? b.rek_sumber || 'BSI' : 'BSI' };
   const asal = koreksi ? usData.data.find(x => x.id === koreksi) : null;
-  const progs = [...new Set((typeof PROG_BAKU !== 'undefined' ? PROG_BAKU : []).concat(usData.data.map(x => x.program)))];   // v73: program baku di urutan atas
+  const progs = [...new Set((typeof PROG_KATALOG !== 'undefined' && PROG_KATALOG ? PROG_KATALOG : typeof PROG_BAKU !== 'undefined' ? PROG_BAKU : []).concat(usData.data.map(x => x.program)))];   // v73: program baku di urutan atas
   document.getElementById('us-main').innerHTML = `<button class="btn btn-outline btn-sm" type="button" onclick="usDaftar()">← Batal</button>
     <div class="pg-title" style="margin-top:8px">${b ? 'Ubah draf ' + usE(b.id) : asal ? 'Usulan koreksi atas ' + usE(asal.id) : 'Usulan penyaluran baru'}</div>
     <div class="us-form" style="margin-top:10px">
@@ -7167,6 +7167,162 @@ async function rkKirimImpor() {
 }
 
 // ════════════════════════════════════════════
+// v74 — PENGATURAN: Katalog Bantuan · Hari libur & batas berkas · Info kantor · Pengguna & kode akses.
+// Semua petugas boleh melihat; mengubah hanya Wakil Ketua III (dijaga juga di server).
+// ════════════════════════════════════════════
+let atData = null, atTab = 'katalog', atEdit = null, atPengguna = null;
+const atE = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const atRp = n => n ? 'Rp' + Math.round(n).toLocaleString('id-ID') : '—';
+(function () {
+  if (typeof document === 'undefined') return;
+  const pasang = () => {
+    const bar = document.querySelector('.tab-bar'); if (!bar || document.getElementById('tab-atur-btn')) return;
+    const b = document.createElement('button'); b.className = 'tab-btn'; b.id = 'tab-atur-btn'; b.type = 'button'; b.innerHTML = '⚙️ Pengaturan';
+    b.onclick = function () { switchTab('t-atur', this); atMuat(); };
+    bar.appendChild(b);
+    const p = document.createElement('div'); p.id = 't-atur'; p.className = 'tab-pane';
+    p.innerHTML = `<div class="main"><div class="pg-title">Pengaturan</div>
+      <div class="pg-sub">Daftar induk yang dipakai seluruh aplikasi. Semua petugas dapat melihat; perubahan hanya oleh Wakil Ketua III dan tercatat di Log.</div>
+      <div class="rk-sub" id="at-sub"></div><div id="at-isi"><div class="hint">Memuat…</div></div></div>`;
+    const imp = document.getElementById('t-import'); (imp ? imp.parentNode : document.body).insertBefore(p, imp || null);
+    const st = document.createElement('style'); st.textContent = `.at-f{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:10px}
+.at-f label{font-size:12px;font-weight:600;color:var(--g600,#444);display:flex;flex-direction:column;gap:4px}
+.at-f input,.at-f select,.at-f textarea,.at-kotak textarea,.at-kotak input{font:inherit;font-size:13px;padding:7px 9px;border:1px solid var(--g200);border-radius:8px;background:#fff}
+.at-cek{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12.5px}.at-cek label{display:flex;gap:4px;align-items:center;font-weight:400}
+.at-kotak{background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:14px;margin-bottom:14px}
+.at-tag{display:inline-block;background:var(--g100);border-radius:6px;padding:1px 6px;font-size:11px;margin:1px 2px 1px 0}
+.at-off td{opacity:.5}.at-kode{font-family:monospace;font-size:20px;letter-spacing:2px;background:#fff8e1;border:1px dashed #f0b400;border-radius:8px;padding:10px;text-align:center;margin:8px 0}`;
+    document.head.appendChild(st);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pasang); else pasang();
+})();
+
+async function atMuat() {
+  const isi = document.getElementById('at-isi'); if (!isi) return;
+  isi.innerHTML = '<div class="hint">Memuat…</div>';
+  let r; try { r = await dbApi('pengaturan_baca', {}); } catch (e) { isi.innerHTML = '<div class="hint" style="color:var(--red)">Gagal terhubung ke server.</div>'; return; }
+  if (!r || !r.ok) { isi.innerHTML = '<div class="hint" style="color:var(--red)">' + atE((r && r.pesan) || 'Gagal memuat.') + '</div>'; return; }
+  atData = r; atGambar();
+}
+function atGambar() {
+  const r = atData, tab = [['katalog', 'Katalog Bantuan (' + r.katalog.filter(k => k.aktif).length + ')'], ['libur', 'Hari libur & batas berkas'], ['kantor', 'Info kantor']].concat(r.boleh_ubah ? [['pengguna', 'Pengguna & kode akses']] : []);
+  if (!tab.some(t => t[0] === atTab)) atTab = 'katalog';
+  document.getElementById('at-sub').innerHTML = tab.map(t => `<button type="button" class="${t[0] === atTab ? 'on' : ''}" onclick="atTab='${t[0]}';atEdit=null;atGambar()">${t[1]}</button>`).join('');
+  const isi = document.getElementById('at-isi');
+  if (atTab === 'katalog') isi.innerHTML = atEdit ? atFormKatalog() : atDaftarKatalog();
+  else if (atTab === 'libur') isi.innerHTML = atFormLibur();
+  else if (atTab === 'kantor') isi.innerHTML = atFormKantor();
+  else { isi.innerHTML = '<div class="hint">Memuat…</div>'; atMuatPengguna(); }
+}
+function atDaftarKatalog() {
+  const r = atData, ro = !r.boleh_ubah;
+  return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;flex-wrap:wrap">
+    <div class="hint" style="margin:0">Nama program dipakai di isian Program mustahik & Usulan. Berkas wajib dipakai halaman pengajuan (per kategori: item aktif pertama). Sumber dana/asnaf kosong = tidak dibatasi.</div>
+    ${ro ? '' : '<button class="btn btn-primary btn-sm" type="button" onclick="atBukaItem(\'\')">+ Tambah program</button>'}</div>
+  <div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>Kode</th><th>Program</th><th>Kategori · Pilar</th><th>Sumber dana boleh</th><th>Asnaf boleh</th><th class="n">Standar / Maks</th><th class="n">Berkas</th>${ro ? '' : '<th></th>'}</tr></thead><tbody>
+  ${r.katalog.map(k => `<tr class="${k.aktif ? '' : 'at-off'}"><td>${atE(k.kode)}</td><td><b>${atE(k.nama_program)}</b>${k.aktif ? '' : ' <span class="at-tag">nonaktif</span>'}</td>
+    <td>${atE(k.kategori)}<div class="rk-k">${atE(k.pilar || '—')}</div></td>
+    <td>${k.sumber_boleh.length ? k.sumber_boleh.map(s => '<span class="at-tag">' + atE(s) + '</span>').join('') : '<span class="rk-k">semua</span>'}</td>
+    <td>${k.asnaf_boleh.length ? k.asnaf_boleh.map(s => '<span class="at-tag">' + atE(s) + '</span>').join('') : '<span class="rk-k">semua</span>'}</td>
+    <td class="n">${atRp(k.nilai_standar)}<div class="rk-k">${k.nilai_maks ? 'maks ' + atRp(k.nilai_maks) : 'tanpa batas'}</div></td>
+    <td class="n">${k.berkas_wajib.length} wajib<div class="rk-k">${k.berkas_pendukung.length} pendukung</div></td>
+    ${ro ? '' : `<td><button class="btn btn-outline btn-sm" type="button" onclick="atBukaItem('${atE(k.kode)}')">Ubah</button></td>`}</tr>`).join('')}
+  </tbody></table></div>`;
+}
+function atBukaItem(kode) {
+  const k = atData.katalog.find(x => x.kode === kode);
+  atEdit = k ? JSON.parse(JSON.stringify(k)) : { kode: '', nama_program: '', kategori: '', pilar: '', berkas_wajib: [], berkas_pendukung: [], sumber_boleh: [], asnaf_boleh: [], nilai_standar: 0, nilai_maks: 0, aktif: true };
+  atGambar();
+}
+function atFormKatalog() {
+  const k = atEdit, r = atData, opsi = (a, v) => a.map(x => `<option${x === v ? ' selected' : ''}>${atE(x)}</option>`).join('');
+  const cek = (nm, a, pilih) => `<div class="at-cek">${a.map(x => `<label><input type="checkbox" name="${nm}" value="${atE(x)}"${pilih.includes(x) ? ' checked' : ''}>${atE(x)}</label>`).join('')}</div>`;
+  return `<div class="at-kotak"><div class="rk-h">${k.kode ? 'Ubah ' + atE(k.kode) : 'Program baru'}</div>
+  <div class="at-f"><label>Nama program *<input id="at-nama" maxlength="120" value="${atE(k.nama_program)}" placeholder="Kategori - Pilar - Sub-program"></label>
+    <label>Kategori bantuan *<select id="at-kat"><option value="">— pilih —</option>${opsi(r.kategori, k.kategori)}</select></label>
+    <label>Pilar Linggau Juara<select id="at-pilar"><option value="">—</option>${opsi(r.pilar, k.pilar)}</select></label>
+    <label>Nilai standar (Rp)<input id="at-std" inputmode="numeric" value="${k.nilai_standar || ''}"></label>
+    <label>Batas maksimal (Rp)<input id="at-maks" inputmode="numeric" value="${k.nilai_maks || ''}" placeholder="kosong = tanpa batas"></label>
+    <label>Status<select id="at-aktif"><option value="1"${k.aktif ? ' selected' : ''}>Aktif</option><option value="0"${k.aktif ? '' : ' selected'}>Nonaktif</option></select></label></div>
+  <div class="rk-h" style="font-size:12.5px">Sumber dana yang boleh <span class="rk-k">(tidak dicentang semua = tidak dibatasi; Dana Non-Halal tidak untuk perorangan)</span></div>
+  ${cek('at-sd', r.sumber.filter(s => s !== 'Dana Non-Halal'), k.sumber_boleh)}
+  <div class="rk-h" style="font-size:12.5px;margin-top:10px">Asnaf yang boleh <span class="rk-k">(tidak dicentang semua = tidak dibatasi)</span></div>
+  ${cek('at-as', r.asnaf, k.asnaf_boleh)}
+  <div class="at-f" style="margin-top:10px"><label>Berkas wajib (satu per baris)<textarea id="at-bw" rows="6">${atE(k.berkas_wajib.join('\n'))}</textarea></label>
+    <label>Berkas pendukung (satu per baris)<textarea id="at-bp" rows="6">${atE(k.berkas_pendukung.join('\n'))}</textarea></label></div>
+  <div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" type="button" onclick="atSimpanItem()">Simpan</button>
+    <button class="btn btn-outline btn-sm" type="button" onclick="atEdit=null;atGambar()">Batal</button></div></div>`;
+}
+const atAngka = id => Number(String(document.getElementById(id).value || '').replace(/\D/g, '')) || 0;
+const atBaris = id => String(document.getElementById(id).value || '').split('\n').map(s => s.trim()).filter(Boolean);
+const atCentang = nm => [...document.querySelectorAll('input[name="' + nm + '"]:checked')].map(i => i.value);
+async function atSimpanItem() {
+  const item = { kode: atEdit.kode, nama_program: document.getElementById('at-nama').value, kategori: document.getElementById('at-kat').value,
+    pilar: document.getElementById('at-pilar').value, nilai_standar: atAngka('at-std'), nilai_maks: atAngka('at-maks'),
+    aktif: document.getElementById('at-aktif').value === '1', sumber_boleh: atCentang('at-sd'), asnaf_boleh: atCentang('at-as'),
+    berkas_wajib: atBaris('at-bw'), berkas_pendukung: atBaris('at-bp') };
+  let r; try { r = await dbApi('katalog_simpan', { item }); } catch (e) { toast('Gagal terhubung ke server.', true); return; }
+  if (!r.ok) { toast(r.pesan || 'Gagal menyimpan.', true); return; }
+  toast(r.pesan); atEdit = null; await atMuat();
+}
+function atFormLibur() {
+  const r = atData, ro = r.boleh_ubah ? '' : ' disabled', rw = (r.riwayat || {});
+  const ket = k => rw[k] ? `<div class="rk-k">Diubah ${atE(rw[k].oleh)} · ${atE(String(rw[k].pada).slice(0, 10))}</div>` : '';
+  return `<div class="at-kotak"><div class="rk-h">Hari libur</div>
+    <div class="hint" style="margin:0 0 6px">Satu tanggal per baris (format 2026-12-25). Dipakai menghitung hari kerja PPID & tenggat usulan. Sabtu–Minggu otomatis libur.</div>
+    <textarea id="at-libur" rows="8" style="width:100%;max-width:260px"${ro}>${atE(r.libur.join('\n'))}</textarea>${ket('LIBUR')}
+    <div class="rk-h" style="margin-top:12px">Batas waktu penyerahan berkas pengajuan</div>
+    <input id="at-batas" type="number" min="1" max="90" value="${r.hari_batas_berkas}" style="width:90px"${ro}> hari kalender sejak pengajuan ${ket('HARI_BATAS_BERKAS')}
+    ${r.boleh_ubah ? '<div style="margin-top:12px"><button class="btn btn-primary btn-sm" type="button" onclick="atSimpanLibur()">Simpan</button></div>' : ''}</div>`;
+}
+async function atSimpanLibur() {
+  const libur = atBaris('at-libur'), hari_batas_berkas = Number(document.getElementById('at-batas').value);
+  let r; try { r = await dbApi('pengaturan_simpan', { libur, hari_batas_berkas }); } catch (e) { toast('Gagal terhubung ke server.', true); return; }
+  if (!r.ok) { toast(r.pesan, true); return; } toast(r.pesan); atMuat();
+}
+function atFormKantor() {
+  const r = atData, ro = r.boleh_ubah ? '' : ' disabled', k = r.kantor;
+  return `<div class="at-kotak"><div class="hint" style="margin:0 0 8px">Tampil di halaman pengajuan, tanda terima, dan pendaftaran muzaki.</div>
+    <div class="at-f"><label>Alamat kantor<textarea id="at-alamat" rows="3" maxlength="200"${ro}>${atE(k.alamat)}</textarea></label>
+    <label>Jam layanan<textarea id="at-jam" rows="3" maxlength="120"${ro}>${atE(k.jam)}</textarea></label>
+    <label>Telepon / WA<input id="at-telp" maxlength="40" value="${atE(k.telp)}"${ro}></label></div>
+    ${r.boleh_ubah ? '<button class="btn btn-primary btn-sm" type="button" onclick="atSimpanKantor()">Simpan</button>' : ''}</div>`;
+}
+async function atSimpanKantor() {
+  const kantor = { alamat: document.getElementById('at-alamat').value, jam: document.getElementById('at-jam').value, telp: document.getElementById('at-telp').value };
+  let r; try { r = await dbApi('pengaturan_simpan', { kantor }); } catch (e) { toast('Gagal terhubung ke server.', true); return; }
+  if (!r.ok) { toast(r.pesan, true); return; } toast(r.pesan); atMuat();
+}
+async function atMuatPengguna(kodeBaru) {
+  const isi = document.getElementById('at-isi');
+  let r; try { r = await dbApi('pengguna_daftar', {}); } catch (e) { isi.innerHTML = '<div class="hint" style="color:var(--red)">Gagal terhubung ke server.</div>'; return; }
+  if (!r.ok) { isi.innerHTML = '<div class="hint" style="color:var(--red)">' + atE(r.pesan) + '</div>'; return; }
+  atPengguna = r;
+  isi.innerHTML = `${kodeBaru ? `<div class="at-kotak"><b>Kode akses baru untuk ${atE(kodeBaru.nama)}</b><div class="at-kode">${atE(kodeBaru.kode)}</div>
+      <div class="hint" style="margin:0">Catat dan serahkan langsung ke yang bersangkutan. Kode ini tidak ditampilkan lagi.</div></div>` : ''}
+    <div class="at-kotak"><div class="rk-h">Tambah pengguna</div><div class="at-f"><label>Nama<input id="at-pn" maxlength="80"></label>
+      <label>Jabatan<select id="at-pj">${r.jabatan.map(j => '<option>' + j + '</option>').join('')}</select></label></div>
+      <button class="btn btn-primary btn-sm" type="button" onclick="atTambahPengguna()">Buat kode akses</button></div>
+    <div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>Nama</th><th>Jabatan</th><th>Kode</th><th></th></tr></thead><tbody>
+    ${r.pengguna.map((p, i) => `<tr><td><b>${atE(p.nama)}</b></td><td>${atE(p.jabatan)}</td><td class="mono">${atE(p.id)}</td>
+      <td><button class="btn btn-outline btn-sm" type="button" onclick="atCabut(${i})">Cabut</button></td></tr>`).join('')}</tbody></table></div>
+    <div class="hint">Kode akses UPZ/penggalang dikelola di menu Penggalang & UPZ.</div>`;
+}
+async function atTambahPengguna() {
+  const nama = document.getElementById('at-pn').value.trim(), jabatan = document.getElementById('at-pj').value;
+  if (!nama) { toast('Isi nama pengguna.', true); return; }
+  let r; try { r = await dbApi('pengguna_tambah', { nama, jabatan }); } catch (e) { toast('Gagal terhubung ke server.', true); return; }
+  if (!r.ok) { toast(r.pesan, true); return; }
+  atMuatPengguna({ nama, kode: r.kode });
+}
+async function atCabut(i) {
+  const p = atPengguna.pengguna[i]; if (!p) return;
+  if (!confirm('Cabut kode akses ' + p.nama + ' (' + p.jabatan + ')? Yang bersangkutan tidak bisa masuk lagi.')) return;
+  let r; try { r = await dbApi('pengguna_cabut', { id: p.id, nama: p.nama }); } catch (e) { toast('Gagal terhubung ke server.', true); return; }
+  if (!r.ok) { toast(r.pesan, true); return; } toast(r.pesan); atMuatPengguna();
+}
+
+// ════════════════════════════════════════════
 // v39 — TATA LETAK: menu samping kiri per bidang (Pengumpulan · Pendistribusian & Pendayagunaan · Keuangan, Pelaporan & Akuntansi ·
 // Administrasi, SDM, Umum & Komunikasi). Tombol tab lama dipindah (bukan dibuat ulang) → onclick, badge, & aturan peran tetap.
 // Tabel Pengajuan Masuk diringkas: 5 kolom tanpa geser samping, judul kolom tetap terlihat saat digulir, di HP jadi kartu.
@@ -7176,7 +7332,7 @@ async function rkKirimImpor() {
     {ik:'💰',nama:'Pengumpulan',isi:['#tab-mz-btn','#tab-ol-btn','#tab-pg-btn','#tab-kt-btn','#tab-hl-btn']},
     {ik:'🤲',nama:'Pendistribusian & Pendayagunaan',isi:['#tab-pj-btn','#tab-us-btn','@survei','@monitoring','[onclick^="switchTab(\'t-daftar\'"]','[onclick^="switchTab(\'t-form\'"]','#tab-lb-btn']},
     {ik:'📊',nama:'Keuangan, Pelaporan & Akuntansi',isi:['#tab-rkat-btn','~Laporan & rekap keuangan']},
-    {ik:'🗂',nama:'Administrasi, SDM, Umum & Komunikasi',isi:['#tab-ppid-btn','#tab-import-btn','~Pengguna & peran']}
+    {ik:'🗂',nama:'Administrasi, SDM, Umum & Komunikasi',isi:['#tab-ppid-btn','#tab-import-btn','#tab-atur-btn']}
   ];
   const LABEL={'#tab-pg-btn':'Penggalang & UPZ'};
   const css=document.createElement('style');
@@ -8635,14 +8791,16 @@ function v10Init(){
 }
 
 // v73: isian Program BAZNAS dipilih dari daftar baku (server menyeragamkan juga saat simpan — gas/src/program.gs).
+let PROG_KATALOG=null;
 const PROG_BAKU=['Bantuan Modal Usaha - Linggau Juara Makmur - Pendayagunaan Ekonomi','Bantuan Pendidikan - Linggau Juara Cerdas - Pendidikan Dasar dan Menengah','Bantuan Pendidikan - Linggau Juara Cerdas - Pendidikan Perguruan Tinggi','Bantuan Rumah Layak Huni - Linggau Juara Peduli'];
 function progSaranIsi(){
   const inp=document.getElementById('f-program');if(!inp)return;
   let dl=document.getElementById('dl-program');
-  if(!dl){dl=document.createElement('datalist');dl.id='dl-program';dl.innerHTML=PROG_BAKU.map(p=>'<option value="'+p+'">').join('');document.body.appendChild(dl);}
+  if(!dl){dl=document.createElement('datalist');dl.id='dl-program';dl.innerHTML=PROG_BAKU.map(p=>'<option value="'+p+'">').join('');document.body.appendChild(dl);
+    if(typeof dbApi==='function')dbApi('pengaturan_baca',{}).then(r=>{if(r&&r.ok&&r.katalog){const n=r.katalog.filter(k=>k.aktif).map(k=>k.nama_program);if(n.length){PROG_KATALOG=n;dl.innerHTML=n.map(p=>'<option value="'+String(p).replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">').join('');}}}).catch(()=>{});}   // v74: dari Katalog Bantuan
   inp.setAttribute('list','dl-program');inp.setAttribute('autocomplete','off');inp.placeholder='Pilih dari daftar program baku';
 }
-function progRapikan(){const e=document.getElementById('f-program');if(!e)return;const v=e.value.trim().replace(/\s+/g,' ');const sama=PROG_BAKU.find(o=>o.toLowerCase()===v.toLowerCase());e.value=sama||v;}
+function progRapikan(){const e=document.getElementById('f-program');if(!e)return;const v=e.value.trim().replace(/\s+/g,' ');const sama=(PROG_KATALOG||PROG_BAKU).find(o=>o.toLowerCase()===v.toLowerCase());e.value=sama||v;}
 document.addEventListener('focusin',ev=>{if(ev.target&&ev.target.id==='f-program')progSaranIsi();});
 document.addEventListener('change',ev=>{if(ev.target&&ev.target.id==='f-program')progRapikan();},true);
 
@@ -9259,7 +9417,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='2026.11.25-1630';
+const APP_VERSI='2026.11.25-1650';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
