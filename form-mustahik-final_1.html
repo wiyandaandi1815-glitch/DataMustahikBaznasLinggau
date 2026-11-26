@@ -7205,13 +7205,14 @@ async function atMuat() {
   atData = r; atGambar();
 }
 function atGambar() {
-  const r = atData, tab = [['katalog', 'Katalog Bantuan (' + r.katalog.filter(k => k.aktif).length + ')'], ['libur', 'Hari libur & batas berkas'], ['kantor', 'Info kantor']].concat(r.boleh_ubah ? [['pengguna', 'Pengguna & kode akses']] : []);
+  const r = atData, tab = [['katalog', 'Katalog Bantuan (' + r.katalog.filter(k => k.aktif).length + ')'], ['libur', 'Hari libur & batas berkas'], ['kantor', 'Info kantor'], ['gaji', 'Gaji & Pajak']].concat(r.boleh_ubah ? [['pengguna', 'Pengguna & kode akses']] : []);
   if (!tab.some(t => t[0] === atTab)) atTab = 'katalog';
   document.getElementById('at-sub').innerHTML = tab.map(t => `<button type="button" class="${t[0] === atTab ? 'on' : ''}" onclick="atTab='${t[0]}';atEdit=null;atGambar()">${t[1]}</button>`).join('');
   const isi = document.getElementById('at-isi');
   if (atTab === 'katalog') isi.innerHTML = atEdit ? atFormKatalog() : atDaftarKatalog();
   else if (atTab === 'libur') isi.innerHTML = atFormLibur();
   else if (atTab === 'kantor') isi.innerHTML = atFormKantor();
+  else if (atTab === 'gaji') { isi.innerHTML = '<div class="hint">Memuat…</div>'; agMuat(); }
   else { isi.innerHTML = '<div class="hint">Memuat…</div>'; atMuatPengguna(); }
 }
 function atDaftarKatalog() {
@@ -7364,6 +7365,64 @@ async function atCabut(i) {
   if (!confirm('Cabut kode akses ' + p.nama + ' (' + ((atPengguna.jabatan_label || {})[p.jabatan] || p.jabatan) + ')? Yang bersangkutan tidak bisa masuk lagi.')) return;
   let r; try { r = await dbApi('pengguna_cabut', { id: p.id, nama: p.nama }); } catch (e) { toast('Gagal terhubung ke server.', true); return; }
   if (!r.ok) { toast(r.pesan, true); return; } toast(r.pesan); atMuatPengguna();
+}
+
+// ── v78: Gaji & Pajak — parameter berversi (berlaku mulai + dasar hukum) & tabel TER/Pasal 17 ──
+let agData = null, agTgl = '', agEdit = null, agTabEdit = null, agBuka = {};
+const agRp = v => v === '' || v == null ? '—' : 'Rp' + Number(v).toLocaleString('id-ID');
+const agNilai = (p, v) => !v || v.nilai === '' ? '<span class="rk-k">belum diisi</span>' : p.jenis === 'rp' ? agRp(v.nilai) : p.jenis === 'persen' ? atE(String(v.nilai).replace('.', ',')) + '%' : atE(v.nilai);
+const agTglId = t => t ? t.split('-').reverse().join('/') : '';
+async function agMuat() {
+  let r; try { r = await dbApi('gaji_param_baca', { tanggal: agTgl }); } catch (e) { document.getElementById('at-isi').innerHTML = '<div class="hint" style="color:var(--red)">Gagal terhubung ke server.</div>'; return; }
+  if (!r.ok) { document.getElementById('at-isi').innerHTML = '<div class="hint" style="color:var(--red)">' + atE(r.pesan) + '</div>'; return; }
+  agData = r; agTgl = r.tanggal; agGambar();
+}
+function agGambar() {
+  const r = agData, ubah = r.boleh_ubah, kel = [...new Set(r.param.map(p => p.kelompok))];
+  const form = p => { const e = agEdit; return `<tr><td colspan="${ubah ? 5 : 4}" style="background:var(--g50)"><div class="at-f" style="margin:6px 0">
+      <label>Nilai baru${p.jenis === 'yatidak' ? `<select id="ag-n"><option${e.nilai === 'Ya' ? ' selected' : ''}>Ya</option><option${e.nilai === 'Tidak' ? ' selected' : ''}>Tidak</option></select>` : `<input id="ag-n" value="${atE(e.nilai)}" ${['rp', 'angka', 'persen'].includes(p.jenis) ? 'inputmode="decimal"' : ''} placeholder="${p.jenis === 'persen' ? 'mis. 3,7' : p.jenis === 'rp' ? 'mis. 3.942.963' : ''}">`}</label>
+      <label>Berlaku mulai *<input id="ag-m" type="date" value="${atE(e.berlaku_mulai)}"></label>
+      <label>Dasar hukum / keputusan${p.kelompok === 'Data induk lembaga' ? '' : ' *'}<input id="ag-d" maxlength="200" value="${atE(e.dasar)}" placeholder="mis. PMK 168/2023"></label>
+      <label>Keterangan<input id="ag-k" maxlength="200" value="${atE(e.keterangan || '')}"></label></div>
+      <div class="hint" style="margin:0 0 6px">Nilai lama tetap dipakai untuk bulan sebelum tanggal berlaku. Tanggal berlaku sama dengan versi yang ada = ralat (versi lama ditandai diganti).</div>
+      <button class="btn btn-primary btn-sm" type="button" onclick="agSimpan('${p.kunci}')">Simpan</button> <button class="btn btn-outline btn-sm" type="button" onclick="agEdit=null;agGambar()">Batal</button></td></tr>`; };
+  const baris = p => {
+    const v = p.kini, rw = p.riwayat, buka = agBuka[p.kunci];
+    return `<tr><td>${atE(p.uraian)}</td><td class="n"><b>${agNilai(p, v)}</b></td><td class="mono">${v ? agTglId(v.berlaku_mulai) : '—'}</td><td>${atE(v ? v.dasar || '—' : '—')}${v && v.keterangan ? '<div class="rk-k">' + atE(v.keterangan) + '</div>' : ''}
+      ${rw.length > 1 ? `<div><a href="#" onclick="agBuka['${p.kunci}']=!agBuka['${p.kunci}'];agGambar();return false" class="rk-k">${buka ? 'sembunyikan' : 'riwayat (' + rw.length + ')'}</a></div>` : ''}</td>
+      ${ubah ? `<td><button class="btn btn-outline btn-sm" type="button" onclick="agEdit={kunci:'${p.kunci}',nilai:${atE(JSON.stringify(v && !p.rahasia ? v.nilai : ''))},berlaku_mulai:'${new Date().toISOString().slice(0, 10)}',dasar:'',keterangan:''};agGambar()">Ubah</button></td>` : ''}</tr>
+      ${buka ? rw.map(x => `<tr class="${x.dihapus ? 'at-off' : ''}"><td class="rk-k" style="padding-left:18px">↳ ${x.dihapus ? 'diganti' : 'versi'}</td><td class="n rk-k">${agNilai(p, x)}</td><td class="mono rk-k">${agTglId(x.berlaku_mulai)}</td><td class="rk-k" colspan="${ubah ? 2 : 1}">${atE(x.dasar || '—')} · ${atE(x.oleh)} ${atE(String(x.pada).slice(0, 10))}${x.keterangan ? ' · ' + atE(x.keterangan) : ''}</td></tr>`).join('') : ''}
+      ${agEdit && agEdit.kunci === p.kunci ? form(p) : ''}`;
+  };
+  const tabs = r.tabel_nama.map(nm => {
+    const vs = r.tabel.filter(t => t.tabel === nm), kini = vs.find(t => t.berlaku_mulai <= agTgl) || vs[vs.length - 1], buka = agBuka['T:' + nm];
+    return `<div class="at-kotak"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>${atE(nm)}</b>
+      <span class="rk-k">${kini ? kini.lapis.length + ' lapis · berlaku mulai ' + agTglId(kini.berlaku_mulai) + ' · ' + atE(kini.dasar) : 'belum ada'}${vs.length > 1 ? ' · ' + vs.length + ' versi' : ''}</span>
+      <a href="#" class="rk-k" onclick="agBuka['T:${nm}']=!agBuka['T:${nm}'];agGambar();return false">${buka ? 'sembunyikan' : 'lihat tabel'}</a>
+      ${ubah ? `<button class="btn btn-outline btn-sm" type="button" style="margin-left:auto" onclick="agTabEdit={tabel:'${nm}',teks:${atE(JSON.stringify(kini ? kini.lapis.map(l => (l.batas || '') + ' | ' + String(l.tarif).replace('.', ',')).join('\n') : ''))}};agGambar()">Versi baru</button>` : ''}</div>
+      ${buka && kini ? `<div class="rk-wrap" style="max-height:260px;overflow:auto;margin-top:6px"><table class="rk-tbl"><thead><tr><th>Lapis</th><th class="n">${nm === 'PASAL 17' ? 'PKP setahun s.d.' : 'Bruto sebulan s.d.'}</th><th class="n">Tarif</th></tr></thead><tbody>
+        ${kini.lapis.map(l => `<tr><td>${l.urut}</td><td class="n">${l.batas ? agRp(l.batas) : 'di atasnya'}</td><td class="n">${String(l.tarif).replace('.', ',')}%</td></tr>`).join('')}</tbody></table></div>` : ''}
+      ${agTabEdit && agTabEdit.tabel === nm ? `<div style="margin-top:8px"><div class="hint" style="margin:0 0 4px">Satu lapis per baris: <b>batas atas | tarif %</b>. Baris terakhir tanpa batas (contoh <span class="mono">| 34</span>). Versi lama tetap dipakai untuk bulan sebelumnya.</div>
+        <textarea id="ag-tt" rows="10" style="width:100%;max-width:360px;font-family:monospace;font-size:12px">${atE(agTabEdit.teks)}</textarea>
+        <div class="at-f"><label>Berlaku mulai *<input id="ag-tm" type="date"></label><label>Dasar hukum *<input id="ag-td" maxlength="200" placeholder="mis. PP 58/2023 Lampiran"></label></div>
+        <button class="btn btn-primary btn-sm" type="button" onclick="agSimpanTabel()">Simpan versi baru</button> <button class="btn btn-outline btn-sm" type="button" onclick="agTabEdit=null;agGambar()">Batal</button></div>` : ''}</div>`;
+  }).join('');
+  document.getElementById('at-isi').innerHTML = `<div class="at-kotak" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <b>Nilai yang berlaku per tanggal</b><input type="date" value="${atE(agTgl)}" onchange="agTgl=this.value;agMuat()">
+      <span class="rk-k">Dipakai menu Gaji (Tahap C). ${ubah ? 'Perubahan = versi baru dengan tanggal berlaku & dasar hukum; tercatat di Log.' : 'Hanya Wakil Ketua III yang dapat mengubah.'}</span></div>
+    ${kel.map(k => `<div class="at-kotak"><div class="rk-h">${atE(k)}</div><div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>Parameter</th><th class="n">Nilai</th><th>Berlaku mulai</th><th>Dasar</th>${ubah ? '<th></th>' : ''}</tr></thead><tbody>
+      ${r.param.filter(p => p.kelompok === k).map(baris).join('')}</tbody></table></div></div>`).join('')}
+    <div class="rk-h" style="margin-top:6px">Tabel tarif PPh 21</div>${tabs}`;
+}
+async function agSimpan(kunci) {
+  const d = { kunci, nilai: document.getElementById('ag-n').value, berlaku_mulai: document.getElementById('ag-m').value, dasar: document.getElementById('ag-d').value, keterangan: document.getElementById('ag-k').value };
+  if (await atKirim('gaji_param_simpan', d)) { agEdit = null; agMuat(); }
+}
+async function agSimpanTabel() {
+  const lapis = document.getElementById('ag-tt').value.split('\n').map(s => s.trim()).filter(Boolean).map(s => {
+    const b = s.split('|'); return { batas: Number(String(b[0] || '').replace(/[^\d]/g, '')) || 0, tarif: Number(String(b[1] || '').replace(',', '.').replace(/[^\d.]/g, '')) };
+  });
+  if (await atKirim('gaji_tarif_simpan', { tabel: agTabEdit.tabel, berlaku_mulai: document.getElementById('ag-tm').value, dasar: document.getElementById('ag-td').value, lapis })) { agTabEdit = null; agMuat(); }
 }
 
 // ════════════════════════════════════════════
@@ -9592,7 +9651,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='2026.11.26-0834';
+const APP_VERSI='2026.11.26-0854';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
