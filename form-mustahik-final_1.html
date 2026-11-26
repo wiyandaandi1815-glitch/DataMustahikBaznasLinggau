@@ -7478,20 +7478,21 @@ function pgwGambar() {
 }
 function pgwDaftar() {
   const r = pgwData, P = r.pilihan, q = pgwCari.toLowerCase();
-  const d = r.data.filter(x => (!q || String(x.nama).toLowerCase().includes(q) || String(x.nip).includes(q))
+  const d = r.data.filter(x => (!q || String(x.nama).toLowerCase().includes(q) || String(x.nia || '').includes(q))
     && (!pgwF.jabatan || x.jabatan === pgwF.jabatan) && (!pgwF.bidang || x.bidang === pgwF.bidang) && (!pgwF.status || x.status_kepegawaian === pgwF.status)
     && (!pgwF.aktif || (pgwF.aktif === 'aktif') === (x.aktif !== 'FALSE')));
   const sel = (k, opsi, lbl, fmt) => `<select onchange="pgwF.${k}=this.value;pgwGambar()"><option value="">${lbl}</option>${opsi.map(o => `<option value="${pgwE(o)}"${pgwF[k] === o ? ' selected' : ''}>${pgwE(fmt ? fmt(o) : o)}</option>`).join('')}</select>`;
   return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
-      <input type="search" placeholder="Cari nama atau NIP" value="${pgwE(pgwCari)}" oninput="pgwCari=this.value;clearTimeout(window._pgwT);window._pgwT=setTimeout(()=>{pgwGambar();const i=document.querySelector('#pgw-isi input[type=search]');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250)" style="min-width:200px">
+      <input type="search" placeholder="Cari nama atau NIA" value="${pgwE(pgwCari)}" oninput="pgwCari=this.value;clearTimeout(window._pgwT);window._pgwT=setTimeout(()=>{pgwGambar();const i=document.querySelector('#pgw-isi input[type=search]');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250)" style="min-width:200px">
       ${sel('jabatan', P.jabatan, 'Semua jabatan', pgwJab)}${sel('bidang', P.bidang, 'Semua bidang')}${sel('status', P.status, 'Semua status')}
       <select onchange="pgwF.aktif=this.value;pgwGambar()"><option value="">Aktif & nonaktif</option><option value="aktif"${pgwF.aktif === 'aktif' ? ' selected' : ''}>Aktif</option><option value="nonaktif"${pgwF.aktif === 'nonaktif' ? ' selected' : ''}>Nonaktif</option></select>
       ${r.boleh_ubah ? '<button class="btn btn-primary btn-sm" type="button" style="margin-left:auto" onclick="pgwBuka(\'\')">+ Tambah Pegawai Baru</button>' : ''}</div>
-    ${(r.nip_ganda || []).length ? '<div class="pgw-w" style="color:#c0392b">⚠️ Ada ' + r.nip_ganda.length + ' NIP yang sama dipakai lebih dari satu pegawai (ditandai merah). Buka Ubah, kosongkan NIP, lalu Simpan agar NIP dibuat ulang otomatis.</div>' : ''}
+    ${(r.nia_ganda || []).length ? '<div class="pgw-w" style="color:#c0392b">⚠️ Ada ' + r.nia_ganda.length + ' NIA yang sama dipakai lebih dari satu pegawai (ditandai merah). Buka Ubah, kosongkan NIA, lalu Simpan agar dibuat ulang otomatis.</div>' : ''}
+    ${r.boleh_ubah && r.tanpa_nia ? '<div class="pgw-w">' + r.tanpa_nia + ' pegawai belum punya NIA. <button class="btn btn-primary btn-sm" type="button" onclick="pgwNiaIsi(this)">Bentuk NIA otomatis</button></div>' : ''}
     ${r.ringkas ? '<div class="hint">Tampilan ringkas: data pribadi, pajak, rekening, dan gaji tidak ditampilkan untuk jabatan Anda.</div>' : ''}
-    <div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>ID</th><th>Nama</th><th>NIP</th><th>Jabatan</th><th>Bidang/Unit</th><th>Status</th><th>Email</th>${r.boleh_ubah ? '<th></th>' : ''}</tr></thead><tbody>
+    <div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>ID</th><th>Nama</th><th>NIA</th><th>Jabatan</th><th>Bidang/Unit</th><th>Status</th><th>Email</th>${r.boleh_ubah ? '<th></th>' : ''}</tr></thead><tbody>
     ${d.map(x => `<tr class="${x.aktif === 'FALSE' ? 'at-off' : ''}"><td class="mono">${pgwE(x.id_pegawai)}</td><td><b>${pgwE(x.nama)}</b>${x.aktif === 'FALSE' ? ' <span class="at-tag">nonaktif</span>' : ''}</td>
-      <td class="mono">${(r.nip_ganda || []).includes(x.nip) ? '<span style="color:#c0392b;font-weight:700" title="NIP sama dengan pegawai lain — buka Ubah, kosongkan NIP, lalu Simpan agar dibuat ulang">⚠️ ' + pgwE(x.nip) + '</span>' : pgwE(x.nip || '—')}</td><td>${pgwE(pgwJab(x.jabatan))}</td><td>${pgwE(x.bidang || '—')}</td>
+      <td class="mono">${(r.nia_ganda || []).includes(x.nia) ? '<span style="color:#c0392b;font-weight:700" title="NIA sama dengan pegawai lain — buka Ubah, kosongkan NIA, lalu Simpan">⚠️ ' + pgwE(x.nia) + '</span>' : pgwE(x.nia || '—')}</td><td>${pgwE(pgwJab(x.jabatan))}</td><td>${pgwE(x.bidang || '—')}</td>
       <td>${pgwE(x.status_kepegawaian || '—')}${x.tgl_berakhir ? '<div class="rk-k">s.d. ' + pgwE(x.tgl_berakhir.split('-').reverse().join('/')) + '</div>' : ''}</td><td>${pgwE(x.email)}</td>
       ${r.boleh_ubah ? `<td><button class="btn btn-outline btn-sm" type="button" onclick="pgwBuka('${pgwE(x.id_pegawai)}')">Ubah</button></td>` : ''}</tr>`).join('') || '<tr><td colspan="8">Belum ada data pegawai.</td></tr>'}
     </tbody></table></div><div class="hint">${d.length} dari ${r.data.length} pegawai.</div>`;
@@ -7515,12 +7516,12 @@ function pgwForm() {
   return `<div class="at-kotak"><div class="rk-h">${e.id_pegawai ? 'Ubah ' + pgwE(e.id_pegawai) + ' — ' + pgwE(e.nama) : 'Pegawai baru'}</div>
   <div id="pgw-pesan"></div>
   <div class="pgw-sec">1. Identitas kepegawaian</div><div class="at-f">
-    ${inp('nip', 'NIP (18 digit — kosongkan agar dibuat otomatis)', 'inputmode="numeric" maxlength="18" oninput="this.value=this.value.replace(/\\D/g,\'\').slice(0,18)"')}
+    ${inp('nia', 'NIA – Nomor Induk Amil (12 digit — kosongkan agar dibuat otomatis)', 'inputmode="numeric" maxlength="12" oninput="this.value=this.value.replace(/\\D/g,\'\').slice(0,12)"')}
     ${inp('nama', 'Nama lengkap *', 'maxlength="100"')}${inp('email', 'Email * (untuk login)', 'type="email" maxlength="120"')}
     ${sel('jabatan', 'Jabatan *', P.jabatan, pgwJab)}${sel('bidang', 'Bidang/unit kerja *', P.bidang)}
     ${inp('no_sk', 'Nomor SK pengangkatan', 'maxlength="80"')}${tgl('tgl_sk', 'Tanggal berlaku SK')}
     <label>Status kepegawaian *<select id="pgw-status_kepegawaian" onchange="pgwSimpanSementara();pgwEdit.status_kepegawaian=this.value;pgwGambar()"><option value="">— pilih —</option>${P.status.map(o => `<option${e.status_kepegawaian === o ? ' selected' : ''}>${o}</option>`).join('')}</select></label>
-    ${tgl('tgl_mulai', 'Tanggal mulai bekerja')}${kontrak ? tgl('tgl_berakhir', 'Tanggal berakhir kontrak *') : ''}
+    ${tgl('tgl_mulai', 'Tanggal mulai bertugas (TMT)')}${kontrak ? tgl('tgl_berakhir', 'Tanggal berakhir kontrak *') : ''}
     <div style="display:flex;gap:16px;align-items:center">${cek('pkwt', 'Status PKWT', 'onchange="pgwSimpanSementara();pgwEdit.pkwt=this.checked?\'TRUE\':\'FALSE\';pgwGambar()"')}${cek('aktif', 'Aktif')}</div></div>
   <div class="pgw-sec">2. Data pribadi</div><div class="at-f">
     ${inp('tempat_lahir', 'Tempat lahir', 'maxlength="60"')}${tgl('tgl_lahir', 'Tanggal lahir')}${sel('jk', 'Jenis kelamin', ['Laki-laki', 'Perempuan'], null, PGW_ULANG)}
@@ -7556,7 +7557,7 @@ function pgwTer(p) { return ['TK/0', 'TK/1', 'K/0'].includes(p) ? 'A' : ['TK/2',
 // v79: PTKP pemotongan — perempuan kawin = TK/0 kecuali ada surat keterangan suami tidak berpenghasilan.
 function pgwPtkpEf(e) { return !e.ptkp ? '' : (e.jk === 'Perempuan' && e.status_kawin === 'Kawin' && e.suami_tidak_berpenghasilan !== 'TRUE') ? 'TK/0' : e.ptkp; }
 const PGW_ULANG = 'onchange="pgwSimpanSementara();pgwGambar()"';
-const PGW_ISIAN = ['nip', 'nama', 'email', 'jabatan', 'bidang', 'no_sk', 'tgl_sk', 'status_kepegawaian', 'tgl_mulai', 'tgl_berakhir', 'tempat_lahir', 'tgl_lahir', 'jk', 'status_kawin', 'gol_darah', 'ibu_kandung',
+const PGW_ISIAN = ['nia', 'nama', 'email', 'jabatan', 'bidang', 'no_sk', 'tgl_sk', 'status_kepegawaian', 'tgl_mulai', 'tgl_berakhir', 'tempat_lahir', 'tgl_lahir', 'jk', 'status_kawin', 'gol_darah', 'ibu_kandung',
   'jenis_identitas', 'no_identitas', 'identitas_berlaku', 'npwp', 'ptkp', 'jenis_penerima', 'alamat_ktp', 'kel_ktp', 'kec_ktp', 'kota_ktp', 'pos_ktp', 'alamat_dom', 'kel_dom', 'kec_dom', 'kota_dom', 'pos_dom',
   'hp', 'bpjs_kes_no', 'bpjs_kes_kelas', 'bpjs_kes_tanggungan', 'bpjs_tk_no', 'bpjs_tk_risiko', 'gaji_pokok', 'tunj_jabatan', 'tunj_lain', 'potong_sosial_persen', 'potong_sosial_jenis', 'infak_tetap', 'bank', 'no_rekening', 'nama_rekening', 'catatan'];
 /** Salin isian layar ke pgwEdit sebelum form digambar ulang (ganti status/centang). */
@@ -7576,6 +7577,15 @@ async function pgwSimpan() {
   toast(r.pesan + (r.peringatan && r.peringatan.length ? ' (ada peringatan)' : ''));
   if (r.peringatan && r.peringatan.length) alert('Tersimpan dengan peringatan:\n- ' + r.peringatan.join('\n- '));
   await pgwMuat();
+}
+
+// v89: bentuk NIA untuk pegawai lama yang belum punya
+async function pgwNiaIsi(btn) {
+  btn.disabled = true; btn.textContent = '⏳ Membentuk NIA…';
+  let r; try { r = await dbApi('pegawai_nia_isi', {}); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server.' }; }
+  btn.disabled = false; btn.textContent = 'Bentuk NIA otomatis';
+  if (!r.ok) { toast(r.pesan, true); return; }
+  toast('✓ ' + r.pesan, !!(r.kurang && r.kurang.length)); pgwMuat();
 }
 
 // ════════════════════════════════════════════
@@ -7961,7 +7971,7 @@ async function akSaya() {
   window.akData = r;
   const d = r.diri || {}, a = r.akun || {}, baris = (l, v) => v ? `<tr><td style="color:#667;padding:2px 10px 2px 0">${l}</td><td>${akE(v)}</td></tr>` : '';
   akBuka(`<div style="display:flex;justify-content:space-between;align-items:center"><div class="rk-h" style="margin:0">👤 Akun Saya</div><button class="btn btn-outline btn-sm" type="button" onclick="akTutup()">✕</button></div>
-    <table style="font-size:13px;margin:10px 0">${baris('Nama', d.nama)}${baris('Email', a.email)}${baris('Jabatan', d.jabatan)}${baris('Bidang', d.bidang)}${baris('Status', d.status_kepegawaian)}
+    <table style="font-size:13px;margin:10px 0">${baris('Nama', d.nama)}${baris('NIA', d.nia)}${baris('Email', a.email)}${baris('Jabatan', d.jabatan)}${baris('Bidang', d.bidang)}${baris('Status', d.status_kepegawaian)}
     ${baris('Mulai bekerja', d.tgl_mulai && d.tgl_mulai.split('-').reverse().join('/'))}${baris('PTKP pemotongan', d.ptkp_potong)}${baris('Rekening', d.bank ? d.bank + ' ' + d.no_rekening : '')}
     ${baris('Password berlaku s.d.', a.pw_kedaluwarsa && a.pw_kedaluwarsa.split('-').reverse().join('/') + ' (' + a.pw_sisa_hari + ' hari lagi)')}</table>
     <div class="hint">Perubahan data diri diajukan ke Kepala Bidang Administrasi, SDM & Umum.</div>
@@ -10151,7 +10161,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='2026.11.26-1558';
+const APP_VERSI='2026.11.26-1629';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
