@@ -8454,27 +8454,52 @@ function mzValidasi(o){
   if(gandaN)e.push(`Nomor identitas sudah dipakai ${gandaN.nama} (${gandaN.muzakiId||'menunggu'}).`);
   return e;
 }
+// v84: tanda proses jelas (tombol "Menyimpan… n dtk"), batas tunggu 45 dtk, daftar diperbarui di tempat lalu dimuat ulang di latar belakang.
+async function mzApiBatas(aksi,data,ms){
+  const ctl=typeof AbortController!=='undefined'?new AbortController():null;
+  const t=setTimeout(()=>ctl&&ctl.abort(),ms);
+  try{
+    const res=await fetch(DB_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({aksi,token:getToken(),data:data===undefined?null:data}),redirect:'follow',signal:ctl?ctl.signal:undefined});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    return await res.json();
+  }finally{clearTimeout(t);}
+}
 async function mzSimpan(){
   const o=mzBacaForm(), err=mzValidasi(o), box=document.getElementById('mz-err');
   if(err.length){box.innerHTML='<b>Perbaiki dulu:</b><br>'+err.map(xE).join('<br>');box.style.display='block';box.scrollIntoView({block:'nearest'});return;}
   box.style.display='none';
   if(!o.id_web)o.id_web='mzw_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  mzEdit.id_web=o.id_web;   // kirim ulang memakai id_web sama → server tidak membuat data ganda
   const kirim={};MZ_ISIAN.concat(['muzakiId','id_web','daftar_no']).forEach(k=>{if(o[k]!==undefined)kirim[k]=o[k];});
-  const btn=document.getElementById('mz-btn-simpan');btn.disabled=true;
+  const btn=document.getElementById('mz-btn-simpan'), label=btn.textContent, mulai=Date.now();
+  const tik=()=>{const d=Math.round((Date.now()-mulai)/1000);btn.textContent='⏳ Menyimpan…'+(d>=3?' '+d+' dtk':'');};
+  btn.disabled=true;tik();const jam=setInterval(tik,1000);
+  const antri=(pesan)=>{
+    const q=mzQ().filter(t=>t.data.id_web!==kirim.id_web);q.push({t:Date.now(),data:kirim});mzQSave(q);
+    if(!kirim.muzakiId){const i=mzList.findIndex(x=>x.id_web===kirim.id_web);if(i>=0)mzList[i]={...mzList[i],...kirim,_pending:true};else mzList.push({...kirim,_pending:true});}
+    else{const i=mzList.findIndex(x=>x.muzakiId===kirim.muzakiId);if(i>=0)mzList[i]={...mzList[i],...kirim,_pending:true};}
+    mzSimpanCache();mzRender();closeModal('modal-mz');toast(pesan,true);
+  };
   try{
     let r;
-    try{r=await dbApi('simpan_muzaki',{baris:[kirim]});}
+    try{r=await mzApiBatas('simpan_muzaki',{baris:[kirim]},45000);}
     catch(e){
-      const q=mzQ().filter(t=>t.data.id_web!==kirim.id_web);q.push({t:Date.now(),data:kirim});mzQSave(q);
-      if(!kirim.muzakiId)mzList.push({...kirim,_pending:true});else{const i=mzList.findIndex(x=>x.muzakiId===kirim.muzakiId);if(i>=0)mzList[i]={...mzList[i],...kirim,_pending:true};}
-      mzSimpanCache();mzRender();closeModal('modal-mz');toast('Offline — data muzaki disimpan di antrian dan dikirim otomatis saat online.',true);return;
+      if(e&&e.name==='AbortError')return antri('Server lambat (lebih dari 45 detik). Data disimpan di antrian dan dikirim ulang otomatis — tidak akan tercatat ganda.');
+      return antri('Offline — data muzaki disimpan di antrian dan dikirim otomatis saat online.');
     }
-    if(!r.ok){if(r.kode==='AUTH'){dbLogout(true);return;}toast(r.pesan,true);return;}
+    if(!r.ok){if(r.kode==='AUTH'){dbLogout(true);return;}box.innerHTML=xE(r.pesan||'Gagal menyimpan.');box.style.display='block';return;}
     const h=r.hasil[0];
     if(!h.ok){box.innerHTML='<b>Ditolak server:</b><br>'+xE(h.pesan);box.style.display='block';return;}
-    closeModal('modal-mz');toast(`✓ Muzaki ${h.muzakiId} ${h.pesan==='baru'?'ditambahkan':'diperbarui'}.`);
-    await mzMuat(true);
-  }finally{btn.disabled=false;}
+    // perbarui daftar di layar seketika, lalu muat ulang lengkap di latar belakang
+    const rec={...kirim,muzakiId:h.muzakiId,diubah_pada:h.diubah_pada};
+    let i=mzList.findIndex(x=>(h.muzakiId&&x.muzakiId===h.muzakiId)||(x.id_web&&x.id_web===kirim.id_web));
+    if(i>=0)mzList[i]={...mzList[i],...rec,_pending:false};else mzList.push(rec);
+    mzSimpanCache();mzRender();
+    closeModal('modal-mz');toast(`✓ Muzaki ${h.muzakiId} ${h.pesan==='baru'?'ditambahkan':'diperbarui'} (${Math.round((Date.now()-mulai)/100)/10} dtk).`);
+    const st=document.getElementById('mz-status');if(st)st.textContent='Memperbarui daftar…';
+    mzMuat(true);
+  }finally{clearInterval(jam);btn.disabled=false;btn.textContent=label;}
 }
 async function mzFlush(){
   if(_mzFlush||!getToken()||!navigator.onLine)return;
@@ -9940,7 +9965,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='2026.11.26-1016';
+const APP_VERSI='2026.11.26-1043';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
