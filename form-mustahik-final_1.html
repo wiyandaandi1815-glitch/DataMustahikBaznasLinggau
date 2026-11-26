@@ -7491,11 +7491,12 @@ function pgwForm() {
   const v = k => pgwE(e[k] ?? '');
   const inp = (k, lbl, a) => `<label>${lbl}<input id="pgw-${k}" value="${v(k)}" ${a || ''}></label>`;
   const tgl = (k, lbl) => `<label>${lbl}<input id="pgw-${k}" type="date" value="${v(k)}"></label>`;
-  const sel = (k, lbl, opsi, fmt) => `<label>${lbl}<select id="pgw-${k}"><option value="">— pilih —</option>${opsi.map(o => `<option value="${pgwE(o)}"${String(e[k] ?? '') === o ? ' selected' : ''}>${pgwE(fmt ? fmt(o) : o)}</option>`).join('')}</select></label>`;
+  const sel = (k, lbl, opsi, fmt, extra) => `<label>${lbl}<select id="pgw-${k}" ${extra || ''}><option value="">— pilih —</option>${opsi.map(o => `<option value="${pgwE(o)}"${String(e[k] ?? '') === o ? ' selected' : ''}>${pgwE(fmt ? fmt(o) : o)}</option>`).join('')}</select></label>`;
   const cek = (k, lbl, extra) => `<label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="pgw-${k}"${e[k] === 'TRUE' ? ' checked' : ''} ${extra || ''}> ${lbl}</label>`;
   const prog = String(e.bpjs_tk_program || '').split('\n');
   const kontrak = ['Kontrak', 'PKWT'].includes(e.status_kepegawaian) || e.pkwt === 'TRUE';
   const sama = e.domisili_sama === 'TRUE';
+  const wk = e.jk === 'Perempuan' && e.status_kawin === 'Kawin', ef = pgwPtkpEf(e);
   return `<div class="at-kotak"><div class="rk-h">${e.id_pegawai ? 'Ubah ' + pgwE(e.id_pegawai) + ' — ' + pgwE(e.nama) : 'Pegawai baru'}</div>
   <div id="pgw-pesan"></div>
   <div class="pgw-sec">1. Identitas kepegawaian</div><div class="at-f">
@@ -7507,13 +7508,15 @@ function pgwForm() {
     ${tgl('tgl_mulai', 'Tanggal mulai bekerja')}${kontrak ? tgl('tgl_berakhir', 'Tanggal berakhir kontrak *') : ''}
     <div style="display:flex;gap:16px;align-items:center">${cek('pkwt', 'Status PKWT', 'onchange="pgwSimpanSementara();pgwEdit.pkwt=this.checked?\'TRUE\':\'FALSE\';pgwGambar()"')}${cek('aktif', 'Aktif')}</div></div>
   <div class="pgw-sec">2. Data pribadi</div><div class="at-f">
-    ${inp('tempat_lahir', 'Tempat lahir', 'maxlength="60"')}${tgl('tgl_lahir', 'Tanggal lahir')}${sel('jk', 'Jenis kelamin', ['Laki-laki', 'Perempuan'])}
-    ${sel('status_kawin', 'Status perkawinan', P.kawin)}${sel('gol_darah', 'Golongan darah', P.darah)}${inp('ibu_kandung', 'Nama ibu kandung', 'maxlength="100"')}</div>
+    ${inp('tempat_lahir', 'Tempat lahir', 'maxlength="60"')}${tgl('tgl_lahir', 'Tanggal lahir')}${sel('jk', 'Jenis kelamin', ['Laki-laki', 'Perempuan'], null, PGW_ULANG)}
+    ${sel('status_kawin', 'Status perkawinan', P.kawin, null, PGW_ULANG)}${sel('gol_darah', 'Golongan darah', P.darah)}${inp('ibu_kandung', 'Nama ibu kandung', 'maxlength="100"')}</div>
   <div class="pgw-sec">3. Identitas & pajak</div><div class="at-f">
     ${sel('jenis_identitas', 'Jenis identitas', P.identitas)}${inp('no_identitas', 'Nomor identitas', 'maxlength="30"')}${tgl('identitas_berlaku', 'Identitas berlaku sampai')}
     ${inp('npwp', 'NPWP', 'maxlength="30"')}
-    <label>Status pajak (PTKP)<select id="pgw-ptkp" onchange="document.getElementById('pgw-ter').value=pgwTer(this.value)"><option value="">— pilih —</option>${P.ptkp.map(o => `<option${e.ptkp === o ? ' selected' : ''}>${o}</option>`).join('')}</select></label>
-    <label>Kategori TER PPh 21 (otomatis)<input id="pgw-ter" value="${pgwTer(e.ptkp)}" disabled></label>
+    <label>Status pajak (PTKP)<select id="pgw-ptkp" onchange="pgwSimpanSementara();pgwGambar()"><option value="">— pilih —</option>${P.ptkp.map(o => `<option${e.ptkp === o ? ' selected' : ''}>${o}</option>`).join('')}</select></label>
+    ${wk ? cek('suami_tidak_berpenghasilan', 'Suami tidak berpenghasilan – melampirkan surat keterangan', 'onchange="pgwSimpanSementara();pgwGambar()"') : ''}
+    <label>PTKP pemotongan &amp; TER PPh 21 (otomatis)<input id="pgw-ter" value="${ef ? ef + ' — TER ' + pgwTer(ef) : ''}" disabled></label>
+    ${wk && e.ptkp && ef !== e.ptkp ? '<div class="at-ket" style="grid-column:1/-1;color:#b45309">Pegawai perempuan kawin tanpa surat keterangan: PTKP pemotongan dikunci TK/0 (TER A).</div>' : ''}
     ${sel('jenis_penerima', 'Jenis penerima penghasilan', P.penerima)}</div>
   <div class="pgw-sec">4. Alamat KTP</div><div class="at-f">
     ${inp('alamat_ktp', 'Alamat', 'maxlength="200"')}${inp('kel_ktp', 'Kelurahan/desa')}${inp('kec_ktp', 'Kecamatan')}${inp('kota_ktp', 'Kota/kabupaten')}${inp('pos_ktp', 'Kode pos', 'maxlength="10" inputmode="numeric"')}</div>
@@ -7533,19 +7536,22 @@ function pgwForm() {
   <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-primary btn-sm" type="button" onclick="pgwSimpan()">Simpan</button>
     <button class="btn btn-outline btn-sm" type="button" onclick="pgwEdit=null;pgwGambar()">Batal</button></div></div>`;
 }
-function pgwTer(p) { return ['TK/0', 'TK/1', 'K/0'].includes(p) ? 'A' : ['TK/2', 'TK/3', 'K/1', 'K/2'].includes(p) ? 'B' : ['K/3', 'K/I/0', 'K/I/1', 'K/I/2', 'K/I/3'].includes(p) ? 'C' : ''; }
+function pgwTer(p) { return ['TK/0', 'TK/1', 'K/0'].includes(p) ? 'A' : ['TK/2', 'TK/3', 'K/1', 'K/2'].includes(p) ? 'B' : p === 'K/3' ? 'C' : ''; }
+// v79: PTKP pemotongan — perempuan kawin = TK/0 kecuali ada surat keterangan suami tidak berpenghasilan.
+function pgwPtkpEf(e) { return !e.ptkp ? '' : (e.jk === 'Perempuan' && e.status_kawin === 'Kawin' && e.suami_tidak_berpenghasilan !== 'TRUE') ? 'TK/0' : e.ptkp; }
+const PGW_ULANG = 'onchange="pgwSimpanSementara();pgwGambar()"';
 const PGW_ISIAN = ['nip', 'nama', 'email', 'jabatan', 'bidang', 'no_sk', 'tgl_sk', 'status_kepegawaian', 'tgl_mulai', 'tgl_berakhir', 'tempat_lahir', 'tgl_lahir', 'jk', 'status_kawin', 'gol_darah', 'ibu_kandung',
   'jenis_identitas', 'no_identitas', 'identitas_berlaku', 'npwp', 'ptkp', 'jenis_penerima', 'alamat_ktp', 'kel_ktp', 'kec_ktp', 'kota_ktp', 'pos_ktp', 'alamat_dom', 'kel_dom', 'kec_dom', 'kota_dom', 'pos_dom',
   'hp', 'bpjs_kes_no', 'bpjs_kes_kelas', 'bpjs_kes_tanggungan', 'bpjs_tk_no', 'bpjs_tk_risiko', 'gaji_pokok', 'tunj_jabatan', 'tunj_lain', 'bank', 'no_rekening', 'nama_rekening', 'catatan'];
 /** Salin isian layar ke pgwEdit sebelum form digambar ulang (ganti status/centang). */
 function pgwSimpanSementara() {
   PGW_ISIAN.forEach(k => { const el = document.getElementById('pgw-' + k); if (el) pgwEdit[k] = el.value; });
-  ['pkwt', 'aktif', 'domisili_sama'].forEach(k => { const el = document.getElementById('pgw-' + k); if (el) pgwEdit[k] = el.checked ? 'TRUE' : 'FALSE'; });
+  ['pkwt', 'aktif', 'domisili_sama', 'suami_tidak_berpenghasilan'].forEach(k => { const el = document.getElementById('pgw-' + k); if (el) pgwEdit[k] = el.checked ? 'TRUE' : 'FALSE'; });
   pgwEdit.bpjs_tk_program = [...document.querySelectorAll('input[name="pgw-prog"]:checked')].map(i => i.value).join('\n');
 }
 async function pgwSimpan() {
   pgwSimpanSementara();
-  const e = pgwEdit, kirim = { ...e, pkwt: e.pkwt === 'TRUE', aktif: e.aktif !== 'FALSE', domisili_sama: e.domisili_sama === 'TRUE', bpjs_tk_program: String(e.bpjs_tk_program || '').split('\n').filter(Boolean) };
+  const e = pgwEdit, kirim = { ...e, pkwt: e.pkwt === 'TRUE', aktif: e.aktif !== 'FALSE', domisili_sama: e.domisili_sama === 'TRUE', suami_tidak_berpenghasilan: e.suami_tidak_berpenghasilan === 'TRUE', bpjs_tk_program: String(e.bpjs_tk_program || '').split('\n').filter(Boolean) };
   if (!['Kontrak', 'PKWT'].includes(e.status_kepegawaian) && e.pkwt !== 'TRUE') kirim.tgl_berakhir = '';
   let r; try { r = await dbApi('pegawai_simpan', { pegawai: kirim }); } catch (er) { toast('Gagal terhubung ke server.', true); return; }
   const box = document.getElementById('pgw-pesan');
@@ -9651,7 +9657,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='2026.11.26-0854';
+const APP_VERSI='2026.11.26-0905';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
