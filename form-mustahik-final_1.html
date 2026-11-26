@@ -7344,10 +7344,11 @@ async function atMuatPengguna(kodeBaru) {
   isi.innerHTML = `${kodeBaru ? `<div class="at-kotak"><b>Kode akses baru untuk ${atE(kodeBaru.nama)}</b><div class="at-kode">${atE(kodeBaru.kode)}</div>
       <div class="hint" style="margin:0">Catat dan serahkan langsung ke yang bersangkutan. Kode ini tidak ditampilkan lagi.</div></div>` : ''}
     <div class="at-kotak"><div class="rk-h">Tambah pengguna</div><div class="at-f"><label>Nama<input id="at-pn" maxlength="80"></label>
-      <label>Jabatan<select id="at-pj">${r.jabatan.map(j => '<option>' + j + '</option>').join('')}</select></label></div>
+      <label>Jabatan<select id="at-pj">${r.jabatan.map(j => '<option value="' + j + '">' + atE((r.jabatan_label || {})[j] || j) + '</option>').join('')}</select></label></div>
+      <div class="hint" style="margin:0 0 8px">Kepala Pelaksana, Kepala Bidang & Staf: hak akses sama dengan Petugas. Satuan Audit Internal & Dewan Pengawas Syariah: hanya melihat.</div>
       <button class="btn btn-primary btn-sm" type="button" onclick="atTambahPengguna()">Buat kode akses</button></div>
     <div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>Nama</th><th>Jabatan</th><th>Kode</th><th></th></tr></thead><tbody>
-    ${r.pengguna.map((p, i) => `<tr><td><b>${atE(p.nama)}</b></td><td>${atE(p.jabatan)}</td><td class="mono">${atE(p.id)}</td>
+    ${r.pengguna.map((p, i) => `<tr><td><b>${atE(p.nama)}</b></td><td>${atE((r.jabatan_label || {})[p.jabatan] || p.jabatan)}</td><td class="mono">${atE(p.id)}</td>
       <td><button class="btn btn-outline btn-sm" type="button" onclick="atCabut(${i})">Cabut</button></td></tr>`).join('')}</tbody></table></div>
     <div class="hint">Kode akses UPZ/penggalang dikelola di menu Penggalang & UPZ.</div>`;
 }
@@ -7360,7 +7361,7 @@ async function atTambahPengguna() {
 }
 async function atCabut(i) {
   const p = atPengguna.pengguna[i]; if (!p) return;
-  if (!confirm('Cabut kode akses ' + p.nama + ' (' + p.jabatan + ')? Yang bersangkutan tidak bisa masuk lagi.')) return;
+  if (!confirm('Cabut kode akses ' + p.nama + ' (' + ((atPengguna.jabatan_label || {})[p.jabatan] || p.jabatan) + ')? Yang bersangkutan tidak bisa masuk lagi.')) return;
   let r; try { r = await dbApi('pengguna_cabut', { id: p.id, nama: p.nama }); } catch (e) { toast('Gagal terhubung ke server.', true); return; }
   if (!r.ok) { toast(r.pesan, true); return; } toast(r.pesan); atMuatPengguna();
 }
@@ -9460,7 +9461,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='2026.11.25-1714';
+const APP_VERSI='2026.11.25-1723';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
