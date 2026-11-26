@@ -7563,6 +7563,131 @@ async function pgwSimpan() {
 }
 
 // ════════════════════════════════════════════
+// v80 — KASBON & PIUTANG PEGAWAI (Tahap C1). Sisa berkurang otomatis saat gaji disetujui (Tahap C2) atau bayar tunai.
+// Ajukan & bayar tunai: WK3 + Bidang Keuangan; setujui/tolak/koreksi/batal bayar: WK3; Audit Internal & DPS: lihat (dijaga server).
+// ════════════════════════════════════════════
+var kbData = null, kbBuka = '', kbForm = null, kbF = { status: 'aktif', cari: '' };
+var kbE = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+var kbRp = n => 'Rp' + (Number(n) || 0).toLocaleString('id-ID');
+var kbTgl = t => t ? String(t).slice(0, 10).split('-').reverse().join('/') : '—';
+(function () {
+  if (typeof document === 'undefined') return;
+  const pasang = () => {
+    const bar = document.querySelector('.tab-bar'); if (!bar || document.getElementById('tab-kasbon-btn')) return;
+    const b = document.createElement('button'); b.className = 'tab-btn'; b.id = 'tab-kasbon-btn'; b.type = 'button'; b.innerHTML = '💳 Kasbon & Piutang';
+    b.onclick = function () { switchTab('t-kasbon', this); kbMuat(); };
+    bar.appendChild(b);
+    const p = document.createElement('div'); p.id = 't-kasbon'; p.className = 'tab-pane';
+    p.innerHTML = `<div class="main"><div class="pg-title">Kasbon & Piutang Pegawai</div>
+      <div class="pg-sub">Kasbon, pinjaman, dan piutang uang muka yang dilunasi lewat potong gaji. Sisa berkurang otomatis saat gaji bulanan disetujui atau saat bayar tunai dicatat.</div>
+      <div id="kb-isi"><div class="hint">Memuat…</div></div></div>`;
+    const imp = document.getElementById('t-import'); (imp ? imp.parentNode : document.body).insertBefore(p, imp || null);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pasang); else pasang();
+})();
+
+async function kbMuat() {
+  const isi = document.getElementById('kb-isi'); if (!isi) return;
+  isi.innerHTML = '<div class="hint">Memuat…</div>';
+  let r; try { r = await dbApi('kasbon_daftar', {}); } catch (e) { isi.innerHTML = '<div class="hint" style="color:var(--red)">Gagal terhubung ke server.</div>'; return; }
+  if (!r || !r.ok) { isi.innerHTML = '<div class="hint" style="color:var(--red)">' + kbE((r && r.pesan) || 'Gagal memuat.') + '</div>'; return; }
+  kbData = r; kbForm = null; kbGambar();
+}
+function kbGambar(pesan) {
+  const isi = document.getElementById('kb-isi'); if (!isi || !kbData) return;
+  isi.innerHTML = (pesan ? `<div class="pgw-w">${pesan}</div>` : '') + (kbForm ? kbFormHtml() : kbDaftar());
+}
+function kbDaftar() {
+  const r = kbData, q = kbF.cari.toLowerCase();
+  const d = r.data.filter(k => (!q || String(k.nama).toLowerCase().includes(q) || String(k.id_kasbon).toLowerCase().includes(q))
+    && (!kbF.status || (kbF.status === 'aktif' ? ['Diajukan', 'Disetujui'].includes(k.status) : k.status === kbF.status)));
+  const totSisa = r.data.filter(k => k.status === 'Disetujui').reduce((s, k) => s + k.sisa, 0);
+  return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+    <input type="search" placeholder="Cari nama atau ID" value="${kbE(kbF.cari)}" onchange="kbF.cari=this.value;kbGambar()" style="min-width:200px">
+    <select onchange="kbF.status=this.value;kbGambar()"><option value="aktif"${kbF.status === 'aktif' ? ' selected' : ''}>Diajukan & berjalan</option><option value=""${!kbF.status ? ' selected' : ''}>Semua status</option>
+      ${r.pilihan.status.map(s => `<option${kbF.status === s ? ' selected' : ''}>${s}</option>`).join('')}</select>
+    <span class="rk-k">Total sisa berjalan: <b>${kbRp(totSisa)}</b></span>
+    ${r.boleh_input ? '<button class="btn btn-primary btn-sm" type="button" style="margin-left:auto" onclick="kbBaru()">+ Ajukan</button>' : ''}</div>
+    <div class="hint">Syarat kasbon/pinjaman: status ${kbE(r.param.status_boleh.join(', ') || '—')}, masa kerja minimal ${r.param.masa_kerja_min} bulan; potongan maksimal ${r.param.batas_potong}% penghasilan per bulan (diatur di ⚙️ Pengaturan › Gaji & Pajak). Piutang uang muka tidak terikat syarat ini.</div>
+    <div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>ID</th><th>Pegawai</th><th>Jenis</th><th>Pokok</th><th>Cicilan</th><th>Mulai</th><th>Sisa</th><th>Status</th><th></th></tr></thead><tbody>
+    ${d.map(k => `<tr><td class="mono">${kbE(k.id_kasbon)}</td><td><b>${kbE(k.nama)}</b><div class="rk-k">${kbE(k.keperluan)}</div></td><td>${kbE(k.jenis)}</td>
+      <td>${kbRp(k.pokok)}</td><td>${kbRp(k.cicilan)} × ${kbE(k.tenor)}</td><td>${kbE(k.mulai_potong)}</td><td><b>${kbRp(k.sisa)}</b></td><td>${kbE(k.status)}</td>
+      <td><button class="btn btn-outline btn-sm" type="button" onclick="kbBuka=kbBuka==='${kbE(k.id_kasbon)}'?'':'${kbE(k.id_kasbon)}';kbGambar()">${kbBuka === k.id_kasbon ? 'Tutup' : 'Rinci'}</button></td></tr>
+      ${kbBuka === k.id_kasbon ? `<tr><td colspan="9">${kbRinci(k)}</td></tr>` : ''}`).join('') || '<tr><td colspan="9">Tidak ada data.</td></tr>'}
+    </tbody></table></div>`;
+}
+function kbRinci(k) {
+  const r = kbData, id = kbE(k.id_kasbon);
+  const mut = k.mutasi.length ? `<table class="rk-tbl"><thead><tr><th>ID</th><th>Tanggal</th><th>Jenis</th><th>Periode</th><th>Jumlah</th><th>Keterangan</th><th>Oleh</th><th></th></tr></thead><tbody>
+    ${k.mutasi.map(m => `<tr class="${m.batal === 'TRUE' ? 'at-off' : ''}"><td class="mono">${kbE(m.id_mutasi)}</td><td>${kbTgl(m.tgl)}</td><td>${kbE(m.jenis)}</td><td>${kbE(m.periode)}</td><td>${kbRp(m.jumlah)}</td>
+      <td>${kbE(m.ket)}${m.batal === 'TRUE' ? '<div class="rk-k">Dibatalkan ' + kbE(m.batal_oleh) + ': ' + kbE(m.batal_alasan) + '</div>' : ''}</td><td>${kbE(m.oleh)}</td>
+      <td>${r.boleh_putus && m.batal !== 'TRUE' && m.jenis !== 'Potong Gaji' ? `<button class="btn btn-outline btn-sm" type="button" onclick="kbBatalBayar('${kbE(m.id_mutasi)}')">Batalkan</button>` : ''}</td></tr>`).join('')}</tbody></table>` : '<div class="hint">Belum ada pembayaran.</div>';
+  let aksi = '';
+  if (k.status === 'Diajukan' && r.boleh_putus) aksi += `<div class="at-f"><label>Tanggal pencairan<input type="date" id="kb-cair-${id}" value="${new Date().toISOString().slice(0, 10)}"></label>
+    <label>No. bukti kas keluar (BBK)<input id="kb-bukti-${id}" maxlength="60"></label><label>Alasan (wajib bila ditolak)<input id="kb-alasan-${id}" maxlength="300"></label></div>
+    <button class="btn btn-primary btn-sm" type="button" onclick="kbPutus('${id}','setujui')">✅ Setujui</button> <button class="btn btn-outline btn-sm" type="button" onclick="kbPutus('${id}','tolak')">Tolak</button> `;
+  if (k.status === 'Diajukan' && r.boleh_input) aksi += `<button class="btn btn-outline btn-sm" type="button" onclick="kbUbah('${id}')">Ubah</button> `;
+  if ((k.status === 'Diajukan' && r.boleh_input) || (k.status === 'Disetujui' && r.boleh_putus && !k.mutasi.some(m => m.batal !== 'TRUE')))
+    aksi += `<button class="btn btn-outline btn-sm" type="button" onclick="kbPutus('${id}','batal')">Batalkan pengajuan</button>`;
+  if (k.status === 'Disetujui' && r.boleh_input) aksi += `<div class="at-f" style="margin-top:8px"><label>Catat<select id="kb-jenis-${id}"><option>Bayar Tunai</option>${r.boleh_putus ? '<option>Koreksi</option>' : ''}</select></label>
+    <label>Tanggal<input type="date" id="kb-tgl-${id}" value="${new Date().toISOString().slice(0, 10)}"></label><label>Jumlah (sisa ${kbRp(k.sisa)})<input id="kb-jml-${id}" inputmode="numeric"></label>
+    <label>No. bukti / alasan koreksi<input id="kb-ket-${id}" maxlength="200"></label></div><button class="btn btn-primary btn-sm" type="button" onclick="kbBayar('${id}')">Simpan pembayaran</button>`;
+  return `<div class="at-kotak" style="margin:4px 0"><div class="rk-k">Diajukan ${kbE(k.diajukan_oleh)} ${kbTgl(k.tgl_pengajuan)}${k.diputus_oleh ? ' · ' + kbE(k.status) + ' oleh ' + kbE(k.diputus_oleh) + ' ' + kbTgl(k.diputus_pada) : ''}${k.tgl_cair ? ' · cair ' + kbTgl(k.tgl_cair) : ''}${k.no_bukti ? ' · bukti ' + kbE(k.no_bukti) : ''}${k.alasan ? ' · alasan: ' + kbE(k.alasan) : ''}</div>
+    <div style="margin:6px 0">Dibayar ${kbRp(k.dibayar)} dari ${kbRp(k.pokok)}.</div>${mut}<div style="margin-top:8px">${aksi}</div></div>`;
+}
+function kbBaru() {
+  const d = new Date(); d.setMonth(d.getMonth() + 1);
+  kbForm = { jenis: 'Kasbon', tgl_pengajuan: new Date().toISOString().slice(0, 10), tenor: 1, mulai_potong: d.toISOString().slice(0, 7) }; kbGambar();
+}
+function kbUbah(id) { const k = kbData.data.find(x => x.id_kasbon === id); kbForm = { ...k }; kbGambar(); }
+function kbFormHtml() {
+  const f = kbForm, r = kbData;
+  const pg = r.pegawai.find(p => p.id_pegawai === f.id_pegawai), cic = f.pokok && f.tenor ? Math.ceil(Number(String(f.pokok).replace(/\D/g, '')) / Number(f.tenor)) : 0;
+  return `<div class="at-kotak"><div class="rk-h">${f.id_kasbon ? 'Ubah ' + kbE(f.id_kasbon) : 'Pengajuan baru'}</div><div id="kb-pesan"></div><div class="at-f">
+    <label>Pegawai *<select id="kb-id_pegawai" onchange="kbAmbil();kbGambar()"><option value="">— pilih —</option>${r.pegawai.map(p => `<option value="${kbE(p.id_pegawai)}"${f.id_pegawai === p.id_pegawai ? ' selected' : ''}>${kbE(p.nama)} — ${kbE(p.status || '?')}${p.layak ? '' : ' (belum memenuhi syarat kasbon)'}</option>`).join('')}</select></label>
+    <label>Jenis *<select id="kb-jenis" onchange="kbAmbil();kbGambar()">${r.pilihan.jenis.map(j => `<option${f.jenis === j ? ' selected' : ''}>${j}</option>`).join('')}</select></label>
+    <label>Tanggal pengajuan<input type="date" id="kb-tgl_pengajuan" value="${kbE(f.tgl_pengajuan)}"></label>
+    <label>Nilai pokok (Rp) *<input id="kb-pokok" inputmode="numeric" value="${kbE(f.pokok)}" onchange="kbAmbil();kbGambar()"></label>
+    <label>Lama cicilan (bulan) *<input id="kb-tenor" type="number" min="1" max="60" value="${kbE(f.tenor)}" onchange="kbAmbil();kbGambar()"></label>
+    <label>Mulai potong gaji (bulan) *<input id="kb-mulai_potong" type="month" value="${kbE(f.mulai_potong)}"></label>
+    <label style="grid-column:1/-1">Keperluan *<input id="kb-keperluan" maxlength="300" value="${kbE(f.keperluan)}"></label>
+    <label style="grid-column:1/-1">Catatan<input id="kb-catatan" maxlength="300" value="${kbE(f.catatan)}"></label></div>
+    <div class="hint">Cicilan per bulan: <b>${kbRp(cic)}</b>${pg ? ` · penghasilan tetap ${kbRp(pg.penghasilan)} · masa kerja ${pg.masa_kerja_bln < 0 ? '(tanggal mulai kerja kosong)' : pg.masa_kerja_bln + ' bulan'}` : ''}</div>
+    ${pg && !pg.layak && f.jenis !== 'Piutang Uang Muka' ? '<div class="pgw-w">Pegawai ini belum memenuhi syarat kasbon/pinjaman; server akan menolak.</div>' : ''}
+    <div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-primary" type="button" onclick="kbSimpan(this)">Simpan pengajuan</button><button class="btn btn-outline" type="button" onclick="kbForm=null;kbGambar()">Batal</button></div></div>`;
+}
+function kbAmbil() { ['id_pegawai', 'jenis', 'tgl_pengajuan', 'pokok', 'tenor', 'mulai_potong', 'keperluan', 'catatan'].forEach(k => { const el = document.getElementById('kb-' + k); if (el) kbForm[k] = el.value; }); }
+async function kbKirim(aksi, data, btn) {
+  if (btn) btn.disabled = true;
+  let r; try { r = await dbApi(aksi, data); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server.' }; }
+  if (btn) btn.disabled = false;
+  return r || { ok: false, pesan: 'Gagal.' };
+}
+async function kbSimpan(btn) {
+  kbAmbil();
+  const r = await kbKirim('kasbon_simpan', { kasbon: kbForm }, btn);
+  if (!r.ok) { document.getElementById('kb-pesan').innerHTML = `<div class="pgw-w" style="color:var(--red)">${kbE(r.pesan)}</div>`; return; }
+  await kbMuat(); kbGambar('✅ ' + kbE(r.pesan) + (r.peringatan && r.peringatan.length ? '<br>⚠️ ' + r.peringatan.map(kbE).join('<br>⚠️ ') : ''));
+}
+async function kbPutus(id, kep) {
+  const g = k => (document.getElementById('kb-' + k + '-' + id) || {}).value || '';
+  let alasan = g('alasan');
+  if (kep === 'batal' && !alasan) { alasan = (window.prompt('Alasan pembatalan:') || '').trim(); if (!alasan) return; }
+  const r = await kbKirim('kasbon_putus', { id_kasbon: id, keputusan: kep, alasan, tgl_cair: g('cair'), no_bukti: g('bukti') });
+  if (r.ok) await kbMuat(); kbGambar((r.ok ? '✅ ' : '❌ ') + kbE(r.pesan));
+}
+async function kbBayar(id) {
+  const g = k => (document.getElementById('kb-' + k + '-' + id) || {}).value || '';
+  const r = await kbKirim('kasbon_bayar', { id_kasbon: id, jenis: g('jenis'), tgl: g('tgl'), jumlah: g('jml'), ket: g('ket') });
+  if (r.ok) await kbMuat(); kbGambar((r.ok ? '✅ ' : '❌ ') + kbE(r.pesan));
+}
+async function kbBatalBayar(idm) {
+  const alasan = (window.prompt('Alasan membatalkan ' + idm + ':') || '').trim(); if (!alasan) return;
+  const r = await kbKirim('kasbon_bayar', { batal_id: idm, alasan });
+  if (r.ok) await kbMuat(); kbGambar((r.ok ? '✅ ' : '❌ ') + kbE(r.pesan));
+}
+
+// ════════════════════════════════════════════
 // v39 — TATA LETAK: menu samping kiri per bidang (Pengumpulan · Pendistribusian & Pendayagunaan · Keuangan, Pelaporan & Akuntansi ·
 // Administrasi, SDM, Umum & Komunikasi). Tombol tab lama dipindah (bukan dibuat ulang) → onclick, badge, & aturan peran tetap.
 // Tabel Pengajuan Masuk diringkas: 5 kolom tanpa geser samping, judul kolom tetap terlihat saat digulir, di HP jadi kartu.
@@ -7572,7 +7697,7 @@ async function pgwSimpan() {
     {ik:'💰',nama:'Pengumpulan',isi:['#tab-mz-btn','#tab-ol-btn','#tab-pg-btn','#tab-kt-btn','#tab-hl-btn']},
     {ik:'🤲',nama:'Pendistribusian & Pendayagunaan',isi:['#tab-pj-btn','#tab-us-btn','@survei','@monitoring','[onclick^="switchTab(\'t-daftar\'"]','[onclick^="switchTab(\'t-form\'"]','#tab-lb-btn']},
     {ik:'📊',nama:'Keuangan, Pelaporan & Akuntansi',isi:['#tab-rkat-btn','~Laporan & rekap keuangan']},
-    {ik:'🗂',nama:'Administrasi, SDM, Umum & Komunikasi',isi:['#tab-ppid-btn','#tab-pegawai-btn','#tab-import-btn','#tab-atur-btn']}
+    {ik:'🗂',nama:'Administrasi, SDM, Umum & Komunikasi',isi:['#tab-ppid-btn','#tab-pegawai-btn','#tab-kasbon-btn','#tab-import-btn','#tab-atur-btn']}
   ];
   const LABEL={'#tab-pg-btn':'Penggalang & UPZ'};
   const css=document.createElement('style');
@@ -9657,7 +9782,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='2026.11.26-0905';
+const APP_VERSI='2026.11.26-0925';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
