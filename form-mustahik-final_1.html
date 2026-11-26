@@ -3572,11 +3572,25 @@ function ssSet(k,v){try{sessionStorage.setItem(k,v);}catch{}}
 function ssDel(k){try{sessionStorage.removeItem(k);}catch{}}
 function getToken(){return ssGet(SS_TOKEN)||'';}
 
+// v85: batas tunggu 40 dtk; aksi baca dicoba ulang otomatis sekali bila jaringan/server gagal (aksi tulis tidak, agar tidak ganda)
+const DB_BACA_RE=/^(cek|daftar|.*_daftar|daftar_.*|.*_baca|.*_lihat|.*_riwayat|riwayat_.*|pengaturan_baca|usulan_pool|keluarga_kk|acuan_desil|bm_ringkas)$/;
+async function dbApiSekali(aksi,data,tokenOverride){
+  const ctl=typeof AbortController!=='undefined'?new AbortController():null, t=setTimeout(()=>ctl&&ctl.abort(),40000);
+  try{
+    const res=await fetch(DB_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({aksi,token:tokenOverride||getToken(),data:data===undefined?null:data}),redirect:'follow',signal:ctl?ctl.signal:undefined});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const teks=await res.text();
+    try{return JSON.parse(teks);}catch(e){throw new Error(/too many|terlalu banyak|Service invoked/i.test(teks)?'Server sedang sibuk (batas Google).':'Jawaban server tidak dikenal.');}
+  }catch(e){if(e&&e.name==='AbortError')throw new Error('Server tidak menjawab dalam 40 detik.');throw e;}
+  finally{clearTimeout(t);}
+}
 async function dbApi(aksi,data,tokenOverride){
-  const res=await fetch(DB_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body:JSON.stringify({aksi,token:tokenOverride||getToken(),data:data===undefined?null:data}),redirect:'follow'});
-  if(!res.ok)throw new Error('HTTP '+res.status);
-  return res.json();
+  let r;
+  try{r=await dbApiSekali(aksi,data,tokenOverride);}
+  catch(e){if(!DB_BACA_RE.test(aksi))throw e;await new Promise(z=>setTimeout(z,1500));r=await dbApiSekali(aksi,data,tokenOverride);}
+  if(typeof _syncState!=='undefined'&&_syncState==='offline'&&navigator.onLine&&typeof setSyncState==='function')setSyncState('online');
+  return r;
 }
 
 // ── Antrian offline ──
@@ -8321,12 +8335,23 @@ function mzBacaCache(){try{const c=JSON.parse(lsGet(MZ_CACHE)||'{}');mzList=c.mu
 function mzQ(){try{return JSON.parse(lsGet(MZ_Q)||'[]');}catch{return[];}}
 function mzQSave(q){lsSet(MZ_Q,JSON.stringify(q));}
 
+let _mzMuatJalan=null;   // v85: cegah muat ganda bersamaan
 async function mzMuat(silent){
   if(!getToken())return;
+  if(_mzMuatJalan)return _mzMuatJalan;
+  _mzMuatJalan=mzMuatInti(silent);
+  try{return await _mzMuatJalan;}finally{_mzMuatJalan=null;}
+}
+async function mzMuatInti(silent){
   const st=document.getElementById('mz-status');
   if(st)st.textContent='Memuat…';
+  if(!mzMuatSekali&&!mzList.length){try{mzBacaCache();if(mzList.length)mzRender();}catch(e){}}   // v85: tampilkan cache dulu
   let r;
-  try{r=await dbApi('daftar_muzaki');}catch(e){mzBacaCache();mzRender();if(st)st.textContent='Offline — menampilkan cache perangkat.';return;}
+  try{r=await dbApi('daftar_muzaki');}catch(e){
+    try{mzBacaCache();}catch(x){} mzRender();
+    if(st)st.innerHTML=xE('Gagal memuat: '+(e&&e.message||'jaringan')+' — menampilkan cache perangkat.')+' <a href="#" onclick="mzMuat();return false">Coba lagi</a>';
+    const tb=document.getElementById('mz-tbody');if(tb&&!mzList.length)tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:24px;color:#991b1b">Data muzaki belum dapat dimuat. <a href="#" onclick="mzMuat();return false">Coba lagi</a></td></tr>';
+    return;}
   if(!r.ok){if(r.kode==='AUTH')dbLogout(true);else toast(r.pesan,true);return;}
   if(r.jabatan)ssSet(SS_JABATAN,r.jabatan);
   mzBolehNpwz=!!r.boleh_ubah_npwz;mzBolehBatal=!!r.boleh_batal_bsz;
@@ -9965,7 +9990,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='2026.11.26-1043';
+const APP_VERSI='2026.11.26-1053';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
