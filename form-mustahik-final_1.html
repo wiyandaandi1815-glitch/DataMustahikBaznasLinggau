@@ -7487,10 +7487,11 @@ function pgwDaftar() {
       ${sel('jabatan', P.jabatan, 'Semua jabatan', pgwJab)}${sel('bidang', P.bidang, 'Semua bidang')}${sel('status', P.status, 'Semua status')}
       <select onchange="pgwF.aktif=this.value;pgwGambar()"><option value="">Aktif & nonaktif</option><option value="aktif"${pgwF.aktif === 'aktif' ? ' selected' : ''}>Aktif</option><option value="nonaktif"${pgwF.aktif === 'nonaktif' ? ' selected' : ''}>Nonaktif</option></select>
       ${r.boleh_ubah ? '<button class="btn btn-primary btn-sm" type="button" style="margin-left:auto" onclick="pgwBuka(\'\')">+ Tambah Pegawai Baru</button>' : ''}</div>
+    ${(r.nip_ganda || []).length ? '<div class="pgw-w" style="color:#c0392b">⚠️ Ada ' + r.nip_ganda.length + ' NIP yang sama dipakai lebih dari satu pegawai (ditandai merah). Buka Ubah, kosongkan NIP, lalu Simpan agar NIP dibuat ulang otomatis.</div>' : ''}
     ${r.ringkas ? '<div class="hint">Tampilan ringkas: data pribadi, pajak, rekening, dan gaji tidak ditampilkan untuk jabatan Anda.</div>' : ''}
     <div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>ID</th><th>Nama</th><th>NIP</th><th>Jabatan</th><th>Bidang/Unit</th><th>Status</th><th>Email</th>${r.boleh_ubah ? '<th></th>' : ''}</tr></thead><tbody>
     ${d.map(x => `<tr class="${x.aktif === 'FALSE' ? 'at-off' : ''}"><td class="mono">${pgwE(x.id_pegawai)}</td><td><b>${pgwE(x.nama)}</b>${x.aktif === 'FALSE' ? ' <span class="at-tag">nonaktif</span>' : ''}</td>
-      <td class="mono">${pgwE(x.nip || '—')}</td><td>${pgwE(pgwJab(x.jabatan))}</td><td>${pgwE(x.bidang || '—')}</td>
+      <td class="mono">${(r.nip_ganda || []).includes(x.nip) ? '<span style="color:#c0392b;font-weight:700" title="NIP sama dengan pegawai lain — buka Ubah, kosongkan NIP, lalu Simpan agar dibuat ulang">⚠️ ' + pgwE(x.nip) + '</span>' : pgwE(x.nip || '—')}</td><td>${pgwE(pgwJab(x.jabatan))}</td><td>${pgwE(x.bidang || '—')}</td>
       <td>${pgwE(x.status_kepegawaian || '—')}${x.tgl_berakhir ? '<div class="rk-k">s.d. ' + pgwE(x.tgl_berakhir.split('-').reverse().join('/')) + '</div>' : ''}</td><td>${pgwE(x.email)}</td>
       ${r.boleh_ubah ? `<td><button class="btn btn-outline btn-sm" type="button" onclick="pgwBuka('${pgwE(x.id_pegawai)}')">Ubah</button></td>` : ''}</tr>`).join('') || '<tr><td colspan="8">Belum ada data pegawai.</td></tr>'}
     </tbody></table></div><div class="hint">${d.length} dari ${r.data.length} pegawai.</div>`;
@@ -8007,9 +8008,13 @@ async function akMuatKelola(pesan) {
 }
 async function akKelola(aksi, kunci) {
   if ((aksi === 'reset' || aksi === 'nonaktif') && !confirm(aksi === 'reset' ? 'Reset password ' + kunci + '? Sesi lamanya akan keluar.' : 'Nonaktifkan akun ' + kunci + '?')) return;
-  let r; try { r = await dbApi('akun_kelola', aksi === 'buat' ? { aksi, id_pegawai: kunci } : { aksi, email: kunci }); } catch (e) { toast('Gagal terhubung ke server.', true); return; }
+  const box = document.getElementById('ak-kelola'), tunggu = document.createElement('div');   // v88: tanda proses
+  tunggu.className = 'pgw-w'; tunggu.textContent = '⏳ ' + ({ buat: 'Membuat akun', reset: 'Mereset password', nonaktif: 'Menonaktifkan', aktif: 'Mengaktifkan', buka: 'Membuka kunci' }[aksi] || 'Memproses') + '… jangan tutup halaman ini.';
+  if (box) { box.querySelectorAll('button').forEach(b => b.disabled = true); box.prepend(tunggu); }
+  let r; try { r = await dbApi('akun_kelola', aksi === 'buat' ? { aksi, id_pegawai: kunci } : { aksi, email: kunci }); } catch (e) { tunggu.remove(); if (box) box.querySelectorAll('button').forEach(b => b.disabled = false); toast('Gagal terhubung ke server.', true); return; }
+  tunggu.remove(); if (box) box.querySelectorAll('button').forEach(b => b.disabled = false);
   if (!r.ok) { toast(r.pesan, true); return; }
-  akMuatKelola(r.password_sementara ? `<div class="at-kotak"><b>Password sementara ${akE(r.email || kunci)}</b><div class="at-kode">${akE(r.password_sementara)}</div><div class="hint" style="margin:0">Catat dan serahkan langsung. Tidak ditampilkan lagi.</div></div>` : '');
+  akMuatKelola(r.password_sementara ? `<div class="at-kotak"><b>🔑 Password sementara ${akE(r.email || kunci)}</b><div class="at-kode">${akE(r.password_sementara)}</div><div class="hint" style="margin:0">Catat dan serahkan langsung. Tidak ditampilkan lagi.</div></div>` : '');
   toast('✓ ' + r.pesan);
 }
 // keluar: hapus penanda sesi email
@@ -10146,7 +10151,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='2026.11.26-1527';
+const APP_VERSI='2026.11.26-1558';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
