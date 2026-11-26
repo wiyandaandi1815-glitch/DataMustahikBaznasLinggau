@@ -7367,6 +7367,137 @@ async function atCabut(i) {
 }
 
 // ════════════════════════════════════════════
+// v77 — DATA PEGAWAI (Tahap A, dasar menu Gaji & login). Isian mengacu pegawai.html.
+// Lihat & ubah: WK3 dan Kepala Bidang Administrasi, SDM & Umum; Audit Internal & DPS: daftar tanpa data pribadi (dijaga server).
+// ════════════════════════════════════════════
+var pgwData = null, pgwEdit = null, pgwCari = '', pgwF = { jabatan: '', bidang: '', status: '', aktif: 'aktif' };
+var pgwE = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+(function () {
+  if (typeof document === 'undefined') return;
+  const pasang = () => {
+    const bar = document.querySelector('.tab-bar'); if (!bar || document.getElementById('tab-pegawai-btn')) return;
+    const b = document.createElement('button'); b.className = 'tab-btn'; b.id = 'tab-pegawai-btn'; b.type = 'button'; b.innerHTML = '👤 Data Pegawai';
+    b.onclick = function () { switchTab('t-pegawai', this); pgwMuat(); };
+    bar.appendChild(b);
+    const p = document.createElement('div'); p.id = 't-pegawai'; p.className = 'tab-pane';
+    p.innerHTML = `<div class="main"><div class="pg-title">Data Pegawai</div>
+      <div class="pg-sub">Data induk pegawai & amil — dasar menu Gaji dan login. Hanya Wakil Ketua III dan Kepala Bidang Administrasi, SDM & Umum yang dapat melihat data lengkap dan mengubah.</div>
+      <div id="pgw-isi"><div class="hint">Memuat…</div></div></div>`;
+    const imp = document.getElementById('t-import'); (imp ? imp.parentNode : document.body).insertBefore(p, imp || null);
+    const st = document.createElement('style'); st.textContent = `.pgw-sec{font-weight:700;font-size:13px;margin:14px 0 6px;padding-top:10px;border-top:1px solid var(--g100)}
+.pgw-sec:first-child{border-top:0;margin-top:0;padding-top:0}.pgw-w{background:#fff8e1;border:1px solid #f0d48a;border-radius:8px;padding:8px 10px;font-size:12.5px;margin-bottom:8px}`;
+    document.head.appendChild(st);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pasang); else pasang();
+})();
+
+async function pgwMuat() {
+  const isi = document.getElementById('pgw-isi'); if (!isi) return;
+  isi.innerHTML = '<div class="hint">Memuat…</div>';
+  let r; try { r = await dbApi('pegawai_daftar', {}); } catch (e) { isi.innerHTML = '<div class="hint" style="color:var(--red)">Gagal terhubung ke server.</div>'; return; }
+  if (!r || !r.ok) { isi.innerHTML = '<div class="hint" style="color:var(--red)">' + pgwE((r && r.pesan) || 'Gagal memuat.') + '</div>'; return; }
+  pgwData = r; pgwEdit = null; pgwGambar();
+}
+const pgwJab = j => ((pgwData && pgwData.pilihan.jabatan_label) || {})[j] || j || '—';
+function pgwGambar() {
+  const isi = document.getElementById('pgw-isi'); if (!isi || !pgwData) return;
+  isi.innerHTML = pgwEdit ? pgwForm() : pgwDaftar();
+}
+function pgwDaftar() {
+  const r = pgwData, P = r.pilihan, q = pgwCari.toLowerCase();
+  const d = r.data.filter(x => (!q || String(x.nama).toLowerCase().includes(q) || String(x.nip).includes(q))
+    && (!pgwF.jabatan || x.jabatan === pgwF.jabatan) && (!pgwF.bidang || x.bidang === pgwF.bidang) && (!pgwF.status || x.status_kepegawaian === pgwF.status)
+    && (!pgwF.aktif || (pgwF.aktif === 'aktif') === (x.aktif !== 'FALSE')));
+  const sel = (k, opsi, lbl, fmt) => `<select onchange="pgwF.${k}=this.value;pgwGambar()"><option value="">${lbl}</option>${opsi.map(o => `<option value="${pgwE(o)}"${pgwF[k] === o ? ' selected' : ''}>${pgwE(fmt ? fmt(o) : o)}</option>`).join('')}</select>`;
+  return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+      <input type="search" placeholder="Cari nama atau NIP" value="${pgwE(pgwCari)}" oninput="pgwCari=this.value;clearTimeout(window._pgwT);window._pgwT=setTimeout(()=>{pgwGambar();const i=document.querySelector('#pgw-isi input[type=search]');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250)" style="min-width:200px">
+      ${sel('jabatan', P.jabatan, 'Semua jabatan', pgwJab)}${sel('bidang', P.bidang, 'Semua bidang')}${sel('status', P.status, 'Semua status')}
+      <select onchange="pgwF.aktif=this.value;pgwGambar()"><option value="">Aktif & nonaktif</option><option value="aktif"${pgwF.aktif === 'aktif' ? ' selected' : ''}>Aktif</option><option value="nonaktif"${pgwF.aktif === 'nonaktif' ? ' selected' : ''}>Nonaktif</option></select>
+      ${r.boleh_ubah ? '<button class="btn btn-primary btn-sm" type="button" style="margin-left:auto" onclick="pgwBuka(\'\')">+ Tambah Pegawai Baru</button>' : ''}</div>
+    ${r.ringkas ? '<div class="hint">Tampilan ringkas: data pribadi, pajak, rekening, dan gaji tidak ditampilkan untuk jabatan Anda.</div>' : ''}
+    <div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>ID</th><th>Nama</th><th>NIP</th><th>Jabatan</th><th>Bidang/Unit</th><th>Status</th><th>Email</th>${r.boleh_ubah ? '<th></th>' : ''}</tr></thead><tbody>
+    ${d.map(x => `<tr class="${x.aktif === 'FALSE' ? 'at-off' : ''}"><td class="mono">${pgwE(x.id_pegawai)}</td><td><b>${pgwE(x.nama)}</b>${x.aktif === 'FALSE' ? ' <span class="at-tag">nonaktif</span>' : ''}</td>
+      <td class="mono">${pgwE(x.nip || '—')}</td><td>${pgwE(pgwJab(x.jabatan))}</td><td>${pgwE(x.bidang || '—')}</td>
+      <td>${pgwE(x.status_kepegawaian || '—')}${x.tgl_berakhir ? '<div class="rk-k">s.d. ' + pgwE(x.tgl_berakhir.split('-').reverse().join('/')) + '</div>' : ''}</td><td>${pgwE(x.email)}</td>
+      ${r.boleh_ubah ? `<td><button class="btn btn-outline btn-sm" type="button" onclick="pgwBuka('${pgwE(x.id_pegawai)}')">Ubah</button></td>` : ''}</tr>`).join('') || '<tr><td colspan="8">Belum ada data pegawai.</td></tr>'}
+    </tbody></table></div><div class="hint">${d.length} dari ${r.data.length} pegawai.</div>`;
+}
+function pgwBuka(id) {
+  const x = pgwData.data.find(p => p.id_pegawai === id);
+  pgwEdit = x ? JSON.parse(JSON.stringify(x)) : { aktif: 'TRUE', status_kepegawaian: 'Tetap', domisili_sama: 'TRUE', jenis_identitas: 'KTP', jenis_penerima: 'Pegawai tetap', bpjs_tk_program: 'JHT\nJKK\nJKM' };
+  pgwGambar(); window.scrollTo(0, 0);
+}
+function pgwForm() {
+  const e = pgwEdit, P = pgwData.pilihan;
+  const v = k => pgwE(e[k] ?? '');
+  const inp = (k, lbl, a) => `<label>${lbl}<input id="pgw-${k}" value="${v(k)}" ${a || ''}></label>`;
+  const tgl = (k, lbl) => `<label>${lbl}<input id="pgw-${k}" type="date" value="${v(k)}"></label>`;
+  const sel = (k, lbl, opsi, fmt) => `<label>${lbl}<select id="pgw-${k}"><option value="">— pilih —</option>${opsi.map(o => `<option value="${pgwE(o)}"${String(e[k] ?? '') === o ? ' selected' : ''}>${pgwE(fmt ? fmt(o) : o)}</option>`).join('')}</select></label>`;
+  const cek = (k, lbl, extra) => `<label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="pgw-${k}"${e[k] === 'TRUE' ? ' checked' : ''} ${extra || ''}> ${lbl}</label>`;
+  const prog = String(e.bpjs_tk_program || '').split('\n');
+  const kontrak = ['Kontrak', 'PKWT'].includes(e.status_kepegawaian) || e.pkwt === 'TRUE';
+  const sama = e.domisili_sama === 'TRUE';
+  return `<div class="at-kotak"><div class="rk-h">${e.id_pegawai ? 'Ubah ' + pgwE(e.id_pegawai) + ' — ' + pgwE(e.nama) : 'Pegawai baru'}</div>
+  <div id="pgw-pesan"></div>
+  <div class="pgw-sec">1. Identitas kepegawaian</div><div class="at-f">
+    ${inp('nip', 'NIP (18 digit, boleh kosong)', 'inputmode="numeric" maxlength="18" oninput="this.value=this.value.replace(/\\D/g,\'\').slice(0,18)"')}
+    ${inp('nama', 'Nama lengkap *', 'maxlength="100"')}${inp('email', 'Email * (untuk login)', 'type="email" maxlength="120"')}
+    ${sel('jabatan', 'Jabatan *', P.jabatan, pgwJab)}${sel('bidang', 'Bidang/unit kerja *', P.bidang)}
+    ${inp('no_sk', 'Nomor SK pengangkatan', 'maxlength="80"')}${tgl('tgl_sk', 'Tanggal berlaku SK')}
+    <label>Status kepegawaian *<select id="pgw-status_kepegawaian" onchange="pgwSimpanSementara();pgwEdit.status_kepegawaian=this.value;pgwGambar()"><option value="">— pilih —</option>${P.status.map(o => `<option${e.status_kepegawaian === o ? ' selected' : ''}>${o}</option>`).join('')}</select></label>
+    ${tgl('tgl_mulai', 'Tanggal mulai bekerja')}${kontrak ? tgl('tgl_berakhir', 'Tanggal berakhir kontrak *') : ''}
+    <div style="display:flex;gap:16px;align-items:center">${cek('pkwt', 'Status PKWT', 'onchange="pgwSimpanSementara();pgwEdit.pkwt=this.checked?\'TRUE\':\'FALSE\';pgwGambar()"')}${cek('aktif', 'Aktif')}</div></div>
+  <div class="pgw-sec">2. Data pribadi</div><div class="at-f">
+    ${inp('tempat_lahir', 'Tempat lahir', 'maxlength="60"')}${tgl('tgl_lahir', 'Tanggal lahir')}${sel('jk', 'Jenis kelamin', ['Laki-laki', 'Perempuan'])}
+    ${sel('status_kawin', 'Status perkawinan', P.kawin)}${sel('gol_darah', 'Golongan darah', P.darah)}${inp('ibu_kandung', 'Nama ibu kandung', 'maxlength="100"')}</div>
+  <div class="pgw-sec">3. Identitas & pajak</div><div class="at-f">
+    ${sel('jenis_identitas', 'Jenis identitas', P.identitas)}${inp('no_identitas', 'Nomor identitas', 'maxlength="30"')}${tgl('identitas_berlaku', 'Identitas berlaku sampai')}
+    ${inp('npwp', 'NPWP', 'maxlength="30"')}
+    <label>Status pajak (PTKP)<select id="pgw-ptkp" onchange="document.getElementById('pgw-ter').value=pgwTer(this.value)"><option value="">— pilih —</option>${P.ptkp.map(o => `<option${e.ptkp === o ? ' selected' : ''}>${o}</option>`).join('')}</select></label>
+    <label>Kategori TER PPh 21 (otomatis)<input id="pgw-ter" value="${pgwTer(e.ptkp)}" disabled></label>
+    ${sel('jenis_penerima', 'Jenis penerima penghasilan', P.penerima)}</div>
+  <div class="pgw-sec">4. Alamat KTP</div><div class="at-f">
+    ${inp('alamat_ktp', 'Alamat', 'maxlength="200"')}${inp('kel_ktp', 'Kelurahan/desa')}${inp('kec_ktp', 'Kecamatan')}${inp('kota_ktp', 'Kota/kabupaten')}${inp('pos_ktp', 'Kode pos', 'maxlength="10" inputmode="numeric"')}</div>
+  <div class="pgw-sec">5. Alamat domisili</div>
+  <div style="margin-bottom:6px">${cek('domisili_sama', 'Sama dengan alamat KTP', 'onchange="pgwSimpanSementara();pgwEdit.domisili_sama=this.checked?\'TRUE\':\'FALSE\';pgwGambar()"')}</div>
+  ${sama ? '' : `<div class="at-f">${inp('alamat_dom', 'Alamat', 'maxlength="200"')}${inp('kel_dom', 'Kelurahan/desa')}${inp('kec_dom', 'Kecamatan')}${inp('kota_dom', 'Kota/kabupaten')}${inp('pos_dom', 'Kode pos', 'maxlength="10" inputmode="numeric"')}</div>`}
+  <div class="pgw-sec">6. Kontak</div><div class="at-f">${inp('hp', 'Nomor HP/telepon', 'maxlength="30" inputmode="tel"')}</div>
+  <div class="pgw-sec">7. BPJS</div><div class="at-f">
+    ${inp('bpjs_kes_no', 'No. BPJS Kesehatan', 'maxlength="20" inputmode="numeric"')}${sel('bpjs_kes_kelas', 'Kelas', ['1', '2', '3'])}
+    ${inp('bpjs_kes_tanggungan', 'Anggota keluarga ditanggung', 'type="number" min="0" max="10"')}
+    ${inp('bpjs_tk_no', 'No. BPJS Ketenagakerjaan', 'maxlength="20"')}${sel('bpjs_tk_risiko', 'Kelas risiko JKK', P.risiko)}
+    <label>Program BPJS Ketenagakerjaan<div class="at-cek">${P.bpjs_tk.map(o => `<label><input type="checkbox" name="pgw-prog" value="${o}"${prog.includes(o) ? ' checked' : ''}>${o}</label>`).join('')}</div></label></div>
+  <div class="pgw-sec">8. Gaji tetap & rekening</div><div class="at-f">
+    ${inp('gaji_pokok', 'Gaji pokok (Rp)', 'inputmode="numeric"')}${inp('tunj_jabatan', 'Tunjangan jabatan (Rp)', 'inputmode="numeric"')}${inp('tunj_lain', 'Tunjangan tetap lain (Rp)', 'inputmode="numeric"')}
+    ${inp('bank', 'Bank', 'maxlength="60"')}${inp('no_rekening', 'Nomor rekening', 'inputmode="numeric" maxlength="30"')}${inp('nama_rekening', 'Nama pemilik rekening', 'maxlength="100"')}</div>
+  <div class="pgw-sec">9. Catatan</div><textarea id="pgw-catatan" rows="3" maxlength="500" style="width:100%">${v('catatan')}</textarea>
+  <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-primary btn-sm" type="button" onclick="pgwSimpan()">Simpan</button>
+    <button class="btn btn-outline btn-sm" type="button" onclick="pgwEdit=null;pgwGambar()">Batal</button></div></div>`;
+}
+function pgwTer(p) { return ['TK/0', 'TK/1', 'K/0'].includes(p) ? 'A' : ['TK/2', 'TK/3', 'K/1', 'K/2'].includes(p) ? 'B' : ['K/3', 'K/I/0', 'K/I/1', 'K/I/2', 'K/I/3'].includes(p) ? 'C' : ''; }
+const PGW_ISIAN = ['nip', 'nama', 'email', 'jabatan', 'bidang', 'no_sk', 'tgl_sk', 'status_kepegawaian', 'tgl_mulai', 'tgl_berakhir', 'tempat_lahir', 'tgl_lahir', 'jk', 'status_kawin', 'gol_darah', 'ibu_kandung',
+  'jenis_identitas', 'no_identitas', 'identitas_berlaku', 'npwp', 'ptkp', 'jenis_penerima', 'alamat_ktp', 'kel_ktp', 'kec_ktp', 'kota_ktp', 'pos_ktp', 'alamat_dom', 'kel_dom', 'kec_dom', 'kota_dom', 'pos_dom',
+  'hp', 'bpjs_kes_no', 'bpjs_kes_kelas', 'bpjs_kes_tanggungan', 'bpjs_tk_no', 'bpjs_tk_risiko', 'gaji_pokok', 'tunj_jabatan', 'tunj_lain', 'bank', 'no_rekening', 'nama_rekening', 'catatan'];
+/** Salin isian layar ke pgwEdit sebelum form digambar ulang (ganti status/centang). */
+function pgwSimpanSementara() {
+  PGW_ISIAN.forEach(k => { const el = document.getElementById('pgw-' + k); if (el) pgwEdit[k] = el.value; });
+  ['pkwt', 'aktif', 'domisili_sama'].forEach(k => { const el = document.getElementById('pgw-' + k); if (el) pgwEdit[k] = el.checked ? 'TRUE' : 'FALSE'; });
+  pgwEdit.bpjs_tk_program = [...document.querySelectorAll('input[name="pgw-prog"]:checked')].map(i => i.value).join('\n');
+}
+async function pgwSimpan() {
+  pgwSimpanSementara();
+  const e = pgwEdit, kirim = { ...e, pkwt: e.pkwt === 'TRUE', aktif: e.aktif !== 'FALSE', domisili_sama: e.domisili_sama === 'TRUE', bpjs_tk_program: String(e.bpjs_tk_program || '').split('\n').filter(Boolean) };
+  if (!['Kontrak', 'PKWT'].includes(e.status_kepegawaian) && e.pkwt !== 'TRUE') kirim.tgl_berakhir = '';
+  let r; try { r = await dbApi('pegawai_simpan', { pegawai: kirim }); } catch (er) { toast('Gagal terhubung ke server.', true); return; }
+  const box = document.getElementById('pgw-pesan');
+  const w = (r && r.peringatan || []).length ? '<div class="pgw-w">⚠️ ' + r.peringatan.map(pgwE).join('<br>⚠️ ') + '</div>' : '';
+  if (!r || !r.ok) { if (box) box.innerHTML = '<div class="pgw-w" style="background:#fdecec;border-color:#f3b4b4">' + pgwE((r && r.pesan) || 'Gagal menyimpan.') + '</div>' + w; window.scrollTo(0, 0); return; }
+  toast(r.pesan + (r.peringatan && r.peringatan.length ? ' (ada peringatan)' : ''));
+  if (r.peringatan && r.peringatan.length) alert('Tersimpan dengan peringatan:\n- ' + r.peringatan.join('\n- '));
+  await pgwMuat();
+}
+
+// ════════════════════════════════════════════
 // v39 — TATA LETAK: menu samping kiri per bidang (Pengumpulan · Pendistribusian & Pendayagunaan · Keuangan, Pelaporan & Akuntansi ·
 // Administrasi, SDM, Umum & Komunikasi). Tombol tab lama dipindah (bukan dibuat ulang) → onclick, badge, & aturan peran tetap.
 // Tabel Pengajuan Masuk diringkas: 5 kolom tanpa geser samping, judul kolom tetap terlihat saat digulir, di HP jadi kartu.
@@ -7376,7 +7507,7 @@ async function atCabut(i) {
     {ik:'💰',nama:'Pengumpulan',isi:['#tab-mz-btn','#tab-ol-btn','#tab-pg-btn','#tab-kt-btn','#tab-hl-btn']},
     {ik:'🤲',nama:'Pendistribusian & Pendayagunaan',isi:['#tab-pj-btn','#tab-us-btn','@survei','@monitoring','[onclick^="switchTab(\'t-daftar\'"]','[onclick^="switchTab(\'t-form\'"]','#tab-lb-btn']},
     {ik:'📊',nama:'Keuangan, Pelaporan & Akuntansi',isi:['#tab-rkat-btn','~Laporan & rekap keuangan']},
-    {ik:'🗂',nama:'Administrasi, SDM, Umum & Komunikasi',isi:['#tab-ppid-btn','#tab-import-btn','#tab-atur-btn']}
+    {ik:'🗂',nama:'Administrasi, SDM, Umum & Komunikasi',isi:['#tab-ppid-btn','#tab-pegawai-btn','#tab-import-btn','#tab-atur-btn']}
   ];
   const LABEL={'#tab-pg-btn':'Penggalang & UPZ'};
   const css=document.createElement('style');
@@ -9461,7 +9592,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='2026.11.25-1723';
+const APP_VERSI='2026.11.26-0834';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
