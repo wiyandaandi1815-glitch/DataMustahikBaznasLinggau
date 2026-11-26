@@ -7752,6 +7752,7 @@ function gjTombolStatus(st) {
   if (st === 'Disetujui' && r.boleh_setujui) h += b('buka', '🔓 Buka kunci');
   if (st && r.rinci && r.rinci.length) h += `<button class="btn btn-outline btn-sm" type="button" onclick="gjTransfer()">🏦 Daftar transfer</button><button class="btn btn-outline btn-sm" type="button" onclick="gjCsv()">⬇️ CSV</button>`;
   if (st && r.boleh_slip) h += `<button class="btn btn-outline btn-sm" type="button" onclick="gjSlip('')">🧾 Semua slip</button>`;
+  if (st === 'Disetujui' && r.boleh_susun) h += `<button class="btn btn-outline btn-sm" type="button" onclick="gjCoretax(this)" title="XML BPMP/BPA1/BP21 untuk impor di Coretax DJP">📑 XML Coretax</button>`;   // v83
   return h;
 }
 function gjTabel(d, st) {
@@ -7830,6 +7831,18 @@ async function gjSlip(id) {
     <tr><td colspan="2"><br><b>Ditanggung BAZNAS (tidak dipotong)</b></td></tr>${b('BPJS Ketenagakerjaan bagian lembaga', gjN(x.jht_p) + gjN(x.jp_p) + gjN(x.jkk) + gjN(x.jkm))}${b('BPJS Kesehatan bagian lembaga', x.kes_p)}
     ${gjN(x.iuran_dipotong) ? '' : b('Iuran BPJS bagian pegawai', gjN(x.jht_k) + gjN(x.jp_k) + gjN(x.kes_k))}${gjN(x.pph21) && !gjN(x.pph21_dipotong) ? b('PPh 21 (' + gjE(x.metode_pph.split(':')[0]) + ')', x.pph21) : ''}</table>
     <br><div style="font-size:11px">Transfer ke ${gjE(x.bank)} ${gjE(x.no_rekening)} a.n. ${gjE(x.nama_rekening)}</div></div>`).join(''));
+}
+
+// v83: unduh XML Coretax (BPMP / BPA1 / BP21) — format sesuai converter resmi DJP; impor lewat Coretax › eBupot › Impor Data.
+async function gjCoretax(btn) {
+  const r = await gjKirim('gaji_coretax', { periode: gjPer }, btn);
+  if (!r.ok) { gjGambar('❌ ' + gjE(r.pesan)); return; }
+  (r.files || []).forEach((f, i) => setTimeout(() => {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([f.isi], { type: 'application/xml' })); a.download = f.nama; a.click();
+  }, i * 400));
+  gjGambar('✅ ' + gjE(r.pesan) + (r.files || []).map(f => '<br>📑 ' + gjE(f.nama) + ' — ' + f.jumlah + ' bukti potong').join('') +
+    (r.peringatan && r.peringatan.length ? '<br>⚠️ ' + r.peringatan.map(gjE).join('<br>⚠️ ') : '') +
+    '<br><span class="rk-k">Impor di Coretax: eBupot › BPMP/BPA1/BP21 › Impor Data. Periksa draf sebelum diterbitkan.</span>');
 }
 
 // ════════════════════════════════════════════
@@ -9927,7 +9940,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='2026.11.26-0944';
+const APP_VERSI='2026.11.26-1016';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
