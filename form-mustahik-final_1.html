@@ -7531,6 +7531,7 @@ function pgwForm() {
     <label>Program BPJS Ketenagakerjaan<div class="at-cek">${P.bpjs_tk.map(o => `<label><input type="checkbox" name="pgw-prog" value="${o}"${prog.includes(o) ? ' checked' : ''}>${o}</label>`).join('')}</div></label></div>
   <div class="pgw-sec">8. Gaji tetap & rekening</div><div class="at-f">
     ${inp('gaji_pokok', 'Gaji pokok (Rp)', 'inputmode="numeric"')}${inp('tunj_jabatan', 'Tunjangan jabatan (Rp)', 'inputmode="numeric"')}${inp('tunj_lain', 'Tunjangan tetap lain (Rp)', 'inputmode="numeric"')}
+    ${inp('potong_sosial_persen', 'Potongan zakat/infak (% bruto, kosong = tidak)', 'inputmode="decimal" maxlength="5"')}${sel('potong_sosial_jenis', 'Jenis potongan', P.sosial || ['Otomatis', 'Zakat', 'Infak/Sedekah'])}${inp('infak_tetap', 'Infak tetap per bulan (Rp)', 'inputmode="numeric"')}
     ${inp('bank', 'Bank', 'maxlength="60"')}${inp('no_rekening', 'Nomor rekening', 'inputmode="numeric" maxlength="30"')}${inp('nama_rekening', 'Nama pemilik rekening', 'maxlength="100"')}</div>
   <div class="pgw-sec">9. Catatan</div><textarea id="pgw-catatan" rows="3" maxlength="500" style="width:100%">${v('catatan')}</textarea>
   <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-primary btn-sm" type="button" onclick="pgwSimpan()">Simpan</button>
@@ -7542,7 +7543,7 @@ function pgwPtkpEf(e) { return !e.ptkp ? '' : (e.jk === 'Perempuan' && e.status_
 const PGW_ULANG = 'onchange="pgwSimpanSementara();pgwGambar()"';
 const PGW_ISIAN = ['nip', 'nama', 'email', 'jabatan', 'bidang', 'no_sk', 'tgl_sk', 'status_kepegawaian', 'tgl_mulai', 'tgl_berakhir', 'tempat_lahir', 'tgl_lahir', 'jk', 'status_kawin', 'gol_darah', 'ibu_kandung',
   'jenis_identitas', 'no_identitas', 'identitas_berlaku', 'npwp', 'ptkp', 'jenis_penerima', 'alamat_ktp', 'kel_ktp', 'kec_ktp', 'kota_ktp', 'pos_ktp', 'alamat_dom', 'kel_dom', 'kec_dom', 'kota_dom', 'pos_dom',
-  'hp', 'bpjs_kes_no', 'bpjs_kes_kelas', 'bpjs_kes_tanggungan', 'bpjs_tk_no', 'bpjs_tk_risiko', 'gaji_pokok', 'tunj_jabatan', 'tunj_lain', 'bank', 'no_rekening', 'nama_rekening', 'catatan'];
+  'hp', 'bpjs_kes_no', 'bpjs_kes_kelas', 'bpjs_kes_tanggungan', 'bpjs_tk_no', 'bpjs_tk_risiko', 'gaji_pokok', 'tunj_jabatan', 'tunj_lain', 'potong_sosial_persen', 'potong_sosial_jenis', 'infak_tetap', 'bank', 'no_rekening', 'nama_rekening', 'catatan'];
 /** Salin isian layar ke pgwEdit sebelum form digambar ulang (ganti status/centang). */
 function pgwSimpanSementara() {
   PGW_ISIAN.forEach(k => { const el = document.getElementById('pgw-' + k); if (el) pgwEdit[k] = el.value; });
@@ -7688,6 +7689,150 @@ async function kbBatalBayar(idm) {
 }
 
 // ════════════════════════════════════════════
+// v81 — MENU GAJI (Tahap C2). Hitung di server (TER/Pasal 17, BPJS, zakat/infak, kasbon). Alur: Draf → Diajukan → Diperiksa → Disetujui.
+// Susun: WK3 + Bidang Keuangan; periksa: Kabid Keuangan; setujui & buka kunci: WK3; slip: WK3 & Kabid Keuangan (dijaga server).
+// ════════════════════════════════════════════
+var gjData = null, gjPer = '', gjIsi = {};
+var gjE = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+var gjN = v => Number(v) || 0, gjRp = v => (gjN(v)).toLocaleString('id-ID');
+var GJ_BLN = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+var gjNamaBln = p => p ? GJ_BLN[Number(p.slice(5))] + ' ' + p.slice(0, 4) : '';
+(function () {
+  if (typeof document === 'undefined') return;
+  const pasang = () => {
+    const bar = document.querySelector('.tab-bar'); if (!bar || document.getElementById('tab-gaji-btn')) return;
+    const b = document.createElement('button'); b.className = 'tab-btn'; b.id = 'tab-gaji-btn'; b.type = 'button'; b.innerHTML = '💰 Gaji';
+    b.onclick = function () { switchTab('t-gaji', this); gjMuat(); };
+    bar.appendChild(b);
+    const p = document.createElement('div'); p.id = 't-gaji'; p.className = 'tab-pane';
+    p.innerHTML = `<div class="main"><div class="pg-title">Gaji Bulanan</div>
+      <div class="pg-sub">Gaji pimpinan & amil dihitung dari Data Pegawai dan ⚙️ Pengaturan › Gaji & Pajak. Alur: disusun Bidang Keuangan → diperiksa Kepala Bidang Keuangan → disetujui Wakil Ketua III (terkunci). Jurnal tetap diposting di Buku Bukti Kas.</div>
+      <div id="gj-isi"><div class="hint">Memuat…</div></div></div>`;
+    const imp = document.getElementById('t-import'); (imp ? imp.parentNode : document.body).insertBefore(p, imp || null);
+    const st = document.createElement('style'); st.textContent = `.gj-in{width:96px;text-align:right;padding:3px 5px}.gj-st{display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600;background:var(--g100)}
+.gj-Disetujui{background:#d1fae5;color:#065f46}.gj-Diajukan,.gj-Diperiksa{background:#fef3c7;color:#92400e}.gj-tbl td,.gj-tbl th{white-space:nowrap;font-size:12.5px}.gj-tbl td.r,.gj-tbl th.r{text-align:right}`;
+    document.head.appendChild(st);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pasang); else pasang();
+})();
+
+async function gjMuat(per) {
+  const isi = document.getElementById('gj-isi'); if (!isi) return;
+  if (per !== undefined) gjPer = per;
+  if (!gjPer) { const d = new Date(); gjPer = d.toISOString().slice(0, 7); }
+  isi.innerHTML = '<div class="hint">Memuat…</div>';
+  let r; try { r = await dbApi('gaji_daftar', { periode: gjPer }); } catch (e) { isi.innerHTML = '<div class="hint" style="color:var(--red)">Gagal terhubung ke server.</div>'; return; }
+  if (!r || !r.ok) { isi.innerHTML = '<div class="hint" style="color:var(--red)">' + gjE((r && r.pesan) || 'Gagal memuat.') + '</div>'; return; }
+  gjData = r; gjIsi = {}; gjGambar();
+}
+function gjGambar(pesan) {
+  const isi = document.getElementById('gj-isi'); if (!isi || !gjData) return;
+  const r = gjData, P = r.periode.find(x => x.periode === gjPer), st = P ? P.status : '';
+  const daftar = r.periode.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${r.periode.slice(0, 14).map(x => `<button type="button" class="btn btn-outline btn-sm" onclick="gjMuat('${x.periode}')" style="${x.periode === gjPer ? 'border-width:2px' : ''}">${gjNamaBln(x.periode)} <span class="gj-st gj-${x.status}">${x.status}</span></button>`).join('')}</div>` : '';
+  let h = (pesan ? `<div class="pgw-w">${pesan}</div>` : '') + daftar +
+    `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:10px">
+      <label>Bulan gaji<input type="month" value="${gjPer}" onchange="gjMuat(this.value)"></label>
+      ${r.boleh_susun ? `<label>Tanggal bayar<input type="date" id="gj-tgl" value="${gjE(P ? P.tgl_bayar : '')}" ${st && st !== 'Draf' ? 'disabled' : ''}></label>` : ''}
+      ${st ? `<span class="gj-st gj-${st}">${st}</span>` : '<span class="hint">Belum disiapkan.</span>'}
+      ${r.boleh_susun && (!st || st === 'Draf') ? `<button class="btn btn-primary btn-sm" type="button" onclick="gjHitung(this)">${st ? '🔄 Hitung ulang' : '📋 Siapkan & hitung'}</button>` : ''}
+      ${gjTombolStatus(st)}</div>`;
+  if (P) h += `<div class="hint">${P.jumlah_orang} orang · Dibayar Rp${gjRp(P.total_bersih)} · Bruto Rp${gjRp(P.total_bruto)} · PPh 21 Rp${gjRp(P.total_pph21)} · Beban BAZNAS Rp${gjRp(P.total_beban)}
+    ${P.dihitung_oleh ? '<br>Dihitung ' + gjE(P.dihitung_oleh) : ''}${P.diajukan_oleh ? ' · Diajukan ' + gjE(P.diajukan_oleh) : ''}${P.diperiksa_oleh ? ' · Diperiksa ' + gjE(P.diperiksa_oleh) : ''}${P.disetujui_oleh ? ' · Disetujui ' + gjE(P.disetujui_oleh) : ''}
+    ${P.catatan_status ? '<br>Catatan: ' + gjE(P.catatan_status) : ''}${P.dibuka_alasan ? '<br>Pernah dibuka ' + gjE(P.dibuka_oleh) + ': ' + gjE(P.dibuka_alasan) : ''}</div>`;
+  if (r.ringkas) { isi.innerHTML = h + '<div class="hint">Tampilan ringkas: rincian per orang tidak ditampilkan untuk jabatan Anda.</div>'; return; }
+  if (r.rinci && r.rinci.length) h += gjTabel(r.rinci, st);
+  isi.innerHTML = h;
+}
+function gjTombolStatus(st) {
+  const r = gjData, b = (aksi, lbl, cls) => `<button class="btn ${cls || 'btn-outline'} btn-sm" type="button" onclick="gjStatus('${aksi}',this)">${lbl}</button>`;
+  let h = '';
+  if (st === 'Draf' && r.boleh_susun) h += b('ajukan', '📤 Ajukan ke Kabid Keuangan', 'btn-primary');
+  if (st === 'Diajukan' && r.boleh_periksa) h += b('periksa', '✅ Sudah diperiksa', 'btn-primary') + b('kembalikan', '↩️ Kembalikan');
+  if (st === 'Diperiksa' && r.boleh_setujui) h += b('setujui', '✅ Setujui & kunci', 'btn-primary') + b('kembalikan', '↩️ Kembalikan');
+  if (st === 'Disetujui' && r.boleh_setujui) h += b('buka', '🔓 Buka kunci');
+  if (st && r.rinci && r.rinci.length) h += `<button class="btn btn-outline btn-sm" type="button" onclick="gjTransfer()">🏦 Daftar transfer</button><button class="btn btn-outline btn-sm" type="button" onclick="gjCsv()">⬇️ CSV</button>`;
+  if (st && r.boleh_slip) h += `<button class="btn btn-outline btn-sm" type="button" onclick="gjSlip('')">🧾 Semua slip</button>`;
+  return h;
+}
+function gjTabel(d, st) {
+  const ubah = gjData.boleh_susun && st === 'Draf';
+  const inp = (x, k) => ubah ? `<input class="gj-in" inputmode="numeric" value="${gjN(x[k]) || ''}" oninput="(gjIsi['${x.id_pegawai}']=gjIsi['${x.id_pegawai}']||{}).${k}=this.value">` : gjRp(x[k]);
+  const lembaga = x => gjN(x.jht_p) + gjN(x.jp_p) + gjN(x.jkk) + gjN(x.jkm) + gjN(x.kes_p);
+  const tot = k => d.reduce((s, x) => s + (typeof k === 'function' ? k(x) : gjN(x[k])), 0);
+  return `<div class="rk-wrap"><table class="rk-tbl gj-tbl"><thead><tr><th>Nama</th><th class="r">Faktor</th><th class="r">Gaji + tunj.</th><th class="r">Insentif</th><th class="r">THR</th><th class="r">Honor kegiatan</th>
+    <th class="r">Bruto</th><th class="r">BPJS lembaga</th><th class="r">Iuran pegawai</th><th class="r">PPh 21</th><th class="r">Zakat/infak</th><th class="r">Kasbon</th><th class="r">Potongan lain</th><th class="r">Dibayar</th><th class="r">Beban BAZNAS</th><th>Catatan</th>${gjData.boleh_slip ? '<th></th>' : ''}</tr></thead><tbody>
+    ${d.map(x => `<tr><td><b>${gjE(x.nama)}</b><div class="rk-k">${gjE(x.kelompok)} · ${gjE(x.ptkp_potong)} · ${gjE(x.jenis_penerima)}${x.no_rekening ? '' : ' · <span style="color:var(--red)">rekening kosong</span>'}</div></td>
+      <td class="r">${gjN(x.faktor) === 1 ? '1' : gjE(x.faktor)}</td><td class="r">${gjRp(gjN(x.gaji_pokok) + gjN(x.tunj_jabatan) + gjN(x.tunj_lain))}</td>
+      <td class="r">${inp(x, 'insentif')}</td><td class="r">${inp(x, 'thr')}</td><td class="r">${inp(x, 'honor_kegiatan')}</td><td class="r"><b>${gjRp(x.bruto)}</b></td>
+      <td class="r">${gjRp(lembaga(x))}</td><td class="r">${gjRp(gjN(x.jht_k) + gjN(x.jp_k) + gjN(x.kes_k))}${gjN(x.iuran_dipotong) ? '' : '<div class="rk-k">ditanggung</div>'}</td>
+      <td class="r">${gjRp(x.pph21)}<div class="rk-k" title="${gjE(x.metode_pph)}">${gjE(x.metode_pph.split(':')[0])}${x.tarif_ter ? ' ' + gjE(x.tarif_ter) + '%' : ''}${gjN(x.pph21) && !gjN(x.pph21_dipotong) ? ' · ditanggung' : ''}</div></td>
+      <td class="r">${gjRp(gjN(x.sosial) + gjN(x.infak_tetap))}${x.sosial_jenis ? '<div class="rk-k">' + gjE(x.sosial_jenis) + '</div>' : ''}</td>
+      <td class="r">${gjRp(x.potong_kasbon)}${x.rinci_kasbon ? '<div class="rk-k">' + gjE(x.rinci_kasbon.replace(/:\d+/g, '').replace(/;/g, ', ')) + '</div>' : ''}</td>
+      <td class="r">${inp(x, 'potong_lain')}${ubah ? `<br><input class="gj-in" style="width:130px;text-align:left" placeholder="keterangan" value="${gjE(x.ket_potong_lain)}" oninput="(gjIsi['${x.id_pegawai}']=gjIsi['${x.id_pegawai}']||{}).ket_potong_lain=this.value">` : (x.ket_potong_lain ? '<div class="rk-k">' + gjE(x.ket_potong_lain) + '</div>' : '')}</td>
+      <td class="r"><b>${gjRp(x.bersih)}</b></td><td class="r">${gjRp(x.beban_lembaga)}</td>
+      <td style="white-space:normal;min-width:180px">${ubah ? `<input style="width:100%" placeholder="catatan" value="${gjE(x.catatan_input)}" oninput="(gjIsi['${x.id_pegawai}']=gjIsi['${x.id_pegawai}']||{}).catatan=this.value">` : ''}<div class="rk-k">${gjE(x.catatan.replace(x.catatan_input, '').replace(/^ · /, ''))}</div></td>
+      ${gjData.boleh_slip ? `<td><button class="btn btn-outline btn-sm" type="button" onclick="gjSlip('${gjE(x.id_pegawai)}')">Slip</button></td>` : ''}</tr>`).join('')}
+    <tr style="font-weight:700"><td>Jumlah</td><td></td><td class="r">${gjRp(tot(x => gjN(x.gaji_pokok) + gjN(x.tunj_jabatan) + gjN(x.tunj_lain)))}</td><td class="r">${gjRp(tot('insentif'))}</td><td class="r">${gjRp(tot('thr'))}</td><td class="r">${gjRp(tot('honor_kegiatan'))}</td>
+      <td class="r">${gjRp(tot('bruto'))}</td><td class="r">${gjRp(tot(lembaga))}</td><td class="r">${gjRp(tot(x => gjN(x.jht_k) + gjN(x.jp_k) + gjN(x.kes_k)))}</td><td class="r">${gjRp(tot('pph21'))}</td>
+      <td class="r">${gjRp(tot(x => gjN(x.sosial) + gjN(x.infak_tetap)))}</td><td class="r">${gjRp(tot('potong_kasbon'))}</td><td class="r">${gjRp(tot('potong_lain'))}</td><td class="r">${gjRp(tot('bersih'))}</td><td class="r">${gjRp(tot('beban_lembaga'))}</td><td></td>${gjData.boleh_slip ? '<td></td>' : ''}</tr>
+    </tbody></table></div>${ubah ? '<div class="hint">Ubah insentif/THR/honor/potongan lalu klik 🔄 Hitung ulang. Gaji pokok, tunjangan, BPJS, PTKP, dan rekening diubah di 👤 Data Pegawai.</div>' : ''}`;
+}
+async function gjKirim(aksi, data, btn) {
+  if (btn) btn.disabled = true;
+  let r; try { r = await dbApi(aksi, data); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server.' }; }
+  if (btn) btn.disabled = false;
+  return r || { ok: false, pesan: 'Gagal.' };
+}
+async function gjHitung(btn) {
+  const tgl = (document.getElementById('gj-tgl') || {}).value || '';
+  const r = await gjKirim('gaji_hitung', { periode: gjPer, tgl_bayar: tgl, input: gjIsi }, btn);
+  if (!r.ok) { gjGambar('❌ ' + gjE(r.pesan)); return; }
+  await gjMuat(); gjGambar('✅ ' + gjE(r.pesan) + (r.peringatan && r.peringatan.length ? '<br>⚠️ ' + r.peringatan.map(gjE).join('<br>⚠️ ') : ''));
+}
+async function gjStatus(aksi, btn) {
+  let alasan = '';
+  if (aksi === 'kembalikan' || aksi === 'buka') { alasan = (window.prompt(aksi === 'buka' ? 'Alasan buka kunci (potongan kasbon bulan ini ikut dibatalkan):' : 'Alasan pengembalian:') || '').trim(); if (!alasan) return; }
+  if (aksi === 'setujui' && !window.confirm('Setujui & kunci gaji ' + gjNamaBln(gjPer) + '? Cicilan kasbon akan dipotong.')) return;
+  if (aksi === 'ajukan' && Object.keys(gjIsi).length && !window.confirm('Ada isian yang belum dihitung ulang. Tetap ajukan?')) return;
+  const r = await gjKirim('gaji_status', { periode: gjPer, aksi, alasan }, btn);
+  if (r.ok) await gjMuat(); gjGambar((r.ok ? '✅ ' : '❌ ') + gjE(r.pesan));
+}
+function gjCetak(judul, isi) {
+  const w = window.open('', '_blank'); if (!w) { alert('Izinkan jendela pop-up untuk mencetak.'); return; }
+  w.document.write(`<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>${gjE(judul)}</title><style>body{font:12px Arial,sans-serif;margin:24px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:4px 6px}th{background:#eee}.r{text-align:right}.slip{page-break-after:always;max-width:560px;margin-bottom:24px}.slip td{border:0;padding:2px 4px}.slip .g{border-top:1px solid #333;font-weight:700}h3{margin:0 0 4px}@media print{button{display:none}}</style></head><body><button onclick="print()">Cetak</button>${isi}</body></html>`);
+  w.document.close();
+}
+function gjTransfer() {
+  const d = gjData.rinci.filter(x => gjN(x.bersih) > 0), P = gjData.periode.find(x => x.periode === gjPer) || {};
+  gjCetak('Daftar transfer gaji ' + gjPer, `<h3>Daftar Transfer Gaji — ${gjNamaBln(gjPer)}</h3><div>Status: ${gjE(P.status)}${P.tgl_bayar ? ' · tanggal bayar ' + gjE(P.tgl_bayar.split('-').reverse().join('/')) : ''}</div><br>
+    <table><tr><th>No</th><th>Nama</th><th>Bank</th><th>No. rekening</th><th>Nama pemilik rekening</th><th class="r">Jumlah (Rp)</th></tr>
+    ${d.map((x, i) => `<tr><td>${i + 1}</td><td>${gjE(x.nama)}</td><td>${gjE(x.bank)}</td><td>${gjE(x.no_rekening)}</td><td>${gjE(x.nama_rekening)}</td><td class="r">${gjRp(x.bersih)}</td></tr>`).join('')}
+    <tr><th colspan="5">Jumlah</th><th class="r">${gjRp(d.reduce((s, x) => s + gjN(x.bersih), 0))}</th></tr></table>`);
+}
+function gjCsv() {
+  const k = ['nama', 'kelompok', 'ptkp_potong', 'faktor', 'gaji_pokok', 'tunj_jabatan', 'tunj_lain', 'insentif', 'thr', 'honor_kegiatan', 'bruto', 'jht_p', 'jht_k', 'jp_p', 'jp_k', 'jkk', 'jkm', 'kes_p', 'kes_k',
+    'obj_pph', 'metode_pph', 'pph21', 'pph21_dipotong', 'iuran_dipotong', 'sosial_jenis', 'sosial', 'infak_tetap', 'potong_kasbon', 'potong_lain', 'bersih', 'beban_lembaga', 'bank', 'no_rekening', 'nama_rekening', 'catatan'];
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const csv = '﻿' + k.join(';') + '\n' + gjData.rinci.map(x => k.map(c => q(x[c])).join(';')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'gaji-' + gjPer + '.csv'; a.click();
+}
+async function gjSlip(id) {
+  const r = await gjKirim('gaji_slip', { periode: gjPer, id_pegawai: id });
+  if (!r.ok) { gjGambar('❌ ' + gjE(r.pesan)); return; }
+  const b = (l, v, g) => `<tr${g ? ' class="g"' : ''}><td>${l}</td><td class="r">${gjRp(v)}</td></tr>`;
+  gjCetak('Slip gaji ' + gjPer, r.data.map(x => `<div class="slip"><h3>${gjE(r.lembaga || 'BAZNAS Kota Lubuklinggau')}</h3><div>SLIP GAJI — ${gjNamaBln(gjPer).toUpperCase()}${r.status !== 'Disetujui' ? ' (DRAF)' : ''}</div><br>
+    <table><tr><td>Nama</td><td>${gjE(x.nama)}</td></tr><tr><td>Jabatan / bidang</td><td>${gjE(x.jabatan)} / ${gjE(x.bidang)}</td></tr><tr><td>Status PTKP pemotongan</td><td>${gjE(x.ptkp_potong)}</td></tr></table><br>
+    <table><tr><td colspan="2"><b>Penghasilan</b></td></tr>${b('Gaji pokok', x.gaji_pokok)}${b('Tunjangan jabatan', x.tunj_jabatan)}${gjN(x.tunj_lain) ? b('Tunjangan lain', x.tunj_lain) : ''}
+    ${gjN(x.insentif) ? b('Insentif', x.insentif) : ''}${gjN(x.thr) ? b('THR', x.thr) : ''}${gjN(x.honor_kegiatan) ? b('Honor kegiatan', x.honor_kegiatan) : ''}${b('Penghasilan bruto', x.bruto, 1)}
+    <tr><td colspan="2"><br><b>Potongan</b></td></tr>${gjN(x.iuran_dipotong) ? b('Iuran BPJS bagian pegawai', x.iuran_dipotong) : ''}${gjN(x.pph21_dipotong) ? b('PPh 21', x.pph21_dipotong) : ''}
+    ${gjN(x.sosial) ? b(gjE(x.sosial_jenis), x.sosial) : ''}${gjN(x.infak_tetap) ? b('Infak tetap', x.infak_tetap) : ''}${gjN(x.potong_kasbon) ? b('Cicilan kasbon/piutang', x.potong_kasbon) : ''}${gjN(x.potong_lain) ? b('Potongan lain' + (x.ket_potong_lain ? ' (' + gjE(x.ket_potong_lain) + ')' : ''), x.potong_lain) : ''}
+    ${b('Diterima', x.bersih, 1)}
+    <tr><td colspan="2"><br><b>Ditanggung BAZNAS (tidak dipotong)</b></td></tr>${b('BPJS Ketenagakerjaan bagian lembaga', gjN(x.jht_p) + gjN(x.jp_p) + gjN(x.jkk) + gjN(x.jkm))}${b('BPJS Kesehatan bagian lembaga', x.kes_p)}
+    ${gjN(x.iuran_dipotong) ? '' : b('Iuran BPJS bagian pegawai', gjN(x.jht_k) + gjN(x.jp_k) + gjN(x.kes_k))}${gjN(x.pph21) && !gjN(x.pph21_dipotong) ? b('PPh 21 (' + gjE(x.metode_pph.split(':')[0]) + ')', x.pph21) : ''}</table>
+    <br><div style="font-size:11px">Transfer ke ${gjE(x.bank)} ${gjE(x.no_rekening)} a.n. ${gjE(x.nama_rekening)}</div></div>`).join(''));
+}
+
+// ════════════════════════════════════════════
 // v39 — TATA LETAK: menu samping kiri per bidang (Pengumpulan · Pendistribusian & Pendayagunaan · Keuangan, Pelaporan & Akuntansi ·
 // Administrasi, SDM, Umum & Komunikasi). Tombol tab lama dipindah (bukan dibuat ulang) → onclick, badge, & aturan peran tetap.
 // Tabel Pengajuan Masuk diringkas: 5 kolom tanpa geser samping, judul kolom tetap terlihat saat digulir, di HP jadi kartu.
@@ -7697,7 +7842,7 @@ async function kbBatalBayar(idm) {
     {ik:'💰',nama:'Pengumpulan',isi:['#tab-mz-btn','#tab-ol-btn','#tab-pg-btn','#tab-kt-btn','#tab-hl-btn']},
     {ik:'🤲',nama:'Pendistribusian & Pendayagunaan',isi:['#tab-pj-btn','#tab-us-btn','@survei','@monitoring','[onclick^="switchTab(\'t-daftar\'"]','[onclick^="switchTab(\'t-form\'"]','#tab-lb-btn']},
     {ik:'📊',nama:'Keuangan, Pelaporan & Akuntansi',isi:['#tab-rkat-btn','~Laporan & rekap keuangan']},
-    {ik:'🗂',nama:'Administrasi, SDM, Umum & Komunikasi',isi:['#tab-ppid-btn','#tab-pegawai-btn','#tab-kasbon-btn','#tab-import-btn','#tab-atur-btn']}
+    {ik:'🗂',nama:'Administrasi, SDM, Umum & Komunikasi',isi:['#tab-ppid-btn','#tab-pegawai-btn','#tab-gaji-btn','#tab-kasbon-btn','#tab-import-btn','#tab-atur-btn']}
   ];
   const LABEL={'#tab-pg-btn':'Penggalang & UPZ'};
   const css=document.createElement('style');
@@ -9782,7 +9927,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='2026.11.26-0925';
+const APP_VERSI='2026.11.26-0944';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
