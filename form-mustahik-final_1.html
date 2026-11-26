@@ -7514,7 +7514,7 @@ function pgwForm() {
   return `<div class="at-kotak"><div class="rk-h">${e.id_pegawai ? 'Ubah ' + pgwE(e.id_pegawai) + ' — ' + pgwE(e.nama) : 'Pegawai baru'}</div>
   <div id="pgw-pesan"></div>
   <div class="pgw-sec">1. Identitas kepegawaian</div><div class="at-f">
-    ${inp('nip', 'NIP (18 digit, boleh kosong)', 'inputmode="numeric" maxlength="18" oninput="this.value=this.value.replace(/\\D/g,\'\').slice(0,18)"')}
+    ${inp('nip', 'NIP (18 digit — kosongkan agar dibuat otomatis)', 'inputmode="numeric" maxlength="18" oninput="this.value=this.value.replace(/\\D/g,\'\').slice(0,18)"')}
     ${inp('nama', 'Nama lengkap *', 'maxlength="100"')}${inp('email', 'Email * (untuk login)', 'type="email" maxlength="120"')}
     ${sel('jabatan', 'Jabatan *', P.jabatan, pgwJab)}${sel('bidang', 'Bidang/unit kerja *', P.bidang)}
     ${inp('no_sk', 'Nomor SK pengangkatan', 'maxlength="80"')}${tgl('tgl_sk', 'Tanggal berlaku SK')}
@@ -10146,7 +10146,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='2026.11.26-1115';
+const APP_VERSI='2026.11.26-1527';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
