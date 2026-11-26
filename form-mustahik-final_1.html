@@ -7860,6 +7860,162 @@ async function gjCoretax(btn) {
 }
 
 // ════════════════════════════════════════════
+// v86 — LOGIN EMAIL + PASSWORD (Tahap E1), wajib ganti password, pengingat 7 hari, "Akun Saya", kelola akun (WK3, di ⚙️ Pengaturan › Pengguna).
+// Kode akses lama masih bisa dipakai selama masa peralihan (dijaga server).
+// ════════════════════════════════════════════
+var akE = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+var AK_SESI = 'baznas_sesi_email', akGantiTerbuka = false;
+(function () {
+  if (typeof document === 'undefined') return;
+  const pasang = () => {
+    const f = document.querySelector('#login-overlay form'); if (!f || document.getElementById('login-email')) return;
+    const kode = document.getElementById('login-kode'), p = f.querySelector('p');
+    if (p) p.innerHTML = 'Kota Lubuklinggau — masuk dengan <strong>email & password</strong> akun Anda.';
+    const w = document.createElement('div');
+    w.innerHTML = `<input id="login-email" type="email" placeholder="Email" autocomplete="username" style="margin-bottom:8px"/>
+      <input id="login-pw" type="password" placeholder="Password" autocomplete="current-password"/>
+      <a href="#" id="login-ke-kode" style="display:block;font-size:12px;margin:8px 0;color:#0d7c66" onclick="akModeKode(true);return false">Masuk dengan kode akses lama (masa peralihan)</a>`;
+    kode.parentNode.insertBefore(w, kode);
+    kode.style.display = 'none';
+    const kembali = document.createElement('a'); kembali.href = '#'; kembali.id = 'login-ke-email'; kembali.textContent = '← Masuk dengan email & password';
+    kembali.style.cssText = 'display:none;font-size:12px;margin:8px 0;color:#0d7c66'; kembali.onclick = () => { akModeKode(false); return false; };
+    kode.after(kembali);
+    f.onsubmit = akMasuk;
+    // modal ganti password & akun saya
+    const m = document.createElement('div'); m.id = 'ak-modal';
+    m.style.cssText = 'position:fixed;inset:0;z-index:2100;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto';
+    m.innerHTML = '<div style="background:#fff;border-radius:12px;max-width:640px;width:100%;padding:18px 20px;box-shadow:0 10px 40px rgba(0,0,0,.25)" id="ak-isi"></div>';
+    document.body.appendChild(m);
+    const u = document.getElementById('hdr-user'); if (u) { u.style.cursor = 'pointer'; u.title = 'Akun Saya'; u.onclick = () => akSaya(); }
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pasang); else pasang();
+})();
+function akModeKode(k) {
+  ['login-email', 'login-pw', 'login-ke-kode'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = k ? 'none' : ''; });
+  document.getElementById('login-kode').style.display = k ? '' : 'none';
+  document.getElementById('login-ke-email').style.display = k ? 'block' : 'none';
+  (k ? document.getElementById('login-kode') : document.getElementById('login-email')).focus();
+}
+async function akMasuk(ev) {
+  if (ev) ev.preventDefault();
+  if (document.getElementById('login-kode').style.display !== 'none') { ssDel(AK_SESI); return dbLogin(ev); }
+  const em = document.getElementById('login-email').value.trim(), pw = document.getElementById('login-pw').value, msg = document.getElementById('login-msg'), btn = document.getElementById('login-btn');
+  if (!em || !pw) { msg.style.color = 'var(--red,#c0392b)'; msg.textContent = 'Isi email dan password.'; return false; }
+  btn.disabled = true; msg.style.color = ''; msg.textContent = 'Memeriksa…';
+  try {
+    const r = await dbApiSekali('login', { email: em, password: pw }, '-');
+    if (!r.ok) { msg.style.color = 'var(--red,#c0392b)'; msg.textContent = r.pesan || 'Gagal masuk.'; return false; }
+    ssSet(SS_TOKEN, r.token); ssSet(SS_NAMA, r.nama); ssSet(AK_SESI, r.email);
+    if (typeof SS_JABATAN !== 'undefined') ssSet(SS_JABATAN, r.jabatan);
+    document.getElementById('login-pw').value = ''; msg.textContent = '';
+    tampilLogin(false); tampilUser();
+    if (r.wajib_ganti) { akGanti(true); return false; }
+    toast('Selamat datang, ' + r.nama + '.');
+    if (r.ingatkan) setTimeout(() => toast('🔑 Password Anda berakhir dalam ' + r.pw_sisa_hari + ' hari. Ganti lewat menu Akun Saya (klik nama Anda).', true), 1200);
+    await dbFlush(); await dbMuatDaftar(true); if (typeof pjMuat === 'function') pjMuat(true);
+  } catch (e) { msg.style.color = 'var(--red,#c0392b)'; msg.textContent = 'Tidak dapat terhubung ke server. Periksa koneksi internet lalu coba lagi.'; }
+  finally { btn.disabled = false; }
+  return false;
+}
+// tangkap "wajib ganti password" dari aksi apa pun
+(function () {
+  if (typeof dbApi !== 'function') return;
+  const asli = dbApi;
+  window.dbApi = dbApi = async function (aksi, data, tok) { const r = await asli(aksi, data, tok); if (r && r.kode === 'GANTI_PW' && !akGantiTerbuka) akGanti(true); return r; };
+})();
+function akTutup() { if (akGantiTerbuka) return; document.getElementById('ak-modal').style.display = 'none'; }
+function akBuka(html) { const m = document.getElementById('ak-modal'); document.getElementById('ak-isi').innerHTML = html; m.style.display = 'flex'; }
+function akFormGanti(paksa) {
+  return `<div class="rk-h">${paksa ? '🔑 Ganti password dulu' : 'Ganti password'}</div>
+    ${paksa ? '<div class="hint">Password sementara atau password yang sudah lebih dari 30 hari harus diganti sebelum memakai aplikasi.</div>' : ''}
+    <div class="at-f"><label>Password lama<input type="password" id="ak-lama" autocomplete="current-password"></label>
+    <label>Password baru<input type="password" id="ak-baru" autocomplete="new-password"></label><label>Ulangi password baru<input type="password" id="ak-baru2" autocomplete="new-password"></label></div>
+    <div class="hint">Minimal 8 karakter, berisi huruf dan angka, tidak memuat nama, dan tidak sama dengan 3 password terakhir. Berlaku 30 hari.</div>
+    <div id="ak-pesan" style="color:#c0392b;font-size:13px;margin:6px 0"></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-primary" type="button" onclick="akSimpanGanti(this)">Simpan password</button>
+    ${paksa ? '<button class="btn btn-outline" type="button" onclick="akGantiTerbuka=false;akTutup();dbLogout(true)">Keluar</button>' : '<button class="btn btn-outline" type="button" onclick="akTutup()">Tutup</button>'}</div>`;
+}
+function akGanti(paksa) {
+  if (!ssGet(AK_SESI)) { if (paksa) toast('Masuk dengan email & password untuk mengganti password.', true); return; }
+  akGantiTerbuka = !!paksa; akBuka(akFormGanti(paksa)); setTimeout(() => document.getElementById('ak-lama').focus(), 50);
+}
+async function akSimpanGanti(btn) {
+  const lama = document.getElementById('ak-lama').value, baru = document.getElementById('ak-baru').value, p = document.getElementById('ak-pesan');
+  if (baru !== document.getElementById('ak-baru2').value) { p.textContent = 'Ulangan password baru tidak sama.'; return; }
+  btn.disabled = true;
+  let r; try { r = await dbApiSekali('akun_ganti_pw', { lama, baru }); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server.' }; }
+  btn.disabled = false;
+  if (!r.ok) { if (r.kode === 'AUTH') { akGantiTerbuka = false; akTutup(); dbLogout(true); } p.textContent = r.pesan || 'Gagal.'; return; }
+  ssSet(SS_TOKEN, r.token);
+  const pertama = akGantiTerbuka; akGantiTerbuka = false; akTutup(); toast('✅ ' + r.pesan);
+  if (pertama) { await dbFlush(); await dbMuatDaftar(true); if (typeof pjMuat === 'function') pjMuat(true); }
+}
+const akRp = v => (Number(v) || 0).toLocaleString('id-ID');
+async function akSaya() {
+  if (!ssGet(SS_TOKEN)) return;
+  if (!ssGet(AK_SESI)) { akBuka(`<div class="rk-h">Akun Saya</div><div class="hint">Anda masuk dengan <b>kode akses lama</b> (masa peralihan). Minta akun email ke Wakil Ketua III, lalu masuk dengan email & password untuk memakai Akun Saya, slip gaji, dan ganti password.</div><button class="btn btn-outline" type="button" onclick="akTutup()">Tutup</button>`); return; }
+  akBuka('<div class="hint">Memuat…</div>');
+  let r; try { r = await dbApi('akun_saya', {}); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server.' }; }
+  if (!r.ok) { akBuka(`<div class="hint" style="color:#c0392b">${akE(r.pesan)}</div><button class="btn btn-outline" type="button" onclick="akTutup()">Tutup</button>`); return; }
+  window.akData = r;
+  const d = r.diri || {}, a = r.akun || {}, baris = (l, v) => v ? `<tr><td style="color:#667;padding:2px 10px 2px 0">${l}</td><td>${akE(v)}</td></tr>` : '';
+  akBuka(`<div style="display:flex;justify-content:space-between;align-items:center"><div class="rk-h" style="margin:0">👤 Akun Saya</div><button class="btn btn-outline btn-sm" type="button" onclick="akTutup()">✕</button></div>
+    <table style="font-size:13px;margin:10px 0">${baris('Nama', d.nama)}${baris('Email', a.email)}${baris('Jabatan', d.jabatan)}${baris('Bidang', d.bidang)}${baris('Status', d.status_kepegawaian)}
+    ${baris('Mulai bekerja', d.tgl_mulai && d.tgl_mulai.split('-').reverse().join('/'))}${baris('PTKP pemotongan', d.ptkp_potong)}${baris('Rekening', d.bank ? d.bank + ' ' + d.no_rekening : '')}
+    ${baris('Password berlaku s.d.', a.pw_kedaluwarsa && a.pw_kedaluwarsa.split('-').reverse().join('/') + ' (' + a.pw_sisa_hari + ' hari lagi)')}</table>
+    <div class="hint">Perubahan data diri diajukan ke Kepala Bidang Administrasi, SDM & Umum.</div>
+    <button class="btn btn-primary btn-sm" type="button" onclick="akGanti(false)">🔑 Ganti password</button>
+    <div class="rk-h" style="margin-top:14px">Slip gaji saya</div>
+    ${r.slip.length ? '<div style="display:flex;gap:6px;flex-wrap:wrap">' + r.slip.slice(0, 24).map((x, i) => `<button class="btn btn-outline btn-sm" type="button" onclick="akCetakSlip(${i})">${akE(x.periode)} · Rp${akRp(x.bersih)}</button>`).join('') + '</div>' : '<div class="hint">Belum ada slip gaji yang disetujui.</div>'}`);
+}
+function akCetakSlip(i) {
+  const x = akData.slip[i]; if (!x) return;
+  if (typeof gjCetak !== 'function') return;
+  const b = (l, v, g) => `<tr${g ? ' class="g"' : ''}><td>${l}</td><td class="r">${akRp(v)}</td></tr>`, n = v => Number(v) || 0;
+  gjCetak('Slip gaji ' + x.periode, `<div class="slip"><h3>${akE(akData.lembaga || 'BAZNAS Kota Lubuklinggau')}</h3><div>SLIP GAJI — ${akE(x.periode)}</div><br>
+    <table><tr><td>Nama</td><td>${akE(x.nama)}</td></tr><tr><td>Status PTKP pemotongan</td><td>${akE(x.ptkp_potong)}</td></tr></table><br>
+    <table>${b('Gaji pokok', x.gaji_pokok)}${b('Tunjangan', n(x.tunj_jabatan) + n(x.tunj_lain))}${n(x.insentif) ? b('Insentif', x.insentif) : ''}${n(x.thr) ? b('THR', x.thr) : ''}${n(x.honor_kegiatan) ? b('Honor kegiatan', x.honor_kegiatan) : ''}${b('Bruto', x.bruto, 1)}
+    ${n(x.sosial) ? b(akE(x.sosial_jenis), x.sosial) : ''}${n(x.infak_tetap) ? b('Infak tetap', x.infak_tetap) : ''}${n(x.potong_kasbon) ? b('Cicilan kasbon/piutang', x.potong_kasbon) : ''}${n(x.potong_lain) ? b('Potongan lain', x.potong_lain) : ''}
+    ${n(x.iuran_dipotong) ? b('Iuran BPJS pegawai', x.iuran_dipotong) : ''}${n(x.pph21_dipotong) ? b('PPh 21', x.pph21_dipotong) : ''}${b('Diterima', x.bersih, 1)}
+    ${n(x.pph21) && !n(x.pph21_dipotong) ? b('PPh 21 ditanggung BAZNAS', x.pph21) : ''}</table></div>`);
+}
+// ⚙️ Pengaturan › Pengguna: kelola akun email (WK3) di atas daftar kode akses lama
+(function () {
+  if (typeof atMuatPengguna !== 'function') return;
+  const asli = atMuatPengguna;
+  window.atMuatPengguna = atMuatPengguna = async function (kodeBaru) {
+    await asli(kodeBaru);
+    const isi = document.getElementById('at-isi'); if (!isi) return;
+    const box = document.createElement('div'); box.id = 'ak-kelola'; box.innerHTML = '<div class="hint">Memuat akun…</div>'; isi.prepend(box); akMuatKelola();
+  };
+})();
+async function akMuatKelola(pesan) {
+  const box = document.getElementById('ak-kelola'); if (!box) return;
+  let r; try { r = await dbApi('akun_daftar', {}); } catch (e) { box.innerHTML = '<div class="hint" style="color:#c0392b">Gagal memuat akun.</div>'; return; }
+  if (!r.ok) { box.innerHTML = ''; return; }
+  const tgl = t => t ? String(t).slice(0, 10).split('-').reverse().join('/') : '—';
+  box.innerHTML = `${pesan || ''}<div class="at-kotak"><div class="rk-h">Akun email & password</div>
+    <div class="hint" style="margin:0 0 8px">Akun dibuat dari email di 👤 Data Pegawai. Password sementara tampil sekali — serahkan langsung; wajib diganti saat masuk pertama. ${r.kode_lama_sampai ? 'Kode akses lama di bawah berlaku s.d. <b>' + tgl(r.kode_lama_sampai) + '</b>.' : ''}</div>
+    ${r.belum.length ? '<div style="margin-bottom:8px"><b>Belum punya akun:</b> ' + r.belum.map(b => `<button class="btn btn-outline btn-sm" type="button" style="margin:2px" onclick="akKelola('buat','${akE(b.id_pegawai)}')">+ ${akE(b.nama)} <span class="rk-k">${akE(b.email)}</span></button>`).join('') + '</div>' : ''}
+    <div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>Nama</th><th>Email</th><th>Jabatan</th><th>Status</th><th>Password s.d.</th><th>Terakhir masuk</th><th></th></tr></thead><tbody>
+    ${r.akun.map(a => `<tr class="${a.aktif ? '' : 'at-off'}"><td><b>${akE(a.nama)}</b></td><td>${akE(a.email)}</td><td>${akE(a.jabatan_label)}</td>
+      <td>${!a.aktif ? 'Nonaktif' : a.terkunci ? '🔒 Terkunci' : a.wajib_ganti ? 'Menunggu ganti password' : 'Aktif'}</td><td>${tgl(a.pw_kedaluwarsa)}</td><td>${tgl(a.terakhir_masuk)}</td>
+      <td style="white-space:nowrap"><button class="btn btn-outline btn-sm" type="button" onclick="akKelola('reset','${akE(a.email)}')">Reset password</button>
+      ${a.terkunci ? `<button class="btn btn-outline btn-sm" type="button" onclick="akKelola('buka','${akE(a.email)}')">Buka kunci</button>` : ''}
+      <button class="btn btn-outline btn-sm" type="button" onclick="akKelola('${a.aktif ? 'nonaktif' : 'aktif'}','${akE(a.email)}')">${a.aktif ? 'Nonaktifkan' : 'Aktifkan'}</button></td></tr>`).join('') || '<tr><td colspan="7">Belum ada akun.</td></tr>'}
+    </tbody></table></div></div>`;
+}
+async function akKelola(aksi, kunci) {
+  if ((aksi === 'reset' || aksi === 'nonaktif') && !confirm(aksi === 'reset' ? 'Reset password ' + kunci + '? Sesi lamanya akan keluar.' : 'Nonaktifkan akun ' + kunci + '?')) return;
+  let r; try { r = await dbApi('akun_kelola', aksi === 'buat' ? { aksi, id_pegawai: kunci } : { aksi, email: kunci }); } catch (e) { toast('Gagal terhubung ke server.', true); return; }
+  if (!r.ok) { toast(r.pesan, true); return; }
+  akMuatKelola(r.password_sementara ? `<div class="at-kotak"><b>Password sementara ${akE(r.email || kunci)}</b><div class="at-kode">${akE(r.password_sementara)}</div><div class="hint" style="margin:0">Catat dan serahkan langsung. Tidak ditampilkan lagi.</div></div>` : '');
+  toast('✓ ' + r.pesan);
+}
+// keluar: hapus penanda sesi email
+(function () { if (typeof dbLogout !== 'function') return; const asli = dbLogout; window.dbLogout = dbLogout = function (p) { if (p === true) ssDel(AK_SESI); return asli(p); }; })();
+
+// ════════════════════════════════════════════
 // v39 — TATA LETAK: menu samping kiri per bidang (Pengumpulan · Pendistribusian & Pendayagunaan · Keuangan, Pelaporan & Akuntansi ·
 // Administrasi, SDM, Umum & Komunikasi). Tombol tab lama dipindah (bukan dibuat ulang) → onclick, badge, & aturan peran tetap.
 // Tabel Pengajuan Masuk diringkas: 5 kolom tanpa geser samping, judul kolom tetap terlihat saat digulir, di HP jadi kartu.
@@ -9990,7 +10146,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='2026.11.26-1053';
+const APP_VERSI='2026.11.26-1115';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){

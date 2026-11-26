@@ -101,10 +101,15 @@ canvas.ttd{width:100%;height:170px;border:1.5px dashed #94a3b8;border-radius:9px
 <div id="pita"></div>
 <main>
   <section id="v-masuk" class="kartu" style="display:none">
-    <b>Masuk dengan kode akses</b>
-    <div class="kecil">Kode akses sama dengan aplikasi Data Mustahik. Kode tidak disimpan di HP.</div>
+    <b>Masuk</b>
+    <div class="kecil">Email & password sama dengan aplikasi Data Mustahik.</div>
+    <label for="in-email">Email</label>
+    <input id="in-email" type="email" autocomplete="username" inputmode="email">
+    <label for="in-pw">Password</label>
+    <input id="in-pw" type="password" autocomplete="current-password">
+    <details style="margin-top:8px"><summary class="kecil">Masuk dengan kode akses lama (masa peralihan)</summary>
     <label for="in-kode">Kode akses</label>
-    <input id="in-kode" type="password" autocomplete="off" autocapitalize="characters">
+    <input id="in-kode" type="password" autocomplete="off" autocapitalize="characters"></details>
     <div id="masuk-galat" class="galat" style="display:none"></div>
     <div style="margin-top:12px"><button class="btn" id="btn-masuk" onclick="masuk()">Masuk</button></div>
   </section>
@@ -227,11 +232,16 @@ function pita(){
 
 // ── Masuk / keluar ──
 async function masuk(){
-  const kode=$('in-kode').value.trim(),g=$('masuk-galat');g.style.display='none';
-  if(!kode)return;
+  const kode=$('in-kode').value.trim(),em=$('in-email').value.trim(),pw=$('in-pw').value,g=$('masuk-galat');g.style.display='none';
+  if(!kode&&!(em&&pw)){g.textContent='Isi email dan password.';g.style.display='block';return;}
   $('btn-masuk').disabled=true;
   try{
-    token=kode;const r=await api('cek');
+    let r;
+    if(em&&pw){   // v86: login email + password
+      token='';r=await api('login',{email:em,password:pw});
+      if(r.ok&&r.wajib_ganti){g.textContent='Password Anda harus diganti dulu. Buka aplikasi Data Mustahik di komputer/HP, masuk, lalu ganti password.';g.style.display='block';return;}
+      if(r.ok){token=r.token;$('in-pw').value='';}
+    }else{token=kode;r=await api('cek');}
     if(!r.ok||r.peran!=='surveyor'){token='';g.textContent=r.peran==='penggalang'?'Ini kode akses penggalang — masuk lewat halaman penggalang.html.':r.ok?'Kode ini tidak bisa dipakai di halaman survei.':(r.pesan||'Kode akses tidak valid.');g.style.display='block';return;}
     nama=r.nama;jabatan=r.jabatan||'PETUGAS';
     ss.set('baznas_token',token);ss.set('baznas_surveyor',nama);ss.set('baznas_jabatan',jabatan);
