@@ -8014,7 +8014,21 @@ async function akMuatKelola(pesan) {
       <td style="white-space:nowrap"><button class="btn btn-outline btn-sm" type="button" onclick="akKelola('reset','${akE(a.email)}')">Reset password</button>
       ${a.terkunci ? `<button class="btn btn-outline btn-sm" type="button" onclick="akKelola('buka','${akE(a.email)}')">Buka kunci</button>` : ''}
       <button class="btn btn-outline btn-sm" type="button" onclick="akKelola('${a.aktif ? 'nonaktif' : 'aktif'}','${akE(a.email)}')">${a.aktif ? 'Nonaktifkan' : 'Aktifkan'}</button></td></tr>`).join('') || '<tr><td colspan="7">Belum ada akun.</td></tr>'}
-    </tbody></table></div></div>`;
+    </tbody></table></div></div>
+    <div class="at-kotak"><div class="rk-h">Beban server (2 jam terakhir)</div>
+    <div class="hint" style="margin:0 0 8px">Jumlah panggilan ke Apps Script per menit. Batas Google ±30 proses serentak.</div>
+    <button class="btn btn-outline btn-sm" type="button" onclick="akBeban(this)">📈 Lihat beban</button><div id="ak-beban"></div></div>`;
+}
+async function akBeban(btn) {   // v90
+  const box = document.getElementById('ak-beban'); btn.disabled = true; box.innerHTML = '<div class="hint">Memuat…</div>';
+  let r; try { r = await dbApi('beban_server', {}); } catch (e) { r = { ok: false, pesan: 'Gagal memuat.' }; }
+  btn.disabled = false;
+  if (!r.ok) { box.innerHTML = `<div class="hint" style="color:#c0392b">${akE(r.pesan || 'Gagal memuat.')}</div>`; return; }
+  if (!r.menit.length) { box.innerHTML = '<div class="hint">Belum ada catatan.</div>'; return; }
+  const maks = Math.max(...r.menit.map(m => m.total));
+  box.innerHTML = `<div class="hint" style="margin:6px 0">Puncak: <b>${maks}</b> panggilan/menit.</div><div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>Menit</th><th>Total</th><th>Rincian aksi</th></tr></thead><tbody>
+    ${r.menit.map(m => `<tr${m.total >= 25 ? ' style="background:#fdecea"' : ''}><td>${akE(m.waktu.slice(11))}</td><td><b>${m.total}</b></td><td>${Object.keys(m.aksi).sort((a, b) => m.aksi[b] - m.aksi[a]).map(a => akE(a) + ' ' + m.aksi[a]).join(' · ')}</td></tr>`).join('')}
+    </tbody></table></div>`;
 }
 async function akKelola(aksi, kunci) {
   if ((aksi === 'reset' || aksi === 'nonaktif') && !confirm(aksi === 'reset' ? 'Reset password ' + kunci + '? Sesi lamanya akan keluar.' : 'Nonaktifkan akun ' + kunci + '?')) return;
@@ -10161,7 +10175,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='2026.11.26-1629';
+const APP_VERSI='90 · 28 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){

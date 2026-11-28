@@ -30,8 +30,13 @@
   function pasangFoto(root) {
     root.querySelectorAll('img[data-f]').forEach(img => {
       const id = img.dataset.id, f = img.dataset.f;
-      img.onerror = async () => { img.onerror = null; try { const r = await api('foto_publik', { id, foto: f }); if (r.ok) img.src = 'data:' + r.mime + ';base64,' + r.base64; } catch (e) { } };
       const src = fotoSrc(id, f);
+      img.onerror = async () => {
+        // v90: bila lewat Vercel gagal, coba ulang sekali dengan jeda acak (tidak menyerbu Apps Script langsung)
+        if (src && !img.dataset.ulang) { img.dataset.ulang = '1'; setTimeout(() => { img.src = src + '&u=1'; }, 3000 + Math.random() * 5000); return; }
+        img.onerror = null; if (src) return;
+        try { const r = await api('foto_publik', { id, foto: f }); if (r.ok) img.src = 'data:' + r.mime + ';base64,' + r.base64; } catch (e) { }
+      };
       if (src) img.src = src; else img.onerror();
     });
   }
