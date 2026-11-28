@@ -7492,7 +7492,7 @@ function pgwDaftar() {
     ${r.ringkas ? '<div class="hint">Tampilan ringkas: data pribadi, pajak, rekening, dan gaji tidak ditampilkan untuk jabatan Anda.</div>' : ''}
     <div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>ID</th><th>Nama</th><th>NIA</th><th>Jabatan</th><th>Bidang/Unit</th><th>Status</th><th>Email</th>${r.boleh_ubah ? '<th></th>' : ''}</tr></thead><tbody>
     ${d.map(x => `<tr class="${x.aktif === 'FALSE' ? 'at-off' : ''}"><td class="mono">${pgwE(x.id_pegawai)}</td><td><b>${pgwE(x.nama)}</b>${x.aktif === 'FALSE' ? ' <span class="at-tag">nonaktif</span>' : ''}</td>
-      <td class="mono">${(r.nia_ganda || []).includes(x.nia) ? '<span style="color:#c0392b;font-weight:700" title="NIA sama dengan pegawai lain — buka Ubah, kosongkan NIA, lalu Simpan">⚠️ ' + pgwE(x.nia) + '</span>' : pgwE(x.nia || '—')}</td><td>${pgwE(pgwJab(x.jabatan))}</td><td>${pgwE(x.bidang || '—')}</td>
+      <td class="mono">${(r.nia_ganda || []).includes(x.nia) ? '<span style="color:#c0392b;font-weight:700" title="NIA sama dengan pegawai lain — buka Ubah, kosongkan NIA, lalu Simpan">⚠️ ' + pgwE(x.nia) + '</span>' : pgwE(x.nia || '—')}</td><td>${pgwE(pgwJab(x.jabatan))}${x.jabatan_rangkap ? '<div class="rk-k">+ ' + String(x.jabatan_rangkap).split(',').map(j => pgwE(pgwJab(j))).join(', ') + '</div>' : ''}</td><td>${pgwE(x.bidang || '—')}</td>
       <td>${pgwE(x.status_kepegawaian || '—')}${x.tgl_berakhir ? '<div class="rk-k">s.d. ' + pgwE(x.tgl_berakhir.split('-').reverse().join('/')) + '</div>' : ''}</td><td>${pgwE(x.email)}</td>
       ${r.boleh_ubah ? `<td><button class="btn btn-outline btn-sm" type="button" onclick="pgwBuka('${pgwE(x.id_pegawai)}')">Ubah</button></td>` : ''}</tr>`).join('') || '<tr><td colspan="8">Belum ada data pegawai.</td></tr>'}
     </tbody></table></div><div class="hint">${d.length} dari ${r.data.length} pegawai.</div>`;
@@ -7519,6 +7519,8 @@ function pgwForm() {
     ${inp('nia', 'NIA – Nomor Induk Amil (12 digit — kosongkan agar dibuat otomatis)', 'inputmode="numeric" maxlength="12" oninput="this.value=this.value.replace(/\\D/g,\'\').slice(0,12)"')}
     ${inp('nama', 'Nama lengkap *', 'maxlength="100"')}${inp('email', 'Email * (untuk login)', 'type="email" maxlength="120"')}
     ${sel('jabatan', 'Jabatan *', P.jabatan, pgwJab)}${sel('bidang', 'Bidang/unit kerja *', P.bidang)}
+    <details style="grid-column:1/-1"${String(e.jabatan_rangkap || '') ? ' open' : ''}><summary>Jabatan rangkap (opsional — hanya menambah hak buka menu; gaji & persetujuan tetap ikut jabatan utama)</summary>
+      <div class="at-cek">${P.jabatan.map(o => `<label><input type="checkbox" name="pgw-rangkap" value="${pgwE(o)}"${String(e.jabatan_rangkap || '').split(',').includes(o) ? ' checked' : ''}>${pgwE(pgwJab(o))}</label>`).join('')}</div></details>
     ${inp('no_sk', 'Nomor SK pengangkatan', 'maxlength="80"')}${tgl('tgl_sk', 'Tanggal berlaku SK')}
     <label>Status kepegawaian *<select id="pgw-status_kepegawaian" onchange="pgwSimpanSementara();pgwEdit.status_kepegawaian=this.value;pgwGambar()"><option value="">— pilih —</option>${P.status.map(o => `<option${e.status_kepegawaian === o ? ' selected' : ''}>${o}</option>`).join('')}</select></label>
     ${tgl('tgl_mulai', 'Tanggal mulai bertugas (TMT)')}${kontrak ? tgl('tgl_berakhir', 'Tanggal berakhir kontrak *') : ''}
@@ -7565,6 +7567,7 @@ function pgwSimpanSementara() {
   PGW_ISIAN.forEach(k => { const el = document.getElementById('pgw-' + k); if (el) pgwEdit[k] = el.value; });
   ['pkwt', 'aktif', 'domisili_sama', 'suami_tidak_berpenghasilan'].forEach(k => { const el = document.getElementById('pgw-' + k); if (el) pgwEdit[k] = el.checked ? 'TRUE' : 'FALSE'; });
   pgwEdit.bpjs_tk_program = [...document.querySelectorAll('input[name="pgw-prog"]:checked')].map(i => i.value).join('\n');
+  if (document.querySelector('input[name="pgw-rangkap"]')) pgwEdit.jabatan_rangkap = [...document.querySelectorAll('input[name="pgw-rangkap"]:checked')].map(i => i.value).filter(x => x !== pgwEdit.jabatan).join(',');   // v91
 }
 async function pgwSimpan() {
   pgwSimpanSementara();
@@ -8043,6 +8046,151 @@ async function akKelola(aksi, kunci) {
 }
 // keluar: hapus penanda sesi email
 (function () { if (typeof dbLogout !== 'function') return; const asli = dbLogout; window.dbLogout = dbLogout = function (p) { if (p === true) ssDel(AK_SESI); return asli(p); }; })();
+
+
+// ═════════ v91 — TAHAP E2: HAK AKSES MENU ═════════
+// Menu di luar hak: abu-abu + 🔒; diklik → "Not Authorized" merah. Server juga menolak (kode NOT_AUTH).
+// WK3: Pengaturan › 🔐 Hak Akses (matriks jabatan × menu + pengecualian per orang). Jabatan rangkap diisi di Data Pegawai.
+const HK_DOM = {
+  muzaki: ['#tab-mz-btn', 't-muzaki'], online: ['#tab-ol-btn', 't-online'], penggalang: ['#tab-pg-btn', 't-penggalang'], kabar: ['#tab-kt-btn', 't-konten'],
+  highlight: ['#tab-hl-btn', 't-highlight'], pengajuan: ['#tab-pj-btn', 't-pengajuan'], usulan: ['#tab-us-btn', 't-usulan'],
+  survei: ['a.tab-btn[href="survei.html"]', ''], monitoring: ['a.tab-btn[href="survei.html#monitoring"]', ''],
+  mustahik_daftar: ['[onclick^="switchTab(\'t-daftar\'"]', 't-daftar'], mustahik_input: ['[onclick^="switchTab(\'t-form\'"]', 't-form'],
+  beasiswa: ['#tab-lb-btn', 't-beasiswa'], rkat: ['#tab-rkat-btn', 't-rkat'], ppid: ['#tab-ppid-btn', 't-ppid'], pegawai: ['#tab-pegawai-btn', 't-pegawai'],
+  gaji: ['#tab-gaji-btn', 't-gaji'], kasbon: ['#tab-kasbon-btn', 't-kasbon'], import: ['#tab-import-btn', 't-import'], pengaturan: ['#tab-atur-btn', 't-atur']
+};
+let HK = null;   // {menu:[...], semua:[...]}
+const hkE = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+(function () {
+  const css = document.createElement('style');
+  css.textContent = `.tab-bar .hk-kunci{opacity:.45;filter:grayscale(1);cursor:not-allowed!important}
+.tab-bar .hk-kunci .hk-gembok{margin-left:auto;font-size:11px}
+#hk-tolak{position:fixed;left:50%;top:90px;transform:translateX(-50%);z-index:9999;background:#fff;border:2px solid #c0392b;color:#c0392b;font-weight:800;font-size:18px;padding:14px 26px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.18);text-align:center;display:none}
+#hk-tolak small{display:block;font-size:12px;font-weight:500;color:#7f1d1d;margin-top:4px}
+.hk-tbl th.hk-v{writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;white-space:nowrap;padding:6px 2px}
+.hk-tbl td.hk-c{text-align:center;padding:4px 2px}.hk-tbl th.hk-baru{background:#fff4d6}
+.hk-tbl td:first-child{white-space:nowrap;position:sticky;left:0;background:#fff;z-index:1}
+.hk-or{display:grid;grid-template-columns:minmax(180px,1.2fr) 1fr 1fr auto;gap:8px;align-items:start;border:1px solid var(--g200);border-radius:10px;padding:8px;margin:6px 0}
+.hk-or select[multiple]{min-height:110px;width:100%}`;
+  document.head.appendChild(css);
+  const t = document.createElement('div'); t.id = 'hk-tolak'; t.setAttribute('role', 'alert'); t.innerHTML = '⛔ Not Authorized<small>Menu ini di luar hak akses Anda. Hubungi Wakil Ketua III bila perlu.</small>';
+  document.body.appendChild(t);
+})();
+let hkTimer = null;
+function hkTolak() { const t = document.getElementById('hk-tolak'); t.style.display = 'block'; clearTimeout(hkTimer); hkTimer = setTimeout(() => { t.style.display = 'none'; }, 3500); }
+function hkBoleh(id) { return !HK || HK.menu.includes(id); }
+function hkMenuTab(tab) { return Object.keys(HK_DOM).find(k => HK_DOM[k][1] === tab); }
+function hkTerap() {
+  if (!HK) return;
+  Object.keys(HK_DOM).forEach(id => {
+    document.querySelectorAll(HK_DOM[id][0]).forEach(el => {
+      if (!el.classList.contains('tab-btn')) return;
+      const kunci = !hkBoleh(id);
+      el.classList.toggle('hk-kunci', kunci); el.toggleAttribute('data-hk-kunci', kunci);
+      el.setAttribute('aria-disabled', kunci ? 'true' : 'false');
+      let g = el.querySelector('.hk-gembok');
+      if (kunci && !g) { g = document.createElement('span'); g.className = 'hk-gembok'; g.textContent = '🔒'; el.appendChild(g); }
+      if (!kunci && g) g.remove();
+    });
+  });
+  // tab yang sedang tampil terkunci → pindah ke menu pertama yang boleh
+  const aktif = document.querySelector('.tab-pane.active'), m = aktif && hkMenuTab(aktif.id);
+  if (m && !hkBoleh(m)) {
+    const pertama = [...document.querySelectorAll('.tab-bar .tab-btn')].find(b => !b.hasAttribute('data-hk-kunci') && !b.classList.contains('sb-segera') && b.tagName !== 'A');
+    if (pertama) pertama.click(); else { aktif.classList.remove('active'); hkTolak(); }
+  }
+}
+async function hkMuat(ulang) {
+  let r = null; try { r = await dbApi('hak_saya', {}); } catch (e) { }
+  if (r && r.ok) { HK = r; hkTerap(); return; }
+  if ((ulang || 0) < 5) setTimeout(() => { if (!HK) hkMuat((ulang || 0) + 1); }, 2000);   // sesi belum siap / jaringan → coba lagi
+}
+// klik menu terkunci → tolak (fase tangkap, sebelum onclick menu berjalan)
+document.addEventListener('click', ev => {
+  const el = ev.target.closest && ev.target.closest('[data-hk-kunci]');
+  if (!el) return;
+  ev.preventDefault(); ev.stopImmediatePropagation(); hkTolak();
+}, true);
+(function () {
+  if (typeof switchTab === 'function') {
+    const asli = switchTab;
+    window.switchTab = switchTab = function (id, btn) { const m = hkMenuTab(id); if (m && !hkBoleh(m)) { hkTolak(); return; } return asli(id, btn); };
+  }
+  if (typeof dbApi === 'function') {
+    const asliApi = dbApi;
+    window.dbApi = dbApi = async function (aksi, data, tok) { const r = await asliApi(aksi, data, tok); if (r && r.kode === 'NOT_AUTH') hkTolak(); return r; };
+  }
+  // muat hak setiap kali layar login tertutup (masuk / ganti akun) dan menu samping selesai disusun
+  const ov = document.getElementById('login-overlay');
+  const cek = () => { const tutup = !ov || getComputedStyle(ov).display === 'none' || ov.hidden; if (tutup) { if (!HK) hkMuat(); } else HK = null; };
+  if (ov && window.MutationObserver) new MutationObserver(cek).observe(ov, { attributes: true, attributeFilter: ['style', 'class', 'hidden'] });
+  const bar = document.querySelector('.tab-bar');
+  if (bar && window.MutationObserver) new MutationObserver(() => { if (HK) hkTerap(); }).observe(bar, { childList: true });
+  setTimeout(cek, 0);
+})();
+
+// ───────── Pengaturan › 🔐 Hak Akses (WK3) ─────────
+(function () {
+  if (typeof atGambar !== 'function') return;
+  const asli = atGambar;
+  window.atGambar = atGambar = function () {
+    const hk = atTab === 'hak';
+    if (hk) atTab = 'katalog';
+    asli();
+    if (!atData || !atData.boleh_ubah) return;
+    const sub = document.getElementById('at-sub');
+    sub.insertAdjacentHTML('beforeend', `<button type="button" onclick="atTab='hak';atEdit=null;atGambar()">🔐 Hak Akses</button>`);
+    if (hk) { atTab = 'hak'; sub.querySelectorAll('button').forEach(b => b.classList.toggle('on', /Hak Akses/.test(b.textContent))); hkMatriksMuat(); }
+  };
+})();
+let hkM = null;
+async function hkMatriksMuat() {
+  const isi = document.getElementById('at-isi'); isi.innerHTML = '<div class="hint">Memuat hak akses…</div>';
+  let r; try { r = await dbApi('hak_daftar', {}); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server.' }; }
+  if (!r || !r.ok) { isi.innerHTML = `<div class="hint" style="color:#c0392b">${hkE((r && r.pesan) || 'Gagal memuat.')}</div>`; return; }
+  hkM = r; hkMatriksGambar();
+}
+function hkMatriksGambar() {
+  const r = hkM, isi = document.getElementById('at-isi');
+  const opsi = sel => r.menu.map(m => `<option value="${m.id}"${sel.includes(m.id) ? ' selected' : ''}>${hkE(m.label)}</option>`).join('');
+  isi.innerHTML = `<div class="at-kotak"><div class="rk-h">Hak buka menu per jabatan</div>
+    <div class="hint" style="margin:0 0 8px">Centang menu yang boleh dibuka. Wakil Ketua III selalu bisa membuka semua menu. Hak pegawai berjabatan rangkap (diisi di 👤 Data Pegawai) = gabungan semua jabatannya.
+    ${r.tersimpan ? '' : '<br><b>Belum pernah disimpan</b> — yang tampil adalah usulan bawaan.'}</div>
+    ${r.menu_baru.length ? `<div class="pgw-w" style="margin-bottom:8px">🆕 Menu baru belum diatur: <b>${r.menu_baru.map(id => hkE((r.menu.find(m => m.id === id) || {}).label || id)).join(', ')}</b> — masih tertutup bagi semua jabatan sampai dicentang lalu disimpan.</div>` : ''}
+    <div class="rk-wrap"><table class="rk-tbl hk-tbl"><thead><tr><th>Jabatan</th>${r.menu.map(m => `<th class="hk-v${r.menu_baru.includes(m.id) ? ' hk-baru' : ''}" title="${hkE(m.grup)}">${hkE(m.label)}</th>`).join('')}</tr></thead><tbody>
+    ${r.jabatan.map(j => `<tr><td><b>${hkE(j.label)}</b></td>${r.menu.map(m => `<td class="hk-c"><input type="checkbox" data-j="${j.kode}" data-m="${m.id}"${(r.matriks[j.kode] || []).includes(m.id) ? ' checked' : ''} aria-label="${hkE(j.label + ' – ' + m.label)}"></td>`).join('')}</tr>`).join('')}
+    </tbody></table></div></div>
+    <div class="at-kotak"><div class="rk-h">Pengecualian per orang</div>
+    <div class="hint" style="margin:0 0 8px">Tambah atau cabut menu tertentu untuk satu akun, di luar hak jabatannya. Tahan Ctrl/⌘ untuk memilih beberapa menu.</div>
+    <div id="hk-orang">${r.orang.map((o, i) => hkBarisOrang(o, i, opsi)).join('')}</div>
+    <button class="btn btn-outline btn-sm" type="button" onclick="hkTambahOrang()">+ Tambah pengecualian</button></div>
+    <div style="display:flex;gap:8px;align-items:center"><button class="btn btn-primary btn-sm" type="button" id="hk-simpan" onclick="hkSimpan()">💾 Simpan hak akses</button><span id="hk-pesan" class="hint" style="margin:0"></span></div>`;
+}
+function hkBarisOrang(o, i, opsi) {
+  const akun = hkM.akun;
+  return `<div class="hk-or" data-i="${i}"><label>Akun<select class="hk-email"><option value="">— pilih akun —</option>${akun.map(a => `<option value="${hkE(a.email)}"${a.email === o.email ? ' selected' : ''}>${hkE(a.nama)} · ${hkE(a.email)}</option>`).join('')}
+    ${o.email && !akun.some(a => a.email === o.email) ? `<option value="${hkE(o.email)}" selected>${hkE(o.email)} (akun tidak ditemukan)</option>` : ''}</select></label>
+    <label>➕ Tambah menu<select class="hk-tambah" multiple>${opsi(o.tambah || [])}</select></label>
+    <label>➖ Cabut menu<select class="hk-cabut" multiple>${opsi(o.cabut || [])}</select></label>
+    <button class="btn btn-outline btn-sm" type="button" title="Hapus pengecualian" onclick="this.closest('.hk-or').remove()">✕</button></div>`;
+}
+function hkTambahOrang() {
+  const opsi = sel => hkM.menu.map(m => `<option value="${m.id}"${sel.includes(m.id) ? ' selected' : ''}>${hkE(m.label)}</option>`).join('');
+  document.getElementById('hk-orang').insertAdjacentHTML('beforeend', hkBarisOrang({ email: '', tambah: [], cabut: [] }, Date.now(), opsi));
+}
+async function hkSimpan() {
+  const matriks = {}; hkM.jabatan.forEach(j => { matriks[j.kode] = []; });
+  document.querySelectorAll('.hk-tbl input[type=checkbox]:checked').forEach(c => matriks[c.dataset.j].push(c.dataset.m));
+  const ambil = (el, kls) => [...el.querySelector(kls).selectedOptions].map(o => o.value);
+  const orang = [...document.querySelectorAll('#hk-orang .hk-or')].map(el => ({ email: el.querySelector('.hk-email').value, tambah: ambil(el, '.hk-tambah'), cabut: ambil(el, '.hk-cabut') })).filter(o => o.email);
+  const btn = document.getElementById('hk-simpan'), ps = document.getElementById('hk-pesan');
+  btn.disabled = true; ps.textContent = '⏳ Menyimpan…';
+  let r; try { r = await dbApi('hak_simpan', { matriks, orang }); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server.' }; }
+  btn.disabled = false;
+  if (!r || !r.ok) { ps.innerHTML = `<span style="color:#c0392b">${hkE((r && r.pesan) || 'Gagal menyimpan.')}</span>`; return; }
+  toast(r.pesan); await hkMatriksMuat();
+  const p2 = document.getElementById('hk-pesan'); if (p2) p2.textContent = '✅ Tersimpan. Server langsung menerapkan; tampilan menu pengguna lain berubah saat mereka memuat ulang aplikasi.';
+}
 
 // ════════════════════════════════════════════
 // v39 — TATA LETAK: menu samping kiri per bidang (Pengumpulan · Pendistribusian & Pendayagunaan · Keuangan, Pelaporan & Akuntansi ·
@@ -10175,7 +10323,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='90 · 28 Nov 2026';
+const APP_VERSI='91 · 29 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){

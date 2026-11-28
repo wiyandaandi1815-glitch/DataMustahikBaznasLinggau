@@ -218,8 +218,17 @@ async function api(aksi,data,detik){
   try{
     const r=await fetch(DB_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({aksi,token,data:data===undefined?null:data}),redirect:'follow',signal:ac.signal});
     if(!r.ok)throw new Error('HTTP '+r.status);
-    return await r.json();
+    const j=await r.json();
+    if(j&&j.kode==='NOT_AUTH')hkTolakSurvei();   // v91
+    return j;
   }finally{clearTimeout(t);}
+}
+function hkTolakSurvei(){   // v91: menu di luar hak akses
+  let el=document.getElementById('hk-tolak');
+  if(!el){el=document.createElement('div');el.id='hk-tolak';el.setAttribute('role','alert');
+    el.style.cssText='position:fixed;left:50%;top:80px;transform:translateX(-50%);z-index:9999;background:#fff;border:2px solid #c0392b;color:#c0392b;font-weight:800;font-size:18px;padding:14px 24px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.18);text-align:center';
+    el.innerHTML='⛔ Not Authorized<small style="display:block;font-size:12px;font-weight:500;color:#7f1d1d;margin-top:4px">Menu ini di luar hak akses Anda. Hubungi Wakil Ketua III bila perlu.</small>';document.body.appendChild(el);}
+  el.style.display='block';clearTimeout(el._t);el._t=setTimeout(()=>{el.style.display='none';},4000);
 }
 function tampil(v){['v-masuk','v-daftar','v-form'].forEach(x=>$(x).style.display=x===v?'block':'none');window.scrollTo(0,0);}
 const jmlAntre=()=>Object.keys(antre.survei).length+Object.keys(antre.monitoring).length;
