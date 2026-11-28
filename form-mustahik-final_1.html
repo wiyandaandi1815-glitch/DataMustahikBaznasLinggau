@@ -6259,6 +6259,10 @@ async function usEditor(id, koreksi) {
   document.getElementById('us-buka-laci').onclick = bukaLaci; document.getElementById('us-buka-laci2').onclick = bukaLaci;
   document.getElementById('us-laci-tutup').onclick = tutupLaci; latar.onclick = tutupLaci;
   document.getElementById('us-cari').oninput = cari; document.getElementById('us-sv').onchange = cari; cari();
+  // v92: "Usulkan bantuan" dari Kartu Keluarga → mustahik langsung terpilih
+  const pra = window.usPrapilih; window.usPrapilih = null;
+  if (pra && pra.length) { pra.forEach(id => { const p = usPool.find(x => x.mustahikId === id); if (p && bisa(p)) baru(p); }); usGambarPilih(true); cari();
+    if (!usEdit.items.length && typeof toast === 'function') toast('Mustahik sedang ada di usulan lain atau belum memenuhi syarat usulan.', true); }
   if (!usEdit.items.length) bukaLaci();
 }
 // v50: angka dengan pemisah ribuan, info rekening tujuan & biaya transfer otomatis
@@ -8558,6 +8562,122 @@ async function dmMuatRiwayat(d) {
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', dmSusun); else dmSusun();
 
+
+// ═════════ v92 — FASE 1 TAHAP 1: KARTU KELUARGA (Daftar Mustahik › 🏠 Per keluarga) ═════════
+// Data dari aksi keluarga_daftar (hanya membaca). Bantuan berulang & lintas program per anggota; pemeriksaan mutu data;
+// tombol "Usulkan bantuan" membuka Usulan Penyaluran dengan anggota terpilih.
+let klData = null, klBuka = null, klMemuat = false;
+const klE = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const klRp = n => 'Rp' + Math.round(+n || 0).toLocaleString('id-ID');
+const klRpS = n => { n = +n || 0; return n >= 1e6 ? 'Rp' + (n / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' jt' : n >= 1e3 ? 'Rp' + Math.round(n / 1e3) + ' rb' : klRp(n); };
+const klSamar = k => k ? k.slice(0, 4) + '••••••••' + k.slice(-4) : '—';
+const klUmur = t => { if (!/^\d{4}-\d{2}-\d{2}$/.test(t || '')) return ''; const p = t.split('-').map(Number), n = new Date(); let u = n.getFullYear() - p[0]; if (n.getMonth() + 1 < p[1] || (n.getMonth() + 1 === p[1] && n.getDate() < p[2])) u--; return u + ' th'; };
+(function () {
+  const css = document.createElement('style');
+  css.textContent = `.kl-bar{display:flex;gap:6px;margin:6px 0 12px}.kl-bar button{border:1px solid var(--g200);background:#fff;border-radius:999px;padding:6px 14px;font-weight:600;cursor:pointer;font-size:13px}
+.kl-bar button.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+#t-daftar.kl-mode .main>*:not(.pg-title):not(.pg-sub):not(.kl-bar):not(#kl-view){display:none!important}
+#t-daftar:not(.kl-mode) #kl-view{display:none}
+.kl-ring{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.kl-ring div{background:#fff;border:1px solid var(--g200);border-radius:10px;padding:8px 12px;font-size:12px;color:var(--g500)}
+.kl-ring b{display:block;font-size:17px;color:var(--g800,#1f2937)}
+.kl-saring{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}.kl-saring input[type=search]{min-width:220px;flex:1}
+.kl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px}
+.kl-kartu{background:#fff;border:1px solid var(--g200);border-radius:12px;padding:12px;cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%}
+.kl-kartu:hover,.kl-kartu:focus-visible{border-color:var(--teal);box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.kl-kartu h4{margin:0 0 2px;font-size:15px}.kl-k{font-size:11.5px;color:var(--g500)}
+.kl-chip{display:inline-block;font-size:11px;border-radius:999px;padding:2px 8px;margin:2px 3px 0 0;background:var(--g100);color:var(--g700,#374151)}
+.kl-chip.m{background:#e6f6f3;color:#0f766e}.kl-chip.w{background:#fff4d6;color:#92400e}.kl-chip.b{background:#eef2ff;color:#3730a3}
+.kl-angka{display:flex;gap:12px;margin-top:8px;font-size:12px}.kl-angka b{font-size:13px}
+.kl-masalah{margin-top:8px;font-size:11.5px;color:#92400e}
+.kl-tbl td{vertical-align:top}.kl-tbl td .kl-chip{white-space:nowrap}`;
+  document.head.appendChild(css);
+  const pasang = () => {
+    const main = document.querySelector('#t-daftar .main'), sub = main && main.querySelector('.pg-sub');
+    if (!main || !sub || document.getElementById('kl-bar')) return;
+    const bar = document.createElement('div'); bar.className = 'kl-bar'; bar.id = 'kl-bar'; bar.setAttribute('role', 'tablist');
+    bar.innerHTML = '<button type="button" class="on" data-kl-mode="orang" role="tab" aria-selected="true">👤 Per orang</button><button type="button" data-kl-mode="kk" role="tab" aria-selected="false">🏠 Per keluarga</button>';
+    sub.after(bar);
+    const v = document.createElement('div'); v.id = 'kl-view'; bar.after(v);
+    bar.addEventListener('click', e => { const b = e.target.closest('[data-kl-mode]'); if (b) klMode(b.dataset.klMode); });
+  };
+  pasang(); if (!document.getElementById('kl-bar')) document.addEventListener('DOMContentLoaded', pasang);
+})();
+function klMode(m) {
+  const t = document.getElementById('t-daftar'); t.classList.toggle('kl-mode', m === 'kk');
+  document.querySelectorAll('[data-kl-mode]').forEach(b => { const on = b.dataset.klMode === m; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+  if (m === 'kk') { if (klData) klGambar(); klMuat(); }
+}
+async function klMuat() {
+  if (klMemuat) return; klMemuat = true;
+  const v = document.getElementById('kl-view'); if (!klData) v.innerHTML = '<div class="hint">⏳ Mengelompokkan mustahik per keluarga…</div>';
+  let r; try { r = await dbApi('keluarga_daftar', {}); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server.' }; }
+  klMemuat = false;
+  if (!r || !r.ok) { if (!klData) v.innerHTML = `<div class="hint" style="color:#c0392b">${klE((r && r.pesan) || 'Gagal memuat.')} <button class="btn btn-outline btn-sm" type="button" onclick="klMuat()">Coba lagi</button></div>`; return; }
+  klData = r; klBuka && klData.data.some(k => k.kunci === klBuka) ? klDetail(klBuka) : klGambar();
+}
+function klGambar() {
+  klBuka = null;
+  const r = klData, v = document.getElementById('kl-view'), g = r.ringkas;
+  const kec = [...new Set(r.data.map(k => k.kecamatan).filter(Boolean))].sort();
+  const lama = id => (document.getElementById(id) || {}).value || '';
+  const cek = id => !!(document.getElementById(id) || {}).checked;
+  const s = { q: lama('kl-q'), kec: lama('kl-kec'), d: lama('kl-desil'), m: cek('kl-masalah'), b: cek('kl-belum') };
+  v.innerHTML = `<div class="kl-ring"><div>Keluarga<b>${g.keluarga}</b></div><div>Jiwa<b>${g.jiwa}</b></div><div>Bantuan ${klE(r.tahun)}<b>${klRpS(g.total_tahun)}</b></div>
+      <div>Belum pernah dibantu<b>${g.belum_dibantu}</b></div><div>⚠️ Perlu dicek<b>${g.masalah}</b></div></div>
+    <div class="kl-saring"><input type="search" id="kl-q" placeholder="Cari kepala keluarga, anggota, ID Mustahik, kelurahan…" value="${klE(s.q)}" aria-label="Cari keluarga">
+      <select id="kl-kec" aria-label="Kecamatan"><option value="">Semua kecamatan</option>${kec.map(k => `<option${k === s.kec ? ' selected' : ''}>${klE(k)}</option>`).join('')}</select>
+      <select id="kl-desil" aria-label="Desil"><option value="">Semua desil</option>${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(d => `<option value="${d}"${String(d) === s.d ? ' selected' : ''}>Desil ${d}</option>`).join('')}</select>
+      <label class="hint" style="margin:0"><input type="checkbox" id="kl-masalah"${s.m ? ' checked' : ''}> ⚠️ ada masalah data</label>
+      <label class="hint" style="margin:0"><input type="checkbox" id="kl-belum"${s.b ? ' checked' : ''}> belum pernah dibantu</label>
+      <button class="btn btn-outline btn-sm" type="button" onclick="klMuat()" title="Muat ulang dari server">↻</button></div>
+    <div id="kl-n" class="hint" style="margin:0 0 6px"></div><div class="kl-grid" id="kl-grid"></div>`;
+  ['kl-q', 'kl-kec', 'kl-desil', 'kl-masalah', 'kl-belum'].forEach(id => { const el = document.getElementById(id); el[el.type === 'search' ? 'oninput' : 'onchange'] = klSaring; });
+  klSaring();
+}
+function klSaring() {
+  const q = document.getElementById('kl-q').value.toLowerCase().trim(), kec = document.getElementById('kl-kec').value, d = document.getElementById('kl-desil').value;
+  const m = document.getElementById('kl-masalah').checked, b = document.getElementById('kl-belum').checked;
+  const hasil = klData.data.filter(k => (!kec || k.kecamatan === kec) && (!d || String(k.desil) === d || String(k.desil_baznas) === d) && (!m || k.masalah.length) && (!b || !k.dibantu) &&
+    (!q || [k.kepala, k.kelurahan, k.kecamatan].concat(k.mustahik.map(x => x.nama + ' ' + x.mustahikId)).concat(k.lain.map(x => x.nama)).join(' ').toLowerCase().includes(q)));
+  document.getElementById('kl-n').textContent = hasil.length + ' keluarga';
+  document.getElementById('kl-grid').innerHTML = hasil.slice(0, 300).map(k => `<button type="button" class="kl-kartu" onclick="klDetail('${klE(k.kunci)}')">
+      <h4>🏠 ${klE(k.kepala || k.mustahik[0].nama)}</h4><div class="kl-k">KK ${k.kk_valid ? klSamar(k.noKK) : '<span style="color:#b45309">belum valid</span>'} · ${klE([k.kelurahan, k.kecamatan].filter(Boolean).join(', ') || '—')}</div>
+      <div style="margin-top:6px">${k.mustahik.map(x => `<span class="kl-chip m" title="Mustahik ${klE(x.mustahikId)}">${klE(x.nama)}</span>`).join('')}${k.lain.map(x => `<span class="kl-chip">${klE(x.nama)}</span>`).join('')}</div>
+      <div class="kl-angka"><span>👥 <b>${k.jiwa}</b> jiwa</span><span>Desil <b>${k.desil || '—'}</b>${k.desil_baznas ? ' · BZ <b>' + k.desil_baznas + '</b>' : ''}</span><span>${klE(klData.tahun)}: <b>${k.total_tahun ? klRpS(k.total_tahun) : '—'}</b></span>${k.usulan_jalan ? '<span>📝 <b>' + k.usulan_jalan + '</b> usulan</span>' : ''}</div>
+      ${k.per_program.length ? '<div style="margin-top:4px">' + k.per_program.slice(0, 3).map(p => `<span class="kl-chip b">${klE(p.program)} ×${p.kali}</span>`).join('') + (k.per_program.length > 3 ? '<span class="kl-chip">+' + (k.per_program.length - 3) + '</span>' : '') + '</div>' : '<div class="kl-k" style="margin-top:4px">Belum pernah menerima bantuan</div>'}
+      ${k.masalah.length ? '<div class="kl-masalah">⚠️ ' + k.masalah.length + ' hal perlu dicek</div>' : ''}</button>`).join('') || '<div class="hint">Tidak ada keluarga sesuai saringan.</div>';
+}
+function klDetail(kunci) {
+  const k = klData.data.find(x => x.kunci === kunci); if (!k) return klGambar();
+  klBuka = kunci;
+  const bantuan = m => m.ringkas && m.ringkas.length ? m.ringkas.map(x => `<span class="kl-chip b" title="${x.kali}× pada ${x.tahun}">${klE(x.program)} ${x.tahun}${x.kali > 1 ? ' ×' + x.kali : ''} · ${klRpS(x.nilai)}</span>`).join('') : '<span class="kl-k">belum pernah</span>';
+  const jalan = m => (m.usulan || []).map(u => `<span class="kl-chip w" title="${klE(u.status)}">📝 ${klE(u.id)} · ${klE(u.program)}</span>`).join('');
+  document.getElementById('kl-view').innerHTML = `<button class="btn btn-outline btn-sm" type="button" onclick="klGambar()">← Semua keluarga</button>
+    <div class="at-kotak" style="margin-top:10px"><div class="rk-h">🏠 Keluarga ${klE(k.kepala || k.mustahik[0].nama)}</div>
+      <div class="kl-k">No. KK ${k.kk_valid ? klSamar(k.noKK) : '<b style="color:#b45309">belum valid</b>'} · ${klE([k.kelurahan, k.kecamatan].filter(Boolean).join(', ') || '—')} · ${k.jiwa} jiwa${k.jumlah_tertulis ? ' (tertulis ' + k.jumlah_tertulis + ')' : ''}</div>
+      <div class="kl-ring"><div>Bantuan ${klE(klData.tahun)}<b>${klRp(k.total_tahun)}</b></div><div>Seluruh tahun<b>${klRp(k.total_semua)}</b></div><div>Anggota pernah dibantu<b>${k.dibantu} / ${k.mustahik.length}</b></div><div>Usulan berjalan<b>${k.usulan_jalan}</b></div></div>
+      ${k.masalah.length ? '<div class="pgw-w" style="margin:6px 0">⚠️ Perlu dicek:<br>• ' + k.masalah.map(klE).join('<br>• ') + '</div>' : ''}
+      <div class="rk-wrap"><table class="rk-tbl kl-tbl"><thead><tr><th>Anggota</th><th>Hubungan</th><th>Umur</th><th>Status</th><th>Bantuan diterima (program · tahun · kali · nilai)</th><th></th></tr></thead><tbody>
+      ${k.mustahik.map(m => `<tr><td><b>${klE(m.nama)}</b><div class="kl-k">${klE(m.mustahikId)}${m.program_awal ? ' · program awal: ' + klE(m.program_awal) : ''}</div></td><td>${klE(m.hubungan || '—')}</td><td>${klUmur(m.tanggalLahir)}</td>
+        <td><span class="kl-chip m">Mustahik${m.aktif ? '' : ' (nonaktif)'}</span>${m.desil ? '<div class="kl-k">Desil ' + klE(m.desil) + (m.desilBaznas ? ' · BZ ' + klE(m.desilBaznas) : '') + '</div>' : ''}</td>
+        <td>${bantuan(m)}${jalan(m)}</td>
+        <td style="white-space:nowrap">${m.aktif ? `<button class="btn btn-primary btn-sm" type="button" onclick="klUsulkan('${klE(m.mustahikId)}')">+ Usulkan bantuan</button>` : ''}</td></tr>`).join('')}
+      ${k.lain.map(a => `<tr><td>${klE(a.nama)}<div class="kl-k">${a.nik ? 'NIK tercatat' : 'NIK belum ada'}</div></td><td>${klE(a.hubungan || '—')}</td><td>${klUmur(a.tanggalLahir)}</td><td><span class="kl-chip">Bukan mustahik</span></td>
+        <td><span class="kl-k">${klE([a.pendidikan, a.pekerjaan, a.kesehatan].filter(Boolean).join(' · ') || '—')}</span></td><td></td></tr>`).join('')}
+      </tbody></table></div>
+      ${k.per_program.length ? '<div class="rk-h" style="margin-top:12px">Ringkasan per program (seluruh keluarga)</div><div>' + k.per_program.map(p => `<span class="kl-chip b">${klE(p.program)} · ${p.kali}× · ${klRp(p.nilai)}</span>`).join('') + '</div>' : ''}
+      <div class="hint" style="margin-top:10px">Bantuan bertermin (beasiswa per semester, iuran BPJS) tidak dihitung ganda. "Program awal" = program saat didaftarkan; bantuan sebenarnya dari riwayat penyaluran.</div></div>`;
+  window.scrollTo(0, 0);
+}
+async function klUsulkan(mid) {
+  const btn = document.getElementById('tab-us-btn');
+  if (!btn || btn.hasAttribute('data-hk-kunci')) { if (typeof hkTolak === 'function') hkTolak(); return; }
+  window.usPrapilih = [mid];
+  btn.click();
+  for (let i = 0; i < 40 && !(typeof usData !== 'undefined' && usData); i++) await new Promise(r => setTimeout(r, 250));
+  if (typeof usEditor === 'function' && usData) usEditor('');
+}
+
 document.querySelectorAll('input[name=dok-jenis]').forEach(r=>r.addEventListener('change',ndOpsiToggle));
 
 // ── Data pendidikan (beasiswa) ──
@@ -10323,7 +10443,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='91 · 29 Nov 2026';
+const APP_VERSI='92 · 29 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
