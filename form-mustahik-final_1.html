@@ -7240,7 +7240,7 @@ function atDaftarKatalog() {
     ${ro ? '' : '<button class="btn btn-primary btn-sm" type="button" onclick="atBukaItem(\'\')">+ Tambah program</button>'}</div>
   <div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>Kode</th><th>Program</th><th>Kategori · Pilar</th><th>Sumber dana boleh</th><th>Asnaf boleh</th><th class="n">Standar / Maks</th><th class="n">Berkas</th>${ro ? '' : '<th></th>'}</tr></thead><tbody>
   ${r.katalog.map(k => `<tr class="${k.aktif ? '' : 'at-off'}"><td>${atE(k.kode)}</td><td><b>${atE(k.nama_program)}</b>${k.aktif ? '' : ' <span class="at-tag">nonaktif</span>'}</td>
-    <td>${atE(k.kategori)}<div class="rk-k">${atE(k.pilar || '—')}</div></td>
+    <td>${atE(k.kategori)}<div class="rk-k">${atE(k.pilar || '—')}</div>${k.program_prioritas ? '<div class="rk-k">⭐ ' + atE(k.program_prioritas) + '</div>' : ''}${k.desil_min || k.desil_maks ? '<div class="rk-k">' + atE(k.desil_dasar === 'Desil BAZNAS' ? 'Desil BZ' : 'Desil') + ' ' + (k.desil_min || 1) + '–' + (k.desil_maks || 10) + (k.usia_min || k.usia_maks ? ' · usia ' + (k.usia_min || 0) + '–' + (k.usia_maks || '…') : '') + '</div>' : ''}</td>
     <td>${k.sumber_boleh.length ? k.sumber_boleh.map(s => '<span class="at-tag">' + atE(s) + '</span>').join('') : '<span class="rk-k">semua</span>'}</td>
     <td>${k.asnaf_boleh.length ? k.asnaf_boleh.map(s => '<span class="at-tag">' + atE(s) + '</span>').join('') : '<span class="rk-k">semua</span>'}</td>
     <td class="n">${atRp(k.nilai_standar)}<div class="rk-k">${k.nilai_maks ? 'maks ' + atRp(k.nilai_maks) : 'tanpa batas'}</div></td>
@@ -7253,6 +7253,10 @@ function atBukaItem(kode) {
   atEdit = k ? JSON.parse(JSON.stringify(k)) : { kode: '', nama_program: '', kategori: '', pilar: '', berkas_wajib: [], berkas_pendukung: [], sumber_boleh: [], asnaf_boleh: [], nilai_standar: 0, nilai_maks: 0, aktif: true };
   atGambar();
 }
+// v93: 13 Program Prioritas BAZNAS 2026–2031 (artikel Humas BAZNAS RI 17 Agu 2026; sama dengan PROGRAM_PRIORITAS_BAZNAS di server)
+const AT_PRIORITAS = ['BAZNAS Siaga Kemiskinan', 'BAZNAS Tanggap Bencana', 'Beasiswa Cendekia BAZNAS', 'Rumah Sehat BAZNAS dan Kartu Sehat BAZNAS', 'Rumah Layak Huni BAZNAS',
+  'Bantuan Permodalan Berbasis Masjid dan Majelis Taklim', 'Rumah Terang BAZNAS', 'BAZNAS Balai Ternak', 'Lumbung Pangan BAZNAS', 'Mualaf Center BAZNAS',
+  'Sekolah dan Pesantren Layak Belajar BAZNAS', 'Air Bersih BAZNAS', 'Bank Sampah BAZNAS'];
 function atFormKatalog() {
   const k = atEdit, r = atData, opsi = (a, v) => a.map(x => `<option${x === v ? ' selected' : ''}>${atE(x)}</option>`).join('');
   const cek = (nm, a, pilih) => `<div class="at-cek">${a.map(x => `<label><input type="checkbox" name="${nm}" value="${atE(x)}"${pilih.includes(x) ? ' checked' : ''}>${atE(x)}</label>`).join('')}</div>`;
@@ -7267,6 +7271,14 @@ function atFormKatalog() {
   ${cek('at-sd', r.sumber.filter(s => s !== 'Dana Non-Halal'), k.sumber_boleh)}
   <div class="rk-h" style="font-size:12.5px;margin-top:10px">Asnaf yang boleh <span class="rk-k">(tidak dicentang semua = tidak dibatasi)</span></div>
   ${cek('at-as', r.asnaf, k.asnaf_boleh)}
+  <div class="rk-h" style="font-size:12.5px;margin-top:10px">Kelayakan program <span class="rk-k">(v93 — kosong = tidak diatur; di luar kriteria → peringatan saat usulan, bukan blokir)</span></div>
+  <div class="at-f"><label>Program Prioritas BAZNAS 2026–2031<select id="at-pp"><option value="">—</option>${opsi(AT_PRIORITAS, k.program_prioritas || '')}</select></label>
+    <label>Sasaran<select id="at-sas"><option value="">—</option>${opsi(['Perorangan', 'Keluarga', 'Lembaga'], k.sasaran || '')}</select></label>
+    <label>Dasar desil<select id="at-dd">${opsi(['Desil pengeluaran', 'Desil BAZNAS'], k.desil_dasar || 'Desil pengeluaran')}</select></label>
+    <label>Desil minimal<input id="at-dmin" type="number" min="1" max="10" value="${k.desil_min || ''}"></label>
+    <label>Desil maksimal<input id="at-dmaks" type="number" min="1" max="10" value="${k.desil_maks || ''}"></label>
+    <label>Usia minimal (th)<input id="at-umin" type="number" min="1" max="120" value="${k.usia_min || ''}"></label>
+    <label>Usia maksimal (th)<input id="at-umaks" type="number" min="1" max="120" value="${k.usia_maks || ''}"></label></div>
   <div class="at-f" style="margin-top:10px"><label>Berkas wajib (satu per baris)<textarea id="at-bw" rows="6">${atE(k.berkas_wajib.join('\n'))}</textarea></label>
     <label>Berkas pendukung (satu per baris)<textarea id="at-bp" rows="6">${atE(k.berkas_pendukung.join('\n'))}</textarea></label></div>
   <div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" type="button" onclick="atSimpanItem()">Simpan</button>
@@ -7279,7 +7291,9 @@ async function atSimpanItem() {
   const item = { kode: atEdit.kode, nama_program: document.getElementById('at-nama').value, kategori: document.getElementById('at-kat').value,
     pilar: document.getElementById('at-pilar').value, nilai_standar: atAngka('at-std'), nilai_maks: atAngka('at-maks'),
     aktif: document.getElementById('at-aktif').value === '1', sumber_boleh: atCentang('at-sd'), asnaf_boleh: atCentang('at-as'),
-    berkas_wajib: atBaris('at-bw'), berkas_pendukung: atBaris('at-bp') };
+    berkas_wajib: atBaris('at-bw'), berkas_pendukung: atBaris('at-bp'),
+    program_prioritas: document.getElementById('at-pp').value, sasaran: document.getElementById('at-sas').value, desil_dasar: document.getElementById('at-dd').value,   // v93
+    desil_min: document.getElementById('at-dmin').value, desil_maks: document.getElementById('at-dmaks').value, usia_min: document.getElementById('at-umin').value, usia_maks: document.getElementById('at-umaks').value };
   let r; try { r = await dbApi('katalog_simpan', { item }); } catch (e) { toast('Gagal terhubung ke server.', true); return; }
   if (!r.ok) { toast(r.pesan || 'Gagal menyimpan.', true); return; }
   toast(r.pesan); atEdit = null; await atMuat();
@@ -8196,6 +8210,127 @@ async function hkSimpan() {
   const p2 = document.getElementById('hk-pesan'); if (p2) p2.textContent = '✅ Tersimpan. Server langsung menerapkan; tampilan menu pengguna lain berubah saat mereka memuat ulang aplikasi.';
 }
 
+
+// ═════════ v93 — Pengaturan › 📊 Desil & Kelayakan (acuan bervarian per tanggal berlaku) ═════════
+// Desil pengeluaran per kapita (prioritas) + Desil BAZNAS (pendapatan) + garis acuan + aturan kelayakan Z-Auto/Z-Chicken/konsumtif.
+// Ubah = WK3 (wajib berlaku mulai & dasar), pratinjau dampak sebelum simpan, riwayat versi. Kelayakan per program ada di Katalog Bantuan.
+let dsData = null, dsDraf = null;
+const dsE = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const dsRp = n => (+n || 0).toLocaleString('id-ID');
+// desil pengeluaran di form mustahik mengikuti acuan aktif dari server (dulu angka tetap di kode)
+(function () {
+  if (typeof computeDesil !== 'function') return;
+  const asli = computeDesil;
+  window.computeDesil = computeDesil = function (total, anggota) {
+    const a = typeof acuanAktif === 'function' ? acuanAktif() : null, P = a && a.pengeluaran;
+    if (!P || !Array.isArray(P.batas) || P.batas.length !== 9) return asli(total, anggota);
+    if (!total || !anggota || anggota <= 0) return { perkapita: null, desil: null, status: null, prioritas: false };
+    const pk = total / anggota; let d = 10;
+    for (let i = 0; i < 9; i++) { if (pk <= +P.batas[i]) { d = i + 1; break; } }
+    const st = (P.label.find(x => d <= +x[0]) || [0, ''])[1];
+    return { perkapita: pk, desil: d, status: st, prioritas: d <= +P.prioritas_maks };
+  };
+})();
+// tombol lama "⚙️ Acuan Desil BAZNAS" di Daftar Mustahik → buka pengaturan lengkap
+(function () {
+  if (typeof bukaAcuan !== 'function') return;
+  window.bukaAcuan = bukaAcuan = function () { const b = document.getElementById('tab-atur-btn'); if (!b) return; atTab = 'desil'; b.click(); };
+})();
+(function () {
+  if (typeof atGambar !== 'function') return;
+  const asli = atGambar;
+  window.atGambar = atGambar = function () {
+    const ds = atTab === 'desil';
+    if (ds) atTab = 'katalog';
+    asli();
+    const sub = document.getElementById('at-sub');
+    sub.insertAdjacentHTML('beforeend', `<button type="button" onclick="atTab='desil';atEdit=null;atGambar()">📊 Desil &amp; Kelayakan</button>`);
+    if (ds) { atTab = 'desil'; sub.querySelectorAll('button').forEach(b => b.classList.toggle('on', /Desil &/.test(b.textContent))); dsMuat(); }
+  };
+})();
+async function dsMuat() {
+  const isi = document.getElementById('at-isi'); isi.innerHTML = '<div class="hint">Memuat acuan desil…</div>';
+  let r; try { r = await dbApi('desil_baca', {}); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server.' }; }
+  if (!r || !r.ok) { isi.innerHTML = `<div class="hint" style="color:#c0392b">${dsE((r && r.pesan) || 'Gagal memuat.')}</div>`; return; }
+  dsData = r; dsDraf = JSON.parse(JSON.stringify(r.acuan));
+  if (typeof simpanAcuanLokal === 'function') simpanAcuanLokal(r.acuan, r.boleh_ubah);
+  dsGambar();
+}
+function dsGambar() {
+  const r = dsData, a = dsDraf, ro = !r.boleh_ubah, dis = ro ? ' disabled' : '';
+  const ang = (id, v, extra) => `<input id="${id}" inputmode="numeric" value="${v === '' || v == null ? '' : dsRp(v)}"${dis} ${extra || ''}>`;
+  const kecil = (id, v, lo, hi) => `<input id="${id}" type="number" min="${lo}" max="${hi}" value="${v}" style="width:70px"${dis}>`;
+  const potong = (pref, arr) => arr.map((p, i) => `<div style="display:flex;gap:6px;align-items:center;margin:3px 0">s.d. Desil ${kecil(pref + 'd' + i, p[0], 1, 10)}<input id="${pref}l${i}" value="${dsE(p[1])}" maxlength="40"${dis}></div>`).join('');
+  const hari = new Date().toISOString().slice(0, 10);
+  document.getElementById('at-isi').innerHTML = `<div class="at-kotak"><div class="rk-h">Acuan aktif: ${dsE(a.versi || 'nilai awal')}${a.berlaku_mulai ? ' · berlaku ' + dsE(a.berlaku_mulai) : ''}</div>
+      <div class="hint" style="margin:0">Dasar: ${dsE(a.dasar || a.sumber || '—')}${a.diubah_oleh ? ' · oleh ' + dsE(a.diubah_oleh) : ''}. ${ro ? 'Hanya Wakil Ketua III yang dapat mengubah.' : 'Ubah angka di bawah, klik <b>Pratinjau dampak</b>, lalu simpan sebagai versi baru.'}</div></div>
+    <div class="at-kotak"><div class="rk-h">1. Desil pengeluaran per kapita — dasar <b>prioritas & rekomendasi</b></div>
+      <div class="hint" style="margin:0 0 6px">Batas atas pengeluaran per orang per bulan (Rp). Desil 10 = di atas batas Desil 9.</div>
+      <div class="at-f">${a.pengeluaran.batas.map((x, i) => `<label>Desil ${i + 1} (≤)${ang('ds-pb' + i, x)}</label>`).join('')}</div>
+      <div class="at-f" style="margin-top:6px"><div><div class="rk-k">Status ekonomi</div>${potong('ds-pl', a.pengeluaran.label)}</div>
+        <label>Prioritas bantuan = Desil 1 s.d.${kecil('ds-pp', a.pengeluaran.prioritas_maks, 1, 10)}</label></div></div>
+    <div class="at-kotak"><div class="rk-h">2. Desil BAZNAS — pendapatan keluarga per bulan</div>
+      <div class="at-f">${a.batas.map((x, i) => `<label>Desil ${i + 1} (&lt;)${ang('ds-bb' + i, x)}</label>`).join('')}</div>
+      <div style="margin-top:6px"><div class="rk-k">Kelompok pendapatan</div>${potong('ds-bk', a.kelompok)}</div></div>
+    <div class="at-kotak"><div class="rk-h">3. Garis acuan (Rp/bulan)</div>
+      <div class="at-f"><label>GK BPS per kapita (Kota Lubuklinggau)${ang('ds-gkpk', a.gkPerKapita || '', 'placeholder="kosong = pakai angka per KK"')}</label>
+        <label>GK ekstrem per kapita${ang('ds-gkepk', a.gkEkstremPerKapita || '', 'placeholder="kosong = pakai angka per KK"')}</label>
+        <label>GK per KK (cadangan)${ang('ds-gk', a.gk)}</label><label>GK ekstrem per KK (cadangan)${ang('ds-gke', a.gkEkstrem)}</label>
+        <label>Had kifayah per KK${ang('ds-hk', a.hadKifayah)}</label><label>UMP Sumatera Selatan${ang('ds-ump', a.ump)}</label><label>Nisab zakat pendapatan${ang('ds-nisab', a.nisab)}</label></div>
+      <div class="hint" style="margin:4px 0 0">Bila GK per kapita diisi: garis kemiskinan keluarga = GK per kapita × jumlah anggota (metode CIBEST/IZN). Dipakai untuk Jaring BAZNAS.</div></div>
+    <div class="at-kotak"><div class="rk-h">4. Kelayakan program (dari Desil BAZNAS)</div>
+      <div class="at-f"><label>Z-Auto: Desil ${kecil('ds-za1', a.aturan.zauto.desil_min, 1, 10)} s.d. ${kecil('ds-za2', a.aturan.zauto.desil_maks, 1, 10)}</label>
+        <label>Z-Auto: usia ${kecil('ds-zu1', a.aturan.zauto.usia_min, 0, 120)} s.d. ${kecil('ds-zu2', a.aturan.zauto.usia_maks, 0, 120)} th</label>
+        <label>Z-Chicken prioritas: s.d. Desil ${kecil('ds-zc1', a.aturan.zchicken.prioritas_maks, 1, 10)}</label>
+        <label>Z-Chicken layak (produktif): s.d. Desil ${kecil('ds-zc2', a.aturan.zchicken.layak_maks, 1, 10)}</label>
+        <label>Prioritas konsumtif: s.d. Desil ${kecil('ds-ko', a.aturan.konsumtif.desil_maks, 1, 10)}</label></div>
+      <div class="hint" style="margin:4px 0 0">Kelayakan program lain (13 Program Prioritas BAZNAS: rentang desil, usia, sasaran) diatur per program di tab <b>Katalog Bantuan</b>.</div></div>
+    ${ro ? '' : `<div class="at-kotak"><div class="rk-h">Simpan sebagai versi baru</div>
+      <div class="at-f"><label>Berlaku mulai *<input id="ds-mulai" type="date" value="${hari}"></label>
+        <label style="grid-column:span 2">Dasar perubahan *<input id="ds-dasar" maxlength="200" placeholder="mis. BPS Kota Lubuklinggau Maret 2027 / SK BAZNAS RI No. …"></label></div>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-outline btn-sm" type="button" onclick="dsPratinjau()">🔍 Pratinjau dampak</button>
+        <button class="btn btn-primary btn-sm" type="button" id="ds-simpan" onclick="dsSimpan()">💾 Simpan versi</button><button class="btn btn-ghost btn-sm" type="button" onclick="dsMuat()">Batal</button></div>
+      <div id="ds-dampak" style="margin-top:8px"></div></div>`}
+    <div class="at-kotak"><div class="rk-h">Riwayat versi</div>${r.versi.length ? `<div class="rk-wrap"><table class="rk-tbl"><thead><tr><th>Versi</th><th>Berlaku mulai</th><th>Dasar</th><th>Oleh</th><th></th></tr></thead><tbody>
+      ${r.versi.map(v => `<tr><td><b>${dsE(v.versi)}</b>${v.aktif ? ' <span class="at-tag">aktif</span>' : v.akan_datang ? ' <span class="at-tag">terjadwal</span>' : ''}</td><td>${dsE(v.berlaku_mulai)}</td><td>${dsE(v.dasar)}</td><td>${dsE(v.dibuat_oleh)}</td>
+        <td>${v.akan_datang && !ro ? `<button class="btn btn-outline btn-sm" type="button" onclick="dsBatal('${dsE(v.versi)}')">Batalkan</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<div class="hint">Belum ada versi — memakai nilai awal (slide BAZNAS RI 2026, UMP Sumsel, desil pengeluaran lama).</div>'}</div>`;
+}
+function dsKumpul() {
+  const v = id => (document.getElementById(id) || {}).value || '', n = id => Number(String(v(id)).replace(/\D/g, '')) || 0;
+  const a = dsDraf, ptg = (pref, len) => Array.from({ length: len }, (_, i) => [parseInt(v(pref + 'd' + i), 10), v(pref + 'l' + i)]);
+  return { batas: [0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => n('ds-bb' + i)), gkEkstrem: n('ds-gke'), gk: n('ds-gk'), ump: n('ds-ump'), hadKifayah: n('ds-hk'), nisab: n('ds-nisab'),
+    gkPerKapita: n('ds-gkpk'), gkEkstremPerKapita: n('ds-gkepk'), kelompok: ptg('ds-bk', a.kelompok.length),
+    pengeluaran: { batas: [0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => n('ds-pb' + i)), label: ptg('ds-pl', a.pengeluaran.label.length), prioritas_maks: v('ds-pp') },
+    aturan: { zauto: { desil_min: v('ds-za1'), desil_maks: v('ds-za2'), usia_min: v('ds-zu1'), usia_maks: v('ds-zu2') }, zchicken: { prioritas_maks: v('ds-zc1'), layak_maks: v('ds-zc2') }, konsumtif: { desil_maks: v('ds-ko') } },
+    dasar: v('ds-dasar') };
+}
+async function dsPratinjau() {
+  const box = document.getElementById('ds-dampak'); box.innerHTML = '<div class="hint">⏳ Menghitung dampak…</div>';
+  let r; try { r = await dbApi('desil_pratinjau', { acuan: dsKumpul() }); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server.' }; }
+  if (!r || !r.ok) { box.innerHTML = `<div class="hint" style="color:#c0392b">${dsE((r && r.pesan) || 'Gagal.')}</div>`; return; }
+  const d = r.dampak;
+  box.innerHTML = `<div class="pgw-w">Dari ${d.total} mustahik: <b>${d.berubah}</b> berpindah desil
+      (pengeluaran: ${d.pg_turun} turun, ${d.pg_naik} naik · BAZNAS: ${d.bz_turun} turun, ${d.bz_naik} naik) ·
+      prioritas: <b>+${d.prioritas_baru}</b> / <b>−${d.prioritas_hilang}</b> · Z-Auto berubah ${d.zauto} · Z-Chicken ${d.zchicken} · konsumtif ${d.konsumtif}.
+      ${d.contoh.length ? '<details style="margin-top:6px"><summary>Lihat contoh (' + d.contoh.length + ')</summary>' + d.contoh.map(c => `<div class="rk-k">${dsE(c.nama)} (${dsE(c.mustahikId)}): ${c.ubah.map(dsE).join(' · ')}</div>`).join('') + '</details>' : ''}</div>`;
+}
+async function dsSimpan() {
+  const mulai = document.getElementById('ds-mulai').value, dasar = document.getElementById('ds-dasar').value.trim();
+  if (!mulai || dasar.length < 5) { toast('Isi tanggal berlaku mulai dan dasar perubahan.', true); return; }
+  if (!confirm('Simpan acuan sebagai versi baru berlaku ' + mulai + '?\nBila berlaku hari ini atau sebelumnya, desil seluruh mustahik langsung dihitung ulang.')) return;
+  const btn = document.getElementById('ds-simpan'); btn.disabled = true; btn.textContent = '⏳ Menyimpan & menghitung ulang…';
+  let r; try { r = await dbApi('desil_simpan', { acuan: dsKumpul(), berlaku_mulai: mulai, dasar }); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server.' }; }
+  btn.disabled = false; btn.textContent = '💾 Simpan versi';
+  if (!r || !r.ok) { toast((r && r.pesan) || 'Gagal menyimpan.', true); return; }
+  toast(r.pesan); await dsMuat();
+  if (typeof dbMuatDaftar === 'function') dbMuatDaftar(true).catch(() => {});
+}
+async function dsBatal(versi) {
+  if (!confirm('Batalkan versi ' + versi + ' yang belum berlaku?')) return;
+  let r; try { r = await dbApi('desil_batal', { versi }); } catch (e) { r = { ok: false, pesan: 'Gagal terhubung ke server.' }; }
+  toast(r.pesan || (r.ok ? 'Dibatalkan.' : 'Gagal.'), !r.ok); if (r.ok) dsMuat();
+}
+
 // ════════════════════════════════════════════
 // v39 — TATA LETAK: menu samping kiri per bidang (Pengumpulan · Pendistribusian & Pendayagunaan · Keuangan, Pelaporan & Akuntansi ·
 // Administrasi, SDM, Umum & Komunikasi). Tombol tab lama dipindah (bukan dibuat ulang) → onclick, badge, & aturan peran tetap.
@@ -8700,18 +8835,21 @@ let _bolehUbahAcuan=false;
 function acuanAktif(){try{const a=JSON.parse(lsGet(ACUAN_KEY)||'null');if(a&&Array.isArray(a.batas)&&a.batas.length===9)return a;}catch{}return ACUAN_DEFAULT;}
 function simpanAcuanLokal(a,boleh){if(a)lsSet(ACUAN_KEY,JSON.stringify(a));_bolehUbahAcuan=!!boleh;const b=document.getElementById('btn-acuan');if(b)b.style.display=_bolehUbahAcuan?'inline-flex':'none';}
 function umurDari(tgl){if(!/^\d{4}-\d{2}-\d{2}$/.test(tgl||''))return null;const p=tgl.split('-').map(Number),n=new Date();let u=n.getFullYear()-p[0];if(n.getMonth()+1<p[1]||(n.getMonth()+1===p[1]&&n.getDate()<p[2]))u--;return u;}
-function hitungDesilBaznas(penghasilan,tglLahir,a){
-  a=a||acuanAktif();
+function hitungDesilBaznas(penghasilan,tglLahir,a,anggota){   // v93: kelompok, aturan & GK per kapita dari acuan bervarian
+  a=a||acuanAktif();if(anggota===undefined){const el=document.getElementById('f-jmlAnggota');anggota=el?el.value:'';}
   const k={desilBaznas:'',kelompokPendapatan:'',jaringBaznas:'',statusHadKifayah:'',statusUMP:'',layakZAuto:'',layakZChicken:'',prioritasKonsumtif:''};
   if(penghasilan===''||penghasilan===null||penghasilan===undefined)return k;
   const p=Number(String(penghasilan).replace(/[^\d.]/g,''));if(isNaN(p))return k;
   let d=10;for(let i=0;i<a.batas.length;i++){if(p<Number(a.batas[i])){d=i+1;break;}}
-  const u=umurDari(tglLahir);
-  return{desilBaznas:String(d),kelompokPendapatan:d<=2?'Miskin':d<=5?'MBR Non Fix Income':d<=8?'MBR Fix Income':'MBM/MBA',
-    jaringBaznas:String(p<a.gkEkstrem?1:p<a.gk?2:p<a.hadKifayah?3:p<a.nisab?4:5),
+  const u=umurDari(tglLahir),n=Number(String(anggota||'').replace(/[^\d.]/g,''))||0;
+  const R=a.aturan||{zauto:{desil_min:3,desil_maks:5,usia_min:22,usia_maks:50},zchicken:{prioritas_maks:4,layak_maks:6},konsumtif:{desil_maks:2}};
+  const kel=a.kelompok?((a.kelompok.find(x=>d<=+x[0])||[0,''])[1]):(d<=2?'Miskin':d<=5?'MBR Non Fix Income':d<=8?'MBR Fix Income':'MBM/MBA');
+  const gkE=a.gkEkstremPerKapita&&n>0?a.gkEkstremPerKapita*n:a.gkEkstrem,gk=a.gkPerKapita&&n>0?a.gkPerKapita*n:a.gk;
+  return{desilBaznas:String(d),kelompokPendapatan:kel,
+    jaringBaznas:String(p<gkE?1:p<gk?2:p<a.hadKifayah?3:p<a.nisab?4:5),
     statusHadKifayah:p>=a.hadKifayah?'Memenuhi':'Belum',statusUMP:p>=a.ump?'Di atas UMP':'Di bawah UMP',
-    layakZAuto:(d>=3&&d<=5)?((u===null||(u>=22&&u<=50))?'Ya':'Tidak (usia)'):'Tidak',
-    layakZChicken:d<=4?'Prioritas':d<=6?'Layak (produktif)':'Tidak',prioritasKonsumtif:d<=2?'Ya':'Tidak'};
+    layakZAuto:(d>=R.zauto.desil_min&&d<=R.zauto.desil_maks)?((u===null||(u>=R.zauto.usia_min&&u<=R.zauto.usia_maks))?'Ya':'Tidak (usia)'):'Tidak',
+    layakZChicken:d<=R.zchicken.prioritas_maks?'Prioritas':d<=R.zchicken.layak_maks?'Layak (produktif)':'Tidak',prioritasKonsumtif:d<=R.konsumtif.desil_maks?'Ya':'Tidak'};
 }
 function badgeProgram(d){
   const b=[];
@@ -10443,7 +10581,7 @@ function v14Init(){}
 // ════════════════════════════════════════════
 // v15 — Tanda versi aplikasi + pemberitahuan "Versi baru tersedia" + peringatan salinan file lama
 // ════════════════════════════════════════════
-const APP_VERSI='92 · 29 Nov 2026';
+const APP_VERSI='93 · 29 Nov 2026';
 const APP_URL_RESMI='https://baznaskotallg.vercel.app/form-mustahik-final_1.html';
 let _v15Tampil=false;
 function v15Pita(html,warna){
